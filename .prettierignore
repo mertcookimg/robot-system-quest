@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.vite/
+.git/
+.agents/
+.claude/
+coverage/
+package-lock.json
+public/
+docs/
+README.md
+ネタ.md
+*.tsbuildinfo

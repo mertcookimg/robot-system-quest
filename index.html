@@ -1,0 +1,579 @@
+<!-- Copyright 2026 Masato Kobayashi -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Robot System Quest: Games and Lessons</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="description" content="A browser-based game for learning ROS 2 concepts" />
+    <link rel="canonical" href="https://mertcookimg.github.io/robot-system-quest/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Robot System Quest" />
+    <meta property="og:title" content="Robot System Quest: Games and Lessons" />
+    <meta property="og:description" content="A browser-based game for learning ROS 2 concepts" />
+    <meta property="og:url" content="https://mertcookimg.github.io/robot-system-quest/" />
+    <meta property="og:image" content="https://mertcookimg.github.io/robot-system-quest/home.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1195" />
+    <meta property="og:image:height" content="604" />
+    <meta property="og:image:alt" content="Robot System Quest — Games and Lessons home screen" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Robot System Quest: Games and Lessons" />
+    <meta name="twitter:description" content="A browser-based game for learning ROS 2 concepts" />
+    <meta
+      name="twitter:image"
+      content="https://mertcookimg.github.io/robot-system-quest/home.png"
+    />
+    <meta name="twitter:image:alt" content="Robot System Quest — Games and Lessons home screen" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="ambient" class="ambient"></canvas>
+
+    <!-- Intro -->
+    <div id="intro-screen" class="intro-screen">
+      <div class="intro-bg"></div>
+      <div class="intro-card">
+        <button
+          id="intro-lang-toggle"
+          class="intro-lang-toggle"
+          type="button"
+          title="Language / 言語"
+        >
+          JA
+        </button>
+        <div class="intro-mark">◆</div>
+        <h1 class="intro-title">
+          <span class="intro-title-main">Robot System Quest:</span>
+          <span class="intro-title-accent">Games and Lessons</span>
+        </h1>
+        <p class="intro-tagline">Learn ROS 2 Concepts Through Play</p>
+        <p class="intro-mini i18n-ja">
+          ロボットを動かして学ぶ、ブラウザ完結の ROS 2 コンセプト教材
+        </p>
+        <p class="intro-mini i18n-en">A browser-based game for learning ROS 2 concepts</p>
+        <ul class="intro-pills" aria-hidden="true">
+          <li>🌐 Browser-only</li>
+          <li>🎮 Gamepad / KB / Mouse</li>
+          <li>🌏 JA / EN</li>
+          <li>🤖 34 stages</li>
+        </ul>
+        <div class="intro-showcase" aria-hidden="true">
+          <div class="showcase-topline">
+            <span class="showcase-live"><i></i> ROBOT ONLINE</span>
+            <span>MISSION_01 / NAVIGATION</span>
+            <span class="showcase-signal">● ● ●</span>
+          </div>
+          <canvas id="intro-robot-canvas" width="760" height="146"></canvas>
+          <div class="showcase-command">
+            <span class="showcase-prompt">&gt;_</span>
+            <span>ros2 topic pub /cmd_vel geometry_msgs/msg/Twist</span>
+            <span class="showcase-running">RUNNING</span>
+          </div>
+        </div>
+        <div class="intro-modes">
+          <button class="intro-mode intro-mode--game" type="button" data-mode="game">
+            <div class="im-icon" aria-hidden="true">🎮</div>
+            <div class="im-body">
+              <span class="im-kicker">GAME</span>
+              <strong class="im-title i18n-ja">体験しながら学ぶ</strong>
+              <strong class="im-title i18n-en">Learn by Playing</strong>
+              <span class="im-desc i18n-ja"
+                ><span id="intro-game-count">0</span> ステージ ・ アクション重視</span
+              >
+              <span class="im-desc i18n-en"
+                ><span id="intro-game-count-en">0</span> stages ・ action-focused</span
+              >
+            </div>
+            <span class="im-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="intro-mode intro-mode--lesson" type="button" data-mode="lesson">
+            <div class="im-icon" aria-hidden="true">📚</div>
+            <div class="im-body">
+              <span class="im-kicker">LESSON</span>
+              <strong class="im-title i18n-ja">手順でしっかり理解</strong>
+              <strong class="im-title i18n-en">Step-by-Step Lessons</strong>
+              <span class="im-desc i18n-ja"
+                ><span id="intro-lesson-count">0</span> ステージ ・ 基礎を体系化</span
+              >
+              <span class="im-desc i18n-en"
+                ><span id="intro-lesson-count-en">0</span> stages ・ structured basics</span
+              >
+            </div>
+            <span class="im-arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
+        <a class="intro-guide-link" href="./guide/">
+          <span class="intro-guide-icon" aria-hidden="true">▤</span>
+          <span>
+            <small>LEARNING GUIDE</small>
+            <strong class="i18n-ja">GamesとLessonsを詳しく見る</strong>
+            <strong class="i18n-en">Explore the Games &amp; Lessons Guide</strong>
+          </span>
+          <b aria-hidden="true">↗</b>
+        </a>
+        <p class="intro-foot">
+          <a
+            href="https://mertcookimg.github.io/"
+            target="_blank"
+            rel="noopener noreferrer"
+            id="intro-author-link"
+          >
+            <span class="i18n-ja">作者: <strong>Masato Kobayashi</strong> ↗</span>
+            <span class="i18n-en">Created by <strong>Masato Kobayashi</strong> ↗</span>
+          </a>
+        </p>
+      </div>
+    </div>
+
+    <!-- All Clear -->
+    <div id="allclear-screen" class="allclear-screen">
+      <div class="allclear-card">
+        <div class="allclear-eyebrow">MISSION COMPLETE</div>
+        <div class="allclear-title">All Stages Cleared</div>
+        <div id="allclear-stars" class="allclear-stars"></div>
+        <div id="allclear-stats" class="stats"></div>
+        <button id="allclear-restart" class="primary">Play Again</button>
+      </div>
+    </div>
+
+    <header>
+      <div class="brand">
+        <span class="mark">◆</span>
+        <span class="title">Robot System Quest</span>
+        <a
+          id="brand-author"
+          class="brand-author"
+          href="https://mertcookimg.github.io/"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Author / 著者ページを開く"
+        >
+          <span class="ba-by">Created by</span>
+          <strong class="ba-name">Masato Kobayashi</strong>
+          <span class="ba-arrow">↗</span>
+        </a>
+      </div>
+      <div class="header-actions">
+        <div class="hdr-group" role="group" aria-label="Navigation">
+          <button class="hdr-btn" id="home-toggle" title="ホーム / Home へ戻る">HOME</button>
+          <button class="hdr-btn" id="lesson-toggle" title="このステージのガイド / Stage guide">
+            STAGE GUIDE
+          </button>
+          <a
+            class="hdr-btn robotics-guide-link"
+            href="./guide/"
+            aria-label="Open Robotics Learning Guide / ロボティクス学習ガイドを開く"
+            title="GamesとLessonsの学習サイト / Open Robotics Learning Guide"
+          >
+            <span>ROBOTICS LEARNING GUIDE</span>
+            <b aria-hidden="true">↗</b>
+          </a>
+          <button class="hdr-btn hdr-icon" id="help-toggle" title="操作ヘルプ / Controls help">
+            ?
+          </button>
+        </div>
+        <span class="hdr-sep" aria-hidden="true"></span>
+        <div class="hdr-group" role="group" aria-label="Settings">
+          <button
+            class="hdr-btn hdr-value"
+            id="lang-toggle"
+            title="表示言語を切替 / Switch language"
+          >
+            JA
+          </button>
+          <button
+            class="hdr-btn hdr-toggle"
+            id="ghost-toggle"
+            title="ゴースト再生 ON/OFF / Ghost replay"
+          >
+            GHOST
+          </button>
+          <button class="hdr-btn hdr-toggle" id="audio-toggle" title="サウンド ON/OFF / Audio">
+            ON
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Help -->
+    <div id="help-modal" class="help-modal">
+      <div class="help-card">
+        <h2>How to Play</h2>
+        <div class="i18n-ja">
+          <table>
+            <tr>
+              <td>
+                <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / 矢印 / 🎮 左スティック・十字
+              </td>
+              <td>移動 / 旋回</td>
+            </tr>
+            <tr>
+              <td><kbd>Shift</kbd> / <kbd>X</kbd> / 🎮 LB・RB・LT・RT</td>
+              <td>ブースト</td>
+            </tr>
+            <tr>
+              <td><kbd>Space</kbd> / 🎮 A</td>
+              <td>停止 / 決定・アクション・SETTINGS（ステージ依存）</td>
+            </tr>
+            <tr>
+              <td><kbd>R</kbd> / 🎮 Start</td>
+              <td>リスタート</td>
+            </tr>
+            <tr>
+              <td>🎮 Select / Back</td>
+              <td>ステージメニューの開閉 (キーボードはステージ pill を直接クリック)</td>
+            </tr>
+            <tr>
+              <td>🎮 L3 (左スティック押込み)</td>
+              <td>ターミナルのコマンドパレット (↑↓ 選択 / A 実行 / B 閉じる)</td>
+            </tr>
+            <tr>
+              <td><kbd>?</kbd> / 🎮 R3 (右スティック押込み)</td>
+              <td>ヘルプ表示 / 閉じる</td>
+            </tr>
+            <tr>
+              <td><kbd>Esc</kbd> / 🎮 B</td>
+              <td>閉じる</td>
+            </tr>
+          </table>
+          <p class="help-note">
+            各ステージ固有の操作 (Block Editor・配線パズル・Nav2 など) は、そのステージの GUIDE (📖)
+            と画面上のヒントに表示されます。
+          </p>
+        </div>
+        <div class="i18n-en">
+          <table>
+            <tr>
+              <td>
+                <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / Arrows / 🎮 Left Stick · D-Pad
+              </td>
+              <td>Move / Turn</td>
+            </tr>
+            <tr>
+              <td><kbd>Shift</kbd> / <kbd>X</kbd> / 🎮 LB·RB·LT·RT</td>
+              <td>Boost</td>
+            </tr>
+            <tr>
+              <td><kbd>Space</kbd> / 🎮 A</td>
+              <td>Stop / confirm, action, or SETTINGS (stage-dependent)</td>
+            </tr>
+            <tr>
+              <td><kbd>R</kbd> / 🎮 Start</td>
+              <td>Restart</td>
+            </tr>
+            <tr>
+              <td>🎮 Select / Back</td>
+              <td>Open / close Stage Menu (keyboard: click a stage pill)</td>
+            </tr>
+            <tr>
+              <td>🎮 L3 (left-stick click)</td>
+              <td>Terminal command palette (↑↓ select / A run / B close)</td>
+            </tr>
+            <tr>
+              <td><kbd>?</kbd> / 🎮 R3 (right-stick click)</td>
+              <td>Show / hide Help</td>
+            </tr>
+            <tr>
+              <td><kbd>Esc</kbd> / 🎮 B</td>
+              <td>Close</td>
+            </tr>
+          </table>
+          <p class="help-note">
+            Stage-specific controls (Block Editor, wire puzzles, Nav2, …) are shown in that stage's
+            GUIDE (📖) and as on-screen hints.
+          </p>
+        </div>
+        <button id="help-close" class="primary">Close</button>
+      </div>
+    </div>
+
+    <!-- Lesson / Game intro (per stage) — opens automatically once; the LESSON button reopens it -->
+    <div
+      id="lesson-modal"
+      class="lesson-modal"
+      data-kind="lesson"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lesson-title"
+      aria-hidden="true"
+    >
+      <div class="lesson-card" tabindex="-1">
+        <div class="lesson-stage-badge" id="lesson-stage-badge"></div>
+        <div class="lesson-eyebrow" id="lesson-eyebrow">LESSON</div>
+        <h2 class="lesson-title" id="lesson-title"></h2>
+        <p class="lesson-subtitle" id="lesson-subtitle"></p>
+        <div class="lesson-diagram" id="lesson-diagram"></div>
+        <!-- GAME mode only: pixel-art demo of the stage controls -->
+        <div class="lesson-demo" aria-hidden="true">
+          <canvas id="lesson-demo-canvas" width="440" height="120"></canvas>
+        </div>
+        <section class="lesson-section" data-section="goal">
+          <h3 class="lesson-section-title-game i18n-ja">
+            <span class="ls-icon">🏁</span>ミッション
+          </h3>
+          <h3 class="lesson-section-title-game i18n-en"><span class="ls-icon">🏁</span>Mission</h3>
+          <h3 class="lesson-section-title-lesson i18n-ja"><span class="ls-icon">🎯</span>ゴール</h3>
+          <h3 class="lesson-section-title-lesson i18n-en"><span class="ls-icon">🎯</span>Goal</h3>
+          <p id="lesson-goal"></p>
+        </section>
+        <section class="lesson-section" data-section="first">
+          <h3 class="lesson-section-title-game i18n-ja"><span class="ls-icon">🎮</span>操作</h3>
+          <h3 class="lesson-section-title-game i18n-en"><span class="ls-icon">🎮</span>Controls</h3>
+          <h3 class="lesson-section-title-lesson i18n-ja"><span class="ls-icon">🎮</span>操作</h3>
+          <h3 class="lesson-section-title-lesson i18n-en">
+            <span class="ls-icon">🎮</span>Controls / Try this first
+          </h3>
+          <p id="lesson-first"></p>
+        </section>
+        <section class="lesson-section" data-section="learn">
+          <h3 class="i18n-ja"><span class="ls-icon">💡</span>ROS 2 で学ぶこと</h3>
+          <h3 class="i18n-en"><span class="ls-icon">💡</span>What you'll learn (ROS 2)</h3>
+          <p id="lesson-learn"></p>
+        </section>
+        <button id="lesson-close" class="primary lesson-start">
+          <span class="lesson-start-game i18n-ja">▶ START</span>
+          <span class="lesson-start-game i18n-en">▶ START</span>
+          <span class="lesson-start-lesson i18n-ja">はじめる</span>
+          <span class="lesson-start-lesson i18n-en">Got it</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <nav id="mode-tabs" class="mode-tabs">
+      <button class="mode-tab active" data-mode="game">
+        <span class="mt-icon" aria-hidden="true">🎮</span>
+        <span class="mt-copy">
+          <span class="mt-label">GAME</span>
+          <span class="mt-sub i18n-ja">アクションゲームを選ぶ</span>
+          <span class="mt-sub i18n-en">Choose an action game</span>
+        </span>
+        <span class="mt-open" aria-hidden="true">⌄</span>
+      </button>
+      <button class="mode-tab" data-mode="lesson">
+        <span class="mt-icon" aria-hidden="true">📚</span>
+        <span class="mt-copy">
+          <span class="mt-label">LESSON</span>
+          <span class="mt-sub i18n-ja">ROS 2レッスンを選ぶ</span>
+          <span class="mt-sub i18n-en">Choose a ROS 2 lesson</span>
+        </span>
+        <span class="mt-open" aria-hidden="true">⌄</span>
+      </button>
+    </nav>
+
+    <nav id="stage-selector" class="stage-selector"></nav>
+
+    <p id="status">Loading...</p>
+
+    <aside id="lesson-brief" class="lesson-brief" hidden aria-label="Lesson mission">
+      <div class="lesson-brief-head">
+        <span id="lesson-brief-number" class="lesson-brief-number">L--</span>
+        <div class="lesson-brief-heading">
+          <span class="i18n-ja">このLessonでやること</span>
+          <span class="i18n-en">Your lesson mission</span>
+          <strong id="lesson-brief-title"></strong>
+        </div>
+        <button id="lesson-brief-guide" class="lesson-brief-guide" type="button">
+          <span class="i18n-ja">くわしく見る</span>
+          <span class="i18n-en">Open guide</span>
+        </button>
+      </div>
+      <div class="lesson-brief-steps">
+        <div class="lesson-brief-step lesson-brief-step-action">
+          <span class="lesson-brief-step-no">1</span>
+          <p>
+            <b class="i18n-ja">まず操作</b><b class="i18n-en">First action</b
+            ><span id="lesson-brief-first"></span>
+          </p>
+        </div>
+        <span class="lesson-brief-arrow" aria-hidden="true">→</span>
+        <div class="lesson-brief-step lesson-brief-step-goal">
+          <span class="lesson-brief-step-no">2</span>
+          <p>
+            <b class="i18n-ja">ここまでできたらクリア</b><b class="i18n-en">Clear condition</b
+            ><span id="lesson-brief-goal"></span>
+          </p>
+        </div>
+      </div>
+    </aside>
+
+    <div id="canvas-wrap" class="canvas-wrap">
+      <canvas id="game" width="800" height="500"></canvas>
+      <div id="stage-overlay" class="stage-overlay"></div>
+
+      <!-- Crash (Game Over) -->
+      <div id="crash-overlay" class="crash-overlay">
+        <div class="crash-text">CRASH</div>
+        <div class="crash-sub" id="crash-sub">— restarting —</div>
+      </div>
+
+      <div id="clear-overlay" class="clear-overlay">
+        <div class="card">
+          <div class="card-eyebrow">CLEAR</div>
+          <div class="card-title">Stage Complete</div>
+          <div id="stars" class="stars"></div>
+          <div id="clear-stats" class="stats"></div>
+          <div class="actions">
+            <button id="restart">Retry</button>
+            <button id="next-stage" class="primary">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section id="stage-controls-dock" class="stage-controls-dock" hidden></section>
+
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="dot"></span>
+          <span class="ph-title">Robot State</span>
+          <span class="hint">pose / cmd</span>
+        </div>
+        <pre id="info"></pre>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <span class="dot"></span>
+          <span class="ph-title">Topic Monitor</span>
+          <span class="hint" id="topic-label">ros2 topic echo</span>
+        </div>
+        <pre id="topic" class="mono"></pre>
+      </div>
+    </div>
+
+    <!-- Block Editor: displayed only for the Feedforward Mission stage -->
+    <section id="block-editor" class="block-editor" style="display: none">
+      <div class="be-head">
+        <span class="be-tag">PROGRAM</span>
+        <span class="be-title">Feed-forward Block Programming</span>
+        <span class="be-status" id="be-status">idle</span>
+        <div class="be-actions">
+          <button id="be-run" class="be-btn be-run">▶ RUN</button>
+          <button id="be-stop" class="be-btn be-stop">■ STOP</button>
+          <button id="be-clear" class="be-btn">CLEAR</button>
+        </div>
+      </div>
+      <div class="be-body">
+        <aside class="be-palette">
+          <div class="be-palette-label">BLOCKS</div>
+          <button class="be-palette-block" data-add="forward">
+            <span class="bp-name">forward</span>
+            <span class="bp-args">speed, duration</span>
+          </button>
+          <button class="be-palette-block" data-add="rotate">
+            <span class="bp-name">rotate</span>
+            <span class="bp-args">angle, speed</span>
+          </button>
+          <button class="be-palette-block" data-add="wait">
+            <span class="bp-name">wait</span>
+            <span class="bp-args">duration</span>
+          </button>
+          <button class="be-palette-block" data-add="cmd_vel">
+            <span class="bp-name">cmd_vel</span>
+            <span class="bp-args">linear, angular, dur</span>
+          </button>
+          <button class="be-palette-block" data-add="p_control">
+            <span class="bp-name">p_control</span>
+            <span class="bp-args">x, y, Kp_lin, Kp_ang</span>
+          </button>
+          <button class="be-palette-block" data-add="go_straight">
+            <span class="bp-name">go_straight</span>
+            <span class="bp-args">distance, velocity</span>
+          </button>
+          <button class="be-palette-block" data-add="turn_left">
+            <span class="bp-name">turn_left</span>
+            <span class="bp-args">angle, yawrate</span>
+          </button>
+          <button class="be-palette-block" data-add="turn_right">
+            <span class="bp-name">turn_right</span>
+            <span class="bp-args">angle, yawrate</span>
+          </button>
+          <button class="be-palette-block" data-add="lidar_avoid">
+            <span class="bp-name">lidar_avoid</span>
+            <span class="bp-args">threshold, fwd, turn</span>
+          </button>
+          <p class="be-palette-hint" id="be-palette-hint">
+            <span class="i18n-ja">クリックで program に追加</span>
+            <span class="i18n-en">Click to add to program</span>
+          </p>
+        </aside>
+        <div class="be-program-wrap">
+          <div class="be-program-label">
+            <span>PROGRAM</span>
+            <span class="be-program-hint" id="be-program-hint"
+              ><span class="i18n-ja">空のプログラム</span
+              ><span class="i18n-en">Empty program</span></span
+            >
+          </div>
+          <ol id="be-program" class="be-program"></ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROS 2 Terminal: run `ros2 ...` commands to inspect the current stage state -->
+    <section id="ros-terminal" class="ros-terminal">
+      <div class="terminal-head">
+        <span class="terminal-led"></span>
+        <span class="terminal-title" id="terminal-title">ROS 2 TERMINAL · simulated</span>
+        <span class="terminal-stage" id="terminal-stage">stage —</span>
+        <span class="terminal-hint" id="terminal-hint">click to focus · ↑/↓ history · "help"</span>
+      </div>
+      <div class="terminal-body" id="terminal-body"></div>
+      <div class="terminal-command-row">
+        <label for="terminal-command-select" id="terminal-command-label">COMMAND</label>
+        <select
+          id="terminal-command-select"
+          class="terminal-command-select"
+          aria-label="実行するROS 2コマンドを選択"
+        >
+          <option value="">コマンドを選択…</option>
+        </select>
+        <button id="terminal-command-run" class="terminal-command-run" type="button">▶ 実行</button>
+      </div>
+      <div class="terminal-input-row">
+        <span class="terminal-prompt-line">$</span>
+        <input
+          id="terminal-input"
+          class="terminal-input"
+          type="text"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          placeholder='ros2 topic list   (try "help")'
+        />
+      </div>
+    </section>
+
+    <footer>
+      <span>Lesson</span>
+      <strong id="lesson-label">--</strong>
+      <span>·</span>
+      <code id="lesson-cmd">--</code>
+      <small class="analytics-note">
+        <span class="i18n-ja">アクセス解析にGoogle Analyticsを利用しています。</span>
+        <span class="i18n-en">This site uses Google Analytics for usage insights.</span>
+      </small>
+      <a
+        id="footer-author"
+        class="author-link"
+        href="https://mertcookimg.github.io/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Created by <strong>Masato Kobayashi</strong> ↗
+      </a>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

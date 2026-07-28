@@ -1,0 +1,24 @@
+<!-- Copyright 2026 Masato Kobayashi -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="8" y1="5" x2="56" y2="59" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111620"/>
+      <stop offset="1" stop-color="#07080b"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="14" y1="13" x2="50" y2="53" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#70d7f7"/>
+      <stop offset="1" stop-color="#65e6c4"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
+  <path d="M32 7 57 32 32 57 7 32Z" fill="none" stroke="#c3b7fb" stroke-opacity=".38" stroke-width="2"/>
+  <rect x="15" y="18" width="34" height="29" rx="11" fill="#edf2f7" stroke="url(#rim)" stroke-width="2.5"/>
+  <rect x="20" y="23" width="24" height="14" rx="6" fill="#0b1018"/>
+  <circle cx="27" cy="30" r="2.6" fill="#70d7f7"/>
+  <circle cx="37" cy="30" r="2.6" fill="#65e6c4"/>
+  <path d="M26 42h12" stroke="#f5c763" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M32 18v-5" stroke="#70d7f7" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="32" cy="11" r="2.5" fill="#70d7f7"/>
+</svg>

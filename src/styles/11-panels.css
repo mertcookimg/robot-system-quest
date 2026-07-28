@@ -1,0 +1,76 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Panels === */
+.panels {
+  display: flex;
+  gap: 14px;
+  width: min(800px, 100%);
+  min-width: 0;
+}
+.panel {
+  flex: 1;
+  min-width: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 13.5px;
+}
+.panel-head .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 6px var(--ok);
+}
+.ph-title {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+.panel-head .hint {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--fg-dim);
+  font-weight: 400;
+  letter-spacing: 0.3px;
+}
+
+#info,
+#topic {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--fg);
+  margin: 0;
+  padding: 12px 14px;
+  background: rgba(3, 6, 13, 0.6);
+  white-space: pre-wrap;
+  min-height: 120px;
+  max-height: 180px;
+  overflow-y: auto;
+  line-height: 1.65;
+}
+#topic .dim {
+  color: var(--fg-dim);
+}
+
+@media (max-width: 640px) {
+  .panels {
+    flex-direction: column;
+    gap: 10px;
+  }
+  #info,
+  #topic {
+    min-height: 96px;
+    max-height: 150px;
+    font-size: 11.5px;
+  }
+}

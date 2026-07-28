@@ -1,0 +1,51 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Canvas === */
+.canvas-wrap {
+  position: relative;
+  width: min(800px, 100%);
+  min-width: 0;
+  max-width: 100%;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 20px 60px -20px rgba(0, 0, 0, 0.6);
+}
+.canvas-wrap.shake {
+  animation: shake 0.22s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+@keyframes shake {
+  10%,
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  20%,
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-3px, 0, 0);
+  }
+  40%,
+  60% {
+    transform: translate3d(3px, 0, 0);
+  }
+}
+
+canvas#game {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--canvas-bg);
+  border-radius: var(--radius);
+}
+
+canvas#game.touch-interactive {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}

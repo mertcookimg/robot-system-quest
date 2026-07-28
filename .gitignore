@@ -1,0 +1,27 @@
+# Build outputs
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Claude Code (per-machine local settings)
+.claude/
+
+src-tauri/
+

@@ -1,0 +1,79 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* Responsive layouts for stage-specific controls rendered below the canvas. */
+.stage-tool-panel {
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .bt-rule-editor {
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    gap: 7px 6px !important;
+    padding: 9px !important;
+  }
+  .bt-header-cell,
+  .bt-spacer {
+    display: none;
+  }
+  .bt-rule-row {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 5px !important;
+    min-width: 0;
+    padding: 2px 0 !important;
+  }
+  .bt-rule-select {
+    width: 100%;
+    min-width: 0;
+  }
+  .bt-action {
+    min-height: 38px;
+    padding-inline: 7px !important;
+  }
+  .bt-status {
+    grid-column: 1 / -1 !important;
+    display: grid;
+    gap: 5px;
+  }
+  .bt-pad-hint {
+    float: none !important;
+    line-height: 1.45;
+  }
+
+  .tf-puzzle-panel {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 7px !important;
+    padding: 9px !important;
+  }
+  .tf-puzzle-control {
+    display: grid !important;
+    grid-template-columns: 28px minmax(0, 1fr) 64px;
+    width: 100%;
+    padding: 3px 0 !important;
+  }
+  .tf-puzzle-slider {
+    width: 100% !important;
+    min-width: 0;
+  }
+  .tf-puzzle-reminder {
+    padding-top: 5px;
+    border-top: 1px solid rgba(125, 211, 252, 0.18);
+  }
+}
+
+@media (max-width: 390px) {
+  .bt-rule-editor {
+    font-size: 10px !important;
+  }
+  .bt-rule-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .bt-rule-row > span:nth-child(3) {
+    display: none;
+  }
+  .bt-rule-row .bt-rule-select:last-child {
+    grid-column: 2;
+  }
+}

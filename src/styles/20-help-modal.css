@@ -1,0 +1,94 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Help Modal === */
+.help-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(var(--scrim-rgb), 0.85);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.help-modal.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.help-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 30px 36px;
+  max-width: 540px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow: var(--shadow-soft);
+  animation: pop 0.3s;
+}
+.help-card h2 {
+  margin: 0 0 18px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.help-card h3 {
+  margin: 22px 0 10px;
+  font-size: 12.5px;
+  color: var(--accent);
+  font-family: var(--mono);
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+.help-card table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.help-card td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.help-card td:first-child {
+  color: var(--fg-dim);
+  width: 38%;
+}
+.help-card ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13.5px;
+  line-height: 1.9;
+  color: var(--fg-dim);
+}
+.help-card ul b {
+  color: var(--fg);
+  font-weight: 600;
+}
+.help-card kbd {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 2px 7px;
+  margin: 0 2px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--bg-2);
+  color: var(--fg);
+}
+.help-card .help-note {
+  margin: 16px 0 0;
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: var(--fg-dim);
+}
+.help-card button {
+  margin-top: 22px;
+  width: 100%;
+}

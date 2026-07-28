@@ -1,0 +1,29 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* Component-split entry. Each rule lives in src/styles/. */
+@import "./styles/00-base.css";
+@import "./styles/01-header.css";
+@import "./styles/02-mode-tabs.css";
+@import "./styles/03-stage-selector.css";
+@import "./styles/05-status.css";
+@import "./styles/06-canvas.css";
+@import "./styles/07-stage-overlay.css";
+@import "./styles/09-crash-overlay.css";
+@import "./styles/10-rankings.css";
+@import "./styles/11-panels.css";
+@import "./styles/12-block-editor.css";
+@import "./styles/13-blockpad-cursor.css";
+@import "./styles/14-navpad-cursor.css";
+@import "./styles/15-stage-menu.css";
+@import "./styles/16-terminal.css";
+@import "./styles/17-footer.css";
+@import "./styles/18-intro.css";
+@import "./styles/19-allclear.css";
+@import "./styles/20-help-modal.css";
+@import "./styles/21-toast.css";
+@import "./styles/22-i18n.css";
+@import "./styles/23-lesson-modal.css";
+@import "./styles/24-lesson-brief.css";
+@import "./styles/25-touchpad.css";
+@import "./styles/26-stage-tools-responsive.css";
