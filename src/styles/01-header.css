@@ -1,0 +1,326 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Header === */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1160px;
+  padding: 10px 12px;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  box-shadow: var(--shadow-soft);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.mark {
+  font-size: 18px;
+  color: var(--accent);
+  letter-spacing: 0;
+}
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.brand-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  text-decoration: none;
+  margin-left: 6px;
+  padding: 3px 10px;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  border-radius: 999px;
+  background: rgba(125, 211, 252, 0.08);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.brand-author .ba-by,
+.brand-author .ba-name {
+  white-space: nowrap;
+}
+.brand-author .ba-by {
+  color: var(--fg-dim);
+}
+.brand-author .ba-name {
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+.brand-author .ba-arrow {
+  color: var(--accent);
+  font-size: 11.5px;
+  opacity: 0.85;
+}
+.brand-author:hover {
+  background: rgba(125, 211, 252, 0.18);
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px rgba(125, 211, 252, 0.35),
+    0 0 14px rgba(125, 211, 252, 0.25);
+}
+.brand-author:hover .ba-by {
+  color: var(--fg);
+}
+/* Two clusters — [ HOME · GUIDE · ? ] | [ 🌐 · 👻 · 🔊 ] — separated by a
+   thin rule so "navigation actions" read apart from "settings toggles". */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hdr-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hdr-sep {
+  width: 1px;
+  align-self: stretch;
+  min-height: 18px;
+  background: var(--line);
+}
+
+.hdr-btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.hdr-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.robotics-guide-link {
+  text-decoration: none;
+  color: var(--accent-2);
+  border-color: rgba(196, 181, 253, 0.42);
+  background: linear-gradient(135deg, rgba(196, 181, 253, 0.11), rgba(125, 211, 252, 0.06));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+}
+.robotics-guide-link::before {
+  content: "✦";
+  color: var(--accent-2);
+  filter: drop-shadow(0 0 5px rgba(196, 181, 253, 0.65));
+}
+.robotics-guide-link b {
+  color: var(--accent);
+  font-size: 10px;
+}
+.robotics-guide-link:hover {
+  color: var(--fg);
+  border-color: var(--accent-2);
+  background: linear-gradient(135deg, rgba(196, 181, 253, 0.2), rgba(125, 211, 252, 0.1));
+  box-shadow: 0 0 16px rgba(196, 181, 253, 0.14);
+}
+
+/* Leading glyph so each button's role is guessable at a glance. Rendered via
+   ::before because the JS keeps rewriting these buttons' textContent
+   (HOME/localized home label, JA/EN, ON/OFF) and would otherwise wipe an inline icon. */
+#home-toggle::before {
+  content: "\1F3E0";
+} /* 🏠 */
+#lesson-toggle::before {
+  content: "\1F4D6";
+} /* 📖 */
+#lang-toggle::before {
+  content: "\1F310";
+} /* 🌐 */
+#ghost-toggle::before {
+  content: "\1F47B";
+} /* 👻 */
+#audio-toggle::before {
+  content: "\1F50A";
+} /* 🔊 */
+#audio-toggle.muted::before {
+  content: "\1F507";
+} /* 🔇 */
+#help-toggle::before {
+  content: "?";
+}
+.hdr-btn::before {
+  font-size: 12.5px;
+  line-height: 1;
+}
+
+/* Icon-only button (help "?"). */
+.hdr-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  justify-content: center;
+  font-size: 13.5px;
+}
+
+/* Language: not on/off but a current value — always tinted, shows JA or EN. */
+.hdr-value {
+  color: var(--accent);
+  border-color: rgba(125, 211, 252, 0.4);
+  background: rgba(125, 211, 252, 0.08);
+}
+
+/* State toggles (ghost / audio): filled + accent = ON, dim + outline = OFF.
+   The explicit fill replaces the old opacity-only signal, which made "is it
+   on or off?" hard to read at a glance. */
+.hdr-toggle {
+  color: var(--accent);
+  border-color: rgba(125, 211, 252, 0.4);
+  background: rgba(125, 211, 252, 0.08);
+}
+.hdr-toggle.muted {
+  color: var(--fg-dim);
+  border-color: var(--line);
+  background: transparent;
+}
+.hdr-toggle.muted::before {
+  opacity: 0.6;
+}
+
+@media (max-width: 900px) {
+  .brand-author .ba-by {
+    display: none;
+  }
+  .brand-author {
+    margin-left: 0;
+    padding-inline: 8px;
+  }
+  .header-actions {
+    gap: 7px;
+  }
+  .hdr-group {
+    gap: 5px;
+  }
+  .hdr-btn {
+    padding: 5px 9px;
+    letter-spacing: 0.3px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .brand-author {
+    display: none;
+  }
+}
+
+@media (max-width: 820px) {
+  header {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 9px;
+  }
+  .brand {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .header-actions {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  header {
+    padding: 9px;
+    border-radius: 13px;
+  }
+  .brand {
+    gap: 7px;
+    padding: 0 3px 2px;
+  }
+  .mark {
+    font-size: 15px;
+  }
+  .title {
+    font-size: 13.5px;
+  }
+  .brand-author {
+    font-size: 10.5px;
+    padding: 2px 7px;
+  }
+  .header-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .hdr-group {
+    display: grid;
+    width: 100%;
+    gap: 5px;
+  }
+  .hdr-group:first-child {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .hdr-group:last-child {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .hdr-btn {
+    width: 100%;
+    min-width: 0;
+    height: 43px;
+    justify-content: center;
+    flex-direction: column;
+    gap: 3px;
+    padding: 4px 3px;
+    overflow: hidden;
+    border-radius: 9px;
+    font-size: 8px;
+    letter-spacing: 0.02em;
+    text-overflow: ellipsis;
+  }
+  .hdr-sep {
+    display: none;
+  }
+  .hdr-btn::before {
+    font-size: 13px;
+  }
+  .robotics-guide-link span {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 7px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .robotics-guide-link b {
+    display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .title {
+    max-width: calc(100vw - 58px);
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+  }
+  .hdr-btn {
+    height: 40px;
+    font-size: 7px;
+  }
+}

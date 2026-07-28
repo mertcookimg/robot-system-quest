@@ -1,0 +1,112 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Rankings === */
+.rankings {
+  margin: 18px auto 22px;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 13px;
+  width: min(240px, 100%);
+  background: rgba(125, 211, 252, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.rankings h4 {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  color: var(--accent);
+  letter-spacing: 3px;
+  font-weight: 700;
+  text-align: center;
+}
+.rankings .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: var(--fg-dim);
+}
+.rankings .row.current {
+  background: rgba(125, 211, 252, 0.12);
+  color: var(--accent);
+  font-weight: 700;
+}
+.rankings .rk {
+  color: var(--fg-dim);
+}
+.rankings .row.current .rk {
+  color: var(--accent);
+}
+.rankings .empty {
+  color: var(--fg-dim);
+  text-align: center;
+  font-style: italic;
+}
+.new-record {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 4px;
+  color: var(--warn);
+  font-weight: 700;
+  margin-bottom: 12px;
+  animation: blink 0.6s ease-in-out 3;
+}
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+button {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+button.primary:hover {
+  background: #a5e0fd;
+  border-color: #a5e0fd;
+  color: var(--bg);
+}
+
+@media (max-width: 420px) {
+  .rankings {
+    margin-block: 10px;
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+  .actions button {
+    flex: 1 1 110px;
+    min-width: 0;
+    padding-inline: 8px;
+  }
+}

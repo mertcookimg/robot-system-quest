@@ -1,0 +1,105 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Refined dark palette === */
+/* NOTE: the background-family tokens (--bg, --bg-2, --panel, --panel-2,
+   --canvas-bg, --term-bg, --term-body-bg, --scrim-rgb) are the SINGLE SOURCE
+   in src/core/theme.ts, which overwrites them on load. Edit colors there.
+   The values here are only the pre-JS fallback. */
+:root {
+  --bg: #000000;
+  --bg-2: #000000;
+  --panel: #000000;
+  --panel-2: #181f3a;
+  --canvas-bg: #000000;
+  --term-bg: #000000;
+  --term-body-bg: #000000;
+  --scrim-rgb: 8, 12, 28;
+  --line: #232c4d;
+  --line-soft: #1b2340;
+  --fg: #eef2ff;
+  --fg-dim: #6e7a9c;
+  --fg-mid: #9aa6c8;
+  --accent: #7dd3fc;
+  --accent-deep: #38bdf8;
+  --accent-2: #c4b5fd;
+  --ok: #5eead4;
+  --warn: #fbbf24;
+  --danger: #fb7185;
+  --mono: ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Mono", Consolas, monospace;
+  --sans:
+    -apple-system, "SF Pro Text", "Segoe UI Variable", "Hiragino Sans", "Yu Gothic UI", system-ui,
+    sans-serif;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  padding: 18px 20px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(56, 189, 248, 0.06), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(167, 139, 250, 0.04), transparent 70%);
+}
+
+@media (max-width: 840px) {
+  body {
+    padding: 12px 12px 24px;
+    gap: 11px;
+  }
+}
+
+/* Background star field */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  width: 100vw;
+  height: 100vh;
+}
+/* Display regular content above the ambient layer; leave fixed/absolute overlays unchanged. */
+header,
+.stage-selector,
+#status,
+.canvas-wrap,
+.panels,
+footer {
+  position: relative;
+  z-index: 1;
+}
+
+/* These are flex children of body. Without an explicit zero minimum, the
+   canvas intrinsic width and long menu labels can force a phone viewport to
+   render an 800px desktop layout with its right side clipped. */
+header,
+.mode-tabs,
+#status,
+.canvas-wrap,
+.stage-controls-dock,
+.panels,
+.panel,
+footer {
+  min-width: 0;
+  max-width: 100%;
+}

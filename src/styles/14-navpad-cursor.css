@@ -1,0 +1,40 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Nav Goal Pad Cursor (Stage 10) === */
+#pad-cursor {
+  position: absolute;
+  pointer-events: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--warn);
+  border-radius: 50%;
+  background: rgba(251, 191, 36, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 0 12px rgba(251, 191, 36, 0.55);
+  transform: translate(-50%, -50%);
+  z-index: 200;
+  display: none;
+  transition:
+    background-color 0.1s,
+    border-color 0.1s,
+    box-shadow 0.1s;
+}
+#pad-cursor::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+#pad-cursor.dragging {
+  border-color: var(--ok);
+  background: rgba(94, 234, 212, 0.2);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 0 18px rgba(94, 234, 212, 0.75);
+}
+#pad-cursor.dragging::after {
+  background: var(--ok);
+}

@@ -1,0 +1,64 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Stage-specific overlay === */
+.stage-overlay {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: none;
+}
+
+/* While the clear or crash overlay is up, hide the stage-specific panel
+   (e.g. the 1P/2P + difficulty switcher) so it doesn't collide with the
+   Retry / Next buttons or peek through the blur. */
+.canvas-wrap:has(#clear-overlay.show) .stage-overlay,
+.canvas-wrap:has(#crash-overlay.show) .stage-overlay {
+  visibility: hidden;
+}
+
+.stage-controls-dock {
+  position: relative;
+  z-index: 1;
+  width: min(800px, 100%);
+}
+.stage-controls-dock .overlay-control-panel {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+@media (max-width: 640px) {
+  .stage-controls-dock .overlay-control-panel {
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+  .stage-controls-dock .overlay-choice {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 6px !important;
+  }
+  .stage-controls-dock .overlay-choice > span:not(.overlay-divider) {
+    flex: 1 1 100%;
+  }
+  .stage-controls-dock .overlay-choice > button {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-inline: 7px !important;
+    white-space: nowrap;
+  }
+  .stage-controls-dock .overlay-divider {
+    display: none;
+  }
+  .stage-controls-dock .overlay-slider {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) 62px;
+    width: 100%;
+  }
+  .stage-controls-dock .overlay-slider input {
+    width: 100% !important;
+    min-width: 0;
+  }
+  .stage-controls-dock .overlay-note {
+    flex: 1 1 100%;
+    line-height: 1.45;
+  }
+}

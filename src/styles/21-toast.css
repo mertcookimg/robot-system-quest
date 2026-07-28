@@ -1,0 +1,76 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Toast === */
+.toast-container {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  max-width: calc(100vw - 24px);
+}
+.toast {
+  padding: 12px 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--fg);
+  box-shadow: var(--shadow-soft);
+  min-width: 240px;
+  max-width: 100%;
+  animation:
+    toastIn 0.3s ease-out,
+    toastOut 0.4s ease-in 3.6s forwards;
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+  }
+  .toast {
+    width: 100%;
+    min-width: 0;
+  }
+}
+.toast .toast-title {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 12px;
+  font-family: var(--mono);
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+.toast .toast-body {
+  color: var(--fg);
+}
+.toast .toast-body b {
+  color: var(--warn);
+}
+@keyframes toastIn {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes toastOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}

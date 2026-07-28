@@ -1,0 +1,400 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Lesson / Game Intro Modal (first-time guide for each stage) === */
+.lesson-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 115;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(var(--scrim-rgb), 0.85);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.lesson-modal.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.lesson-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 28px 30px;
+  max-width: 520px;
+  width: 100%;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow: var(--shadow-soft);
+  animation: pop 0.3s;
+}
+
+.lesson-stage-badge {
+  display: none;
+}
+.lesson-modal[data-kind="game"] .lesson-stage-badge {
+  display: block;
+  font-family: var(--mono);
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--warn);
+  line-height: 1;
+  text-shadow:
+    0 0 12px rgba(251, 191, 36, 0.45),
+    0 0 32px rgba(251, 191, 36, 0.18);
+  margin-bottom: 4px;
+}
+
+.lesson-eyebrow {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--accent);
+  font-weight: 700;
+  padding: 3px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+.lesson-modal[data-kind="game"] .lesson-eyebrow {
+  color: var(--warn);
+  letter-spacing: 6px;
+  border-color: rgba(251, 191, 36, 0.6);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.lesson-title {
+  margin: 0 0 18px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--fg);
+  line-height: 1.3;
+}
+.lesson-modal[data-kind="game"] .lesson-title {
+  font-size: 30px;
+  letter-spacing: 2px;
+  margin: 6px 0 4px;
+  background: linear-gradient(180deg, #fef3e8 0%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 24px rgba(125, 211, 252, 0.18);
+}
+
+.lesson-subtitle {
+  display: none;
+}
+.lesson-modal[data-kind="game"] .lesson-subtitle {
+  display: block;
+  margin: 0 0 18px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--fg-dim);
+  letter-spacing: 1.2px;
+  line-height: 1.4;
+}
+
+/* Start button: GAME mode shows ▶ START, while LESSON shows localized text.
+   i18n.css already hides the wrong-language sibling via !important, so
+   here we only need to hide the wrong-kind variant. */
+.lesson-start-game,
+.lesson-start-lesson {
+  display: none;
+}
+.lesson-modal[data-kind="game"] .lesson-start-game {
+  display: inline;
+}
+.lesson-modal[data-kind="lesson"] .lesson-start-lesson {
+  display: inline;
+}
+.lesson-modal[data-kind="game"] .lesson-start {
+  font-size: 13px;
+  padding: 14px;
+  letter-spacing: 6px;
+  background: linear-gradient(180deg, var(--warn), #f59e0b);
+  border: none;
+  color: #1f1408;
+  font-weight: 800;
+  box-shadow: 0 8px 28px rgba(251, 191, 36, 0.35);
+}
+.lesson-modal[data-kind="game"] .lesson-start:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.lesson-diagram {
+  margin: 0 0 12px;
+  padding: 14px 8px;
+  background: rgba(var(--scrim-rgb), 0.5);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  text-align: center;
+}
+.lesson-diagram:empty {
+  display: none;
+}
+.lesson-diagram svg {
+  width: 100%;
+  height: auto;
+  max-width: 420px;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Image Processing guide: a miniature live camera pipeline. */
+.imgproc-guide .ig-card {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ig-card-focus 4.8s ease-in-out infinite;
+}
+.imgproc-guide .ig-card-delay-1 {
+  animation-delay: 1.2s;
+}
+.imgproc-guide .ig-card-delay-2 {
+  animation-delay: 2.4s;
+}
+.imgproc-guide .ig-card-delay-3 {
+  animation-delay: 3.6s;
+}
+.imgproc-guide .ig-noise {
+  animation: ig-noise 0.22s steps(2) infinite;
+}
+.imgproc-guide .ig-scan {
+  animation: ig-scan 1.7s linear infinite;
+}
+.imgproc-guide .ig-clean-sweep {
+  animation: ig-clean-sweep 2.2s ease-in-out infinite;
+}
+.imgproc-guide .ig-edge {
+  stroke-dasharray: 140;
+  stroke-dashoffset: 140;
+  animation: ig-draw-edge 2.4s ease-out infinite;
+}
+.imgproc-guide .ig-edge-b {
+  animation-delay: 0.18s;
+}
+.imgproc-guide .ig-edge-c {
+  animation-delay: 0.36s;
+}
+.imgproc-guide .ig-progress {
+  transform: rotate(-90deg);
+  transform-box: fill-box;
+  transform-origin: center;
+  stroke-dashoffset: 78;
+  animation: ig-score 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  filter: drop-shadow(0 0 4px rgba(94, 234, 212, 0.65));
+}
+@keyframes ig-card-focus {
+  0%,
+  18%,
+  100% {
+    opacity: 0.74;
+  }
+  7%,
+  13% {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(125, 211, 252, 0.24));
+  }
+}
+@keyframes ig-noise {
+  50% {
+    transform: translate(1px, -1px);
+    opacity: 0.42;
+  }
+}
+@keyframes ig-scan {
+  from {
+    transform: translateY(-8px);
+  }
+  to {
+    transform: translateY(70px);
+  }
+}
+@keyframes ig-clean-sweep {
+  0%,
+  100% {
+    transform: translateX(-95px);
+  }
+  55%,
+  80% {
+    transform: translateX(95px);
+  }
+}
+@keyframes ig-draw-edge {
+  0%,
+  12% {
+    stroke-dashoffset: 140;
+    opacity: 0.25;
+  }
+  48%,
+  88% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.25;
+  }
+}
+@keyframes ig-score {
+  0%,
+  18% {
+    stroke-dashoffset: 78;
+  }
+  62%,
+  88% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 78;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .imgproc-guide * {
+    animation: none !important;
+  }
+  .imgproc-guide .ig-edge,
+  .imgproc-guide .ig-progress {
+    stroke-dashoffset: 0;
+  }
+}
+
+.lesson-section {
+  margin: 14px 0;
+  display: flex;
+  flex-direction: column;
+}
+.lesson-section h3 {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  font-family: var(--mono);
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: var(--accent);
+  align-items: center;
+  gap: 6px;
+  /* display is set by .lesson-section-title-{lesson,game} below so we
+     can swap based on data-kind without fighting the i18n display:none. */
+}
+.lesson-section .ls-icon {
+  font-size: 16px;
+  letter-spacing: 0;
+}
+.lesson-section p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--fg);
+}
+
+/* === Section title swap (lesson default vs game variant) ===
+   Default both hidden, then show only the matching variant for the
+   current `data-kind`. Cross-language still hidden by i18n.css's
+   !important rule (without us using !important here, so it wins). */
+.lesson-section-title-game,
+.lesson-section-title-lesson {
+  display: none;
+}
+.lesson-modal[data-kind="lesson"] .lesson-section-title-lesson {
+  display: flex;
+}
+.lesson-modal[data-kind="game"] .lesson-section-title-game {
+  display: flex;
+}
+
+/* === GAME mode: focus on clear conditions + controls, hide ROS 2 topic === */
+.lesson-modal[data-kind="game"] [data-section="goal"] {
+  order: 1;
+}
+.lesson-modal[data-kind="game"] [data-section="first"] {
+  display: none;
+}
+.lesson-modal[data-kind="game"] [data-section="learn"] {
+  display: none;
+}
+/* Hide the technical diagram (ROS 2 topic relationships) in GAME mode. */
+.lesson-modal[data-kind="game"] .lesson-diagram {
+  display: none;
+}
+
+.lesson-modal[data-kind="game"] [data-section="goal"] {
+  background: linear-gradient(135deg, rgba(94, 234, 212, 0.14), rgba(94, 234, 212, 0));
+  border: 1px solid rgba(94, 234, 212, 0.45);
+  border-radius: 14px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.lesson-modal[data-kind="game"] [data-section="goal"]::before {
+  content: "";
+  position: absolute;
+  inset: -40% -10% auto auto;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(94, 234, 212, 0.18), transparent 70%);
+  pointer-events: none;
+}
+.lesson-modal[data-kind="game"] [data-section="goal"] h3 {
+  color: var(--ok);
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+.lesson-modal[data-kind="game"] [data-section="goal"] p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--fg);
+  white-space: pre-line; /* Preserve line breaks (\n) for readability. */
+}
+.lesson-modal[data-kind="game"] [data-section="first"] {
+  background: linear-gradient(135deg, rgba(125, 211, 252, 0.1), rgba(125, 211, 252, 0));
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  border-radius: 14px;
+  padding: 14px 18px;
+}
+.lesson-modal[data-kind="game"] [data-section="first"] h3 {
+  color: var(--accent);
+  font-size: 13.5px;
+  letter-spacing: 2px;
+}
+.lesson-modal[data-kind="game"] [data-section="first"] p {
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+
+.lesson-card button {
+  margin-top: 18px;
+  width: 100%;
+}
+
+/* === Live demo canvas (the actual in-game robot animated) === */
+.lesson-demo {
+  display: none;
+}
+.lesson-modal[data-kind="game"] .lesson-demo {
+  display: block;
+  margin: 0 0 12px;
+  padding: 8px;
+  background:
+    linear-gradient(180deg, rgba(var(--scrim-rgb), 0.65), rgba(3, 6, 13, 0.65)),
+    radial-gradient(ellipse 60% 60% at 50% 50%, rgba(125, 211, 252, 0.05), transparent);
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 12px;
+  position: relative;
+}
+.lesson-demo canvas {
+  width: 100%;
+  height: auto;
+  max-height: 120px;
+  display: block;
+  border-radius: 8px;
+  image-rendering: pixelated; /* preserve crisp pixel-art */
+  image-rendering: -moz-crisp-edges;
+}

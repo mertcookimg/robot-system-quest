@@ -1,0 +1,76 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Stage Menu (toggle with the gamepad Select button) === */
+.gp-focus {
+  position: relative;
+  z-index: 1;
+  border-color: var(--warn) !important;
+  color: var(--warn) !important;
+  animation: bp-focus-pulse 1s ease-in-out infinite;
+  outline: none;
+}
+/* Remove the default solid-blue background when a primary button receives gp-focus. */
+button.primary.gp-focus {
+  background: transparent !important;
+}
+body.stage-menu-open #stage-selector,
+body.stage-menu-open #mode-tabs {
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  transition: box-shadow 0.2s;
+}
+body.stage-menu-open::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 3, 12, 0.76);
+  backdrop-filter: blur(5px) saturate(0.72);
+}
+body.stage-menu-open #mode-tabs {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  z-index: 103;
+  width: min(620px, calc(100vw - 40px));
+  transform: translateX(-50%);
+}
+body.stage-menu-open #mode-tabs .mode-tab {
+  min-height: 58px;
+}
+
+@media (max-width: 600px) {
+  body.stage-menu-open #mode-tabs {
+    top: 8px;
+    width: calc(100vw - 16px);
+  }
+  body.stage-menu-open #mode-tabs .mode-tab {
+    min-height: 52px;
+  }
+}
+
+/* Drag-and-drop row reordering. */
+.be-block {
+  cursor: grab;
+}
+.be-block:active {
+  cursor: grabbing;
+}
+.be-block input,
+.be-block button {
+  cursor: auto;
+}
+.be-block input {
+  cursor: text;
+}
+.be-block button {
+  cursor: pointer;
+}
+.be-block.bp-dragging {
+  opacity: 0.45;
+  cursor: grabbing;
+}
+.be-block.bp-drag-over {
+  border-top: 2px solid var(--accent);
+  background: rgba(125, 211, 252, 0.1);
+}

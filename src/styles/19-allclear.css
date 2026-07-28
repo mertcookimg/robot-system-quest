@@ -1,0 +1,86 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === All Clear === */
+.allclear-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--scrim-rgb), 0.92);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+.allclear-screen.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.allclear-card {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--accent);
+  border-radius: 18px;
+  padding: 44px 64px;
+  text-align: center;
+  min-width: 460px;
+  max-width: calc(100vw - 32px);
+  box-shadow:
+    0 0 0 1px rgba(125, 211, 252, 0.25),
+    0 20px 80px rgba(0, 0, 0, 0.7);
+  animation: pop 0.6s cubic-bezier(0.2, 1, 0.3, 1.1);
+}
+
+@media (max-width: 520px) {
+  .allclear-card {
+    min-width: 0;
+    width: calc(100vw - 32px);
+    padding: 34px 20px;
+  }
+}
+.allclear-eyebrow {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 4px;
+  color: var(--accent);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+.allclear-title {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--fg);
+  margin-bottom: 28px;
+}
+.allclear-stars {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.allclear-stars .stage-result {
+  background: rgba(125, 211, 252, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 12px;
+}
+.allclear-stars .stage-result h4 {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  font-family: var(--mono);
+  color: var(--fg-dim);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.allclear-stars .stage-result .ss {
+  font-size: 22px;
+  color: var(--line);
+  letter-spacing: 4px;
+}
+.allclear-stars .stage-result .ss .on {
+  color: var(--warn);
+}

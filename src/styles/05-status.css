@@ -1,0 +1,14 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Status === */
+#status {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--fg-dim);
+  text-align: center;
+  min-height: 1.4em;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+  transition: color 0.3s;
+}

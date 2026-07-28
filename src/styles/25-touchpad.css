@@ -1,0 +1,190 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Touch controls === */
+.touchpad {
+  display: block;
+  width: min(800px, 100%);
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  box-shadow: var(--shadow-soft);
+  font-family: var(--mono);
+}
+
+.touchpad-toolbar,
+.touchpad-controls {
+  display: flex;
+  align-items: center;
+}
+.touchpad-toolbar {
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px 9px;
+}
+.touchpad-title {
+  color: var(--fg-dim);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+.touchpad-switcher {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+}
+.touchpad-switcher button {
+  min-height: 30px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-dim);
+  font: 700 10px/1 var(--mono);
+  letter-spacing: 0.04em;
+  touch-action: manipulation;
+}
+.touchpad-switcher button.active {
+  background: rgba(125, 211, 252, 0.16);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.42);
+}
+.touchpad-controls {
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 164px;
+  padding: 4px 6px 2px;
+}
+.touch-move-zone {
+  position: relative;
+  width: 164px;
+  height: 164px;
+  flex: 0 0 164px;
+}
+.touch-dpad {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template: repeat(3, 52px) / repeat(3, 52px);
+  gap: 4px;
+}
+.touch-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid rgba(125, 211, 252, 0.42);
+  border-radius: 12px;
+  background: rgba(var(--scrim-rgb), 0.72);
+  color: var(--fg-mid);
+  font: 800 18px/1 var(--mono);
+  user-select: none;
+  touch-action: none;
+  -webkit-user-select: none;
+}
+.touch-button.pressed {
+  border-color: var(--accent);
+  background: rgba(125, 211, 252, 0.25);
+  color: var(--fg);
+  transform: scale(0.96);
+}
+.touch-up {
+  grid-area: 1 / 2;
+}
+.touch-left {
+  grid-area: 2 / 1;
+}
+.touch-right {
+  grid-area: 2 / 3;
+}
+.touch-down {
+  grid-area: 3 / 2;
+}
+.touch-joystick {
+  position: relative;
+  display: none;
+  width: 154px;
+  height: 154px;
+  margin: 5px;
+  border: 1px solid rgba(125, 211, 252, 0.38);
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg, transparent 49.5%, rgba(125, 211, 252, 0.12) 50%, transparent 50.5%),
+    linear-gradient(transparent 49.5%, rgba(125, 211, 252, 0.12) 50%, transparent 50.5%),
+    radial-gradient(circle, rgba(125, 211, 252, 0.12), rgba(var(--scrim-rgb), 0.72) 68%);
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.35);
+  touch-action: none;
+}
+.touch-joystick-knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  height: 64px;
+  margin: -32px;
+  border: 2px solid rgba(125, 211, 252, 0.72);
+  border-radius: 50%;
+  background: rgba(28, 45, 70, 0.94);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.4),
+    inset 0 0 14px rgba(125, 211, 252, 0.16);
+  pointer-events: none;
+  transition: transform 80ms ease-out;
+}
+.touch-joystick.active .touch-joystick-knob {
+  transition: none;
+}
+.touchpad[data-layout="joystick"] .touch-dpad {
+  display: none;
+}
+.touchpad[data-layout="joystick"] .touch-joystick {
+  display: block;
+}
+.touch-actions {
+  display: grid;
+  grid-template: repeat(2, 58px) / repeat(2, minmax(58px, 72px));
+  gap: 8px;
+}
+.touch-actions .touch-button {
+  font-size: 12px;
+}
+.touch-actions .touch-boost {
+  color: var(--accent);
+}
+.touch-actions .touch-ok {
+  color: var(--ok);
+}
+.touch-actions .touch-reset {
+  color: var(--warn);
+}
+
+@media (max-width: 380px) {
+  .touchpad {
+    padding: 8px;
+  }
+  .touchpad-controls {
+    gap: 8px;
+    padding-inline: 0;
+  }
+  .touch-move-zone {
+    width: 146px;
+    height: 146px;
+    flex-basis: 146px;
+  }
+  .touch-dpad {
+    grid-template: repeat(3, 46px) / repeat(3, 46px);
+  }
+  .touch-joystick {
+    width: 140px;
+    height: 140px;
+    margin: 3px;
+  }
+  .touch-actions {
+    grid-template: repeat(2, 54px) / repeat(2, minmax(50px, 1fr));
+    gap: 6px;
+  }
+}

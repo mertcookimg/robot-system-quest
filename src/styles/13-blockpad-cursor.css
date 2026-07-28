@@ -1,0 +1,57 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* === Gamepad cursor (Block editor) === */
+@keyframes bp-focus-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px var(--warn),
+      0 0 14px rgba(251, 191, 36, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px var(--warn),
+      0 0 22px rgba(251, 191, 36, 0.85);
+  }
+}
+@keyframes bp-edit-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px var(--danger),
+      0 0 14px rgba(251, 113, 133, 0.55);
+    background: rgba(251, 113, 133, 0.18);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px var(--danger),
+      0 0 24px rgba(251, 113, 133, 0.95);
+    background: rgba(251, 113, 133, 0.32);
+  }
+}
+.be-palette-block.bp-focus,
+.be-block.bp-focus,
+.be-block input[type="number"].bp-focus,
+.be-block .be-remove.bp-focus {
+  position: relative;
+  z-index: 1;
+  border-color: var(--warn) !important;
+  color: var(--warn);
+  animation: bp-focus-pulse 1s ease-in-out infinite;
+  outline: none;
+}
+.be-block.bp-focus {
+  background: rgba(251, 191, 36, 0.06);
+}
+.be-block input[type="number"].bp-editing {
+  border-color: var(--danger) !important;
+  color: var(--fg);
+  animation: bp-edit-pulse 0.5s ease-in-out infinite;
+}
+.be-block .be-remove.bp-focus {
+  color: var(--danger);
+  border: 1px solid var(--warn);
+  border-radius: 4px;
+  padding: 0 6px;
+}

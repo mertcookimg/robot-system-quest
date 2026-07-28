@@ -1,0 +1,183 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* Persistent mission card for LESSON stages. The intro explains the concept;
+   this compact card keeps the actual task visible while the learner works. */
+.lesson-brief {
+  position: relative;
+  width: min(100%, 800px);
+  margin-inline: auto;
+  padding: 13px 16px 14px;
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 9% 0%, rgba(125, 211, 252, 0.14), transparent 34%),
+    linear-gradient(135deg, rgba(18, 27, 54, 0.96), rgba(10, 15, 34, 0.96));
+  box-shadow: 0 12px 30px -22px rgba(94, 234, 212, 0.65);
+  overflow: hidden;
+}
+
+.lesson-brief[hidden] {
+  display: none;
+}
+
+.lesson-brief::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(var(--accent), var(--ok));
+}
+
+.lesson-brief-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 11px;
+}
+
+.lesson-brief-number {
+  display: grid;
+  place-items: center;
+  min-width: 42px;
+  height: 28px;
+  border: 1px solid rgba(125, 211, 252, 0.52);
+  border-radius: 7px;
+  background: rgba(125, 211, 252, 0.1);
+  color: var(--accent);
+  font: 800 12px/1 var(--mono);
+  letter-spacing: 1px;
+}
+
+.lesson-brief-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  color: var(--fg-dim);
+  font: 700 10px/1.25 var(--mono);
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.lesson-brief-heading strong {
+  overflow: hidden;
+  color: var(--fg);
+  font-size: 14px;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.lesson-brief-guide {
+  flex: none;
+  margin-left: auto;
+  padding: 7px 10px;
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  border-radius: 8px;
+  background: rgba(125, 211, 252, 0.07);
+  color: var(--accent);
+  font: 700 10.5px/1 var(--mono);
+  cursor: pointer;
+}
+
+.lesson-brief-guide:hover {
+  border-color: var(--accent);
+  background: rgba(125, 211, 252, 0.13);
+}
+
+.lesson-brief-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 10px;
+}
+
+.lesson-brief-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: rgba(3, 7, 18, 0.46);
+}
+
+.lesson-brief-step-goal {
+  border-color: rgba(94, 234, 212, 0.25);
+  background: rgba(94, 234, 212, 0.045);
+}
+
+.lesson-brief-step-no {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #07111d;
+  font: 900 11px/1 var(--mono);
+}
+
+.lesson-brief-step-goal .lesson-brief-step-no {
+  background: var(--ok);
+}
+
+.lesson-brief-step p {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  min-width: 0;
+}
+
+.lesson-brief-step b {
+  color: var(--accent);
+  font: 800 10px/1.2 var(--mono);
+  letter-spacing: 1px;
+}
+
+.lesson-brief-step-goal b {
+  color: var(--ok);
+}
+
+.lesson-brief-step p span:last-child {
+  color: var(--fg);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.lesson-brief-arrow {
+  align-self: center;
+  color: var(--fg-dim);
+  font: 700 15px/1 var(--mono);
+}
+
+@media (max-width: 680px) {
+  .lesson-brief {
+    padding: 11px 11px 12px;
+  }
+  .lesson-brief-head {
+    align-items: flex-start;
+  }
+  .lesson-brief-heading > span {
+    display: none !important;
+  }
+  .lesson-brief-heading strong {
+    font-size: 12.5px;
+    white-space: normal;
+  }
+  .lesson-brief-guide {
+    min-height: 34px;
+    white-space: nowrap;
+  }
+  .lesson-brief-steps {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  .lesson-brief-arrow {
+    display: none;
+  }
+}
