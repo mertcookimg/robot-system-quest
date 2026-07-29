@@ -25,6 +25,7 @@ import { clearBlockpadHighlights } from "../lib/blockpad";
 import { activateNavpad, deactivateNavpad } from "../lib/navpad";
 import { drawGhost } from "../lib/draw";
 import { clearStageTimeouts, setStageTimeout } from "./stage_timers";
+import { trackStageReset, trackStageStart } from "./analytics";
 
 let stages: Stage[] = [];
 let current: Stage;
@@ -118,6 +119,9 @@ export function loadStage(id: string): void {
   const next = stages.find((s) => s.id === id) ?? stages[0];
   current = next;
   current.init(gameContext);
+  if (!intro.isShown()) {
+    trackStageStart(current.id, modes.isGameStage(current.id) ? "game" : "lesson");
+  }
   if (current.id === "navigation") activateNavpad();
   // `stage.lesson` holds only the concept text; the L-number comes from the
   // registry order so labels can never duplicate or fall out of sequence.
@@ -148,6 +152,7 @@ export function loadNextStage(): void {
 }
 
 export function resetCurrent(): void {
+  trackStageReset(current.id, modes.isGameStage(current.id) ? "game" : "lesson");
   clearStageTimeouts();
   crash.clearCrashOverlay();
   current.reset();

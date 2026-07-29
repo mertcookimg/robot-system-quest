@@ -42,6 +42,11 @@ Analytics is disabled by default, including during local development and in fork
 owners who want Google Analytics can define the Actions repository variable
 `GA_MEASUREMENT_ID`; it is passed to production builds as `VITE_GA_ID`.
 
+When enabled, analytics records aggregate stage starts, completions, resets, exits, play duration,
+stars, Guide detail opens, Guide-to-stage clicks, and Guide section views. Events use only
+predefined stage and section identifiers; user-entered text, simulated terminal commands, and
+saved progress are not sent.
+
 ## npm scripts
 
 | Command | Description |
