@@ -23,6 +23,22 @@ export interface CourtBounds {
   h: number;
 }
 
+export interface TennisBallExitResult {
+  winner: TennisSide;
+  reason: "out" | "miss";
+}
+
+export function resolveTennisBallExit(
+  lastHitter: TennisSide,
+  bounces: number,
+): TennisBallExitResult {
+  if (bounces > 0) return { winner: lastHitter, reason: "miss" };
+  return {
+    winner: lastHitter === "player" ? "ai" : "player",
+    reason: "out",
+  };
+}
+
 export function tennisPointDisplay(own: number, other: number): string {
   if (own >= 3 && other >= 3) {
     if (own === other) return "40";
