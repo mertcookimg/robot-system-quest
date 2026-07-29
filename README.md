@@ -188,6 +188,11 @@ The basic workflow is:
 4. Extend `src/guide/` if the stage needs a custom explanation or animation.
 5. Verify formatting, tests, the production build, and browser controls.
 
+## Contributing
+
+Issues and pull requests are welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the development
+workflow, project-specific requirements, verification steps, and pull request guidelines.
+
 ## Related learning resources
 
 - [ROS 2 lectures and hands-on materials](https://mertcookimg.github.io/ros2_lecture/)

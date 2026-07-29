@@ -1,0 +1,24 @@
+# <type>: <short imperative description>
+#
+# Explain why the change is needed and any non-obvious implementation choices.
+# Describe side effects or compatibility concerns.
+#
+# Closes #123
+#
+# Types:
+#   feat:     New user-facing behavior, Game, or Lesson
+#   fix:      Bug fix
+#   docs:     Documentation only
+#   test:     Add or update tests
+#   refactor: Code change without a behavior change
+#   style:    Formatting only
+#   build:    Build system or dependency change
+#   ci:       Continuous integration change
+#   chore:    Other maintenance
+#
+# Guidelines:
+#   - Use imperative mood: "add", not "added" or "adds".
+#   - Keep the subject concise, lowercase, and without a trailing period.
+#   - Keep each commit focused on one logical change.
+#   - Add a body when the reason or impact is not obvious.
+#   - Reference related issues in the footer when applicable.

@@ -1,0 +1,133 @@
+name: Bug report
+description: Report something broken or unexpected in Robot System Quest.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please provide enough detail for someone else to reproduce it.
+
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and did not find the same problem.
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Briefly describe the problem.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Where does the problem occur?
+      options:
+        - Home / stage selection
+        - Game
+        - Lesson
+        - Robotics Learning Guide
+        - Keyboard / gamepad / touch controls
+        - Japanese / English text
+        - Progress, rankings, or saved data
+        - Build or development environment
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: stage
+    attributes:
+      label: Game or Lesson
+      description: Include the stage name or ID when the problem is stage-specific.
+      placeholder: e.g. Robo Soccer / robo_soccer
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide numbered steps that reproduce the problem.
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Press ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Where did you see it?
+      options:
+        - Official GitHub Pages site
+        - Local development server
+        - Local production preview
+        - Fork or other deployment
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: e.g. Chrome 140, Firefox 142, Safari 19
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: e.g. Windows 11, macOS 26, Ubuntu 26.04
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      description: For a local checkout, include the output of `git rev-parse --short HEAD`.
+      placeholder: e.g. 3be4dc0
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Browser console output
+      description: Paste relevant errors or warnings from the browser developer console.
+      render: shell
+
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots or recording
+      description: Drag and drop images or a short recording when useful.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add any other context, links, or possible causes.
