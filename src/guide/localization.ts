@@ -122,6 +122,8 @@ const ATTRIBUTE_EN: Record<string, string> = {
   "実践！知能ロボットシステム入門 — カチャカとROS 2でAIロボット":
     "Practical Intelligent Robot Systems — AI Robotics with Kachaka and ROS 2",
   kachaka_ros2_lectureをGitHubで開く: "Open kachaka_ros2_lecture on GitHub",
+  "Robot System QuestのOSSリポジトリをGitHubで開く":
+    "Open the Robot System Quest open-source repository on GitHub",
   "ROS 2 AI Lectureの解説サイトを開く": "Open the ROS 2 AI Lecture guide",
   小林聖人のサイトを開く: "Open Masato Kobayashi's website",
 };

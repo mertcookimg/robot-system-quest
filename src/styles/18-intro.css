@@ -524,6 +524,11 @@ body.intro-open {
 /* Footer credit */
 .intro-foot {
   margin: 6px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
   font-family: var(--mono);
   font-size: 11.5px;
   color: var(--fg-dim);
@@ -540,6 +545,27 @@ body.intro-open {
 .intro-foot strong {
   color: var(--fg);
   font-weight: 600;
+}
+.intro-foot .intro-oss-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.intro-oss-link svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+.intro-oss-link .oss-star {
+  color: var(--accent);
+  opacity: 0.58;
+  transition: opacity 0.15s;
+}
+.intro-oss-link:hover .oss-star {
+  opacity: 1;
+}
+.intro-foot-separator {
+  color: var(--line);
 }
 
 /* Hide intro pill emoji on very small screens for cleanliness */

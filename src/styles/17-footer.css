@@ -27,6 +27,30 @@ footer .analytics-note {
   font-size: 9px;
   opacity: 0.62;
 }
+footer .oss-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--fg-dim);
+  text-decoration: none;
+  transition: color 0.12s;
+}
+footer .oss-link svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+footer .oss-link .oss-star {
+  color: var(--accent);
+  opacity: 0.55;
+  transition: opacity 0.12s;
+}
+footer .oss-link:hover {
+  color: var(--accent);
+}
+footer .oss-link:hover .oss-star {
+  opacity: 1;
+}
 footer .author-link {
   margin-left: auto;
   color: var(--fg-dim);

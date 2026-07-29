@@ -219,6 +219,7 @@ a {
   gap: 9px;
 }
 .quiet-button,
+.repository-button,
 .play-button {
   height: 34px;
   padding: 0 12px;
@@ -229,6 +230,37 @@ a {
   font: 700 9px/1 var(--mono);
   text-decoration: none;
   cursor: pointer;
+}
+.repository-button {
+  gap: 7px;
+  color: #c5cfdd;
+  border: 1px solid rgba(var(--cyan-rgb), 0.45);
+  background: rgba(var(--cyan-rgb), 0.08);
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+.repository-button svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+.repository-star {
+  color: var(--cyan);
+  opacity: 0.55;
+  transition: opacity 160ms ease;
+}
+.repository-button:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+  background: rgba(var(--cyan-rgb), 0.14);
+}
+.repository-button:hover .repository-star {
+  opacity: 1;
+}
+.repository-label-short {
+  display: none;
 }
 .quiet-button {
   color: var(--muted);
@@ -2343,6 +2375,15 @@ main {
   .guide-actions {
     margin-left: auto;
   }
+  .repository-button {
+    padding: 0 9px;
+  }
+  .repository-label {
+    display: none;
+  }
+  .repository-label-short {
+    display: inline;
+  }
   .play-button {
     padding: 0 10px;
   }
@@ -2590,6 +2631,7 @@ main {
 }
 .guide-breadcrumb,
 .quiet-button,
+.repository-button,
 .play-button {
   font-size: 11px;
 }
