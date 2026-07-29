@@ -16,7 +16,11 @@ import {
   advanceTennisScore,
   isInsideDiagonalServiceBox,
   isInsideSingles,
+  otherTennisSide,
   resolveTennisBallExit,
+  resolveTennisLanding,
+  tennisGroundContact,
+  tennisHeightAtCrossing,
   tennisPointDisplay,
 } from "../../lib/tennis_rules";
 
@@ -48,7 +52,6 @@ interface TennisBall {
   vy: number;
   vz: number;
   bounces: number;
-  bounceSide: Side;
   lastHitter: Side;
   trail: Array<{ x: number; y: number; z: number }>;
 }
@@ -66,7 +69,6 @@ export function makeRoboTennis(): Stage {
     vy: 0,
     vz: 0,
     bounces: 0,
-    bounceSide: "player",
     lastHitter: "player",
     trail: [],
   };
@@ -80,6 +82,7 @@ export function makeRoboTennis(): Stage {
   let pointsPlayedInGame = 0;
   let serveAttempt = 0;
   let serveActive = false;
+  let lastShotWasServe = false;
   let serveFromTop = false;
   let serveTargetY = COURT.y + COURT.h / 2 - 55;
   let rallyHits = 0;
@@ -114,6 +117,7 @@ export function makeRoboTennis(): Stage {
     pointsPlayedInGame = 0;
     serveAttempt = 0;
     serveActive = false;
+    lastShotWasServe = false;
     serveFromTop = false;
     serveTargetY = COURT.y + COURT.h / 2 - 55;
     rallyHits = 0;
@@ -204,8 +208,8 @@ export function makeRoboTennis(): Stage {
     ball.vy = 0;
     ball.vz = 0;
     ball.bounces = 0;
-    ball.bounceSide = servingSide() === "player" ? "ai" : "player";
     ball.lastHitter = servingSide();
+    lastShotWasServe = false;
     ball.trail.length = 0;
     rallyHits = 0;
   }
@@ -229,8 +233,10 @@ export function makeRoboTennis(): Stage {
     ball.vy = (serveTargetY - ball.y) / flightTime;
     ball.lastHitter = side;
     ball.bounces = 0;
-    ball.bounceSide = side === "player" ? "ai" : "player";
     serveActive = true;
+    lastShotWasServe = true;
+    rallyHits = 1;
+    bestRally = Math.max(bestRally, rallyHits);
     server.swing = 0.18;
     server.hitCooldown = 0.35;
     g.sfx.start();
@@ -254,7 +260,7 @@ export function makeRoboTennis(): Stage {
     }
     g.awardStars(
       stars,
-      `${t("robo_tennis.stats.score")} <b>${scorePlayer} - ${scoreAi}</b> ${mode2P ? "(P1 - P2)" : "(YOU - AUTO)"}<br>` +
+      `${t("robo_tennis.stats.score")} <b>${scorePlayer} - ${scoreAi}</b> ${mode2P ? "(P1 - P2)" : "(YOU - AI)"}<br>` +
         `${t("robo_tennis.stats.rally")} <b>${bestRally}</b><br>` +
         `${t("robo_tennis.stats.time")} <b>${elapsed.toFixed(1)} s</b>`,
     );
@@ -301,7 +307,7 @@ export function makeRoboTennis(): Stage {
       g.setStatus(t("robo_tennis.status.fault"), "var(--warn)");
       return;
     }
-    const receiver = servingSide() === "player" ? "ai" : "player";
+    const receiver = otherTennisSide(servingSide());
     awardPoint(receiver, t("robo_tennis.result.double_fault"));
   }
 
@@ -312,9 +318,10 @@ export function makeRoboTennis(): Stage {
     phaseTimer = 1.25;
     pointWinner = winner;
     const gameWon = registerTennisPoint(winner);
+    const winnerLabel = winner === "player" ? (mode2P ? "P1" : "YOU") : mode2P ? "P2" : "AI";
     pointText = gameWon
-      ? `${t("robo_tennis.result.game")} ${winner === "player" ? (mode2P ? "P1" : "YOU") : mode2P ? "P2" : "AUTO"}`
-      : reason;
+      ? `${t("robo_tennis.result.game")} ${winnerLabel}`
+      : `${reason} · ${winnerLabel} POINT`;
     ball.vx = 0;
     ball.vy = 0;
     ball.vz = 0;
@@ -326,10 +333,6 @@ export function makeRoboTennis(): Stage {
       g.sfx.bump();
     }
     g.setStatus(pointText, winner === "player" ? "var(--ok)" : "var(--warn)");
-  }
-
-  function sideAt(x: number): Side {
-    return x < NET_X ? "player" : "ai";
   }
 
   function requestSwing(side: Side, robot: Robot): void {
@@ -371,7 +374,7 @@ export function makeRoboTennis(): Stage {
     ball.vz = 222 + quality * 45;
     ball.lastHitter = side;
     ball.bounces = 0;
-    ball.bounceSide = side === "player" ? "ai" : "player";
+    lastShotWasServe = false;
     ball.x = robot.x + dir * 26;
     robot.swing = 0;
     rallyHits++;
@@ -436,7 +439,7 @@ export function makeRoboTennis(): Stage {
       ball.vz = 230;
       ball.lastHitter = "ai";
       ball.bounces = 0;
-      ball.bounceSide = "player";
+      lastShotWasServe = false;
       ball.x = ai.x - 25;
       rallyHits++;
       bestRally = Math.max(bestRally, rallyHits);
@@ -449,29 +452,45 @@ export function makeRoboTennis(): Stage {
   function updateBall(dt: number): void {
     if (phase !== "rally") return;
     const oldX = ball.x;
+    const oldY = ball.y;
+    const oldZ = ball.z;
+    const oldVx = ball.vx;
+    const oldVy = ball.vy;
+    const oldVz = ball.vz;
     ball.trail.push({ x: ball.x, y: ball.y, z: ball.z });
     if (ball.trail.length > 18) ball.trail.shift();
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
-    ball.z += ball.vz * dt;
+    ball.z += ball.vz * dt - 0.5 * GRAVITY * dt * dt;
     ball.vz -= GRAVITY * dt;
 
-    // A low shot that crosses the center line hits the net.
-    if ((oldX - NET_X) * (ball.x - NET_X) <= 0 && ball.z < NET_H) {
-      // In 1P, prevent the AI from ending too many rallies with unforced
-      // net errors. Human shots and local 2P shots still use the normal rule.
-      if (!mode2P && ball.lastHitter === "ai") {
-        ball.z = NET_H + 6;
-        ball.vz = Math.max(ball.vz, 24);
-      } else {
-        if (serveActive) serviceFault();
-        else
-          awardPoint(ball.lastHitter === "player" ? "ai" : "player", t("robo_tennis.result.net"));
-        return;
-      }
+    // Judge the ball at the exact instant it crosses the net plane so the
+    // result does not change with the rendering frame rate.
+    const netCrossingHeight = tennisHeightAtCrossing(
+      { x: oldX, z: oldZ },
+      { x: oldVx, z: oldVz },
+      NET_X,
+      GRAVITY,
+      dt,
+    );
+    if (netCrossingHeight !== null && netCrossingHeight < NET_H) {
+      if (serveActive) serviceFault();
+      else awardPoint(otherTennisSide(ball.lastHitter), t("robo_tennis.result.net"));
+      return;
     }
 
     if (ball.z <= 0 && ball.vz < 0) {
+      const landing = tennisGroundContact(
+        { x: oldX, y: oldY, z: oldZ },
+        { x: oldVx, y: oldVy, z: oldVz },
+        GRAVITY,
+        dt,
+      );
+      if (landing) {
+        ball.x = landing.x;
+        ball.y = landing.y;
+        ball.vz = landing.vz;
+      }
       ball.z = 0;
       if (serveActive) {
         const validServe = isInsideDiagonalServiceBox(
@@ -489,22 +508,20 @@ export function makeRoboTennis(): Stage {
           return;
         }
         serveActive = false;
+        g.setStatus(t("robo_tennis.status.rally"), "");
       }
       const inside = isInsideSingles(ball.x, ball.y, COURT, SINGLES_INSET);
-      if (!inside) {
-        awardPoint(ball.lastHitter === "player" ? "ai" : "player", t("robo_tennis.result.out"));
+      const landingResult = resolveTennisLanding(
+        ball.lastHitter,
+        ball.bounces,
+        inside,
+        lastShotWasServe,
+      );
+      if (landingResult) {
+        awardPoint(landingResult.winner, t(`robo_tennis.result.${landingResult.reason}`));
         return;
       }
-      const currentSide = sideAt(ball.x);
-      if (currentSide === ball.bounceSide) ball.bounces++;
-      else {
-        ball.bounceSide = currentSide;
-        ball.bounces = 1;
-      }
-      if (ball.bounces >= 2) {
-        awardPoint(currentSide === "player" ? "ai" : "player", t("robo_tennis.result.double"));
-        return;
-      }
+      ball.bounces = 1;
       ball.vz = Math.max(155, Math.abs(ball.vz) * 0.72);
       ball.vx *= 0.94;
       ball.vy *= 0.94;
@@ -517,7 +534,7 @@ export function makeRoboTennis(): Stage {
     if (ball.x < COURT.x - 130 || ball.x > COURT.x + COURT.w + 130) {
       if (serveActive) serviceFault();
       else {
-        const exit = resolveTennisBallExit(ball.lastHitter, ball.bounces);
+        const exit = resolveTennisBallExit(ball.lastHitter, ball.bounces, lastShotWasServe);
         awardPoint(exit.winner, t(`robo_tennis.result.${exit.reason}`));
       }
     }
@@ -760,7 +777,7 @@ export function makeRoboTennis(): Stage {
     c.font = "800 8px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText(
-      side === "player" ? (mode2P ? "P1" : "YOU") : mode2P ? "P2" : "AUTO",
+      side === "player" ? (mode2P ? "P1" : "YOU") : mode2P ? "P2" : "AI",
       robot.x,
       robot.y + 34,
     );
@@ -813,7 +830,7 @@ export function makeRoboTennis(): Stage {
     c.fillStyle = "#94a3b8";
     c.fillText("—", 174, 39);
     c.fillStyle = "#f472b6";
-    c.fillText(`${pointDisplay("ai")}  G${scoreAi}  ${mode2P ? "P2" : "AUTO"}`, 202, 39);
+    c.fillText(`${pointDisplay("ai")}  G${scoreAi}  ${mode2P ? "P2" : "AI"}`, 202, 39);
     c.fillStyle = "#eef2ff";
     c.font = "700 9px ui-monospace, monospace";
     c.fillText("BEST OF 3 GAMES", 34, 58);
@@ -948,8 +965,8 @@ export default defineStage({
       en: "Track a flying ball in 3D and move toward its future contact point.",
     },
     goal: {
-      ja: "AIまたは友達を相手に、0・15・30・40の得点で2ゲーム先取を目指しましょう。2バウンド、アウト、ネットで相手のポイントです。",
-      en: "Against AI or a friend, win two games using 0, 15, 30, 40, deuce and advantage. A double bounce, out, or net gives the opponent a point.",
+      ja: "AIまたは友達を相手に、0・15・30・40の得点で2ゲーム先取を目指しましょう。返球ミス、アウト、ネットで相手のポイントです。",
+      en: "Against AI or a friend, win two games using 0, 15, 30, 40, deuce and advantage. A missed return, out, or net gives the opponent a point.",
     },
     first: {
       ja: "P1はWASD・PAD・マウス/タッチ、P2は矢印・2台目PADで移動します。E・Space・Enter・Shift・PAD A/X・クリック/タップでサービスとスイング。サービスだけは1バウンド後に返球し、その後はボレーも可能です。",
@@ -970,7 +987,7 @@ export default defineStage({
       "result.net": "NET!",
       "result.out": "OUT!",
       "result.miss": "MISS!",
-      "result.double": "DOUBLE BOUNCE!",
+      "result.ace": "ACE!",
       "result.game": "GAME",
       "result.double_fault": "DOUBLE FAULT!",
       "stats.score": "スコア",
@@ -994,7 +1011,7 @@ export default defineStage({
       "result.net": "NET!",
       "result.out": "OUT!",
       "result.miss": "MISS!",
-      "result.double": "DOUBLE BOUNCE!",
+      "result.ace": "ACE!",
       "result.game": "GAME",
       "result.double_fault": "DOUBLE FAULT!",
       "stats.score": "Score",
