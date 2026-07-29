@@ -53,7 +53,7 @@ import { isAllCleared } from "./core/progress";
 import { sfx } from "./core/audio";
 import { getLang, toggleLang, onLangChange } from "./i18n";
 import type { Stage } from "./types";
-import { setupAnalytics } from "./core/analytics";
+import { setupAnalytics, trackStageExit, trackStageStart } from "./core/analytics";
 
 setupAnalytics();
 
@@ -113,6 +113,7 @@ setupIntro({
   // because intro was on screen when the stage initially loaded.
   onDismiss: () => {
     const id = getCurrentId();
+    trackStageStart(id, isGameStage(id) ? "game" : "lesson");
     lessonModal.maybeAutoOpen(id, isGameStage(id), {
       introOpen: false,
       allclearOpen: false,
@@ -174,6 +175,7 @@ setupGamepad({
   resetCurrentStage: resetCurrent,
 });
 ui.homeToggle.addEventListener("click", () => {
+  trackStageExit();
   showIntro();
   sfx.click();
 });

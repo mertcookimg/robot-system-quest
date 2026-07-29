@@ -10,7 +10,12 @@ import { cardPreviewFor, guideCopyFor } from "./content";
 import { setupCardDemos } from "./card_demos";
 import { setupHeroShowcase } from "./hero_showcase";
 import { guideText as gt, localizeStaticGuide } from "./localization";
-import { setupAnalytics } from "../core/analytics";
+import {
+  setupAnalytics,
+  trackGuideOpen,
+  trackGuidePlayClick,
+  trackGuideSectionView,
+} from "../core/analytics";
 
 setupAnalytics();
 localizeStaticGuide();
@@ -91,7 +96,12 @@ function stageCard(stage: Stage, index: number, mode: "game" | "lesson"): string
         <button class="stage-detail-button" type="button" data-stage-id="${escapeHtml(stage.id)}">
           ${gt("説明を読む", "Read guide")} <span>→</span>
         </button>
-        <a class="stage-open-button" href="../?direct=stage#${encodeURIComponent(stage.id)}">
+        <a
+          class="stage-open-button"
+          href="../?direct=stage#${encodeURIComponent(stage.id)}"
+          data-guide-play-stage="${escapeHtml(stage.id)}"
+          data-stage-mode="${mode}"
+        >
           ${mode === "game" ? gt("Gameを開く", "Open Game") : gt("Lessonを開く", "Open Lesson")} <span>↗</span>
         </a>
       </div>
@@ -317,7 +327,12 @@ function openStage(stage: Stage, syncUrl = true): void {
           `
               : ""
           }
-          <a class="dialog-play" href="../?direct=stage#${encodeURIComponent(stage.id)}">
+          <a
+            class="dialog-play"
+            href="../?direct=stage#${encodeURIComponent(stage.id)}"
+            data-guide-play-stage="${escapeHtml(stage.id)}"
+            data-stage-mode="${mode}"
+          >
             ${mode === "game" ? gt("このGameで遊ぶ", "Play this Game") : gt("このLessonを始める", "Start this Lesson")} <span>↗</span>
           </a>
         </aside>
@@ -325,11 +340,20 @@ function openStage(stage: Stage, syncUrl = true): void {
     </article>
   `;
   dialog.showModal();
+  trackGuideOpen(stage.id, mode);
   if (syncUrl) setStageQuery(stage.id);
   if (mode === "game") requestAnimationFrame(() => startDemo(stage.id));
 }
 
 document.addEventListener("click", (event) => {
+  const playLink = (event.target as HTMLElement).closest<HTMLAnchorElement>(
+    "[data-guide-play-stage]",
+  );
+  if (playLink?.dataset.guidePlayStage) {
+    const mode = playLink.dataset.stageMode === "lesson" ? "lesson" : "game";
+    trackGuidePlayClick(playLink.dataset.guidePlayStage, mode);
+  }
+
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-stage-id]");
   if (!button) return;
   const stage = stages.find((item) => item.id === button.dataset.stageId);
@@ -340,6 +364,7 @@ byId("dialog-close").addEventListener("click", () => dialog.close());
 dialog.addEventListener("close", () => {
   stopDemo();
   setStageQuery();
+  queueMicrotask(trackVisibleGuideSection);
 });
 dialog.addEventListener("click", (event) => {
   if (event.target === dialog) dialog.close();
@@ -369,15 +394,35 @@ langButton.addEventListener("click", () => {
 
 const observedSections = [...document.querySelectorAll<HTMLElement>("main section[id]")];
 const navLinks = [...document.querySelectorAll<HTMLAnchorElement>(".guide-nav a[href^='#']")];
+const sectionVisibility = new Map<HTMLElement, number>();
+const viewedSections = new Set<string>();
+
+function trackVisibleGuideSection(): void {
+  const visible = [...sectionVisibility.entries()]
+    .filter(([, ratio]) => ratio > 0)
+    .sort((a, b) => b[1] - a[1])[0]?.[0];
+  if (!visible) return;
+
+  navLinks.forEach((link) => {
+    link.classList.toggle("active", link.hash === `#${visible.id}`);
+  });
+
+  // A directly opened stage dialog covers the page underneath, so do not
+  // count its background section until the visitor closes the dialog.
+  if (dialog.open || viewedSections.has(visible.id)) return;
+  viewedSections.add(visible.id);
+  trackGuideSectionView(visible.id);
+}
+
 const sectionObserver = new IntersectionObserver(
   (entries) => {
-    const visible = entries
-      .filter((entry) => entry.isIntersecting)
-      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-    if (!visible) return;
-    navLinks.forEach((link) => {
-      link.classList.toggle("active", link.hash === `#${visible.target.id}`);
+    entries.forEach((entry) => {
+      sectionVisibility.set(
+        entry.target as HTMLElement,
+        entry.isIntersecting ? entry.intersectionRatio : 0,
+      );
     });
+    trackVisibleGuideSection();
   },
   { rootMargin: "-15% 0px -65%", threshold: [0, 0.2, 0.5] },
 );

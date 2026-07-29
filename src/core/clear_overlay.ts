@@ -16,6 +16,7 @@ import { t } from "../i18n";
 import * as allclear from "./allclear";
 import type { Stage } from "../types";
 import { setStageTimeout } from "./stage_timers";
+import { trackStageComplete } from "./analytics";
 
 type Focus = "restart" | "next";
 let focus: Focus = "next";
@@ -59,6 +60,8 @@ interface ShowDeps {
 }
 
 export function show(stars: number, statsHtml: string, deps: ShowDeps): void {
+  trackStageComplete(deps.current.id, stars);
+
   // Pull elapsed time out of the stats HTML — stages embed it as
   // "Time <b>X.XX s</b>" so we can save it to the rankings without changing
   // every stage's signature.
