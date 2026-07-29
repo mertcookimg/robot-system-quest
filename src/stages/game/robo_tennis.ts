@@ -16,6 +16,7 @@ import {
   advanceTennisScore,
   isInsideDiagonalServiceBox,
   isInsideSingles,
+  resolveTennisBallExit,
   tennisPointDisplay,
 } from "../../lib/tennis_rules";
 
@@ -511,10 +512,14 @@ export function makeRoboTennis(): Stage {
       g.sfx.click();
     }
 
-    // Prevent a missed lob from flying forever before its first bounce.
+    // End balls that have travelled beyond the playable view. Before the
+    // first bounce this is an out; after a valid bounce it is a missed return.
     if (ball.x < COURT.x - 130 || ball.x > COURT.x + COURT.w + 130) {
       if (serveActive) serviceFault();
-      else awardPoint(ball.lastHitter === "player" ? "ai" : "player", t("robo_tennis.result.out"));
+      else {
+        const exit = resolveTennisBallExit(ball.lastHitter, ball.bounces);
+        awardPoint(exit.winner, t(`robo_tennis.result.${exit.reason}`));
+      }
     }
   }
 
@@ -964,6 +969,7 @@ export default defineStage({
       "status.lose": "MATCH OVER — リトライでもう一戦",
       "result.net": "NET!",
       "result.out": "OUT!",
+      "result.miss": "MISS!",
       "result.double": "DOUBLE BOUNCE!",
       "result.game": "GAME",
       "result.double_fault": "DOUBLE FAULT!",
@@ -987,6 +993,7 @@ export default defineStage({
       "status.lose": "MATCH OVER — retry for another match",
       "result.net": "NET!",
       "result.out": "OUT!",
+      "result.miss": "MISS!",
       "result.double": "DOUBLE BOUNCE!",
       "result.game": "GAME",
       "result.double_fault": "DOUBLE FAULT!",
