@@ -1,0 +1,78 @@
+name: Feature request
+description: Suggest a new capability or improvement for Robot System Quest.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. Describe the learning or usability problem first, then the proposed solution.
+
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and did not find the same request.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What are you trying to learn or do, and what is missing or difficult today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior or change you would like.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the project would this affect?
+      options:
+        - New Game
+        - New Lesson
+        - Existing Game or Lesson
+        - Robotics Learning Guide
+        - Keyboard / gamepad / touch controls
+        - Accessibility or responsive layout
+        - Japanese / English content
+        - Progress, rankings, or saved data
+        - Build, tests, or contributor tooling
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: learning
+    attributes:
+      label: Learning value
+      description: If applicable, explain the ROS 2 or robotics concept this would help teach.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe other approaches or workarounds you considered.
+
+  - type: textarea
+    id: interaction
+    attributes:
+      label: Interaction and language considerations
+      description: Note how this could work with keyboard, gamepad, touch, Japanese, and English.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add mockups, examples, links, related issues, or other context.
