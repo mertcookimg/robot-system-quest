@@ -7,6 +7,7 @@ import {
   advanceTennisScore,
   isInsideDiagonalServiceBox,
   isInsideSingles,
+  resolveTennisBallExit,
   tennisPointDisplay,
   type TennisScoreInput,
 } from "../src/lib/tennis_rules.ts";
@@ -72,6 +73,17 @@ test("singles bounds reject the doubles alleys", () => {
   assert.equal(isInsideSingles(25, 30, COURT, SINGLES_INSET), true);
   assert.equal(isInsideSingles(25, 2, COURT, SINGLES_INSET), false);
   assert.equal(isInsideSingles(101, 30, COURT, SINGLES_INSET), false);
+});
+
+test("a ball leaving the play area is only out before a valid bounce", () => {
+  assert.deepEqual(resolveTennisBallExit("ai", 0), {
+    winner: "player",
+    reason: "out",
+  });
+  assert.deepEqual(resolveTennisBallExit("ai", 1), {
+    winner: "ai",
+    reason: "miss",
+  });
 });
 
 test("a serve must land in the receiver's diagonal service box", () => {
