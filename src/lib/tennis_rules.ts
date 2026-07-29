@@ -23,20 +23,90 @@ export interface CourtBounds {
   h: number;
 }
 
+const LINE_EPSILON = 1e-6;
+
 export interface TennisBallExitResult {
   winner: TennisSide;
-  reason: "out" | "miss";
+  reason: "out" | "miss" | "ace";
+}
+
+export interface TennisBallPosition {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface TennisBallVelocity {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export function otherTennisSide(side: TennisSide): TennisSide {
+  return side === "player" ? "ai" : "player";
+}
+
+export function tennisGroundContact(
+  position: TennisBallPosition,
+  velocity: TennisBallVelocity,
+  gravity: number,
+  maxTime: number,
+): (TennisBallPosition & { vz: number; time: number }) | null {
+  if (gravity <= 0) return null;
+  const discriminant = velocity.z * velocity.z + 2 * gravity * position.z;
+  if (discriminant < 0) return null;
+  const time = (velocity.z + Math.sqrt(discriminant)) / gravity;
+  if (time < 0 || time > maxTime) return null;
+  return {
+    x: position.x + velocity.x * time,
+    y: position.y + velocity.y * time,
+    z: 0,
+    vz: velocity.z - gravity * time,
+    time,
+  };
+}
+
+export function tennisHeightAtCrossing(
+  position: Pick<TennisBallPosition, "x" | "z">,
+  velocity: Pick<TennisBallVelocity, "x" | "z">,
+  crossingX: number,
+  gravity: number,
+  maxTime: number,
+): number | null {
+  if (velocity.x === 0) return null;
+  const time = (crossingX - position.x) / velocity.x;
+  if (time < 0 || time > maxTime) return null;
+  return position.z + velocity.z * time - 0.5 * gravity * time * time;
 }
 
 export function resolveTennisBallExit(
   lastHitter: TennisSide,
   bounces: number,
+  isServe = false,
 ): TennisBallExitResult {
-  if (bounces > 0) return { winner: lastHitter, reason: "miss" };
+  if (bounces > 0) return { winner: lastHitter, reason: isServe ? "ace" : "miss" };
   return {
-    winner: lastHitter === "player" ? "ai" : "player",
+    winner: otherTennisSide(lastHitter),
     reason: "out",
   };
+}
+
+export function resolveTennisLanding(
+  lastHitter: TennisSide,
+  previousBounces: number,
+  insideSingles: boolean,
+  isServe = false,
+): TennisBallExitResult | null {
+  if (previousBounces > 0) {
+    return { winner: lastHitter, reason: isServe ? "ace" : "miss" };
+  }
+  if (!insideSingles) {
+    return {
+      winner: otherTennisSide(lastHitter),
+      reason: "out",
+    };
+  }
+  return null;
 }
 
 export function tennisPointDisplay(own: number, other: number): string {
@@ -85,10 +155,10 @@ export function isInsideSingles(
   singlesInset: number,
 ): boolean {
   return (
-    x >= court.x &&
-    x <= court.x + court.w &&
-    y >= court.y + singlesInset &&
-    y <= court.y + court.h - singlesInset
+    x >= court.x - LINE_EPSILON &&
+    x <= court.x + court.w + LINE_EPSILON &&
+    y >= court.y + singlesInset - LINE_EPSILON &&
+    y <= court.y + court.h - singlesInset + LINE_EPSILON
   );
 }
 
@@ -105,11 +175,11 @@ export function isInsideDiagonalServiceBox(
   const midY = court.y + court.h / 2;
   const inReceiverDepth =
     server === "player"
-      ? x > netX && x <= netX + serviceDepth
-      : x < netX && x >= netX - serviceDepth;
+      ? x > netX && x <= netX + serviceDepth + LINE_EPSILON
+      : x < netX && x >= netX - serviceDepth - LINE_EPSILON;
   const targetTop = !serveFromTop;
   const inTargetLane = targetTop
-    ? y >= court.y + singlesInset && y < midY
-    : y > midY && y <= court.y + court.h - singlesInset;
+    ? y >= court.y + singlesInset - LINE_EPSILON && y <= midY + LINE_EPSILON
+    : y >= midY - LINE_EPSILON && y <= court.y + court.h - singlesInset + LINE_EPSILON;
   return inReceiverDepth && inTargetLane;
 }

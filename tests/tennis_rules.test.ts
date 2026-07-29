@@ -7,7 +7,11 @@ import {
   advanceTennisScore,
   isInsideDiagonalServiceBox,
   isInsideSingles,
+  otherTennisSide,
   resolveTennisBallExit,
+  resolveTennisLanding,
+  tennisGroundContact,
+  tennisHeightAtCrossing,
   tennisPointDisplay,
   type TennisScoreInput,
 } from "../src/lib/tennis_rules.ts";
@@ -69,8 +73,21 @@ test("winning the target number of games ends the match", () => {
   assert.equal(result.gamesPlayer, 2);
 });
 
+test("points are awarded to the selected winner for both sides", () => {
+  const playerPoint = advanceTennisScore(score(), "player", 2);
+  assert.equal(playerPoint.pointsPlayer, 1);
+  assert.equal(playerPoint.pointsAi, 0);
+
+  const aiPoint = advanceTennisScore(score(), "ai", 2);
+  assert.equal(aiPoint.pointsPlayer, 0);
+  assert.equal(aiPoint.pointsAi, 1);
+  assert.equal(otherTennisSide("player"), "ai");
+  assert.equal(otherTennisSide("ai"), "player");
+});
+
 test("singles bounds reject the doubles alleys", () => {
   assert.equal(isInsideSingles(25, 30, COURT, SINGLES_INSET), true);
+  assert.equal(isInsideSingles(25, SINGLES_INSET - Number.EPSILON, COURT, SINGLES_INSET), true);
   assert.equal(isInsideSingles(25, 2, COURT, SINGLES_INSET), false);
   assert.equal(isInsideSingles(101, 30, COURT, SINGLES_INSET), false);
 });
@@ -84,6 +101,57 @@ test("a ball leaving the play area is only out before a valid bounce", () => {
     winner: "ai",
     reason: "miss",
   });
+});
+
+test("only the first bounce can be out; an unreturned second bounce is a miss", () => {
+  assert.equal(resolveTennisLanding("ai", 0, true), null);
+  assert.deepEqual(resolveTennisLanding("ai", 0, false), {
+    winner: "player",
+    reason: "out",
+  });
+  assert.deepEqual(resolveTennisLanding("ai", 1, false), {
+    winner: "ai",
+    reason: "miss",
+  });
+  assert.deepEqual(resolveTennisLanding("player", 1, true), {
+    winner: "player",
+    reason: "miss",
+  });
+});
+
+test("an unreturned valid serve is an ace for the server", () => {
+  assert.deepEqual(resolveTennisLanding("player", 1, false, true), {
+    winner: "player",
+    reason: "ace",
+  });
+  assert.deepEqual(resolveTennisLanding("ai", 1, true, true), {
+    winner: "ai",
+    reason: "ace",
+  });
+  assert.deepEqual(resolveTennisBallExit("player", 1, true), {
+    winner: "player",
+    reason: "ace",
+  });
+});
+
+test("ground contact uses the exact ballistic impact time", () => {
+  const landing = tennisGroundContact(
+    { x: 49, y: 30, z: 2 },
+    { x: -420, y: 0, z: -150 },
+    540,
+    1 / 60,
+  );
+  assert.ok(landing);
+  assert.equal(landing.z, 0);
+  assert.ok(landing.x < 49);
+  assert.ok(landing.x > 42);
+  assert.ok(landing.vz < 0);
+});
+
+test("net height is measured at the crossing point instead of the end of the frame", () => {
+  assert.equal(tennisHeightAtCrossing({ x: 395, z: 55 }, { x: 600, z: -300 }, 400, 0, 0.05), 52.5);
+  assert.equal(tennisHeightAtCrossing({ x: 405, z: 45 }, { x: -600, z: 300 }, 400, 0, 0.05), 47.5);
+  assert.equal(tennisHeightAtCrossing({ x: 390, z: 20 }, { x: 100, z: 30 }, 400, 540, 0.05), null);
 });
 
 test("a serve must land in the receiver's diagonal service box", () => {
@@ -100,10 +168,18 @@ test("a serve must land in the receiver's diagonal service box", () => {
     isInsideDiagonalServiceBox(75, 15, "player", false, COURT, NET_X, SINGLES_INSET, SERVICE_DEPTH),
     false,
   );
+  assert.equal(
+    isInsideDiagonalServiceBox(60, 30, "player", false, COURT, NET_X, SINGLES_INSET, SERVICE_DEPTH),
+    true,
+  );
 
   // The opposite server mirrors both the receiver side and diagonal lane.
   assert.equal(
     isInsideDiagonalServiceBox(40, 45, "ai", true, COURT, NET_X, SINGLES_INSET, SERVICE_DEPTH),
+    true,
+  );
+  assert.equal(
+    isInsideDiagonalServiceBox(40, 30, "ai", true, COURT, NET_X, SINGLES_INSET, SERVICE_DEPTH),
     true,
   );
 });
