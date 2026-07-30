@@ -122,10 +122,19 @@ export function setupBlockProgram<B extends { kind: string }>(
       const spec = opts.blockKinds.find((k) => k.kind === b.kind);
       const params = spec ? spec.params(b) : [];
       params.forEach((p, idx) => {
+        const field = document.createElement("label");
+        field.className = "be-param";
+        const paramName = document.createElement("span");
+        paramName.className = "be-param-name";
+        paramName.textContent = p.key;
+        field.appendChild(paramName);
+
         const inp = document.createElement("input");
         inp.type = "number";
         inp.step = String(p.step ?? 0.1);
         inp.value = String(p.value);
+        inp.setAttribute("aria-label", p.key);
+        inp.title = p.key;
         // `input` event fires both for keyboard typing AND for the
         // synthesized event blockpad dispatches when the gamepad nudges
         // a value. `change` alone misses the latter (it only fires on
@@ -140,13 +149,14 @@ export function setupBlockProgram<B extends { kind: string }>(
         };
         inp.addEventListener("input", commit);
         inp.addEventListener("change", commit);
-        li.appendChild(inp);
+        field.appendChild(inp);
         if (p.unit) {
           const u = document.createElement("span");
           u.className = "be-unit";
           u.textContent = p.unit;
-          li.appendChild(u);
+          field.appendChild(u);
         }
+        li.appendChild(field);
         if (idx < params.length - 1) {
           const c = document.createElement("span");
           c.className = "be-comma";
@@ -161,6 +171,8 @@ export function setupBlockProgram<B extends { kind: string }>(
       li.appendChild(close);
 
       // up / down / delete
+      const actions = document.createElement("span");
+      actions.className = "be-block-actions";
       const up = document.createElement("button");
       up.className = "be-up";
       up.textContent = "↑";
@@ -172,7 +184,7 @@ export function setupBlockProgram<B extends { kind: string }>(
           changed();
         }
       };
-      li.appendChild(up);
+      actions.appendChild(up);
       const down = document.createElement("button");
       down.className = "be-down";
       down.textContent = "↓";
@@ -184,7 +196,7 @@ export function setupBlockProgram<B extends { kind: string }>(
           changed();
         }
       };
-      li.appendChild(down);
+      actions.appendChild(down);
       const rm = document.createElement("button");
       rm.className = "be-remove";
       rm.textContent = "×";
@@ -194,7 +206,8 @@ export function setupBlockProgram<B extends { kind: string }>(
         refresh();
         changed();
       };
-      li.appendChild(rm);
+      actions.appendChild(rm);
+      li.appendChild(actions);
 
       programListEl!.appendChild(li);
     });
