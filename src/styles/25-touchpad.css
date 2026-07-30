@@ -144,6 +144,75 @@
 .touchpad[data-layout="joystick"] .touch-joystick {
   display: block;
 }
+
+.touch-joint-zone {
+  display: none;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(2, minmax(112px, 1fr)) minmax(88px, 0.7fr);
+  gap: 10px;
+}
+
+.touchpad[data-stage="joint_teleop"] .touchpad-switcher,
+.touchpad[data-stage="joint_teleop"] .touch-move-zone,
+.touchpad[data-stage="joint_teleop"] .touch-actions {
+  display: none;
+}
+
+.touchpad[data-stage="joint_teleop"] .touchpad-controls {
+  min-height: 0;
+  padding-inline: 0;
+}
+
+.touchpad[data-stage="joint_teleop"] .touch-joint-zone {
+  display: grid;
+}
+
+.touch-joint-group,
+.touch-joint-utility {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(52px, 1fr));
+  gap: 8px;
+}
+
+.touch-joint-group {
+  padding: 8px;
+  border: 1px solid rgba(125, 211, 252, 0.3);
+  border-radius: 10px;
+  background: rgba(var(--scrim-rgb), 0.4);
+}
+
+.touch-joint-label {
+  grid-column: 1 / -1;
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.touch-joint-button {
+  min-height: 64px;
+  font-size: 26px;
+}
+
+.touch-joint-utility {
+  grid-template-columns: 1fr;
+}
+
+.touch-joint-precision,
+.touch-joint-reset {
+  min-height: 52px;
+  padding-inline: 8px;
+  font-size: 11px;
+}
+
+.touch-joint-precision {
+  color: var(--accent);
+}
+
+.touch-joint-reset {
+  color: var(--warn);
+}
+
 .touch-actions {
   display: grid;
   grid-template: repeat(2, 58px) / repeat(2, minmax(58px, 72px));
@@ -186,5 +255,19 @@
   .touch-actions {
     grid-template: repeat(2, 54px) / repeat(2, minmax(50px, 1fr));
     gap: 6px;
+  }
+
+  .touch-joint-zone {
+    grid-template-columns: repeat(2, minmax(96px, 1fr));
+    gap: 6px;
+  }
+
+  .touch-joint-utility {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .touch-joint-button {
+    min-height: 58px;
   }
 }
