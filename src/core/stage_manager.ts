@@ -31,6 +31,17 @@ import { stageDisplayName } from "./stage_labels";
 
 let stages: Stage[] = [];
 let current: Stage;
+const MOBILE_LIVE_EDITOR_STAGES = new Set([
+  "feedforward_controller",
+  "feedforward_mission",
+  "feedback_controller",
+  "feedback_mission",
+  "lidar_avoidance",
+  "param_tuner",
+  "image_processing",
+  "edge_detection",
+  "object_detection",
+]);
 
 export function getStages(): readonly Stage[] {
   return stages;
@@ -120,6 +131,7 @@ export function loadStage(id: string): void {
 
   const next = stages.find((s) => s.id === id) ?? stages[0];
   current = next;
+  document.body.classList.toggle("mobile-live-editor", MOBILE_LIVE_EDITOR_STAGES.has(current.id));
   current.init(gameContext);
   setTouchpadStage(current.id);
   if (!intro.isShown()) {

@@ -121,6 +121,8 @@ export function setupBlockProgram<B extends { kind: string }>(
 
       const spec = opts.blockKinds.find((k) => k.kind === b.kind);
       const params = spec ? spec.params(b) : [];
+      const paramsWrap = document.createElement("span");
+      paramsWrap.className = "be-params";
       params.forEach((p, idx) => {
         const field = document.createElement("label");
         field.className = "be-param";
@@ -131,6 +133,7 @@ export function setupBlockProgram<B extends { kind: string }>(
 
         const inp = document.createElement("input");
         inp.type = "number";
+        inp.inputMode = "decimal";
         inp.step = String(p.step ?? 0.1);
         inp.value = String(p.value);
         inp.setAttribute("aria-label", p.key);
@@ -149,21 +152,41 @@ export function setupBlockProgram<B extends { kind: string }>(
         };
         inp.addEventListener("input", commit);
         inp.addEventListener("change", commit);
+
+        const makeStepButton = (direction: -1 | 1): HTMLButtonElement => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "be-param-step";
+          button.textContent = direction < 0 ? "−" : "+";
+          button.setAttribute("aria-label", `${p.key} ${direction < 0 ? "decrease" : "increase"}`);
+          button.addEventListener("click", () => {
+            const current = Number.parseFloat(inp.value);
+            const step = p.step ?? 0.1;
+            const next = (Number.isFinite(current) ? current : 0) + direction * step;
+            inp.value = String(Number(next.toFixed(6)));
+            inp.dispatchEvent(new Event("input", { bubbles: true }));
+          });
+          return button;
+        };
+
+        field.appendChild(makeStepButton(-1));
         field.appendChild(inp);
+        field.appendChild(makeStepButton(1));
         if (p.unit) {
           const u = document.createElement("span");
           u.className = "be-unit";
           u.textContent = p.unit;
           field.appendChild(u);
         }
-        li.appendChild(field);
+        paramsWrap.appendChild(field);
         if (idx < params.length - 1) {
           const c = document.createElement("span");
           c.className = "be-comma";
           c.textContent = ",";
-          li.appendChild(c);
+          paramsWrap.appendChild(c);
         }
       });
+      if (params.length) li.appendChild(paramsWrap);
 
       const close = document.createElement("span");
       close.className = "be-paren";

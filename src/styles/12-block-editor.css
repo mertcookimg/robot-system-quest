@@ -258,7 +258,13 @@
   align-items: center;
   gap: 4px;
 }
+.be-params {
+  display: contents;
+}
 .be-param-name {
+  display: none;
+}
+.be-param-step {
   display: none;
 }
 .be-block input[type="number"]::-webkit-outer-spin-button,
@@ -308,6 +314,20 @@
 }
 
 @media (max-width: 640px) {
+  body.mobile-live-editor .canvas-wrap {
+    position: sticky;
+    top: max(6px, env(safe-area-inset-top));
+    z-index: 30;
+    margin-inline: auto;
+    box-shadow:
+      0 0 0 1px rgba(125, 211, 252, 0.58),
+      0 12px 32px rgba(0, 0, 0, 0.72);
+    transition: width 0.18s ease;
+  }
+  body.mobile-live-editor:has(.be-param input:focus) .canvas-wrap {
+    width: min(72vw, 280px);
+  }
+
   .be-head {
     flex-wrap: wrap;
     gap: 8px;
@@ -340,35 +360,78 @@
   }
   .be-block {
     flex-wrap: wrap;
-    align-items: flex-end;
-    padding: 10px;
+    align-items: center;
+    gap: 5px;
+    padding: 7px;
+  }
+  .be-block .be-paren,
+  .be-block .be-comma {
+    display: none;
+  }
+  .be-params {
+    order: 2;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+    flex: 1 1 100%;
+    width: 100%;
+    gap: 6px;
   }
   .be-param {
-    flex: 1 1 116px;
-    flex-wrap: wrap;
-    gap: 3px 6px;
+    position: relative;
+    display: grid;
+    grid-template-columns: 36px minmax(36px, 1fr) 36px;
+    min-width: 0;
+    gap: 3px;
   }
   .be-param-name {
     display: block;
-    flex-basis: 100%;
+    grid-column: 1 / -1;
     color: var(--fg-dim);
-    font-size: 10px;
+    font-size: 9px;
     letter-spacing: 0.04em;
   }
   .be-block input[type="number"] {
-    width: 78px;
-    min-height: 44px;
-    padding: 7px 9px;
-    font-size: 16px;
+    width: 100%;
+    min-width: 0;
+    min-height: 36px;
+    padding: 5px 4px;
+    font-size: 14px;
+    scroll-margin-top: 190px;
+  }
+  .be-param-step {
+    display: inline-grid;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    place-items: center;
+    border: 1px solid rgba(125, 211, 252, 0.42);
+    border-radius: 8px;
+    background: rgba(125, 211, 252, 0.1);
+    color: var(--accent);
+    font: 700 18px/1 var(--mono);
+    touch-action: manipulation;
+  }
+  .be-param-step:active {
+    border-color: var(--accent);
+    background: rgba(125, 211, 252, 0.24);
+    transform: scale(0.96);
+  }
+  .be-param .be-unit {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 8px;
   }
   .be-block-actions {
+    order: 1;
     flex: 0 0 auto;
+    margin-left: auto;
   }
   .be-block .be-up,
   .be-block .be-down,
   .be-block .be-remove {
-    min-width: 44px;
-    min-height: 44px;
+    min-width: 34px;
+    min-height: 34px;
     padding: 0;
   }
 }
