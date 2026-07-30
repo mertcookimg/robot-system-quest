@@ -13,6 +13,7 @@ import { theme, withA } from "../../core/theme";
 import { defineStage } from "../../core/stage_def";
 import { drawHint, drawRobotBody, drawRobotLabel, COLORS, clearBackground } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
+import { canvasInteractionRadius } from "../../lib/canvas_touch";
 import { t, tx } from "../../i18n";
 
 interface Port {
@@ -103,6 +104,7 @@ export function makePubsub(): Stage {
   let onMouseDown: ((e: MouseEvent) => void) | null = null;
   let onMouseMove: ((e: MouseEvent) => void) | null = null;
   let onMouseUp: ((e: MouseEvent) => void) | null = null;
+  let onMouseLeave: (() => void) | null = null;
 
   function portAbsPos(p: Port): { x: number; y: number } {
     const node = NODES.find((n) => n.id === p.nodeId)!;
@@ -110,16 +112,18 @@ export function makePubsub(): Stage {
   }
 
   function portAt(x: number, y: number): Port | null {
+    const hitRadius = canvasInteractionRadius(g.canvas, 28, 28);
     for (const p of PORTS) {
       const pos = portAbsPos(p);
       const dx = x - pos.x,
         dy = y - pos.y;
-      if (dx * dx + dy * dy < 24 * 24) return p;
+      if (dx * dx + dy * dy < hitRadius * hitRadius) return p;
     }
     return null;
   }
 
   function wireAt(x: number, y: number): number {
+    const hitRadius = canvasInteractionRadius(g.canvas, 16, 24);
     for (let i = 0; i < wires.length; i++) {
       const w = wires[i];
       const p1 = portAbsPos(PORTS.find((p) => p.id === w.fromPortId)!);
@@ -130,10 +134,26 @@ export function makePubsub(): Stage {
         const yi = bezierAt(p1.y, p1.y, p2.y, p2.y, t);
         const dx = x - xi,
           dy = y - yi;
-        if (dx * dx + dy * dy < 14 * 14) return i;
+        if (dx * dx + dy * dy < hitRadius * hitRadius) return i;
       }
     }
     return -1;
+  }
+
+  function snapTarget(from: Port, x: number, y: number): Port | null {
+    const maxSideways = canvasInteractionRadius(g.canvas, 48, 32);
+    for (const target of PORTS) {
+      if (target.kind === from.kind) continue;
+      const a = portAbsPos(from);
+      const b = portAbsPos(target);
+      const vx = b.x - a.x;
+      const vy = b.y - a.y;
+      const lengthSq = vx * vx + vy * vy;
+      const progress = ((x - a.x) * vx + (y - a.y) * vy) / lengthSq;
+      const sideways = Math.abs((x - a.x) * vy - (y - a.y) * vx) / Math.sqrt(lengthSq);
+      if (progress >= 0.42 && sideways <= maxSideways) return target;
+    }
+    return null;
   }
 
   function checkAllValid(): boolean {
@@ -157,8 +177,13 @@ export function makePubsub(): Stage {
       if (cleared) return;
       const { x, y } = canvasCoords(e);
       const p = portAt(x, y);
-      if (p && p.kind === "out") {
-        dragFrom = p;
+      if (p) {
+        if (dragFrom && dragFrom.id !== p.id) tryConnect(p);
+        else if (!dragFrom) selectPort(p);
+        return;
+      }
+      if (dragFrom) {
+        cancelSelection();
         return;
       }
       const wIdx = wireAt(x, y);
@@ -177,19 +202,25 @@ export function makePubsub(): Stage {
       if (!dragFrom) return;
       const { x, y } = canvasCoords(e);
       const p = portAt(x, y);
-      if (p && p.kind === "in") tryConnect(p);
-      else dragFrom = null;
+      if (p && p.id !== dragFrom.id) tryConnect(p);
+      else {
+        const target = snapTarget(dragFrom, x, y);
+        if (target) tryConnect(target);
+      }
     };
+    onMouseLeave = () => cancelSelection();
     g.canvas.addEventListener("mousedown", onMouseDown);
     g.canvas.addEventListener("mousemove", onMouseMove);
     g.canvas.addEventListener("mouseup", onMouseUp);
+    g.canvas.addEventListener("mouseleave", onMouseLeave);
   }
 
   function dispose() {
     if (onMouseDown) g.canvas.removeEventListener("mousedown", onMouseDown);
     if (onMouseMove) g.canvas.removeEventListener("mousemove", onMouseMove);
     if (onMouseUp) g.canvas.removeEventListener("mouseup", onMouseUp);
-    onMouseDown = onMouseMove = onMouseUp = null;
+    if (onMouseLeave) g.canvas.removeEventListener("mouseleave", onMouseLeave);
+    onMouseDown = onMouseMove = onMouseUp = onMouseLeave = null;
   }
 
   function reset() {
@@ -209,18 +240,36 @@ export function makePubsub(): Stage {
     g.setStatus(t("puzzle.status.connect"), "");
   }
 
-  // Commit an out → in connection (shared by mouse / pad / keyboard).
-  function tryConnect(toPort: Port) {
-    if (!dragFrom || toPort.kind !== "in") return;
-    const exists = wires.some((w) => w.fromPortId === dragFrom!.id && w.toPortId === toPort.id);
+  function selectPort(port: Port) {
+    dragFrom = port;
+    g.sfx.click();
+    g.setStatus(t("pubsub_builder.status.select_other"), "var(--accent)");
+  }
+
+  function cancelSelection() {
+    if (!dragFrom) return;
+    dragFrom = null;
+    g.setStatus(t("puzzle.status.connect"), "");
+  }
+
+  // Commit a connection in either selection order (shared by touch / mouse / pad).
+  function tryConnect(otherPort: Port) {
+    if (!dragFrom || otherPort.id === dragFrom.id) return;
+    if (otherPort.kind === dragFrom.kind) {
+      selectPort(otherPort);
+      return;
+    }
+    const fromPort = dragFrom.kind === "out" ? dragFrom : otherPort;
+    const toPort = dragFrom.kind === "in" ? dragFrom : otherPort;
+    const exists = wires.some((w) => w.fromPortId === fromPort.id && w.toPortId === toPort.id);
     if (!exists) {
-      const valid = dragFrom.msgType === toPort.msgType && dragFrom.topic === toPort.topic;
+      const valid = fromPort.msgType === toPort.msgType && fromPort.topic === toPort.topic;
       let errorReason: string | undefined;
       if (!valid) {
-        if (dragFrom.msgType !== toPort.msgType) errorReason = "TYPE MISMATCH";
+        if (fromPort.msgType !== toPort.msgType) errorReason = "TYPE MISMATCH";
         else errorReason = "TOPIC MISMATCH";
       }
-      wires.push({ fromPortId: dragFrom.id, toPortId: toPort.id, valid, errorReason });
+      wires.push({ fromPortId: fromPort.id, toPortId: toPort.id, valid, errorReason });
       g.sfx.click();
       if (valid) g.shake(0.1);
       else g.sfx.bump();
@@ -277,16 +326,12 @@ export function makePubsub(): Stage {
     }
     if (edge.a) {
       const fp = PORTS[focusedPortIdx];
-      if (!dragFrom && fp.kind === "out") {
-        dragFrom = fp;
-        g.sfx.click();
-      } else if (dragFrom && fp.kind === "in") {
-        tryConnect(fp);
-      }
+      if (!dragFrom) selectPort(fp);
+      else if (dragFrom.id !== fp.id) tryConnect(fp);
     }
     if (edge.b) {
       if (dragFrom) {
-        dragFrom = null;
+        cancelSelection();
         g.sfx.click();
       } else {
         const fp = PORTS[focusedPortIdx];
@@ -484,7 +529,8 @@ export function makePubsub(): Stage {
     const typeColor = TYPE_COLORS[p.msgType] || "#94a3b8";
     c.save();
     // Outer ring (color = type); highlighted ports grow slightly + glow.
-    const r = isHover || isDrag || isFocused ? 10 : 8;
+    const baseRadius = canvasInteractionRadius(g.canvas, 9, 12);
+    const r = isHover || isDrag || isFocused ? baseRadius + 3 : baseRadius;
     if (isHover || isDrag) {
       c.fillStyle = typeColor + "55"; // translucent glow
       c.beginPath();
@@ -598,32 +644,15 @@ export function makePubsub(): Stage {
     ros2: {
       title: tx("Pub/Sub — ノードを topic で繋ぐ", "Pub/Sub — link nodes via topics"),
       summary:
-        "ROS2 の根本: 独立したノードが topic を介してメッセージを送り合う。" +
-        "出力ポート (右端) を入力ポート (左端) へドラッグして配線。" +
-        "topic 名と msgType の両方が一致しないと繋がらない (= 契約)。" +
+        "ROS 2 の根本: 独立したノードが topic を介してメッセージを送り合う。" +
+        "この Lesson では topic 名と msgType の一致を確認する。" +
+        "実機で通信するには QoS にも互換性が必要。" +
         "全部正しく繋がると擬似 publish が始まり、robot が動き出す。",
       msgTypes: ["geometry_msgs/msg/Twist", "nav_msgs/msg/Odometry"],
       cli: ["ros2 node list", "ros2 topic list", "ros2 topic info /cmd_vel", "rqt_graph"],
-      python: `# Publisher (controller_node)
-class Controller(Node):
-    def __init__(self):
-        super().__init__("controller_node")
-        self.pub = self.create_publisher(Twist, "/cmd_vel", 10)
-        self.create_timer(0.1, self.tick)
-    def tick(self):
-        m = Twist(); m.linear.x = 0.5
-        self.pub.publish(m)
-
-# Subscriber (pose_logger)
-class Logger(Node):
-    def __init__(self):
-        super().__init__("pose_logger")
-        self.create_subscription(Odometry, "/odom", self.on_odom, 10)
-    def on_odom(self, msg):
-        self.get_logger().info(f"x={msg.pose.pose.position.x:.2f}")`,
       realWorld: tx(
-        "実機 ROS2: 複数の launch でノードを起動 → rqt_graph で接続を可視化。topic 名や型のミスで『接続されていないように見える』バグは頻発。このパズルで先に契約という概念を体得する。",
-        "Real ROS2: bring up nodes via multiple launch files, then visualize the graph in rqt_graph. Bugs where things 'look unconnected' due to wrong topic names or types are very common. This puzzle teaches the contract concept up front.",
+        "実機 ROS 2: 複数の launch でノードを起動 → rqt_graph で接続を可視化。通信できない場合は topic 名、message 型に加えて QoS の互換性も確認する。",
+        "Real ROS 2: bring up nodes via launch files, then visualize the graph in rqt_graph. If data does not flow, check the topic name, message type, and QoS compatibility.",
       ),
     },
     init,
@@ -672,39 +701,41 @@ export default defineStage({
       en: "Pub/Sub — publish messages over a topic",
     },
     learn: {
-      ja: "ROS2 では、プログラムの単位である node どうしが topic という名前付きの通信路でメッセージをやり取りします。送信側を Publisher、受信側を Subscriber と呼び、Publisher が topic に publish すると、その topic を subscribe している全 node にメッセージが届きます。",
-      en: "In ROS2, nodes (the units of a running program) exchange messages over named channels called topics. A node that sends is a Publisher; a node that receives is a Subscriber. When a Publisher publishes to a topic, every node that subscribes to that topic receives the message.",
+      ja: "ROS 2 では、プログラムの単位である node どうしが topic という名前付きの通信路でメッセージをやり取りします。送信側を Publisher、受信側を Subscriber と呼びます。同じ topic 名と message 型を使い、互換性のある QoS を持つ Subscription がメッセージを受信します。この Lesson では topic 名と型を確認します。",
+      en: "In ROS 2, nodes exchange messages over named channels called topics. A sending node is a Publisher and a receiving node is a Subscriber. A Subscription receives messages when it uses the same topic name and message type with compatible QoS. This lesson checks the topic name and type.",
     },
     goal: {
       ja: "command_node (Publisher) と robot_node (Subscriber) を topic /cmd_vel で繋ぎ、Twist メッセージを流してロボを GOAL まで動かしましょう。",
       en: "Wire command_node (Publisher) to robot_node (Subscriber) over the /cmd_vel topic so Twist messages flow and the robot reaches the GOAL.",
     },
     first: {
-      ja: "command_node の右側にある output port (●) から robot_node の左側 input port (○) までドラッグして wire を引きます。topic 名と message type が一致すると接続が valid になります。",
-      en: "Drag from command_node's right-side output port (●) to robot_node's left-side input port (○). The wire becomes valid when the topic name and message type both match.",
+      ja: "左右どちらかのポートをタップし、もう片方をタップします。ポート間を直接ドラッグしても接続できます。topic 名と message type が一致すると valid になります。",
+      en: "Tap either port, then tap the other one. You can also drag directly between them. The link becomes valid when the topic name and message type both match.",
     },
   },
   strings: {
     ja: {
-      hint: "out → in にドラッグ / 線クリックで削除 / 型と topic 名が一致して初めて繋がる",
+      hint: "左右を順にタップ（順不同）/ 反対側へ半分ほどドラッグでも自動接続",
       "node.controller": "WASD 操作で /cmd_vel を publish",
       "node.motor": "/cmd_vel を subscribe → モーター駆動",
       sim_label: "ROBOT SIMULATION  (graph 完成で自動起動)",
       "status.incomplete": "配線が不完全 — 必要な接続を見直そう",
       "status.success": "接続完成 — メッセージが流れて robot が動き始めた",
-      subtitle: "出力ポート (右) → 入力ポート (左) にドラッグ / 線をクリックで削除",
-      tip_hud: "型と topic 名が両方一致しないと繋がらない",
+      "status.select_other": "ポートを選択中 — 反対側のポートをタップ",
+      subtitle: "左右を順にタップ（順不同）/ 半分ほどドラッグすると自動接続",
+      tip_hud: "このLesson: 型 + topic 名 / 実機: QoS 互換性も必要",
       title: "Pub/Sub Builder — ノードを topic で繋ぐ",
     },
     en: {
-      hint: "Drag out → in / click a wire to delete / type and topic name must both match",
+      hint: "Tap both ports in either order / drag about halfway to auto-connect",
       "node.controller": "WASD input publishes /cmd_vel",
       "node.motor": "Subscribes /cmd_vel → drives the motors",
       sim_label: "ROBOT SIMULATION  (auto-starts when the graph is complete)",
       "status.incomplete": "Graph incomplete — review required connections",
       "status.success": "Wires complete — messages flowing, robot moving",
-      subtitle: "Drag from output (right) → input (left) / click a wire to delete",
-      tip_hud: "type and topic name must both match",
+      "status.select_other": "Port selected — tap the port on the other side",
+      subtitle: "Tap both ports in either order, or drag about halfway to auto-connect",
+      tip_hud: "This lesson: type + topic / real ROS 2: compatible QoS too",
       title: "Pub/Sub Builder — link nodes via topics",
     },
   },

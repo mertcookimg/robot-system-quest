@@ -33,7 +33,7 @@ const CARD_PREVIEW: Record<string, CardPreview> = {
   robo_baseball: { icon: "⚾", action: "投球を追跡し、照準とタイミングを合わせて打つ" },
   robo_tennis: { icon: "🎾", action: "ボールの高さと着地点を読み、ラリーを続ける" },
   pubsub_builder: { icon: "⇄", action: "PublisherとSubscriberを接続する" },
-  service_builder: { icon: "↔", action: "RequestとResponseを正しくつなぐ" },
+  service_builder: { icon: "↔", action: "接続してServiceを1回ずつ呼び出す" },
   tf_puzzle: { icon: "⌗", action: "座標フレームを正しい親子関係にする" },
   feedforward_controller: { icon: "△", action: "速度と時間を計算して正三角形を描く" },
   feedforward_mission: { icon: "┄", action: "計算した指令だけで目標位置に止める" },
@@ -50,7 +50,7 @@ const CARD_PREVIEW: Record<string, CardPreview> = {
   joint_teleop: { icon: "⌇", action: "関節角を操作してアームを動かす" },
   ik_reach: { icon: "✣", action: "手先目標から必要な関節角を求める" },
   pick_place: { icon: "♢", action: "物体を掴んで指定場所へ運ぶ" },
-  action_builder: { icon: "▷", action: "Goal・Feedback・Resultを接続する" },
+  action_builder: { icon: "▷", action: "Actionを接続してGoalから完了まで確認する" },
   behavior_tree: { icon: "⑂", action: "条件と行動を木構造で組み立てる" },
 };
 
@@ -185,14 +185,14 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
   },
   pubsub_builder: {
     action: "Connect a Publisher to a Subscriber through a Topic",
-    goal: "Explain the relationship among Node, Topic, and Message",
+    goal: "Explain how Node, Topic, Message type, and compatible QoS relate",
     observe: "Watch one published message reach every compatible subscriber",
     exercise: "Connect two Subscribers to one Publisher and give each Subscriber a different job.",
     insight:
       "Pub/Sub is loosely coupled, so logging, visualization, and control nodes can be added without changing the Publisher.",
   },
   service_builder: {
-    action: "Connect a Request and Response correctly",
+    action: "Connect a Service Client and Server, then make one explicit call",
     goal: "Distinguish Service Client and Server responsibilities",
     observe: "Follow one request from the Client through processing to its response",
     exercise:
@@ -335,9 +335,9 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
       "Pre-grasp and retreat poses make manipulation safer and more repeatable than moving directly to the grasp point.",
   },
   action_builder: {
-    action: "Connect Goal, Feedback, Result, and Cancel",
-    goal: "Distinguish the four parts of an ROS 2 Action",
-    observe: "Watch feedback stream while one long-running goal remains active",
+    action: "Connect an Action and trace Goal, Feedback, Result, and Goal Status",
+    goal: "Distinguish Action interface data from goal state and cancellation",
+    observe: "Watch this simulation emit periodic feedback while one goal remains active",
     exercise:
       "Design a cancellation policy for the case where a new navigation goal arrives during execution.",
     insight:
@@ -556,7 +556,7 @@ const COPY: Record<string, GuideCopy> = {
   },
   pubsub_builder: {
     overview:
-      "Publisher、Topic、Subscriberを正しく接続し、ROS 2の基本通信を組み立てます。送信側と受信側は互いを直接知らず、共通のTopic名とMessage型だけを約束します。",
+      "Publisher、Topic、Subscriberを正しく接続し、ROS 2の基本通信を組み立てます。送信側と受信側は互いを直接知らず、同じTopic名とMessage型に加えて、互換性のあるQoSを使って通信します。このLessonではTopic名と型の一致を操作します。",
     goals: [
       "Node・Topic・Messageの関係を説明する",
       "型が一致しない接続が成立しない理由を理解する",
@@ -572,7 +572,7 @@ const COPY: Record<string, GuideCopy> = {
   },
   service_builder: {
     overview:
-      "Requestを送りResponseを受け取るService通信を組み立てます。連続的に流れるTopicと異なり、明確な完了結果が必要な一回の操作に適しています。",
+      "Requestを送りResponseを受け取るService通信を組み立てます。連続的に流れるTopicと異なり、短時間で応答できる一回の問い合わせや操作に適しています。接続しただけでは実行されず、CALLを押すたびに一組のRequest/Responseが発生します。",
     goals: [
       "Service ClientとServerの役割を区別する",
       "Request/Response型を理解する",
@@ -581,7 +581,7 @@ const COPY: Record<string, GuideCopy> = {
     steps: [
       "Clientが型に沿ったRequestを作る",
       "Serverが要求を処理する",
-      "Responseを受け取り成功・失敗を判断する",
+      "CALLを実行し、対応するResponseを一回受け取る",
     ],
     exercise:
       "モーター停止、現在温度、カメラ画像のうちServiceに適するものを理由とともに選びましょう。",
@@ -858,16 +858,16 @@ const COPY: Record<string, GuideCopy> = {
   },
   action_builder: {
     overview:
-      "時間のかかるGoalを送り、Feedbackを受けながら完了またはCancelを待つAction通信を組み立てます。ナビゲーションやアーム動作など、進捗が必要な処理に適しています。",
+      "時間のかかるGoalを送り、完了またはCancelを待つAction通信を組み立てます。Serverは実行中に必要に応じてFeedbackを返せるため、ナビゲーションやアーム動作など、途中経過を扱いたい処理に適しています。",
     goals: [
-      "ActionのGoal・Feedback・Resultを区別する",
+      "ActionのGoal・Feedback・ResultとGoal Statusを区別する",
       "Cancel可能な処理を設計する",
       "Serviceとの使い分けを説明する",
     ],
     steps: [
       "ClientがAction ServerへGoalを送る",
-      "実行中にFeedbackを繰り返し受け取る",
-      "完了時にResult、必要ならCancelを処理する",
+      "このシミュレーションが実行中に送る定期Feedbackを観察する",
+      "完了時のResultとGoal Statusを確認し、必要ならCancelを要求する",
     ],
     exercise: "ナビゲーション中に新しいGoalが届いた場合のキャンセル方針を考えましょう。",
     insight:

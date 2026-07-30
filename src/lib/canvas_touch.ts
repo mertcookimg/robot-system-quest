@@ -7,6 +7,25 @@
 
 const TOUCH_MOUSE_SOURCE = 42;
 
+/** Keep a canvas-space hit radius finger-friendly after responsive scaling. */
+export function canvasInteractionRadius(
+  canvas: HTMLCanvasElement,
+  defaultRadius: number,
+  minimumCssRadius: number,
+): number {
+  if (
+    typeof window === "undefined" ||
+    typeof window.matchMedia !== "function" ||
+    !window.matchMedia("(any-pointer: coarse)").matches
+  ) {
+    return defaultRadius;
+  }
+  const rect = canvas.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return defaultRadius;
+  const canvasPerCssPixel = Math.max(canvas.width / rect.width, canvas.height / rect.height);
+  return Math.max(defaultRadius, minimumCssRadius * canvasPerCssPixel);
+}
+
 function dispatchMouse(
   canvas: HTMLCanvasElement,
   type: "mousedown" | "mousemove" | "mouseup" | "mouseleave",
@@ -37,6 +56,8 @@ export function setupCanvasTouch(canvas: HTMLCanvasElement): void {
       event.preventDefault();
       activePointer = event.pointerId;
       canvas.setPointerCapture(event.pointerId);
+      // Cursor-driven stages must see the current tap position before acting.
+      dispatchMouse(canvas, "mousemove", event);
       dispatchMouse(canvas, "mousedown", event);
     },
     { passive: false },

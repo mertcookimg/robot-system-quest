@@ -26,6 +26,7 @@ import { activateNavpad, deactivateNavpad } from "../lib/navpad";
 import { drawGhost } from "../lib/draw";
 import { clearStageTimeouts, setStageTimeout } from "./stage_timers";
 import { trackStageReset, trackStageStart } from "./analytics";
+import { setTouchpadStage } from "../lib/touchpad";
 
 let stages: Stage[] = [];
 let current: Stage;
@@ -119,6 +120,7 @@ export function loadStage(id: string): void {
   const next = stages.find((s) => s.id === id) ?? stages[0];
   current = next;
   current.init(gameContext);
+  setTouchpadStage(current.id);
   if (!intro.isShown()) {
     trackStageStart(current.id, modes.isGameStage(current.id) ? "game" : "lesson");
   }

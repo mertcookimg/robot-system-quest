@@ -228,8 +228,6 @@ ros2: defineRos2Concept({
     "ros2 topic info /cmd_vel",
     "ros2 topic echo /cmd_vel",
   ],
-  // Retained as Ros2Concept compatibility data, although the current UI does not display it.
-  python: "",
   realWorld: "",
   state: state({
     nodes: ["/teleop", "/robot"],

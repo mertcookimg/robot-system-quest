@@ -90,8 +90,8 @@ export interface Ros2Concept {
   msgTypes: string[];
   /** Candidate commands; the UI exposes only safe in-game observations. */
   cli: string[];
-  /** Author reference retained in stage data; not shown in the game UI. */
-  python: string;
+  /** Optional author reference retained in stage data; not shown in the game UI. */
+  python?: string;
   /** Author background retained in stage data; not shown in the game UI. */
   realWorld: string;
   /** Pseudo-terminal state: live nodes / topics / services for the stage. */
