@@ -10,6 +10,7 @@ import { theme, withA } from "../../core/theme";
 import { defineStage } from "../../core/stage_def";
 import { drawHint, drawRobotBody, drawRobotLabel, COLORS, clearBackground } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
+import { canvasInteractionRadius } from "../../lib/canvas_touch";
 import { t, tx } from "../../i18n";
 
 interface Port {
@@ -97,21 +98,24 @@ export function makeService(): Stage {
   let onMouseDown: ((e: MouseEvent) => void) | null = null;
   let onMouseMove: ((e: MouseEvent) => void) | null = null;
   let onMouseUp: ((e: MouseEvent) => void) | null = null;
+  let onMouseLeave: (() => void) | null = null;
 
   function portAbsPos(p: Port) {
     const node = NODES.find((n) => n.id === p.nodeId)!;
     return { x: node.x + p.offX, y: node.y + p.offY };
   }
   function portAt(x: number, y: number): Port | null {
+    const hitRadius = canvasInteractionRadius(g.canvas, 24, 24);
     for (const p of PORTS) {
       const pos = portAbsPos(p);
       const dx = x - pos.x,
         dy = y - pos.y;
-      if (dx * dx + dy * dy < 24 * 24) return p;
+      if (dx * dx + dy * dy < hitRadius * hitRadius) return p;
     }
     return null;
   }
   function wireAt(x: number, y: number): number {
+    const hitRadius = canvasInteractionRadius(g.canvas, 14, 20);
     for (let i = 0; i < wires.length; i++) {
       const w = wires[i];
       const p1 = portAbsPos(PORTS.find((p) => p.id === w.fromPortId)!);
@@ -122,7 +126,7 @@ export function makeService(): Stage {
         const yi = bezierAt(p1.y, p1.y, p2.y, p2.y, t);
         const dx = x - xi,
           dy = y - yi;
-        if (dx * dx + dy * dy < 14 * 14) return i;
+        if (dx * dx + dy * dy < hitRadius * hitRadius) return i;
       }
     }
     return -1;
@@ -169,16 +173,21 @@ export function makeService(): Stage {
       if (p && p.kind === "in") tryConnect(p);
       else dragFrom = null;
     };
+    onMouseLeave = () => {
+      dragFrom = null;
+    };
     g.canvas.addEventListener("mousedown", onMouseDown);
     g.canvas.addEventListener("mousemove", onMouseMove);
     g.canvas.addEventListener("mouseup", onMouseUp);
+    g.canvas.addEventListener("mouseleave", onMouseLeave);
   }
 
   function dispose() {
     if (onMouseDown) g.canvas.removeEventListener("mousedown", onMouseDown);
     if (onMouseMove) g.canvas.removeEventListener("mousemove", onMouseMove);
     if (onMouseUp) g.canvas.removeEventListener("mouseup", onMouseUp);
-    onMouseDown = onMouseMove = onMouseUp = null;
+    if (onMouseLeave) g.canvas.removeEventListener("mouseleave", onMouseLeave);
+    onMouseDown = onMouseMove = onMouseUp = onMouseLeave = null;
   }
 
   function reset() {
@@ -479,7 +488,8 @@ export function makeService(): Stage {
     const isFocused = isPadMode() && PORTS[focusedPortIdx]?.id === p.id;
     const typeColor = TYPE_COLORS[p.msgType] || "#94a3b8";
     c.save();
-    const r = isHover || isDrag || isFocused ? 10 : 8;
+    const baseRadius = canvasInteractionRadius(g.canvas, 8, 10);
+    const r = isHover || isDrag || isFocused ? baseRadius + 2 : baseRadius;
     if (isHover || isDrag) {
       c.fillStyle = typeColor + "55";
       c.beginPath();

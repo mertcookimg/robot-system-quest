@@ -213,6 +213,25 @@ export function setupTouchpad(): void {
     document.getElementById("stage-controls-dock") ?? document.getElementById("canvas-wrap");
   layoutAnchor?.insertAdjacentElement("afterend", root);
 
+  // Block-programming lessons are edited directly with touch. Keep their
+  // editor immediately below the canvas and remove the unrelated movement
+  // controls so learners do not have to scroll past a joystick and panels.
+  const blockEditor = document.getElementById("block-editor");
+  const syncForBlockEditor = () => {
+    const blockEditing = blockEditor?.style.display !== "none";
+    root.style.display = blockEditing ? "none" : "";
+    if (blockEditing && layoutAnchor && blockEditor) {
+      layoutAnchor.insertAdjacentElement("afterend", blockEditor);
+    }
+  };
+  if (blockEditor) {
+    new MutationObserver(syncForBlockEditor).observe(blockEditor, {
+      attributes: true,
+      attributeFilter: ["style"],
+    });
+  }
+  syncForBlockEditor();
+
   const releaseMovement = () => {
     joystick.release();
     MOVE_KEYS.forEach((key) => sendKey(key, false));
