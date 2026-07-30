@@ -33,7 +33,7 @@ Describe any additional manual testing:
 
 ## Checklist
 
-- [ ] This PR targets `develop`.
+- [ ] This PR targets `main`.
 - [ ] The change is focused and does not include unrelated reformatting.
 - [ ] Tests and documentation were added or updated where needed.
 - [ ] No credentials, analytics IDs, generated `dist/` files, or other secrets are included.

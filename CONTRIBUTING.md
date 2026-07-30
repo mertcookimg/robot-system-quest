@@ -31,10 +31,10 @@ You need Node.js 22.12 or later and a modern browser.
    npm ci
    ```
 
-3. Create a branch from `develop`:
+3. Create a branch from the latest `main`:
 
    ```bash
-   git switch develop
+   git switch main
    git pull --ff-only
    git switch -c feat/short-description
    ```
@@ -151,8 +151,9 @@ stages does not leave stale state or UI behind.
 
 ## Open a pull request
 
-Push your branch to your fork and open a pull request against the `develop` branch. The `main`
-branch is the deployment branch; use a different target only when a maintainer asks you to.
+Push your branch to your fork and open a pull request against the `main` branch. Changes merged
+into `main` are tested and deployed automatically; use a different target only when a maintainer
+asks you to.
 
 In the pull request:
 

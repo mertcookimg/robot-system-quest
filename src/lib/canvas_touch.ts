@@ -7,7 +7,10 @@
 
 const TOUCH_MOUSE_SOURCE = 42;
 
-/** Keep a canvas-space hit radius finger-friendly after responsive scaling. */
+/**
+ * Return a canvas-space radius that stays finger-friendly after the canvas is
+ * scaled down on a coarse-pointer device.
+ */
 export function canvasInteractionRadius(
   canvas: HTMLCanvasElement,
   defaultRadius: number,
@@ -56,7 +59,9 @@ export function setupCanvasTouch(canvas: HTMLCanvasElement): void {
       event.preventDefault();
       activePointer = event.pointerId;
       canvas.setPointerCapture(event.pointerId);
-      // Cursor-driven stages must see the current tap position before acting.
+      // Mouse-driven stages often update their cursor in `mousemove` and act
+      // on it in `mousedown`. Sync the touch position first so a tap never
+      // acts on the previous cursor position.
       dispatchMouse(canvas, "mousemove", event);
       dispatchMouse(canvas, "mousedown", event);
     },
