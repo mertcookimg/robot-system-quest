@@ -38,6 +38,7 @@ import { setupBlockpad } from "./lib/blockpad";
 import { setNavpadCanvas } from "./lib/navpad";
 import { setupTouchpad } from "./lib/touchpad";
 import { setupCanvasTouch } from "./lib/canvas_touch";
+import { setupTouchCalloutGuard } from "./lib/touch_callout";
 import { shake } from "./core/dom";
 import {
   setStages,
@@ -56,6 +57,7 @@ import type { Stage } from "./types";
 import { setupAnalytics, trackStageExit, trackStageStart } from "./core/analytics";
 
 setupAnalytics();
+setupTouchCalloutGuard();
 
 // 0. Apply the background theme tokens to :root before anything paints.
 applyThemeVars();

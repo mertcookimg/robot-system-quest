@@ -62,6 +62,19 @@ body {
     radial-gradient(ellipse 60% 40% at 50% 100%, rgba(167, 139, 250, 0.04), transparent 70%);
 }
 
+@media (hover: none) and (pointer: coarse) {
+  body {
+    -webkit-touch-callout: none;
+  }
+
+  input,
+  textarea,
+  select,
+  [contenteditable]:not([contenteditable="false"]) {
+    -webkit-touch-callout: default;
+  }
+}
+
 @media (max-width: 840px) {
   body {
     padding: 12px 12px 24px;

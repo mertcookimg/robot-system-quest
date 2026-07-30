@@ -52,6 +52,11 @@ export function setupCanvasTouch(canvas: HTMLCanvasElement): void {
   canvas.classList.add("touch-interactive");
   let activePointer: number | null = null;
 
+  // Mobile browsers can treat a long press on a canvas as an image download
+  // request. The canvas is an operation surface here, so suppress that native
+  // menu without affecting context menus elsewhere in the page.
+  canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+
   canvas.addEventListener(
     "pointerdown",
     (event) => {
