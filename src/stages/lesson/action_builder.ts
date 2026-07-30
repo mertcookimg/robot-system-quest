@@ -104,7 +104,7 @@ export function makeAction(): Stage {
     return { x: node.x + p.offX, y: node.y + p.offY };
   }
   function portAt(x: number, y: number): Port | null {
-    const hitRadius = canvasInteractionRadius(g.canvas, 24, 24);
+    const hitRadius = canvasInteractionRadius(g.canvas, 28, 28);
     for (const p of PORTS) {
       const pos = portAbsPos(p);
       const dx = x - pos.x,
@@ -114,7 +114,7 @@ export function makeAction(): Stage {
     return null;
   }
   function wireAt(x: number, y: number): number {
-    const hitRadius = canvasInteractionRadius(g.canvas, 14, 20);
+    const hitRadius = canvasInteractionRadius(g.canvas, 16, 24);
     for (let i = 0; i < wires.length; i++) {
       const w = wires[i];
       const p1 = portAbsPos(PORTS.find((p) => p.id === w.fromPortId)!);
@@ -129,6 +129,21 @@ export function makeAction(): Stage {
       }
     }
     return -1;
+  }
+  function snapTarget(from: Port, x: number, y: number): Port | null {
+    const maxSideways = canvasInteractionRadius(g.canvas, 48, 32);
+    for (const target of PORTS) {
+      if (target.kind === from.kind) continue;
+      const a = portAbsPos(from);
+      const b = portAbsPos(target);
+      const vx = b.x - a.x;
+      const vy = b.y - a.y;
+      const lengthSq = vx * vx + vy * vy;
+      const progress = ((x - a.x) * vx + (y - a.y) * vy) / lengthSq;
+      const sideways = Math.abs((x - a.x) * vy - (y - a.y) * vx) / Math.sqrt(lengthSq);
+      if (progress >= 0.42 && sideways <= maxSideways) return target;
+    }
+    return null;
   }
   function checkAllValid(): boolean {
     return REQUIRED.every((req) =>
@@ -149,8 +164,13 @@ export function makeAction(): Stage {
       if (cleared) return;
       const { x, y } = canvasCoords(e);
       const p = portAt(x, y);
-      if (p && p.kind === "out") {
-        dragFrom = p;
+      if (p) {
+        if (dragFrom && dragFrom.id !== p.id) tryConnect(p);
+        else if (!dragFrom) selectPort(p);
+        return;
+      }
+      if (dragFrom) {
+        cancelSelection();
         return;
       }
       const wIdx = wireAt(x, y);
@@ -169,12 +189,13 @@ export function makeAction(): Stage {
       if (!dragFrom) return;
       const { x, y } = canvasCoords(e);
       const p = portAt(x, y);
-      if (p && p.kind === "in") tryConnect(p);
-      else dragFrom = null;
+      if (p && p.id !== dragFrom.id) tryConnect(p);
+      else {
+        const target = snapTarget(dragFrom, x, y);
+        if (target) tryConnect(target);
+      }
     };
-    onMouseLeave = () => {
-      dragFrom = null;
-    };
+    onMouseLeave = () => cancelSelection();
     g.canvas.addEventListener("mousedown", onMouseDown);
     g.canvas.addEventListener("mousemove", onMouseMove);
     g.canvas.addEventListener("mouseup", onMouseUp);
@@ -206,19 +227,37 @@ export function makeAction(): Stage {
     g.setStatus(t("puzzle.status.connect"), "");
   }
 
-  function tryConnect(toPort: Port) {
-    if (!dragFrom || toPort.kind !== "in") return;
-    if (wires.some((w) => w.fromPortId === dragFrom!.id && w.toPortId === toPort.id)) {
+  function selectPort(port: Port) {
+    dragFrom = port;
+    g.sfx.click();
+    g.setStatus(t("action_builder.status.select_other"), "var(--accent)");
+  }
+
+  function cancelSelection() {
+    if (!dragFrom) return;
+    dragFrom = null;
+    g.setStatus(t("puzzle.status.connect"), "");
+  }
+
+  function tryConnect(otherPort: Port) {
+    if (!dragFrom || otherPort.id === dragFrom.id) return;
+    if (otherPort.kind === dragFrom.kind) {
+      selectPort(otherPort);
+      return;
+    }
+    const fromPort = dragFrom.kind === "out" ? dragFrom : otherPort;
+    const toPort = dragFrom.kind === "in" ? dragFrom : otherPort;
+    if (wires.some((w) => w.fromPortId === fromPort.id && w.toPortId === toPort.id)) {
       dragFrom = null;
       return;
     }
-    const valid = dragFrom.msgType === toPort.msgType && dragFrom.topic === toPort.topic;
+    const valid = fromPort.msgType === toPort.msgType && fromPort.topic === toPort.topic;
     let errorReason: string | undefined;
     if (!valid) {
-      if (dragFrom.msgType !== toPort.msgType) errorReason = "ACTION TYPE MISMATCH";
+      if (fromPort.msgType !== toPort.msgType) errorReason = "ACTION TYPE MISMATCH";
       else errorReason = "ACTION NAME MISMATCH";
     }
-    wires.push({ fromPortId: dragFrom.id, toPortId: toPort.id, valid, errorReason });
+    wires.push({ fromPortId: fromPort.id, toPortId: toPort.id, valid, errorReason });
     g.sfx.click();
     if (valid) g.shake(0.1);
     else g.sfx.bump();
@@ -272,14 +311,12 @@ export function makeAction(): Stage {
     }
     if (edge.a) {
       const fp = PORTS[focusedPortIdx];
-      if (!dragFrom && fp.kind === "out") {
-        dragFrom = fp;
-        g.sfx.click();
-      } else if (dragFrom && fp.kind === "in") tryConnect(fp);
+      if (!dragFrom) selectPort(fp);
+      else if (dragFrom.id !== fp.id) tryConnect(fp);
     }
     if (edge.b) {
       if (dragFrom) {
-        dragFrom = null;
+        cancelSelection();
         g.sfx.click();
       } else {
         const fp = PORTS[focusedPortIdx];
@@ -312,8 +349,8 @@ export function makeAction(): Stage {
     allValid = valid;
 
     if (allValid) {
-      // Actions progress continuously — the robot drifts toward the GOAL
-      // while feedback messages stream at a high rate.
+      // The action runs over time. This simulation emits periodic feedback
+      // while the robot moves toward the goal.
       robotX += 70 * dt;
       pubAcc += dt;
       if (pubAcc > 0.3) {
@@ -328,12 +365,16 @@ export function makeAction(): Stage {
         cleared = true;
         g.publish(
           "/navigate_to_pose/_action/result",
-          `nav2_msgs/action/NavigateToPose.Result {result: SUCCEEDED}`,
+          `nav2_msgs/action/NavigateToPose.Result {error_code: 0, error_msg: ""}`,
         );
+        g.publish("/navigate_to_pose/_action/status", `Goal status: SUCCEEDED (4)`);
         particles.burst(ROBOT_GOAL_X, ROBOT_Y, "#c4b5fd", 36);
         g.shake(0.4);
         const stars = elapsed < 25 ? 3 : elapsed < 50 ? 2 : 1;
-        const stats = `Time   <b>${elapsed.toFixed(2)} s</b><br>` + `result <b>SUCCEEDED</b>`;
+        const stats =
+          `Time   <b>${elapsed.toFixed(2)} s</b><br>` +
+          `result <b>error_code: 0</b><br>` +
+          `goal status <b>SUCCEEDED</b>`;
         g.setTimeout(() => {
           g.sfx.clear();
           g.showClear(stars, stats);
@@ -483,8 +524,8 @@ export function makeAction(): Stage {
     const isFocused = isPadMode() && PORTS[focusedPortIdx]?.id === p.id;
     const typeColor = TYPE_COLORS[p.msgType] || "#94a3b8";
     c.save();
-    const baseRadius = canvasInteractionRadius(g.canvas, 8, 10);
-    const r = isHover || isDrag || isFocused ? baseRadius + 2 : baseRadius;
+    const baseRadius = canvasInteractionRadius(g.canvas, 9, 12);
+    const r = isHover || isDrag || isFocused ? baseRadius + 3 : baseRadius;
     if (isHover || isDrag) {
       c.fillStyle = typeColor + "55";
       c.beginPath();
@@ -557,7 +598,7 @@ export function makeAction(): Stage {
     c.bezierCurveTo(cpx, y1, cpx, y2, x2, y2);
     c.stroke();
 
-    // Action: Goal (once) → Feedback (continuous) → Result (last).
+    // Action: Goal (once) → optional Feedback during execution → Result (last).
     if (w && valid && allValid) {
       // Goal (first frame): when elapsed < 1.0 send a quick A → B pulse.
       if (elapsed < 1.0) {
@@ -577,7 +618,7 @@ export function makeAction(): Stage {
         c.textAlign = "center";
         c.fillText("GOAL", xi, yi - 14);
       } else {
-        // Feedback: stream multiple B → A pulses on a short period.
+        // Feedback: visualize this simulation's periodic B → A updates.
         for (let k = 0; k < 3; k++) {
           const phase = (elapsed * 0.7 + k * 0.33) % 1;
           const t = 1 - phase;
@@ -624,27 +665,16 @@ export function makeAction(): Stage {
         "Action — long-running tasks + progress + cancellation",
       ),
       summary:
-        "ROS2 の Action は長く時間のかかる処理 (ナビ、把持、移動、撮影連射 等) のための仕組み。" +
-        "Client が Goal を送ると Server が処理を始め、定期的に Feedback を流し、終わったら Result を返す。" +
+        "ROS 2 の Action は長く時間のかかる処理 (ナビ、把持、移動、撮影連射 等) のための仕組み。" +
+        "Client が Goal を送ると Server が処理を始め、実行中は必要に応じて Feedback を返せて、完了時に Result を返す。" +
         "Service との違い: 長時間 / 途中経過あり / 途中キャンセル可能。" +
         "action 名 + action 型 が両方一致しないと繋がらない。",
       msgTypes: ["nav2_msgs/action/NavigateToPose"],
       cli: [
         "ros2 action list",
         "ros2 action info /navigate_to_pose",
-        "ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose ...",
+        'ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose "{pose: {header: {frame_id: map}, pose: {position: {x: 2.0, y: 0.0}, orientation: {w: 1.0}}}}" --feedback',
       ],
-      python: `# Action Client
-from rclpy.action import ActionClient
-client = ActionClient(node, NavigateToPose, "/navigate_to_pose")
-client.wait_for_server()
-
-goal_msg = NavigateToPose.Goal()
-# goal_msg.pose.pose.position.x = 5.0
-future = client.send_goal_async(goal_msg, feedback_callback=on_feedback)
-
-def on_feedback(fb):
-    node.get_logger().info(f"remaining: {fb.feedback.distance_remaining:.2f}")`,
       realWorld: tx(
         "Nav2 や MoveIt 2 では、完了まで時間のかかる処理に Action が使われます。Goal の受付、途中経過の Feedback、完了時の Result、キャンセル要求を扱える点が Service との大きな違いです。",
         "Nav2 and MoveIt 2 use Actions for tasks that take time to finish. Compared with Services, Actions add goal handling, progress feedback, a final result, and cancellation requests.",
@@ -662,7 +692,7 @@ export default defineStage({
   mode: "lesson",
   order: 3,
   diagram: `
-<svg viewBox="0 0 420 120" role="img" aria-label="action goal once, feedback streams continuously, result at the end">
+<svg viewBox="0 0 420 120" role="img" aria-label="action goal once, optional feedback during execution, result at the end">
   <defs>
     <marker id="ld-action-arrow-goal" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
       <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
@@ -693,9 +723,9 @@ export default defineStage({
   <circle r="3" fill="#5eead4">
     <animateMotion dur="3s" repeatCount="indefinite" path="M 148 32 L 270 32"/>
   </circle>
-  <!-- Feedback arrow + multiple streaming dots -->
+  <!-- Feedback arrow + example periodic updates -->
   <line x1="272" y1="64" x2="146" y2="64" stroke="#fbbf24" stroke-width="2" marker-end="url(#ld-action-arrow-fb)"/>
-  <text x="209" y="58" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Feedback (連続)</text>
+  <text x="209" y="58" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Feedback (必要時)</text>
   <circle r="2.5" fill="#fbbf24">
     <animateMotion dur="1.4s" repeatCount="indefinite" path="M 270 64 L 148 64"/>
   </circle>
@@ -716,37 +746,39 @@ export default defineStage({
       en: "Action — Goal / Feedback / Result",
     },
     learn: {
-      ja: "Action は時間のかかる処理用。Goal を送り、進捗を Feedback で連続受信、最後に Result が返ります。途中キャンセルもできます。",
-      en: "Actions are for long-running tasks: send a Goal, receive continuous Feedback, then a final Result. They can be cancelled mid-way.",
+      ja: "Action は時間のかかる処理用です。Client が Goal を送り、Server は実行中に必要に応じて Feedback を返せます。完了時には Result と Goal Status が返り、途中でキャンセルを要求することもできます。",
+      en: "Actions are for long-running tasks. A Client sends a Goal, and the Server may provide Feedback as needed during execution. Completion provides a Result and Goal Status, and the Client may request cancellation.",
     },
     goal: {
-      ja: "Client と Server を action 名と型で繋ぎ、Goal → Feedback (連続) → Result の流れを完成させましょう。",
-      en: "Wire the Client and Server with a matching action name and type so the Goal → Feedback → Result flow runs.",
+      ja: "Client と Server を action 名と型で繋ぎ、Goal → Feedback（必要に応じて）→ Result / Goal Status の流れを完成させましょう。",
+      en: "Wire the Client and Server with a matching action name and type so the Goal → optional Feedback → Result / Goal Status flow runs.",
     },
     first: {
-      ja: "出力ポートをドラッグして入力ポートに繋ぎます。action 名と action 型が両方一致して初めて接続できます。",
-      en: "Drag from an output port to an input port. The link only forms when action name and action type both match.",
+      ja: "左右どちらかのポートをタップし、もう片方をタップします。ポート間を直接ドラッグしても接続できます。action 名と型が一致すると接続できます。",
+      en: "Tap either port, then tap the other one. You can also drag directly between them. The link forms when the action name and type both match.",
     },
   },
   strings: {
     ja: {
-      hint: "action 名 + action 型 が一致して繋がる / Goal → Feedback (連続) → Result の流れ",
+      hint: "左右を順にタップ（順不同）/ 反対側へ半分ほどドラッグでも自動接続",
       "node.client": "Goal pose を action server に送る",
-      "node.server": "/navigate_to_pose で目標まで進路 + 進捗報告",
-      sim_label: "ROBOT SIMULATION  (action 進行中は連続前進 + feedback 配信)",
+      "node.server": "/navigate_to_pose で目標まで走行 + 必要に応じて進捗報告",
+      sim_label: "ROBOT SIMULATION  (この例では action 実行中に定期 feedback)",
       "status.incomplete": "配線が不完全 — action 名と型を一致させて",
-      "status.success": "Action 接続成立 — Goal 送信、Feedback 連続受信中",
-      subtitle: "長時間処理 + 進捗報告。Service と違いキャンセル可能、途中経過あり",
+      "status.success": "Action 接続成立 — Goal 送信、この例では定期 Feedback を受信",
+      "status.select_other": "ポートを選択中 — 反対側のポートをタップ",
+      subtitle: "長時間処理 + 任意の進捗報告。Service と違いキャンセル要求が可能",
       tip_hud: "action 名 + action 型 が両方一致しないと繋がらない",
       title: "Action Builder — Goal 送信 → Feedback → Result",
     },
     en: {
-      hint: "action name + type must match / Goal → continuous Feedback → Result",
+      hint: "Tap both ports in either order / drag about halfway to auto-connect",
       "node.client": "Sends a Goal pose to the action server",
-      "node.server": "Navigates to goal and streams feedback",
-      sim_label: "ROBOT SIMULATION  (continuous motion + feedback while action is running)",
+      "node.server": "Navigates to the goal and may report progress",
+      sim_label: "ROBOT SIMULATION  (this example emits periodic feedback)",
       "status.incomplete": "Graph incomplete — match action name and type",
-      "status.success": "Action connected — goal sent, feedback streaming",
+      "status.success": "Action connected — goal sent; this example emits periodic feedback",
+      "status.select_other": "Port selected — tap the port on the other side",
       subtitle:
         "Long-running tasks with progress. Cancellable, with intermediate updates (unlike Service)",
       tip_hud: "action name + action type must both match for the link to form",

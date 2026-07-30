@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // service: Service Builder — basics of the request/reply pattern.
-// A client sends a request to a server and always gets a response back.
+// A client sends an on-demand request and handles the server's response.
 // Unlike Pub/Sub: on-demand request/response.
 import { W, type Stage, type GameContext } from "../../types";
 import { theme, withA } from "../../core/theme";
@@ -11,7 +11,8 @@ import { defineStage } from "../../core/stage_def";
 import { drawHint, drawRobotBody, drawRobotLabel, COLORS, clearBackground } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
 import { canvasInteractionRadius } from "../../lib/canvas_touch";
-import { t, tx } from "../../i18n";
+import { makeOverlayPanel, type OverlayPanelHandle } from "../../lib/overlay_panel";
+import { onLangChange, t, tx } from "../../i18n";
 
 interface Port {
   id: string;
@@ -83,11 +84,13 @@ export function makeService(): Stage {
     mouseY = 0;
   let robotX = ROBOT_START_X;
   let elapsed = 0;
-  let pubAcc = 0;
   let cleared = false;
   let allValid = false;
   let lampOn = false; // visual indicator that toggles per service call
-  let lampToggleAcc = 0;
+  let serviceCalls = 0;
+  let serviceAnimUntil = 0;
+  let controls: OverlayPanelHandle | null = null;
+  let disposeLangSync: (() => void) | null = null;
 
   // Pad / keyboard navigation.
   let focusedPortIdx = 0;
@@ -105,7 +108,7 @@ export function makeService(): Stage {
     return { x: node.x + p.offX, y: node.y + p.offY };
   }
   function portAt(x: number, y: number): Port | null {
-    const hitRadius = canvasInteractionRadius(g.canvas, 24, 24);
+    const hitRadius = canvasInteractionRadius(g.canvas, 28, 28);
     for (const p of PORTS) {
       const pos = portAbsPos(p);
       const dx = x - pos.x,
@@ -115,7 +118,7 @@ export function makeService(): Stage {
     return null;
   }
   function wireAt(x: number, y: number): number {
-    const hitRadius = canvasInteractionRadius(g.canvas, 14, 20);
+    const hitRadius = canvasInteractionRadius(g.canvas, 16, 24);
     for (let i = 0; i < wires.length; i++) {
       const w = wires[i];
       const p1 = portAbsPos(PORTS.find((p) => p.id === w.fromPortId)!);
@@ -130,6 +133,21 @@ export function makeService(): Stage {
       }
     }
     return -1;
+  }
+  function snapTarget(from: Port, x: number, y: number): Port | null {
+    const maxSideways = canvasInteractionRadius(g.canvas, 48, 32);
+    for (const target of PORTS) {
+      if (target.kind === from.kind) continue;
+      const a = portAbsPos(from);
+      const b = portAbsPos(target);
+      const vx = b.x - a.x;
+      const vy = b.y - a.y;
+      const lengthSq = vx * vx + vy * vy;
+      const progress = ((x - a.x) * vx + (y - a.y) * vy) / lengthSq;
+      const sideways = Math.abs((x - a.x) * vy - (y - a.y) * vx) / Math.sqrt(lengthSq);
+      if (progress >= 0.42 && sideways <= maxSideways) return target;
+    }
+    return null;
   }
   function checkAllValid(): boolean {
     return REQUIRED.every((req) =>
@@ -146,12 +164,31 @@ export function makeService(): Stage {
   function init(ctx: GameContext) {
     g = ctx;
     reset();
+    controls = makeOverlayPanel(
+      g.overlay,
+      [
+        {
+          kind: "choice",
+          label: () => t("service_builder.call_prompt"),
+          choices: [{ key: "call", label: () => t("service_builder.call_button") }],
+          active: () => "",
+          onSelect: () => callService(),
+        },
+      ],
+      { placement: "dock" },
+    );
+    disposeLangSync = onLangChange(() => controls?.refresh());
     onMouseDown = (e) => {
       if (cleared) return;
       const { x, y } = canvasCoords(e);
       const p = portAt(x, y);
-      if (p && p.kind === "out") {
-        dragFrom = p;
+      if (p) {
+        if (dragFrom && dragFrom.id !== p.id) tryConnect(p);
+        else if (!dragFrom) selectPort(p);
+        return;
+      }
+      if (dragFrom) {
+        cancelSelection();
         return;
       }
       const wIdx = wireAt(x, y);
@@ -170,12 +207,13 @@ export function makeService(): Stage {
       if (!dragFrom) return;
       const { x, y } = canvasCoords(e);
       const p = portAt(x, y);
-      if (p && p.kind === "in") tryConnect(p);
-      else dragFrom = null;
+      if (p && p.id !== dragFrom.id) tryConnect(p);
+      else {
+        const target = snapTarget(dragFrom, x, y);
+        if (target) tryConnect(target);
+      }
     };
-    onMouseLeave = () => {
-      dragFrom = null;
-    };
+    onMouseLeave = () => cancelSelection();
     g.canvas.addEventListener("mousedown", onMouseDown);
     g.canvas.addEventListener("mousemove", onMouseMove);
     g.canvas.addEventListener("mouseup", onMouseUp);
@@ -188,6 +226,10 @@ export function makeService(): Stage {
     if (onMouseUp) g.canvas.removeEventListener("mouseup", onMouseUp);
     if (onMouseLeave) g.canvas.removeEventListener("mouseleave", onMouseLeave);
     onMouseDown = onMouseMove = onMouseUp = onMouseLeave = null;
+    disposeLangSync?.();
+    disposeLangSync = null;
+    controls?.dispose();
+    controls = null;
   }
 
   function reset() {
@@ -196,11 +238,11 @@ export function makeService(): Stage {
     dragFrom = null;
     robotX = ROBOT_START_X;
     elapsed = 0;
-    pubAcc = 0;
     cleared = false;
     allValid = false;
     lampOn = false;
-    lampToggleAcc = 0;
+    serviceCalls = 0;
+    serviceAnimUntil = 0;
     focusedPortIdx = 0;
     inpPrev.left = inpPrev.right = inpPrev.up = inpPrev.down = inpPrev.a = inpPrev.b = false;
     lastMouseAt = 0;
@@ -209,19 +251,67 @@ export function makeService(): Stage {
     g.setStatus(t("puzzle.status.connect"), "");
   }
 
-  function tryConnect(toPort: Port) {
-    if (!dragFrom || toPort.kind !== "in") return;
-    if (wires.some((w) => w.fromPortId === dragFrom!.id && w.toPortId === toPort.id)) {
+  function callService() {
+    if (cleared) return;
+    if (!allValid) {
+      g.sfx.bump();
+      g.setStatus(t("service_builder.status.connect_first"), "var(--warn)");
+      return;
+    }
+
+    lampOn = !lampOn;
+    serviceCalls += 1;
+    serviceAnimUntil = elapsed + 1.2;
+    robotX = Math.min(ROBOT_GOAL_X, robotX + 80);
+    particles.burst(robotX, ROBOT_Y, lampOn ? COLORS.WARN : COLORS.ACCENT, 12, 100);
+    g.sfx.click();
+    g.setStatus(t("service_builder.status.response"), "var(--ok)");
+
+    if (robotX >= ROBOT_GOAL_X) {
+      cleared = true;
+      particles.burst(ROBOT_GOAL_X, ROBOT_Y, COLORS.OK, 30);
+      g.shake(0.4);
+      const stars = elapsed < 25 ? 3 : elapsed < 50 ? 2 : 1;
+      const stats =
+        `Time   <b>${elapsed.toFixed(2)} s</b><br>` + `service calls <b>${serviceCalls}</b>`;
+      g.setTimeout(() => {
+        g.sfx.clear();
+        g.showClear(stars, stats);
+      }, 350);
+    }
+  }
+
+  function selectPort(port: Port) {
+    dragFrom = port;
+    g.sfx.click();
+    g.setStatus(t("service_builder.status.select_other"), "var(--accent)");
+  }
+
+  function cancelSelection() {
+    if (!dragFrom) return;
+    dragFrom = null;
+    g.setStatus(t("puzzle.status.connect"), "");
+  }
+
+  function tryConnect(otherPort: Port) {
+    if (!dragFrom || otherPort.id === dragFrom.id) return;
+    if (otherPort.kind === dragFrom.kind) {
+      selectPort(otherPort);
+      return;
+    }
+    const fromPort = dragFrom.kind === "out" ? dragFrom : otherPort;
+    const toPort = dragFrom.kind === "in" ? dragFrom : otherPort;
+    if (wires.some((w) => w.fromPortId === fromPort.id && w.toPortId === toPort.id)) {
       dragFrom = null;
       return;
     }
-    const valid = dragFrom.msgType === toPort.msgType && dragFrom.topic === toPort.topic;
+    const valid = fromPort.msgType === toPort.msgType && fromPort.topic === toPort.topic;
     let errorReason: string | undefined;
     if (!valid) {
-      if (dragFrom.msgType !== toPort.msgType) errorReason = "TYPE MISMATCH";
+      if (fromPort.msgType !== toPort.msgType) errorReason = "TYPE MISMATCH";
       else errorReason = "SERVICE NAME MISMATCH";
     }
-    wires.push({ fromPortId: dragFrom.id, toPortId: toPort.id, valid, errorReason });
+    wires.push({ fromPortId: fromPort.id, toPortId: toPort.id, valid, errorReason });
     g.sfx.click();
     if (valid) g.shake(0.1);
     else g.sfx.bump();
@@ -275,14 +365,12 @@ export function makeService(): Stage {
     }
     if (edge.a) {
       const fp = PORTS[focusedPortIdx];
-      if (!dragFrom && fp.kind === "out") {
-        dragFrom = fp;
-        g.sfx.click();
-      } else if (dragFrom && fp.kind === "in") tryConnect(fp);
+      if (!dragFrom) selectPort(fp);
+      else if (dragFrom.id !== fp.id) tryConnect(fp);
     }
     if (edge.b) {
       if (dragFrom) {
-        dragFrom = null;
+        cancelSelection();
         g.sfx.click();
       } else {
         const fp = PORTS[focusedPortIdx];
@@ -314,38 +402,10 @@ export function makeService(): Stage {
     }
     allValid = valid;
 
-    if (allValid) {
-      // Service call every 1.5s: toggle the lamp and advance the robot.
-      lampToggleAcc += dt;
-      if (lampToggleAcc > 1.5) {
-        lampToggleAcc = 0;
-        lampOn = !lampOn;
-        g.publish(
-          "/toggle_lamp",
-          `std_srvs/srv/Trigger.Request {} → Response {success: true, message: "lamp ${lampOn ? "ON" : "OFF"}"}`,
-        );
-        robotX += 80; // each call advances 80px (service call as an active action)
-        particles.burst(robotX, ROBOT_Y, lampOn ? COLORS.WARN : COLORS.ACCENT, 12, 100);
-      }
-      pubAcc += dt;
-      if (robotX >= ROBOT_GOAL_X) {
-        cleared = true;
-        particles.burst(ROBOT_GOAL_X, ROBOT_Y, COLORS.OK, 30);
-        g.shake(0.4);
-        const stars = elapsed < 25 ? 3 : elapsed < 50 ? 2 : 1;
-        const stats =
-          `Time   <b>${elapsed.toFixed(2)} s</b><br>` +
-          `service calls <b>${Math.floor(elapsed / 1.5)}</b>`;
-        g.setTimeout(() => {
-          g.sfx.clear();
-          g.showClear(stars, stats);
-        }, 350);
-      }
-    }
-
     g.setHud([
       `mode:    service request/response`,
       `wires:   ${wires.length}  (valid ${wires.filter((w) => w.valid).length})`,
+      `calls:   ${serviceCalls}`,
       `lamp:    ${lampOn ? "ON" : "OFF"}`,
       `tip:     ${t("service_builder.tip_hud")}`,
     ]);
@@ -488,8 +548,8 @@ export function makeService(): Stage {
     const isFocused = isPadMode() && PORTS[focusedPortIdx]?.id === p.id;
     const typeColor = TYPE_COLORS[p.msgType] || "#94a3b8";
     c.save();
-    const baseRadius = canvasInteractionRadius(g.canvas, 8, 10);
-    const r = isHover || isDrag || isFocused ? baseRadius + 2 : baseRadius;
+    const baseRadius = canvasInteractionRadius(g.canvas, 9, 12);
+    const r = isHover || isDrag || isFocused ? baseRadius + 3 : baseRadius;
     if (isHover || isDrag) {
       c.fillStyle = typeColor + "55";
       c.beginPath();
@@ -562,9 +622,9 @@ export function makeService(): Stage {
     c.bezierCurveTo(cpx, y1, cpx, y2, x2, y2);
     c.stroke();
 
-    // Service: request → response round-trip animation.
-    if (w && valid && allValid) {
-      const phase = (elapsed * 0.6) % 1;
+    // Animate one request/response round trip only after an explicit call.
+    if (w && valid && elapsed < serviceAnimUntil) {
+      const phase = Math.max(0, Math.min(1, 1 - (serviceAnimUntil - elapsed) / 1.2));
       let xi: number, yi: number, dotColor: string;
       if (phase < 0.5) {
         // request: A → B
@@ -628,22 +688,6 @@ export function makeService(): Stage {
         "ros2 service type /toggle_lamp",
         "ros2 service call /toggle_lamp std_srvs/srv/Trigger {}",
       ],
-      python: `# Server
-class LampServer(Node):
-    def __init__(self):
-        super().__init__("lamp_server")
-        self.lamp = False
-        self.srv = self.create_service(Trigger, "/toggle_lamp", self.cb)
-    def cb(self, req, res):
-        self.lamp = not self.lamp
-        res.success = True
-        res.message = f"lamp {'ON' if self.lamp else 'OFF'}"
-        return res
-
-# Client
-client = node.create_client(Trigger, "/toggle_lamp")
-client.wait_for_service()
-future = client.call_async(Trigger.Request())`,
       realWorld: tx(
         "実機 ROS2: ros2 service list で利用可能なサービス確認 → ros2 service call でテスト。Lifecycle/Param/各種ツールの大半が裏で Service を使う。",
         "Real ROS2: list available services with ros2 service list, then test them via ros2 service call. Most of Lifecycle, Param, and the various tools rely on Service under the hood.",
@@ -709,36 +753,46 @@ export default defineStage({
       en: "A Service is ROS 2 request/response communication. Normally one server owns a service name, while multiple clients may send requests. A server returns a response when it is available and completes the request, so clients must still handle unavailability and timeouts. Service name and srv type must match. Inside a node, consider the executor and callback arrangement and use an asynchronous call when appropriate.",
     },
     goal: {
-      ja: "Client node と Server node を正しい service 名と srv 型で繋ぎ、request → response が往復する状態を作りましょう。",
-      en: "Wire the Client node to the Server node with a matching service name and srv type so request → response messages flow back and forth.",
+      ja: "Client node と Server node を正しい service 名と srv 型で繋ぎ、CALL を押して request → response を1回ずつ実行しましょう。",
+      en: "Wire the Client node to the Server node with a matching service name and srv type, then press CALL to perform one request → response exchange at a time.",
     },
     first: {
-      ja: "Client の output port から Server の input port までドラッグして wire を引きます。service 名と srv 型が両方一致したときに接続が valid になります。",
-      en: "Drag from the Client's output port to the Server's input port. The wire becomes valid when service name and srv type both match.",
+      ja: "左右どちらかのポートをタップし、もう片方をタップします。接続後は画面下の CALL を押すたびに、1組の request/response が発生します。",
+      en: "Tap either port, then tap the other one. Once connected, each press of CALL below the canvas performs one request/response exchange.",
     },
   },
   strings: {
     ja: {
-      hint: "service 名 + srv 型 が一致して初めて繋がる / 接続後 1.5s ごとに request → response",
+      hint: "左右を順にタップ（順不同）/ 反対側へ半分ほどドラッグでも自動接続",
       "node.client": "ボタン → /toggle_lamp を Service call",
       "node.server": "/toggle_lamp の Service Server (応答)",
       sim_label: "ROBOT SIMULATION  (service call ごとに 1 step 進む)",
       "status.incomplete": "配線が不完全 — service 名と型を一致させて",
-      "status.success": "Service 接続成立 — request/response が往復し始めた",
+      "status.success": "Service 接続成立 — CALL を押して request を送信",
+      "status.connect_first": "先に Client と Server を接続してください",
+      "status.response": "Response 受信 — success: true",
+      "status.select_other": "ポートを選択中 — 反対側のポートをタップ",
       subtitle: "Pub/Sub と違う on-demand の request / response",
-      tip_hud: "service 名 + srv 型 が両方一致しないと繋がらない",
+      tip_hud: "接続後、CALL 1回につき request/response が1往復",
       title: "Service Builder — Client → Server に request を送る",
+      call_prompt: "Service request",
+      call_button: "CALL",
     },
     en: {
-      hint: "service name + srv type must match / once connected: request → response every 1.5s",
+      hint: "Tap both ports in either order / drag about halfway to auto-connect",
       "node.client": "Button press → service call to /toggle_lamp",
       "node.server": "/toggle_lamp service server (replies)",
       sim_label: "ROBOT SIMULATION  (advances one step per service call)",
       "status.incomplete": "Graph incomplete — match service name and srv type",
-      "status.success": "Service connected — request/response flowing",
+      "status.success": "Service connected — press CALL to send a request",
+      "status.connect_first": "Connect the Client and Server first",
+      "status.response": "Response received — success: true",
+      "status.select_other": "Port selected — tap the port on the other side",
       subtitle: "Unlike Pub/Sub: on-demand request / response",
-      tip_hud: "service name + srv type must both match",
+      tip_hud: "After connecting, each CALL performs one request/response exchange",
       title: "Service Builder — send a request from Client → Server",
+      call_prompt: "Service request",
+      call_button: "CALL",
     },
   },
   build: makeService,

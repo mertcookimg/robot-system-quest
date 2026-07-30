@@ -23,7 +23,6 @@ export function canvasInteractionRadius(
   ) {
     return defaultRadius;
   }
-
   const rect = canvas.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) return defaultRadius;
   const canvasPerCssPixel = Math.max(canvas.width / rect.width, canvas.height / rect.height);

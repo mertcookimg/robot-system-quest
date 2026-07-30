@@ -12,6 +12,17 @@ type TouchLayout = "dpad" | "joystick";
 
 const STORE_KEY = "robot_quest_touch_layout_v1";
 const MOVE_KEYS: MoveKey[] = ["w", "a", "s", "d"];
+const NO_TOUCHPAD_STAGES = new Set(["pubsub_builder", "service_builder", "action_builder"]);
+
+let touchpadRoot: HTMLElement | null = null;
+let releaseActiveMovement: () => void = () => {};
+
+export function setTouchpadStage(stageId: string): void {
+  if (!touchpadRoot) return;
+  const hidden = NO_TOUCHPAD_STAGES.has(stageId);
+  if (hidden) releaseActiveMovement();
+  touchpadRoot.style.display = hidden ? "none" : "";
+}
 
 function sendKey(key: string, down: boolean): void {
   window.dispatchEvent(new KeyboardEvent(down ? "keydown" : "keyup", { key, bubbles: true }));
@@ -136,6 +147,7 @@ export function setupTouchpad(): void {
   const root = document.createElement("section");
   root.id = "touchpad";
   root.className = "touchpad";
+  touchpadRoot = root;
 
   const toolbar = document.createElement("div");
   toolbar.className = "touchpad-toolbar";
@@ -236,6 +248,7 @@ export function setupTouchpad(): void {
     joystick.release();
     MOVE_KEYS.forEach((key) => sendKey(key, false));
   };
+  releaseActiveMovement = releaseMovement;
   window.addEventListener("blur", releaseMovement);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) releaseMovement();

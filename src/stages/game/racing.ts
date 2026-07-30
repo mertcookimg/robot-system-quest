@@ -1113,7 +1113,7 @@ export default defineStage({
     },
     learn: {
       ja: "Nav2 の FollowPath は Action で実装されており、Goal を送ると Feedback で進捗を返しつつ Result で完了を知らせます。レースでは決まったコースを高速に追従します。",
-      en: "Nav2's FollowPath is implemented as an Action: send a Goal, get continuous Feedback on progress, then a final Result. Racing means tracking a fixed path as fast as possible.",
+      en: "Nav2's FollowPath is implemented as an Action: send a Goal, receive progress Feedback while it runs, then get a final Result. Racing means tracking a fixed path as fast as possible.",
     },
     goal: {
       ja: "WASD で操縦、Shift か X でブースト!\n3 周走り切って AI の対戦相手より先にフィニッシュすれば 1 位クリア。",

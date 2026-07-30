@@ -42,6 +42,7 @@
   .stage-controls-dock .overlay-choice > button {
     flex: 1 1 auto;
     min-width: 0;
+    min-height: 44px;
     padding-inline: 7px !important;
     white-space: nowrap;
   }

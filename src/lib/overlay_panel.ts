@@ -220,6 +220,7 @@ function makeChoice(c: ChoiceControl): { el: HTMLSpanElement; refresh: () => voi
   for (const opt of c.choices) {
     const b = document.createElement("button");
     b.type = "button";
+    b.className = "overlay-choice-button";
     b.style.cssText = CHOICE_BTN_STYLE;
     b.onclick = () => c.onSelect(opt.key);
     btns.set(opt.key, b);
