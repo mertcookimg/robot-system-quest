@@ -27,6 +27,7 @@ import { drawGhost } from "../lib/draw";
 import { clearStageTimeouts, setStageTimeout } from "./stage_timers";
 import { trackStageReset, trackStageStart } from "./analytics";
 import { setTouchpadStage } from "../lib/touchpad";
+import { stageDisplayName } from "./stage_labels";
 
 let stages: Stage[] = [];
 let current: Stage;
@@ -134,7 +135,7 @@ export function loadStage(id: string): void {
   // simulation. Mutating real-ROS commands stay out until a stage implements
   // an actual in-game effect for them.
   ui.lessonCmd.textContent = terminalUi.recommendedCommand();
-  ui.topicLabel.textContent = `stage: ${current.name}`;
+  ui.topicLabel.textContent = `stage: ${stageDisplayName(current)}`;
   lessonModal.renderBrief(current.id);
   terminalUi.resetForStage();
   history.replaceState(null, "", `#${id}`);

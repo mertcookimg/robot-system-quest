@@ -10,6 +10,7 @@ import { cardPreviewFor, guideCopyFor } from "./content";
 import { setupCardDemos } from "./card_demos";
 import { setupHeroShowcase } from "./hero_showcase";
 import { guideText as gt, localizeStaticGuide } from "./localization";
+import { stageDisplayLesson, stageDisplayName } from "../core/stage_labels";
 import {
   setupAnalytics,
   trackGuideOpen,
@@ -45,21 +46,26 @@ const escapeHtml = (value: string): string =>
   );
 
 function stageDescription(stage: Stage): string {
+  const displayName = stageDisplayName(stage);
   if (getLang() === "en") {
     const interfaceName = stage.ros2?.msgTypes[0]?.split("/").at(-1) ?? "ROS 2 interfaces";
-    return `Follow how ${stage.name} receives input, updates its internal state, and produces an output through ${interfaceName}. Use the animation and ROS 2 graph to connect each visible change with the data exchanged by the nodes.`;
+    return `Follow how ${displayName} receives input, updates its internal state, and produces an output through ${interfaceName}. Use the animation and ROS 2 graph to connect each visible change with the data exchanged by the nodes.`;
   }
   return (
     stage.ros2?.summary ??
     gt(
-      `${stage.name}を通して、ロボットシステムの基本的な考え方を体験します。`,
-      `Use ${stage.name} to explore the fundamental structure of a robot system.`,
+      `${displayName}を通して、ロボットシステムの基本的な考え方を体験します。`,
+      `Use ${displayName} to explore the fundamental structure of a robot system.`,
     )
   );
 }
 
 function stageCard(stage: Stage, index: number, mode: "game" | "lesson"): string {
-  const concept = stage.ros2?.title ?? (stage.lesson || "Robot System");
+  const concept =
+    getLang() === "ja"
+      ? stageDisplayLesson(stage)
+      : (stage.ros2?.title ?? stage.lesson ?? "Robot System");
+  const displayName = stageDisplayName(stage);
   const copy = guideCopyFor(stage);
   const preview = cardPreviewFor(stage);
   const messageTypes = stage.ros2?.msgTypes.slice(0, 2) ?? [];
@@ -75,7 +81,7 @@ function stageCard(stage: Stage, index: number, mode: "game" | "lesson"): string
         <span class="stage-mode">${mode.toUpperCase()}</span>
       </div>
       <p class="stage-concept">${escapeHtml(concept)}</p>
-      <h3>${escapeHtml(stage.name)}</h3>
+      <h3>${escapeHtml(displayName)}</h3>
       <div class="stage-card-preview" aria-hidden="true">
         <canvas class="card-demo card-demo--${mode}" width="320" height="104" data-stage-demo="${escapeHtml(stage.id)}"></canvas>
       </div>
@@ -141,6 +147,8 @@ function openStage(stage: Stage, syncUrl = true): void {
   const services = ros?.state?.services ?? [];
   const nodes = ros?.state?.nodes ?? [];
   const diagram = getDiagram(stage.id);
+  const displayName = stageDisplayName(stage);
+  const displayLesson = stageDisplayLesson(stage);
   const number =
     mode === "lesson"
       ? `LESSON ${lessonNumbers.get(stage.id) ?? ""}`
@@ -152,8 +160,8 @@ function openStage(stage: Stage, syncUrl = true): void {
       <header class="lesson-page-header">
         <div>
           <div class="dialog-kicker">${number} / ${mode.toUpperCase()}</div>
-          <h2>${escapeHtml(stage.name)}</h2>
-          <p class="dialog-lead">${escapeHtml(ros?.title ?? (stage.lesson || "Robot System"))}</p>
+          <h2>${escapeHtml(displayName)}</h2>
+          <p class="dialog-lead">${escapeHtml(getLang() === "ja" ? displayLesson : (ros?.title ?? stage.lesson ?? "Robot System"))}</p>
         </div>
         <span class="lesson-page-id">${escapeHtml(stage.id)}</span>
       </header>
@@ -166,7 +174,7 @@ function openStage(stage: Stage, syncUrl = true): void {
         <div class="lesson-visual-stage">
           ${
             mode === "game"
-              ? `<canvas id="lesson-demo-canvas" width="760" height="190" aria-label="${escapeHtml(stage.name)} gameplay animation"></canvas>`
+              ? `<canvas id="lesson-demo-canvas" width="760" height="190" aria-label="${escapeHtml(displayName)} gameplay animation"></canvas>`
               : `<div class="guide-diagram">${
                   diagram ||
                   `

@@ -1035,12 +1035,12 @@ function loop(now: number): void {
   raf = visible.size ? requestAnimationFrame(loop) : 0;
 }
 
-export function setupCardDemos(root: ParentNode = document): void {
+export function setupCardDemos(root: ParentNode = document): () => void {
   const canvases = [...root.querySelectorAll<DemoCanvas>(".card-demo")];
-  if (!canvases.length) return;
+  if (!canvases.length) return () => {};
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   canvases.forEach((canvas) => draw(canvas, 0.8));
-  if (reduced) return;
+  if (reduced) return () => {};
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -1056,4 +1056,12 @@ export function setupCardDemos(root: ParentNode = document): void {
   canvases.forEach((canvas) => observer.observe(canvas));
 
   startedAt = performance.now();
+  return () => {
+    observer.disconnect();
+    canvases.forEach((canvas) => visible.delete(canvas));
+    if (!visible.size && raf) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
+  };
 }

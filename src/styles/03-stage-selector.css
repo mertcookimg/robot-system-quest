@@ -98,16 +98,16 @@ body.stage-menu-open .stage-selector {
 .stage-pill {
   position: relative;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
+  grid-template-rows: 92px auto auto;
+  align-content: start;
+  gap: 8px;
   min-width: 0;
-  min-height: 72px;
-  padding: 10px 11px;
+  min-height: 174px;
+  padding: 8px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: rgba(var(--scrim-rgb), 0.5);
+  border-radius: 14px;
+  background: rgba(var(--scrim-rgb), 0.62);
   color: var(--fg);
   cursor: pointer;
   text-align: left;
@@ -115,68 +115,107 @@ body.stage-menu-open .stage-selector {
   transition:
     border-color 0.15s,
     background 0.15s,
-    transform 0.15s;
+    transform 0.15s,
+    box-shadow 0.15s;
 }
 .stage-pill:hover {
   z-index: 1;
   border-color: var(--accent);
   background: var(--panel-2);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
 }
 .stage-pill.active {
-  border-color: var(--accent);
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), var(--panel-2));
-  box-shadow: inset 3px 0 var(--accent);
+  border-color: var(--warn);
+  background: linear-gradient(145deg, rgba(251, 191, 36, 0.1), var(--panel-2));
+  box-shadow:
+    inset 0 0 0 1px rgba(251, 191, 36, 0.42),
+    0 0 18px rgba(251, 191, 36, 0.08);
+}
+
+.stage-card-preview {
+  position: relative;
+  width: 100%;
+  height: 92px;
+  overflow: hidden;
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-radius: 9px;
+  background: #070a0e;
+}
+.stage-card-preview .card-demo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.stage-card-icon {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  z-index: 2;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(125, 211, 252, 0.38);
+  border-radius: 7px;
+  background: rgba(3, 7, 14, 0.82);
+  color: var(--accent);
+  font: 800 14px/1 var(--mono);
+  text-shadow: 0 0 8px rgba(125, 211, 252, 0.6);
+  backdrop-filter: blur(4px);
+}
+.stage-pill-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
 }
 .stage-pill .num {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 1px solid rgba(125, 211, 252, 0.28);
-  border-radius: 10px;
-  background: rgba(125, 211, 252, 0.07);
   color: var(--accent);
-  font: 800 12px/1 var(--mono);
-  letter-spacing: 0.04em;
+  font: 800 9px/1 var(--mono);
+  letter-spacing: 0.08em;
 }
 .stage-pill .info {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 3px;
+  gap: 5px;
 }
 .stage-pill .name {
-  display: block;
+  display: -webkit-box;
   overflow: hidden;
   color: var(--fg);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 750;
   line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .stage-pill .lesson {
-  display: block;
+  display: -webkit-box;
+  min-height: 0;
   overflow: hidden;
   color: var(--fg-dim);
-  font: 500 9px/1.25 var(--mono);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font: 500 8px/1.35 var(--mono);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.stage-pill .lesson:empty {
+  display: none;
 }
 .stage-pill .multiplayer-badge {
   width: fit-content;
-  padding: 2px 6px;
+  padding: 3px 7px;
   border: 1px solid rgba(94, 234, 212, 0.45);
   border-radius: 999px;
   background: rgba(94, 234, 212, 0.1);
   color: var(--ok);
-  font: 800 8px/1.1 var(--mono);
+  font: 800 7px/1.1 var(--mono);
   white-space: nowrap;
 }
 .stage-pill .ministar {
   color: var(--line);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 1px;
   white-space: nowrap;
 }
@@ -233,35 +272,35 @@ body.stage-menu-open .stage-selector {
     font-size: 9px;
   }
   .stage-pill {
-    grid-template-columns: 34px minmax(0, 1fr);
-    gap: 7px;
-    min-height: 78px;
-    padding: 8px 7px;
+    grid-template-rows: 72px auto auto;
+    gap: 6px;
+    min-height: 148px;
+    padding: 6px;
   }
-  .stage-pill .num {
-    width: 34px;
-    height: 34px;
-    font-size: 10px;
+  .stage-card-preview {
+    height: 72px;
   }
   .stage-pill .info {
-    align-self: stretch;
-    justify-content: center;
-    padding-bottom: 10px;
+    gap: 3px;
   }
   .stage-pill .name {
-    font-size: 11px;
+    font-size: 12px;
   }
   .stage-pill .lesson {
-    font-size: 8px;
-  }
-  .stage-pill .ministar {
-    position: absolute;
-    right: 7px;
-    bottom: 6px;
-    font-size: 8px;
+    font-size: 7px;
   }
   .stage-pill .multiplayer-badge {
-    padding: 1px 4px;
-    font-size: 7px;
+    padding: 2px 5px;
+    font-size: 6px;
+  }
+  .stage-pill .ministar {
+    font-size: 8px;
+  }
+  .stage-card-icon {
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
   }
 }
