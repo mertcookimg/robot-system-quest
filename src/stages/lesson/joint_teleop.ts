@@ -357,26 +357,27 @@ export default defineStage({
       en: "A robot arm is defined by its joint angles (JointState). Joint angles → tip position is forward kinematics (FK). Moving a proximal joint swings everything beyond it, and every joint has a travel limit.",
     },
     goal: {
-      ja: "肩 (W/S) と肘 (I/K) を操って、手先で ① → ⑥ のターゲットに順番に触れましょう。手先を狙い通りに動かす難しさを体感してください。",
-      en: "Jog the shoulder (W/S) and elbow (I/K) to touch targets ①→⑥ in order with the tip. Feel how hard it is to place the tip where you want.",
+      ja: "肩 (W/S) と肘 (I/K) を操って、手先で ① → ⑥ のターゲットに順番に触れましょう。スマホでは肩・肘の専用ボタンを同時押しできます。",
+      en: "Jog the shoulder (W/S) and elbow (I/K) to touch targets ①→⑥ in order with the tip. On touchscreens, the dedicated shoulder and elbow buttons support simultaneous presses.",
     },
     first: {
-      ja: "まず W/S で肩、I/K で肘を動かしてターゲット① に手先を重ね、0.3 秒キープ。Shift でゆっくり精密に動かせます。",
-      en: "Move the shoulder with W/S and elbow with I/K, hover the tip on target ① for 0.3 s. Hold Shift for slow, precise jogging.",
+      ja: "肩と肘を動かしてターゲット①に手先を重ね、0.3秒キープします。スマホでは2組の＋/−ボタン、キーボードではW/S・I/Kを使い、「ゆっくり」またはShiftで精密に動かせます。",
+      en: "Move the tip onto target ① and hold for 0.3 s. Use both +/− button pairs on touchscreens or W/S and I/K on a keyboard; hold SLOW or Shift for precision.",
     },
   },
   strings: {
     ja: {
-      "status.start": "肩 W/S ・肘 I/K で手先をターゲット① へ (Shift で精密)",
+      "status.start": "肩と肘を操作して手先をターゲット①へ（スマホは2組を同時押し可能）",
       "status.next": "取得! 次はターゲット {n}/{total}",
       "status.clear": "全ターゲット制覇! 関節空間で手先を運びきった",
-      hint: "W/S 肩 ・ I/K 肘 ・ 右スティック肘 ・ Shift 精密 ・ R リセット",
+      hint: "タッチ: 肩/肘 ＋− ・ W/S 肩 ・ I/K/右スティック 肘 ・ Shift 精密",
     },
     en: {
-      "status.start": "Shoulder W/S · Elbow I/K — bring the tip to target ① (Shift = precise)",
+      "status.start":
+        "Move shoulder and elbow to bring the tip to target ① (touch supports both at once)",
       "status.next": "Got it! Next: target {n}/{total}",
       "status.clear": "All targets cleared — you carried the tip through joint space!",
-      hint: "W/S shoulder · I/K elbow · right stick elbow · Shift precise · R reset",
+      hint: "Touch: shoulder/elbow +− · W/S shoulder · I/K/right stick elbow · Shift precise",
     },
   },
   build: makeJointTeleop,

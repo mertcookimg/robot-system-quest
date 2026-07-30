@@ -12,6 +12,8 @@ type TouchLayout = "dpad" | "joystick";
 
 const STORE_KEY = "robot_quest_touch_layout_v1";
 const MOVE_KEYS: MoveKey[] = ["w", "a", "s", "d"];
+const JOINT_KEYS = ["i", "k"] as const;
+const TOUCH_KEYS = [...MOVE_KEYS, ...JOINT_KEYS, "Shift", " ", "Escape", "r"] as const;
 const NO_TOUCHPAD_STAGES = new Set(["pubsub_builder", "service_builder", "action_builder"]);
 
 let touchpadRoot: HTMLElement | null = null;
@@ -19,8 +21,9 @@ let releaseActiveMovement: () => void = () => {};
 
 export function setTouchpadStage(stageId: string): void {
   if (!touchpadRoot) return;
+  releaseActiveMovement();
+  touchpadRoot.dataset.stage = stageId;
   const hidden = NO_TOUCHPAD_STAGES.has(stageId);
-  if (hidden) releaseActiveMovement();
   touchpadRoot.style.display = hidden ? "none" : "";
 }
 
@@ -66,6 +69,64 @@ function createDpad(): HTMLElement {
     holdButton("▼", "s", "touch-down"),
   );
   return dpad;
+}
+
+interface JointPad {
+  element: HTMLElement;
+  shoulderLabel: HTMLElement;
+  elbowLabel: HTMLElement;
+  shoulderUp: HTMLButtonElement;
+  shoulderDown: HTMLButtonElement;
+  elbowUp: HTMLButtonElement;
+  elbowDown: HTMLButtonElement;
+  precision: HTMLButtonElement;
+  reset: HTMLButtonElement;
+}
+
+function createJointPad(): JointPad {
+  const element = document.createElement("div");
+  element.className = "touch-joint-zone";
+
+  const makeJointGroup = (
+    className: string,
+    upKey: string,
+    downKey: string,
+  ): {
+    element: HTMLElement;
+    label: HTMLElement;
+    up: HTMLButtonElement;
+    down: HTMLButtonElement;
+  } => {
+    const group = document.createElement("div");
+    group.className = `touch-joint-group ${className}`;
+    const label = document.createElement("strong");
+    label.className = "touch-joint-label";
+    const up = holdButton("＋", upKey, "touch-joint-button");
+    const down = holdButton("−", downKey, "touch-joint-button");
+    group.append(label, up, down);
+    return { element: group, label, up, down };
+  };
+
+  const shoulder = makeJointGroup("touch-joint-shoulder", "w", "s");
+  const elbow = makeJointGroup("touch-joint-elbow", "i", "k");
+  const utility = document.createElement("div");
+  utility.className = "touch-joint-utility";
+  const precision = holdButton("SLOW", "Shift", "touch-joint-precision");
+  const reset = holdButton("RESET", "r", "touch-joint-reset");
+  utility.append(precision, reset);
+  element.append(shoulder.element, elbow.element, utility);
+
+  return {
+    element,
+    shoulderLabel: shoulder.label,
+    elbowLabel: elbow.label,
+    shoulderUp: shoulder.up,
+    shoulderDown: shoulder.down,
+    elbowUp: elbow.up,
+    elbowDown: elbow.down,
+    precision,
+    reset,
+  };
 }
 
 function createJoystick(): { element: HTMLElement; release: () => void } {
@@ -173,6 +234,7 @@ export function setupTouchpad(): void {
   const dpad = createDpad();
   const joystick = createJoystick();
   moveZone.append(dpad, joystick.element);
+  const jointPad = createJointPad();
 
   const actions = document.createElement("div");
   actions.className = "touch-actions";
@@ -182,7 +244,7 @@ export function setupTouchpad(): void {
     holdButton("✕", "Escape", "touch-cancel"),
     holdButton("R", "r", "touch-reset"),
   );
-  controls.append(moveZone, actions);
+  controls.append(moveZone, jointPad.element, actions);
   root.append(toolbar, controls);
 
   let layout = readLayout();
@@ -216,6 +278,22 @@ export function setupTouchpad(): void {
       "aria-label",
       ja ? "ジョイスティック型に切り替える" : "Use joystick",
     );
+    jointPad.shoulderLabel.textContent = ja ? "肩 q1" : "SHOULDER q1";
+    jointPad.elbowLabel.textContent = ja ? "肘 q2" : "ELBOW q2";
+    jointPad.precision.textContent = ja ? "ゆっくり" : "SLOW";
+    jointPad.reset.textContent = ja ? "リセット" : "RESET";
+    jointPad.shoulderUp.setAttribute("aria-label", ja ? "肩を正方向へ動かす" : "Increase shoulder");
+    jointPad.shoulderDown.setAttribute(
+      "aria-label",
+      ja ? "肩を負方向へ動かす" : "Decrease shoulder",
+    );
+    jointPad.elbowUp.setAttribute("aria-label", ja ? "肘を正方向へ動かす" : "Increase elbow");
+    jointPad.elbowDown.setAttribute("aria-label", ja ? "肘を負方向へ動かす" : "Decrease elbow");
+    jointPad.precision.setAttribute(
+      "aria-label",
+      ja ? "押している間ゆっくり動かす" : "Hold for precise movement",
+    );
+    jointPad.reset.setAttribute("aria-label", ja ? "Lessonをリセット" : "Reset the lesson");
   };
   refreshLanguage();
   onLangChange(refreshLanguage);
@@ -246,7 +324,7 @@ export function setupTouchpad(): void {
 
   const releaseMovement = () => {
     joystick.release();
-    MOVE_KEYS.forEach((key) => sendKey(key, false));
+    TOUCH_KEYS.forEach((key) => sendKey(key, false));
   };
   releaseActiveMovement = releaseMovement;
   window.addEventListener("blur", releaseMovement);
