@@ -15,16 +15,38 @@ const MOVE_KEYS: MoveKey[] = ["w", "a", "s", "d"];
 const JOINT_KEYS = ["i", "k"] as const;
 const TOUCH_KEYS = [...MOVE_KEYS, ...JOINT_KEYS, "Shift", " ", "Escape", "r"] as const;
 const NO_TOUCHPAD_STAGES = new Set(["pubsub_builder", "service_builder", "action_builder"]);
+const BLOCK_EDITOR_DRIVE_STAGES = new Set(["edge_detection", "object_detection"]);
 
 let touchpadRoot: HTMLElement | null = null;
+let touchpadLayoutAnchor: HTMLElement | null = null;
 let releaseActiveMovement: () => void = () => {};
+
+function syncTouchpadForStage(): void {
+  if (!touchpadRoot) return;
+
+  const stageId = touchpadRoot.dataset.stage ?? "";
+  const blockEditor = document.getElementById("block-editor");
+  const blockEditing = blockEditor?.style.display !== "none";
+  const drivesWithEditor = BLOCK_EDITOR_DRIVE_STAGES.has(stageId);
+  const hidden = NO_TOUCHPAD_STAGES.has(stageId) || (blockEditing && !drivesWithEditor);
+  touchpadRoot.style.display = hidden ? "none" : "";
+
+  if (!blockEditing || !blockEditor || !touchpadLayoutAnchor) return;
+  if (drivesWithEditor) {
+    // Camera missions need the joystick while their processing pipeline
+    // editor remains open. Keep both directly below the game canvas.
+    touchpadLayoutAnchor.insertAdjacentElement("afterend", touchpadRoot);
+    touchpadRoot.insertAdjacentElement("afterend", blockEditor);
+  } else {
+    touchpadLayoutAnchor.insertAdjacentElement("afterend", blockEditor);
+  }
+}
 
 export function setTouchpadStage(stageId: string): void {
   if (!touchpadRoot) return;
   releaseActiveMovement();
   touchpadRoot.dataset.stage = stageId;
-  const hidden = NO_TOUCHPAD_STAGES.has(stageId);
-  touchpadRoot.style.display = hidden ? "none" : "";
+  syncTouchpadForStage();
 }
 
 function sendKey(key: string, down: boolean): void {
@@ -299,28 +321,21 @@ export function setupTouchpad(): void {
   onLangChange(refreshLanguage);
   setLayout(layout);
 
-  const layoutAnchor =
+  touchpadLayoutAnchor =
     document.getElementById("stage-controls-dock") ?? document.getElementById("canvas-wrap");
-  layoutAnchor?.insertAdjacentElement("afterend", root);
+  touchpadLayoutAnchor?.insertAdjacentElement("afterend", root);
 
   // Block-programming lessons are edited directly with touch. Keep their
   // editor immediately below the canvas and remove the unrelated movement
   // controls so learners do not have to scroll past a joystick and panels.
   const blockEditor = document.getElementById("block-editor");
-  const syncForBlockEditor = () => {
-    const blockEditing = blockEditor?.style.display !== "none";
-    root.style.display = blockEditing ? "none" : "";
-    if (blockEditing && layoutAnchor && blockEditor) {
-      layoutAnchor.insertAdjacentElement("afterend", blockEditor);
-    }
-  };
   if (blockEditor) {
-    new MutationObserver(syncForBlockEditor).observe(blockEditor, {
+    new MutationObserver(syncTouchpadForStage).observe(blockEditor, {
       attributes: true,
       attributeFilter: ["style"],
     });
   }
-  syncForBlockEditor();
+  syncTouchpadForStage();
 
   const releaseMovement = () => {
     joystick.release();
