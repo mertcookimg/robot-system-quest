@@ -4,6 +4,12 @@ Robot System Quest: Games and Lessons is a browser-based learning experience for
 
 It visualizes concepts such as publishers, subscribers, services, actions, feedforward and feedback control, LiDAR, image processing, TF, SLAM, localization, Nav2, behavior trees, and manipulation through games and interactive lessons. It does not connect to a real ROS 2 environment.
 
+![Robot System Quest gameplay](docs/RSQ.gif)
+
+- [YouTube](https://youtu.be/iXOOvXn6CYc)
+- [Game and Lessons Site (English and Japanese)](https://mertcookimg.github.io/robot-system-quest/)
+- [Guide Page (English and Japanese)](https://mertcookimg.github.io/robot-system-quest/guide/)
+
 - **GAME** — 14 stages that introduce robotics concepts through delivery missions, racing, robot soccer, mapping, and more
 - **LESSON** — 20 stages for experimenting with node wiring, block editing, parameter tuning, image processing, navigation, and more
 - **ROBOTICS LEARNING GUIDE** — Bilingual explanations of what to try and observe in each game and lesson
