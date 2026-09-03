@@ -178,7 +178,7 @@ Vite builds `index.html` and `guide/index.html` as separate entry points. Stages
 | L13 | `navigation` | Nav2 — click to send a goal, A* plans the path |
 | L14 | `image_processing` | Image Processing |
 | L15 | `edge_detection` | Camera + Teleop — observe Image Processing while driving |
-| L16 | `object_detection` | Object Detection |
+| L16 | `object_detection` | Simulated Object Detection |
 | L17 | `behavior_tree` | Behavior Tree — Nav2-style decision making |
 | L18 | `joint_teleop` | JointState — jog each joint directly and watch the tip (forward kinematics) |
 | L19 | `ik_reach` | Inverse Kinematics — command the tip pose, solve back for joint angles |
