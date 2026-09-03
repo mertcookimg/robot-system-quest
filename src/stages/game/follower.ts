@@ -357,11 +357,14 @@ export function makeFollower(): Stage {
     lesson: "",
     lessonCmd: "ros2 topic echo /target/pose",
     ros2: {
-      title: tx("Subscriber ・他ノードの情報で動く", "Subscriber — act on data from other nodes"),
+      title: tx(
+        "Subscriber — 他のNodeから受け取った情報で動く",
+        "Subscriber — act on data from other nodes",
+      ),
       summary:
-        "リーダーロボがブロードキャストする /target/pose を Subscribe し、" +
-        "受信した PoseStamped と自分のポーズの差分から cmd_vel を計算します。" +
-        "コールバック駆動の制御は、SLAM やナビゲーションでも全く同じ構造。",
+        "リーダーロボットが配信する/target/poseをsubscribeし、" +
+        "受信したPoseStampedと自分のPoseとの差分からcmd_velを計算します。" +
+        "このようなCallback駆動の制御は、SLAMやナビゲーションでも使われます。",
       msgTypes: ["geometry_msgs/msg/PoseStamped", "geometry_msgs/msg/Twist"],
       cli: [
         "ros2 topic echo /target/pose",
@@ -388,7 +391,7 @@ class Follower(Node):
         target_dist = 0.9  # 目標追従距離 [m]
         ...`,
       realWorld: tx(
-        "実機では他ロボの /amcl_pose や /tf を Subscribe して 隊列走行 を実装する典型パターン。",
+        "実機でも、ほかのロボットの/amcl_poseや/tfをsubscribeし、その位置を基に隊列走行を実装できます。",
         "On real robots, this is the canonical pattern for convoy driving — subscribing to another robot's /amcl_pose or /tf.",
       ),
       state: {
@@ -444,19 +447,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Subscriber 入門 — /target/pose を購読する",
+      ja: "Subscriber入門 — /target/poseを購読する",
       en: "Subscriber basics — reading /target/pose",
     },
     learn: {
-      ja: "リーダーの位置は topic /target/pose で配信されています。Subscriber は topic を購読してそのデータに合わせて行動します。",
+      ja: "リーダーの位置はTopic /target/poseで配信されています。SubscriberはTopicを購読し、そのデータに基づいて行動します。",
       en: "The leader's pose is published on the topic /target/pose. A Subscriber reads the topic and uses the data to decide how to act.",
     },
     goal: {
-      ja: "WASD で動いて、青いリーダーロボの後ろをついていこう。\n近すぎず・遠すぎず (55〜130px) を一定時間キープすればクリア!",
+      ja: "WASDで動き、青いリーダーロボットについていきましょう。\n近すぎず遠すぎない距離（55〜130px）を一定時間保てばクリアです。",
       en: "Drive with WASD and tail the blue leader robot.\nStay in the sweet spot (55–130 px) long enough and you clear!",
     },
     first: {
-      ja: "WASD でリーダーを追いかけ、近づきすぎず離れすぎない距離を保ちましょう。",
+      ja: "WASDでリーダーを追いかけ、近づきすぎず離れすぎない距離を保ちましょう。",
       en: "Use WASD to chase the leader, keeping a comfortable distance — not too close, not too far.",
     },
   },

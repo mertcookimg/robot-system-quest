@@ -1000,7 +1000,7 @@ class ParticleFilter:
         self.p = self.p[idx]
         self.w = np.full(len(self.p), 1.0 / len(self.p))`,
       realWorld: tx(
-        "実機では Nav2 の amcl ノードが、既知の地図 (/map)、LiDAR (/scan)、オドメトリ (tf odom→base_link) を入力に姿勢を推定します。/initialpose で初期姿勢を与え、`/reinitialize_global_localization` で地図全域に仮説を配置し直せます。SLAM は Mapping と Localization を単に別々に同時実行するのではなく、地図と姿勢を互いに関係付けて推定します。",
+        "実機ではNav2のamcl Nodeが、既知の地図（/map）、LiDAR（/scan）、Odometry（TF odom → base_link）を入力として姿勢を推定します。/initialposeで初期姿勢を与え、`/reinitialize_global_localization`で地図全域に仮説を配置し直せます。SLAMはMappingとLocalizationを別々に実行するのではなく、地図と姿勢を互いに関連付けて推定します。",
         "On a real robot, Nav2's AMCL node estimates pose from a known /map, LiDAR /scan, and odometry (tf odom→base_link). You can provide an initial pose through /initialpose or redistribute hypotheses globally with `/reinitialize_global_localization`. SLAM does more than run separate mapping and localization processes at the same time: it estimates map and pose as a coupled problem.",
       ),
       state: {
@@ -1093,19 +1093,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "自己位置推定 — パーティクルフィルタ (AMCL)",
+      ja: "自己位置推定 — パーティクルフィルタ（AMCL）",
       en: "Localization — Particle Filter (AMCL)",
     },
     learn: {
-      ja: "Localization (自己位置推定) は、既知の地図の中で現在の姿勢を推定する処理です。ここではパーティクルフィルタ (Monte Carlo Localization) を体感します。パーティクルは 1 つの姿勢仮説です。多数の仮説を配置し、ロボットの移動に合わせて更新し、LiDAR と一致する仮説ほど大きな重みを与えて再サンプリングします。似た場所が複数あると仮説は複数の塊に分かれて残ります。1 つに絞るには、場所を見分けられる特徴が観測できる所まで移動して情報を増やす必要があります。",
+      ja: "Localization（自己位置推定）は、既知の地図上で現在の姿勢を推定する処理です。ここではパーティクルフィルタ（Monte Carlo Localization）を体験します。各パーティクルは1つの姿勢仮説を表します。多数の仮説をロボットの移動に合わせて更新し、LiDARの観測と一致する仮説ほど大きな重みを与えて再サンプリングします。似た場所が複数あると、仮説は複数の集まりに分かれて残ります。1つに絞るには、場所を見分けられる特徴を観測できる位置まで移動し、情報を増やす必要があります。",
       en: "Localization estimates the robot's current pose in a known map. Here you explore a particle filter (Monte Carlo Localization), where each particle represents one pose hypothesis. The filter propagates many hypotheses with robot motion, assigns higher weights to those that better match the LiDAR observation, and resamples them. Similar-looking places can leave several clusters alive; moving to a distinctive area provides information that lets the filter converge to one location.",
     },
     goal: {
-      ja: "この地図には左右そっくりな部屋が2つあり、LiDAR だけでは自分がどちらの部屋にいるか区別できません。だから仮説の雲は2か所 (2つの「?」リング) に分かれます。カギは右下の部屋だけにある ★ の目印。WASD で ★ の方へ走ると、間違った側の仮説が「そこに ★ は無い / 有る」で否定されて消え、正しい部屋に収束 → 画面上部の LOCALIZE メーターが満タンでクリア。G キーはいつでも仮説を撒き直せる操作 (誘拐ロボット問題の復帰体験)。★ 評価は所要時間で決まります。",
+      ja: "この地図には左右によく似た部屋が2つあり、LiDARだけでは自分がどちらにいるか区別できません。そのため、姿勢の仮説は2か所（2つの「?」リング）に分かれます。手掛かりは右下の部屋だけにある★の目印です。WASDで★へ近づくと観測情報が増え、誤った仮説が消えて正しい部屋へ収束します。画面上部のLOCALIZEメーターが満タンになればクリアです。Gキーを押すと、いつでも仮説を配置し直して「誘拐ロボット問題」からの復帰を体験できます。星の数は所要時間で決まります。",
       en: "This map has two look-alike rooms (left and right), and from the LiDAR alone the robot cannot tell which room it is in — so the hypothesis cloud splits into two places (two '?' rings). The key is the ★ landmark, which exists in only the bottom-right room. Drive with WASD toward the ★: the wrong candidate gets ruled out (it expects a ★ where there is none, or vice-versa) and the cloud collapses onto the true room, filling the LOCALIZE meter at the top to clear. Press G anytime to re-scatter (recovering from the kidnapped-robot problem). Stars depend on your total time.",
     },
     first: {
-      ja: "最初、青い点 (仮説) は2つの部屋の同じ位置に分かれて固まります — ロボットが「自分は左の部屋かも、右の部屋かも」と迷っている状態で、それぞれに黄色い「?」リングが付きます。紫の ◆ (EST) が推定位置、黄色い機体が真の位置。右下の ★ の目印まで走れば迷いが解け、点が1か所に集まってメーターが満ちます。右パネルの「残り候補」が 2 → 1 になるのを狙いましょう。",
+      ja: "開始時、青い点（仮説）は2つの部屋の同じ位置に分かれて集まります。ロボットが自分のいる部屋を特定できていない状態で、それぞれに黄色い「?」リングが付きます。紫の◆（EST）が推定位置、黄色い機体が実際の位置です。右下の★まで走ると仮説が1か所に集まり、メーターが満ちていきます。右パネルの「残り候補」が2から1になることを確認しましょう。",
       en: "At first the blue dots (hypotheses) gather in two rooms at the same spot — the robot is torn between 'maybe I'm in the left room, maybe the right', each marked with a yellow '?' ring. The purple diamond (EST) is the estimate, the yellow robot is the truth. Drive to the ★ landmark in the bottom-right and the tie breaks: the dots collapse to one place and the meter fills. Watch 'candidates left' in the right panel go from 2 to 1.",
     },
   },

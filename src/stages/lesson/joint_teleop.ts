@@ -256,14 +256,13 @@ export function makeJointTeleop(): Stage {
     lessonCmd: "ros2 topic echo /joint_states",
     ros2: {
       title: tx(
-        "JointState ・各関節を直接動かして手先を運ぶ (順運動学)",
+        "JointState — 各関節を直接動かして手先を運ぶ（順運動学）",
         "JointState — jog each joint directly and watch the tip (forward kinematics)",
       ),
       summary:
-        "肩 (q1) と肘 (q2) の 2 関節を直接テレオペして、手先 (end-effector) でターゲットに触れる。" +
-        "関節角 → 手先位置は順運動学 (FK) で決まり、根元の関節を動かすと先の全部がついてくる。" +
-        "各関節には可動域 (リミット) があり、当たると止まる。狙った場所に手先を持っていくのが" +
-        "いかに大変か——これが次の逆運動学 (ik_reach) の動機になる。",
+        "肩（q1）と肘（q2）の2関節を直接操作し、手先（End Effector）でターゲットに触れます。" +
+        "関節角から手先位置は順運動学（FK）で決まり、根元側の関節を動かすと、その先のリンクも一緒に動きます。" +
+        "各関節には可動範囲があり、上限または下限に達すると停止します。手先を狙った場所へ動かす難しさを体験し、次の逆運動学（ik_reach）につなげます。",
       msgTypes: ["sensor_msgs/msg/JointState"],
       cli: [
         "ros2 topic echo /joint_states",
@@ -290,7 +289,7 @@ class JointTeleop(Node):
     # gamepad / keyboard callbacks integrate joint velocity into self.q,
     # clamped to each joint's limit — exactly like this stage.`,
       realWorld: tx(
-        "実機では各関節のエンコーダが角度を /joint_states に流し、robot_state_publisher が FK で各リンクの TF を計算する。RViz のアームはこの topic で動いている。",
+        "実機では、各関節のEncoderが角度を/joint_statesへpublishし、robot_state_publisherが順運動学によって各LinkのTFを計算します。RVizはこれらの情報を使ってアームの姿勢を表示します。",
         "On real hardware each joint encoder streams its angle to /joint_states, and robot_state_publisher runs FK to broadcast every link's TF — that topic is what moves the arm you see in RViz.",
       ),
       state: {
@@ -353,15 +352,15 @@ export default defineStage({
       en: "Joint Teleop — drive the joints directly",
     },
     learn: {
-      ja: "ロボットアームは肩・肘などの関節角 (JointState) で決まります。関節角から手先位置が決まるのが順運動学 (FK)。根元の関節を動かすと先のリンク全部が動き、各関節には可動域リミットがあります。",
+      ja: "ロボットアームの姿勢は、肩や肘などの関節角（JointState）で決まります。関節角から手先位置を求める計算が順運動学（FK）です。根元側の関節を動かすと、その先にあるすべてのリンクが動きます。また、各関節には可動範囲があります。",
       en: "A robot arm is defined by its joint angles (JointState). Joint angles → tip position is forward kinematics (FK). Moving a proximal joint swings everything beyond it, and every joint has a travel limit.",
     },
     goal: {
-      ja: "肩 (W/S) と肘 (I/K) を操って、手先で ① → ⑥ のターゲットに順番に触れましょう。スマホでは肩・肘の専用ボタンを同時押しできます。",
+      ja: "肩（W/S）と肘（I/K）を操作し、手先で①から⑥までのターゲットに順番に触れましょう。スマートフォンでは、肩と肘の専用ボタンを同時に押せます。",
       en: "Jog the shoulder (W/S) and elbow (I/K) to touch targets ①→⑥ in order with the tip. On touchscreens, the dedicated shoulder and elbow buttons support simultaneous presses.",
     },
     first: {
-      ja: "肩と肘を動かしてターゲット①に手先を重ね、0.3秒キープします。スマホでは2組の＋/−ボタン、キーボードではW/S・I/Kを使い、「ゆっくり」またはShiftで精密に動かせます。",
+      ja: "肩と肘を動かしてターゲット①に手先を重ね、0.3秒間保ちます。スマートフォンでは2組の＋/−ボタン、キーボードではW/S・I/Kを使います。「ゆっくり」またはShiftを押すと細かく動かせます。",
       en: "Move the tip onto target ① and hold for 0.3 s. Use both +/− button pairs on touchscreens or W/S and I/K on a keyboard; hold SLOW or Shift for precision.",
     },
   },

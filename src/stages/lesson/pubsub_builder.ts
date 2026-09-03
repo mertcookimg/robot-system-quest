@@ -642,16 +642,16 @@ export function makePubsub(): Stage {
     lesson: "Pub/Sub Basics",
     lessonCmd: "rqt_graph",
     ros2: {
-      title: tx("Pub/Sub — ノードを topic で繋ぐ", "Pub/Sub — link nodes via topics"),
+      title: tx("Pub/Sub — NodeをTopicでつなぐ", "Pub/Sub — link nodes via topics"),
       summary:
-        "ROS 2 の根本: 独立したノードが topic を介してメッセージを送り合う。" +
-        "この Lesson では topic 名と msgType の一致を確認する。" +
-        "実機で通信するには QoS にも互換性が必要。" +
-        "全部正しく繋がると擬似 publish が始まり、robot が動き出す。",
+        "ROS 2では、独立したNodeがTopicを介してMessageをやり取りします。" +
+        "このレッスンでは、Topic名とMessage型の一致を確認します。" +
+        "実機で通信するにはQoSにも互換性が必要です。" +
+        "すべて正しく接続すると擬似的なpublishが始まり、ロボットが動き出します。",
       msgTypes: ["geometry_msgs/msg/Twist", "nav_msgs/msg/Odometry"],
       cli: ["ros2 node list", "ros2 topic list", "ros2 topic info /cmd_vel", "rqt_graph"],
       realWorld: tx(
-        "実機 ROS 2: 複数の launch でノードを起動 → rqt_graph で接続を可視化。通信できない場合は topic 名、message 型に加えて QoS の互換性も確認する。",
+        "実機のROS 2では、Launch Fileで複数のNodeを起動し、rqt_graphで接続を可視化できます。通信できない場合は、Topic名とMessage型に加えてQoSの互換性も確認します。",
         "Real ROS 2: bring up nodes via launch files, then visualize the graph in rqt_graph. If data does not flow, check the topic name, message type, and QoS compatibility.",
       ),
     },
@@ -697,34 +697,34 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Pub/Sub — topic でメッセージを配信する",
+      ja: "Pub/Sub — Topicでメッセージを配信する",
       en: "Pub/Sub — publish messages over a topic",
     },
     learn: {
-      ja: "ROS 2 では、プログラムの単位である node どうしが topic という名前付きの通信路でメッセージをやり取りします。送信側を Publisher、受信側を Subscriber と呼びます。同じ topic 名と message 型を使い、互換性のある QoS を持つ Subscription がメッセージを受信します。この Lesson では topic 名と型を確認します。",
+      ja: "ROS 2では、プログラムの単位であるNode同士が、Topicという名前付きの通信路でMessageをやり取りします。送信側をPublisher、受信側をSubscriberと呼びます。同じTopic名とMessage型を使い、互換性のあるQoSを持つSubscriptionがMessageを受信します。このレッスンでは、Topic名と型の一致を確認します。",
       en: "In ROS 2, nodes exchange messages over named channels called topics. A sending node is a Publisher and a receiving node is a Subscriber. A Subscription receives messages when it uses the same topic name and message type with compatible QoS. This lesson checks the topic name and type.",
     },
     goal: {
-      ja: "command_node (Publisher) と robot_node (Subscriber) を topic /cmd_vel で繋ぎ、Twist メッセージを流してロボを GOAL まで動かしましょう。",
+      ja: "command_node（Publisher）とrobot_node（Subscriber）をTopic /cmd_velでつなぎ、Twistメッセージを流してロボットをGOALまで動かしましょう。",
       en: "Wire command_node (Publisher) to robot_node (Subscriber) over the /cmd_vel topic so Twist messages flow and the robot reaches the GOAL.",
     },
     first: {
-      ja: "左右どちらかのポートをタップし、もう片方をタップします。ポート間を直接ドラッグしても接続できます。topic 名と message type が一致すると valid になります。",
+      ja: "左右どちらかのポートをタップしてから、もう一方をタップします。ポート間を直接ドラッグしても接続できます。Topic名とMessage型が一致すると有効な接続になります。",
       en: "Tap either port, then tap the other one. You can also drag directly between them. The link becomes valid when the topic name and message type both match.",
     },
   },
   strings: {
     ja: {
-      hint: "左右を順にタップ（順不同）/ 反対側へ半分ほどドラッグでも自動接続",
-      "node.controller": "WASD 操作で /cmd_vel を publish",
-      "node.motor": "/cmd_vel を subscribe → モーター駆動",
-      sim_label: "ROBOT SIMULATION  (graph 完成で自動起動)",
-      "status.incomplete": "配線が不完全 — 必要な接続を見直そう",
-      "status.success": "接続完成 — メッセージが流れて robot が動き始めた",
+      hint: "左右のポートを順不同でタップ / 反対側へ半分ほどドラッグしても自動接続",
+      "node.controller": "WASD操作で/cmd_velをpublish",
+      "node.motor": "/cmd_velをsubscribe → モーターを駆動",
+      sim_label: "ROBOT SIMULATION（Graphの完成後に自動で起動）",
+      "status.incomplete": "配線が不完全 — 必要な接続を見直してください",
+      "status.success": "接続完成 — Messageが流れ、ロボットが動き始めました",
       "status.select_other": "ポートを選択中 — 反対側のポートをタップ",
-      subtitle: "左右を順にタップ（順不同）/ 半分ほどドラッグすると自動接続",
-      tip_hud: "このLesson: 型 + topic 名 / 実機: QoS 互換性も必要",
-      title: "Pub/Sub Builder — ノードを topic で繋ぐ",
+      subtitle: "左右のポートを順不同でタップ / 半分ほどドラッグすると自動接続",
+      tip_hud: "このレッスン：Message型とTopic名 / 実機：QoSの互換性も必要",
+      title: "Pub/Sub Builder — NodeをTopicでつなぐ",
     },
     en: {
       hint: "Tap both ports in either order / drag about halfway to auto-connect",

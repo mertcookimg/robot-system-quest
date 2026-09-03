@@ -88,7 +88,7 @@ export function setupAudio(toggleEl: HTMLElement): void {
   const sync = () => {
     toggleEl.textContent = on ? "ON" : "OFF";
     toggleEl.classList.toggle("muted", !on);
-    const label = `Sound: ${on ? "ON" : "OFF"} — toggle / サウンド: ${on ? "ON" : "OFF"} — 切替`;
+    const label = `Sound: ${on ? "ON" : "OFF"} — toggle / サウンド: ${on ? "ON" : "OFF"} — 切り替え`;
     toggleEl.title = label;
     toggleEl.setAttribute("aria-label", label);
     toggleEl.setAttribute("aria-pressed", String(on));

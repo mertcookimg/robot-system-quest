@@ -674,14 +674,14 @@ export function makeService(): Stage {
     lessonCmd: "ros2 service list",
     ros2: {
       title: tx(
-        "Service — Client/Server で request → response",
+        "Service — ClientとServerによるRequest/Response",
         "Service — request → response between Client and Server",
       ),
       summary:
-        "ROS 2 の Service は on-demand の request-response パターン。" +
-        "通常、1 つの service 名に 1 つの Server を用意し、複数の Client から呼び出せます。" +
-        "Pub/Sub と違って『今すぐ何かをして結果を聞く』用途 (例: lamp on/off, take_picture, reset_odom)。" +
-        "Service 名 + srv 型 が両方一致しないと繋がらない。",
+        "ROS 2のServiceは、必要なときに呼び出すRequest/Response形式の通信です。" +
+        "通常、1つのService名に1つのServerを用意し、複数のClientから呼び出せます。" +
+        "継続的にデータを配信するPub/Subとは異なり、処理を要求して結果を受け取る用途に適しています（例：lamp on/off、take_picture、reset_odom）。" +
+        "接続するにはService名とsrv型の両方が一致している必要があります。",
       msgTypes: ["std_srvs/srv/Trigger", "std_srvs/srv/SetBool"],
       cli: [
         "ros2 service list",
@@ -689,7 +689,7 @@ export function makeService(): Stage {
         "ros2 service call /toggle_lamp std_srvs/srv/Trigger {}",
       ],
       realWorld: tx(
-        "実機 ROS2: ros2 service list で利用可能なサービス確認 → ros2 service call でテスト。Lifecycle/Param/各種ツールの大半が裏で Service を使う。",
+        "実機のROS 2では、ros2 service listで利用可能なServiceを確認し、ros2 service callで動作を試せます。LifecycleやParameterなどの機能でも、内部でServiceが利用されています。",
         "Real ROS2: list available services with ros2 service list, then test them via ros2 service call. Most of Lifecycle, Param, and the various tools rely on Service under the hood.",
       ),
     },
@@ -745,37 +745,37 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Service — request/response で 1 回だけ呼ぶ",
+      ja: "Service — Request/Responseを1回実行する",
       en: "Service — request/response, one call at a time",
     },
     learn: {
-      ja: "Service は ROS 2 の request/response 通信です。通常、1 つの service 名に 1 つの Server を用意し、複数の Client が request を送れます。Server が利用可能で処理が完了すれば response を返しますが、Client 側では未接続やタイムアウトも考慮します。service 名と srv 型が一致する必要があります。node の中から呼ぶ場合は、executor と callback の構成に注意し、必要に応じて call_async (非同期呼び出し) を使います。",
+      ja: "ServiceはROS 2のRequest/Response通信です。通常、1つのService名に1つのServerを用意し、複数のClientからRequestを送れます。Serverが利用可能で処理が完了すればResponseが返りますが、Client側では未接続やタイムアウトも考慮します。通信にはService名とsrv型の一致が必要です。Nodeの中から呼び出す場合はExecutorとCallbackの構成に注意し、必要に応じてcall_async（非同期呼び出し）を使います。",
       en: "A Service is ROS 2 request/response communication. Normally one server owns a service name, while multiple clients may send requests. A server returns a response when it is available and completes the request, so clients must still handle unavailability and timeouts. Service name and srv type must match. Inside a node, consider the executor and callback arrangement and use an asynchronous call when appropriate.",
     },
     goal: {
-      ja: "Client node と Server node を正しい service 名と srv 型で繋ぎ、CALL を押して request → response を1回ずつ実行しましょう。",
+      ja: "Client NodeとServer Nodeを正しいService名とsrv型でつなぎ、CALLを押してRequestからResponseまでの流れを実行しましょう。",
       en: "Wire the Client node to the Server node with a matching service name and srv type, then press CALL to perform one request → response exchange at a time.",
     },
     first: {
-      ja: "左右どちらかのポートをタップし、もう片方をタップします。接続後は画面下の CALL を押すたびに、1組の request/response が発生します。",
+      ja: "左右どちらかのポートをタップしてから、もう一方をタップします。接続後は画面下のCALLを押すたびに、1組のRequest/Responseが発生します。",
       en: "Tap either port, then tap the other one. Once connected, each press of CALL below the canvas performs one request/response exchange.",
     },
   },
   strings: {
     ja: {
-      hint: "左右を順にタップ（順不同）/ 反対側へ半分ほどドラッグでも自動接続",
-      "node.client": "ボタン → /toggle_lamp を Service call",
-      "node.server": "/toggle_lamp の Service Server (応答)",
-      sim_label: "ROBOT SIMULATION  (service call ごとに 1 step 進む)",
-      "status.incomplete": "配線が不完全 — service 名と型を一致させて",
-      "status.success": "Service 接続成立 — CALL を押して request を送信",
-      "status.connect_first": "先に Client と Server を接続してください",
-      "status.response": "Response 受信 — success: true",
+      hint: "左右のポートを順不同でタップ / 反対側へ半分ほどドラッグしても自動接続",
+      "node.client": "ボタン → /toggle_lampをService Call",
+      "node.server": "/toggle_lampのService Server（応答側）",
+      sim_label: "ROBOT SIMULATION（Service Callごとに1段階進む）",
+      "status.incomplete": "配線が不完全 — Service名と型を一致させてください",
+      "status.success": "Service接続成立 — CALLを押してRequestを送信",
+      "status.connect_first": "先にClientとServerを接続してください",
+      "status.response": "Responseを受信 — success: true",
       "status.select_other": "ポートを選択中 — 反対側のポートをタップ",
-      subtitle: "Pub/Sub と違う on-demand の request / response",
-      tip_hud: "接続後、CALL 1回につき request/response が1往復",
-      title: "Service Builder — Client → Server に request を送る",
-      call_prompt: "Service request",
+      subtitle: "Pub/Subとは異なる、オンデマンドのRequest/Response",
+      tip_hud: "接続後、CALLを1回押すたびにRequest/Responseが1往復",
+      title: "Service Builder — ClientからServerへRequestを送る",
+      call_prompt: "Service Request",
       call_button: "CALL",
     },
     en: {

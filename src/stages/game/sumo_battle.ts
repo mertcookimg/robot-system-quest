@@ -647,12 +647,12 @@ export function makeSumoBattle(): Stage {
     lessonCmd: "ros2 topic echo /robot/odom",
     ros2: defineRos2Concept({
       title: tx(
-        "Odometry ・/odom で自分の位置を知る",
+        "Odometry — /odomで自分の位置を把握する",
         "Odometry — knowing where you are via /odom",
       ),
       summary:
-        "ロボットは車輪の回転量から自己位置を推定し、nav_msgs/msg/Odometry として /odom に publish します。" +
-        "土俵の中心からの距離を /odom で監視すれば「あとどれだけで場外か」が分かる。" +
+        "ロボットは車輪の回転量から自己位置を推定し、nav_msgs/msg/Odometryとして/odomへpublishします。" +
+        "/odomを使って土俵の中心からの距離を監視すれば、境界までの残り距離を把握できます。" +
         "自律ロボットの第一歩は『自分がどこにいるか』を知ることです。",
       msgTypes: ["nav_msgs/msg/Odometry", "geometry_msgs/msg/Twist"],
       cli: [
@@ -682,7 +682,7 @@ class SumoReferee(Node):
         elif dist > RING_RADIUS - 0.5:
             self.get_logger().info('edge! be careful')`,
       realWorld: tx(
-        "実機でもホイールオドメトリは必ずズレます（スリップ・接触）。だから LiDAR や IMU と融合して補正するのが実用ロボの定石です。",
+        "実機では、スリップや接触によってホイールオドメトリの誤差が蓄積します。そのため、LiDARやIMUなどの情報と融合して補正する方法がよく使われます。",
         "On real robots wheel odometry always drifts (slip, contact). That is why practical robots fuse it with LiDAR or IMU data for correction.",
       ),
       state: state({
@@ -737,19 +737,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Odometry 入門 — /odom で場外を回避する",
+      ja: "Odometry入門 — /odomを使って場外を避ける",
       en: "Odometry basics — staying in the ring with /odom",
     },
     learn: {
-      ja: "ロボットは車輪の回転から自己位置を推定し /odom に publish します。HUD の edge 距離は /odom から計算されたもの。位置が分かるから「場外まであと何m」が分かるのです。",
+      ja: "ロボットは車輪の回転から自己位置を推定し、/odomへpublishします。HUDの境界までの距離は/odomから計算されています。現在位置が分かるため、場外までの残り距離も把握できます。",
       en: "A robot estimates its own pose from wheel rotation and publishes it on /odom. The HUD edge distance is computed from /odom — knowing your pose is what tells you how close you are to falling out.",
     },
     goal: {
-      ja: "ライバルロボを土俵の外へ押し出せ! 自分が先に出たら負け。\nLB/RB(Shift) ブーストで押し込み、突進(!!)はかわして横から押そう。",
+      ja: "ライバルロボットを土俵の外へ押し出しましょう。自分が先に出ると負けです。\nLB/RB（Shift）のブーストで押し込み、相手の突進（!!）をかわして横から押しましょう。",
       en: "Shove the rival robot out of the ring — fall out first and you lose.\nUse LB/RB (Shift) boost to push hard, dodge its charge (!!) and hit it from the side.",
     },
     first: {
-      ja: "1PはWASDで移動。Pad対戦はPadを2台接続してYを押します。P1・P2とも左スティックで移動し、LB/RBでブーストして押し合います。",
+      ja: "1PはWASDで移動します。ゲームパッド対戦は2台のゲームパッドを接続してYを押すと開始できます。P1・P2とも左スティックで移動し、LB/RBでブーストして押し合います。",
       en: "In 1P, move with WASD. For a pad battle, connect two pads and press Y. Both players move with the left stick and boost with LB/RB.",
     },
   },

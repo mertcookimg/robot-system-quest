@@ -1097,9 +1097,9 @@ export function makeImageProcessing(): Stage {
     ros2: {
       title: "Image Processing — Edge Detection",
       summary:
-        "OpenCV の cv2.cvtColor + cv2.GaussianBlur + cv2.Canny を疑似カメラ画像で再現（本ゲームの canny は Sobel + 二重閾値の簡易版で、細線化する非最大抑制 (NMS) は省略。実物より線が太めに出る）。" +
-        "ノイズ込みのフレームから Ground Truth エッジをどれだけ正確に抽出できるかを F1 スコアで評価する。F1 は「取りこぼしの少なさ (再現率)」と「誤検出の少なさ (適合率)」を両立できているかの指標 (両者の調和平均、1.0 が満点)。" +
-        "low / high 閾値の比 (1:2〜1:3 推奨) と blur の σ のバランス感覚が身に付く。",
+        "OpenCVのcv2.cvtColor・cv2.GaussianBlur・cv2.Cannyを疑似カメラ画像で再現します。このステージのCannyはSobelと二重閾値を使った簡易版で、線を細くする非最大値抑制（NMS）は省略しているため、実際より線が太く表示されます。" +
+        "ノイズを含む画像から正解のエッジをどれだけ正確に抽出できるかを、F1スコアで評価します。F1スコアは再現率と適合率の調和平均で、1.0が満点です。" +
+        "low / high閾値の比率とblurのσを調整し、結果のバランスを確かめましょう。",
       msgTypes: ["sensor_msgs/msg/Image", "sensor_msgs/msg/CompressedImage"],
       cli: [
         "ros2 topic echo /image_raw --once",
@@ -1119,7 +1119,7 @@ def callback(self, msg):
     cv2.imshow("edges", edges)
     cv2.waitKey(1)`,
       realWorld: tx(
-        "robot 実機: /robot/front_camera/image_raw を購読し、edge map を別 topic で publish。閾値が低すぎる場合は床のテクスチャまで誤検出、高すぎると目標物が消える — まさに今の体験そのもの。",
+        "実機では/robot/front_camera/image_rawを購読し、エッジ画像を別のTopicへpublishできます。閾値が低すぎると床の模様まで検出し、高すぎると対象物の輪郭を見逃します。",
         "On a real robot: subscribe to /robot/front_camera/image_raw and publish the edge map on a separate topic. Thresholds too low → floor texture is misdetected; too high → the target itself disappears. Exactly what you are experiencing now.",
       ),
     },
@@ -1251,19 +1251,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "カメラ画像から、物の輪郭を見つけよう",
+      ja: "カメラ画像から物体の輪郭を見つけよう",
       en: "Find object edges in a camera image",
     },
     learn: {
-      ja: "カメラ画像には、照明やセンサーによる細かなノイズが混ざります。そのまま輪郭を探すと、ノイズまで線として検出してしまいます。そこで最初に gaussian_blur（ぼかし）で細かなノイズを減らし、その後に canny で明るさが大きく変わる場所を輪郭として探します。つまり「画像を整える → 輪郭を探す」という順番です。ゲーム画面の「輪郭の一致度」は、見つけた輪郭がお手本にどれだけ近いかを表します。内部では F1 スコアという採点方法を使いますが、まずは100%に近いほど良い、と考えれば大丈夫です。",
+      ja: "カメラ画像には、照明やセンサーによる細かなノイズが混ざります。そのまま輪郭を探すと、ノイズまで線として検出してしまいます。そこで最初にgaussian_blur（ぼかし）で細かなノイズを減らし、その後にcannyで明るさが大きく変わる場所を輪郭として探します。つまり「画像を整える → 輪郭を探す」という順番です。ゲーム画面の「輪郭の一致度」は、見つけた輪郭がお手本にどれだけ近いかを表します。内部ではF1スコアという採点方法を使いますが、まずは100%に近いほど良いと考えれば大丈夫です。",
       en: "Camera images contain small amounts of noise from lighting and the sensor. If we search for edges immediately, that noise can also become unwanted lines. We therefore use gaussian_blur first to reduce fine noise, then canny to find places where brightness changes sharply. The order is simply “clean the image → find its edges.” Edge Match shows how closely your result resembles the target. It uses an F1 score internally, but for now you only need to know that closer to 100% is better.",
     },
     goal: {
-      ja: "「見つけた輪郭」を「お手本」に近づけ、輪郭の一致度を55%より上にすればクリア。",
+      ja: "「見つけた輪郭」を「お手本」に近づけ、輪郭の一致度を55%より高くすればクリアです。",
       en: "Match EDGES FOUND to TARGET and raise Edge Match above 55%.",
     },
     first: {
-      ja: "①「ノイズを減らす gaussian_blur」→「輪郭を探す canny」の順を確認　② ▶ RUN　③ 数値を変えながら「見つけた輪郭」と「お手本」を見比べます。",
+      ja: "①「ノイズを減らすgaussian_blur」→「輪郭を探すcanny」の順番を確認します。② ▶ RUNを押します。③ 数値を変えながら「見つけた輪郭」と「お手本」を見比べます。",
       en: "① Check “reduce noise: gaussian_blur” → “find edges: canny”  ② Press ▶ RUN  ③ Tune the values while comparing EDGES FOUND with TARGET.",
     },
   },

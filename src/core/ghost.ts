@@ -63,7 +63,7 @@ export function setupGhostToggle(toggleEl: HTMLElement, onClick?: () => void): v
   const sync = () => {
     toggleEl.textContent = on ? "ON" : "OFF";
     toggleEl.classList.toggle("muted", !on);
-    const label = `Ghost replay: ${on ? "ON" : "OFF"} — toggle / ゴースト再生: ${on ? "ON" : "OFF"} — 切替`;
+    const label = `Ghost replay: ${on ? "ON" : "OFF"} — toggle / ゴースト再生: ${on ? "ON" : "OFF"} — 切り替え`;
     toggleEl.title = label;
     toggleEl.setAttribute("aria-label", label);
     toggleEl.setAttribute("aria-pressed", String(on));

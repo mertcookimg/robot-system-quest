@@ -661,14 +661,14 @@ export function makeAction(): Stage {
     lessonCmd: "ros2 action list",
     ros2: {
       title: tx(
-        "Action — 長時間処理 + 進捗 + キャンセル",
+        "Action — 長時間処理・進捗・キャンセル",
         "Action — long-running tasks + progress + cancellation",
       ),
       summary:
-        "ROS 2 の Action は長く時間のかかる処理 (ナビ、把持、移動、撮影連射 等) のための仕組み。" +
-        "Client が Goal を送ると Server が処理を始め、実行中は必要に応じて Feedback を返せて、完了時に Result を返す。" +
-        "Service との違い: 長時間 / 途中経過あり / 途中キャンセル可能。" +
-        "action 名 + action 型 が両方一致しないと繋がらない。",
+        "ROS 2のActionは、ナビゲーション・把持・移動など、完了まで時間のかかる処理に適した仕組みです。" +
+        "ClientがGoalを送るとServerが処理を始め、実行中は必要に応じてFeedbackを返し、完了時にResultを返します。" +
+        "Serviceと異なり、途中経過の通知とキャンセル要求を扱えます。" +
+        "接続するにはAction名とAction型の両方が一致している必要があります。",
       msgTypes: ["nav2_msgs/action/NavigateToPose"],
       cli: [
         "ros2 action list",
@@ -676,7 +676,7 @@ export function makeAction(): Stage {
         'ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose "{pose: {header: {frame_id: map}, pose: {position: {x: 2.0, y: 0.0}, orientation: {w: 1.0}}}}" --feedback',
       ],
       realWorld: tx(
-        "Nav2 や MoveIt 2 では、完了まで時間のかかる処理に Action が使われます。Goal の受付、途中経過の Feedback、完了時の Result、キャンセル要求を扱える点が Service との大きな違いです。",
+        "Nav2やMoveIt 2では、完了まで時間のかかる処理にActionが使われます。Goalの受付、途中経過のFeedback、完了時のResult、キャンセル要求を扱える点がServiceとの大きな違いです。",
         "Nav2 and MoveIt 2 use Actions for tasks that take time to finish. Compared with Services, Actions add goal handling, progress feedback, a final result, and cancellation requests.",
       ),
     },
@@ -742,34 +742,34 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Action — Goal / Feedback / Result",
+      ja: "Action — Goal・Feedback・Result",
       en: "Action — Goal / Feedback / Result",
     },
     learn: {
-      ja: "Action は時間のかかる処理用です。Client が Goal を送り、Server は実行中に必要に応じて Feedback を返せます。完了時には Result と Goal Status が返り、途中でキャンセルを要求することもできます。",
+      ja: "Actionは時間のかかる処理に適した通信方式です。ClientがGoalを送り、Serverは実行中に必要に応じてFeedbackを返します。完了時にはResultとGoal Statusが返り、途中でキャンセルを要求することもできます。",
       en: "Actions are for long-running tasks. A Client sends a Goal, and the Server may provide Feedback as needed during execution. Completion provides a Result and Goal Status, and the Client may request cancellation.",
     },
     goal: {
-      ja: "Client と Server を action 名と型で繋ぎ、Goal → Feedback（必要に応じて）→ Result / Goal Status の流れを完成させましょう。",
+      ja: "ClientとServerをAction名と型でつなぎ、Goal → Feedback（必要に応じて）→ Result / Goal Statusの流れを完成させましょう。",
       en: "Wire the Client and Server with a matching action name and type so the Goal → optional Feedback → Result / Goal Status flow runs.",
     },
     first: {
-      ja: "左右どちらかのポートをタップし、もう片方をタップします。ポート間を直接ドラッグしても接続できます。action 名と型が一致すると接続できます。",
+      ja: "左右どちらかのポートをタップしてから、もう一方をタップします。ポート間を直接ドラッグしても接続できます。Action名と型が一致すると接続が成立します。",
       en: "Tap either port, then tap the other one. You can also drag directly between them. The link forms when the action name and type both match.",
     },
   },
   strings: {
     ja: {
-      hint: "左右を順にタップ（順不同）/ 反対側へ半分ほどドラッグでも自動接続",
-      "node.client": "Goal pose を action server に送る",
-      "node.server": "/navigate_to_pose で目標まで走行 + 必要に応じて進捗報告",
-      sim_label: "ROBOT SIMULATION  (この例では action 実行中に定期 feedback)",
-      "status.incomplete": "配線が不完全 — action 名と型を一致させて",
-      "status.success": "Action 接続成立 — Goal 送信、この例では定期 Feedback を受信",
+      hint: "左右のポートを順不同でタップ / 反対側へ半分ほどドラッグしても自動接続",
+      "node.client": "Goal PoseをAction Serverへ送る",
+      "node.server": "/navigate_to_poseで目標まで走行し、必要に応じて進捗を報告",
+      sim_label: "ROBOT SIMULATION（この例ではAction実行中に定期的にFeedbackを送信）",
+      "status.incomplete": "配線が不完全 — Action名と型を一致させてください",
+      "status.success": "Action接続成立 — Goalを送信し、この例では定期的にFeedbackを受信",
       "status.select_other": "ポートを選択中 — 反対側のポートをタップ",
-      subtitle: "長時間処理 + 任意の進捗報告。Service と違いキャンセル要求が可能",
-      tip_hud: "action 名 + action 型 が両方一致しないと繋がらない",
-      title: "Action Builder — Goal 送信 → Feedback → Result",
+      subtitle: "長時間処理と任意の進捗報告。Serviceと異なりキャンセル要求が可能",
+      tip_hud: "Action名とAction型が両方一致すると接続できます",
+      title: "Action Builder — Goal送信 → Feedback → Result",
     },
     en: {
       hint: "Tap both ports in either order / drag about halfway to auto-connect",

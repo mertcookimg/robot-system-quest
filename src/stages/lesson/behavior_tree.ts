@@ -390,7 +390,7 @@ export function makeBtEditor(): Stage {
     const padHint = document.createElement("span");
     padHint.className = "bt-pad-hint";
     padHint.style.cssText = "float:right; color:#fbbf24;";
-    padHint.innerHTML = "🎮 ↑↓ 項目 · A 一覧を開く / ボタン実行 · B 取消";
+    padHint.innerHTML = "🎮 ↑↓ 項目選択 · A 一覧を開く／ボタン実行 · B キャンセル";
     statusBox.appendChild(padHint);
     panel.appendChild(statusBox);
 
@@ -803,11 +803,11 @@ export function makeBtEditor(): Stage {
     lesson: "Behavior Tree",
     lessonCmd: "ros2 node info /bt_navigator",
     ros2: defineRos2Concept({
-      title: tx("Behavior Tree — Nav2 流の意思決定", "Behavior Tree — Nav2-style decision making"),
+      title: tx("Behavior Tree — Nav2方式の意思決定", "Behavior Tree — Nav2-style decision making"),
       summary:
-        "Nav2 では BehaviorTree.CPP の Control / Action / Condition Node を組み合わせて" +
-        "ナビゲーションの判断を表現します。このLessonで Selector と呼ぶ優先分岐は、" +
-        "BehaviorTree.CPP の Fallback に相当します。",
+        "Nav2ではBehaviorTree.CPPのControl / Action / Condition Nodeを組み合わせて、" +
+        "ナビゲーションの判断を表現します。このレッスンでSelectorと呼ぶ優先分岐は、" +
+        "BehaviorTree.CPPのFallbackに相当します。",
       msgTypes: ["nav2_msgs/action/NavigateToPose"],
       cli: ["ros2 node info /bt_navigator", "ros2 action info /navigate_to_pose"],
       python: `# behaviortree.cpp は C++ ですが Python wrapper の py_trees も同じ思想:
@@ -825,7 +825,7 @@ avoid = pt.composites.Sequence("avoid", memory=False, children=[
 default = pt.behaviours.Forward()
 root.add_children([goal, avoid, default])`,
       realWorld: tx(
-        "Nav2 の BT Navigator は BehaviorTree.CPP を使い、XML で定義したナビゲーション処理を実行します。Node 間の値は blackboard で共有できます。",
+        "Nav2のBT NavigatorはBehaviorTree.CPPを使い、XMLで定義したナビゲーション処理を実行します。Node間の値はBlackboardで共有できます。",
         "Nav2's BT Navigator uses BehaviorTree.CPP to execute navigation behaviors defined in XML. Nodes can share values through a blackboard.",
       ),
       state: state({
@@ -881,31 +881,31 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Behavior Tree — 優先順位付きルールでロボを動かす",
+      ja: "Behavior Tree — 優先順位付きルールでロボットを動かす",
       en: "Behavior Tree — drive the robot with priority-ordered rules",
     },
     learn: {
-      ja: "Nav2 は BehaviorTree.CPP の Control / Action / Condition Node を組み合わせて意思決定を表現します。本ステージは、BehaviorTree.CPP の Fallback に相当する優先分岐を Selector と表記し、「if 条件 → action」のルール 4 つとデフォルト action を上から順に評価します。",
+      ja: "Nav2はBehaviorTree.CPPのControl / Action / Condition Nodeを組み合わせて意思決定を表現します。このステージでは、BehaviorTree.CPPのFallbackに相当する優先分岐をSelectorと表記し、4つの「if 条件 → action」ルールとデフォルトのactionを上から順に評価します。",
       en: "Nav2 combines BehaviorTree.CPP Control, Action, and Condition nodes to express decisions. This stage labels a priority branch as Selector—the equivalent of a BehaviorTree.CPP Fallback—and evaluates four condition→action rules plus a default from top to bottom.",
     },
     goal: {
-      ja: "ルールを並べて、ロボがスタートからゴールまで衝突せずに到達する policy を組みましょう。`at_goal → stop` を入れておくと到達後にちゃんと止まり、Selector の優先順位の意味も体感できます。",
+      ja: "ルールを並べ、ロボットがスタートからゴールまで衝突せずに到達できるPolicyを組み立てましょう。`at_goal → stop`を入れておくと到達後に停止するため、Selectorの優先順位の意味も体感できます。",
       en: "Build a rule list that drives the robot from start to goal without crashing. Adding `at_goal → stop` is a good way to feel the Selector priority — the robot halts right when it arrives instead of orbiting the goal.",
     },
     first: {
-      ja: "RULE 1 で `at_goal → stop`、RULE 2 で `obstacle_close → turn_right`、default を `forward` にしてみましょう。RUN を押すと BT が動き始めます。",
+      ja: "RULE 1を`at_goal → stop`、RULE 2を`obstacle_close → turn_right`、defaultを`forward`に設定してみましょう。RUNを押すとBehavior Treeが動き始めます。",
       en: "Try RULE 1 = `at_goal → stop`, RULE 2 = `obstacle_close → turn_right`, default = `forward`. Press RUN to start the BT.",
     },
   },
   strings: {
     ja: {
-      "status.idle": "ルールを組んで RUN — 上から評価され、最初に当てはまるルールが実行される",
-      "status.running": "BT 実行中 — 黄色いハイライトが今の active rule",
-      "status.stopped": "停止 — RUN で再開、RESET で位置リセット",
-      "status.crash": "衝突 — ルールを修正して再 RUN",
-      "status.success": "GOAL 到達 — BT による policy 完成",
-      "status.no_rules": "× ルールが空 — 少なくとも 1 つは cond/action を設定して",
-      hint: "RULE は上から優先で評価。`at_goal → stop` を入れると到達と同時に止まる",
+      "status.idle": "ルールを組んでRUN — 上から評価し、最初に当てはまるルールを実行",
+      "status.running": "Behavior Tree実行中 — 黄色のハイライトが現在のルール",
+      "status.stopped": "停止 — RUNで再開、RESETで位置をリセット",
+      "status.crash": "衝突 — ルールを修正して再度RUN",
+      "status.success": "GOAL到達 — Behavior TreeによるPolicyが完成",
+      "status.no_rules": "× ルールが空です — cond/actionを少なくとも1つ設定してください",
+      hint: "RULEは上から優先的に評価されます。`at_goal → stop`を入れると到達時に停止します",
     },
     en: {
       "status.idle": "Build rules then press RUN — evaluated top-down, first match wins",

@@ -664,11 +664,11 @@ export function makeMazeMapper(): Stage {
     lessonCmd: "ros2 topic echo /map",
     ros2: {
       title: tx(
-        "Mapping (SLAM lite) — /scan から /map を作る",
+        "Mapping（簡易SLAM）— /scanから/mapを作る",
         "Mapping (SLAM lite) — building /map from /scan",
       ),
       summary:
-        "このステージではロボットの姿勢が分かっていると仮定し、LiDAR の `/scan` を occupancy grid に反映します。実際の SLAM は、地図の更新と同時にロボットの姿勢も推定し、scan matching や loop closure でずれを抑えます。",
+        "このステージではロボットの姿勢が既知であると仮定し、LiDARの`/scan`をOccupancy Gridへ反映します。実際のSLAMでは、地図の更新と同時にロボットの姿勢も推定し、Scan MatchingやLoop Closureによってずれを抑えます。",
       msgTypes: [
         "sensor_msgs/msg/LaserScan",
         "nav_msgs/msg/OccupancyGrid",
@@ -696,7 +696,7 @@ class MapBuilder(Node):
                 self.grid[row, col] = 100 if hit else 0
         self.pub.publish(occupancy_grid_msg(self.grid))`,
       realWorld: tx(
-        "実機の 2D SLAM でも、LiDAR の /scan と移動情報を使って地図と姿勢を同時に推定します。このステージは、そのうち姿勢が既知の場合の occupancy grid 更新に焦点を当てた簡略モデルです。",
+        "実機の2D SLAMでも、LiDARの/scanと移動情報を使って地図と姿勢を同時に推定します。このステージは、姿勢が既知の場合のOccupancy Grid更新に焦点を当てた簡略モデルです。",
         "Real 2D SLAM also uses LiDAR scans and motion information to estimate both the map and robot pose. This stage is a simplified model focused on occupancy-grid updates when the pose is assumed to be known.",
       ),
       state: {
@@ -807,19 +807,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Mapping (SLAM lite) — /scan から /map を作る",
+      ja: "Mapping（簡易SLAM）— /scanから/mapを作る",
       en: "Mapping (SLAM lite) — building /map from /scan",
     },
     learn: {
-      ja: "本ステージはロボットの姿勢が分かっていると仮定し、LiDAR の /scan から nav_msgs/msg/OccupancyGrid (/map) を更新する流れを体感します。「今見えている領域」と「これまでに観測した領域」を分けて表示し、地図が更新される感覚を学びます。実際の SLAM では姿勢も同時に推定します。",
+      ja: "このステージではロボットの姿勢が既知であると仮定し、LiDARの/scanからnav_msgs/msg/OccupancyGrid（/map）を更新する流れを体験します。「現在見えている領域」と「これまでに観測した領域」を分けて表示し、地図が更新される仕組みを学びます。実際のSLAMでは姿勢も同時に推定します。",
       en: 'This stage assumes the robot pose is known and focuses on updating a nav_msgs/msg/OccupancyGrid (/map) from LiDAR /scan. It separates \\"currently visible\\" from \\"already observed\\" so you can see the map grow. Real SLAM estimates the robot pose and map together.',
     },
     goal: {
-      ja: "WASD で暗い迷路を進もう。ロボの LiDAR が周りを照らしてくれます。\n宝箱 (α / β / γ) を 3 つ集めてから出口へ向かえばクリア!\n壁に当たるとやり直し。",
+      ja: "WASDで暗い迷路を進みましょう。ロボットのLiDARが捉えた範囲は明るく表示されます。\n3つの宝箱（α / β / γ）を集めて出口へ到達すればクリアです。\n壁に当たるとやり直しになります。",
       en: "Drive the dark maze with WASD — your LiDAR lights the way.\nCollect all 3 chests (α / β / γ), then head to the exit to clear!\nHitting a wall = retry.",
     },
     first: {
-      ja: "WASD で動き出すと LiDAR (青い ray) が壁を捉え、右側の OCCUPANCY GRID にどんどん地図が書き込まれます。広く動き回るほど map coverage が上がります。",
+      ja: "WASDで動き出すと、LiDAR（青い光線）が壁を捉え、右側のOCCUPANCY GRIDへ地図が書き込まれていきます。広く動き回るほど地図の完成度が上がります。",
       en: "Press WASD to move; the blue LiDAR rays catch walls and the OCCUPANCY GRID on the right fills in. The wider you roam, the higher your map coverage gets.",
     },
   },

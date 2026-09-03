@@ -691,14 +691,14 @@ export function makeNav2Goal(): Stage {
     lessonCmd: "ros2 action info /navigate_to_pose",
     ros2: {
       title: tx(
-        "Nav2 ・クリックでゴール送信、A* で plan",
+        "Nav2 — クリックでGoalを送り、A*で経路を計画する",
         "Nav2 — click to send a goal, A* plans the path",
       ),
       summary:
-        "RViz2 の 2D Nav Goal をクリックして送るのと同じ。" +
-        "PoseStamped を /goal_pose に publish → グローバルプランナが /plan (nav_msgs/msg/Path) を計算 → " +
-        "ローカルプランナ (ここでは pure pursuit) が /cmd_vel を出してロボを追従させる。" +
-        "Nav2 スタックの「クリック → 自動走行」が成立する仕組みのミニマム実装。",
+        "RViz2の2D Nav Goalと同様に、地図上でGoalを指定します。" +
+        "PoseStampedを/goal_poseへpublishすると、Global Plannerが/plan（nav_msgs/msg/Path）を計算し、" +
+        "Local Controller（ここではPure Pursuit）が/cmd_velを出力してロボットを経路に追従させます。" +
+        "このステージは、Nav2でGoalの指定から自動走行までが行われる仕組みを単純化したものです。",
       msgTypes: [
         "geometry_msgs/msg/PoseStamped",
         "nav_msgs/msg/Path",
@@ -729,7 +729,7 @@ while not nav.isTaskComplete():
     print(f'distance remaining: {feedback.distance_remaining:.2f} m')
 result = nav.getResult()`,
       realWorld: tx(
-        "実機の Nav2 では、地図・自己位置・costmap・各種 server を正しく構成すると RViz からゴールを送れます。Planner には NavFn、Controller には DWB や Regulated Pure Pursuit などの plugin を選べます。本ステージは A* と簡略化した経路追従を組み合わせた一例です。",
+        "実機のNav2では、地図・自己位置・Costmap・各種Serverを正しく構成すると、RVizからGoalを送れます。PlannerにはNavFn、ControllerにはDWBやRegulated Pure PursuitなどのPluginを選べます。このステージは、A*と簡略化した経路追従を組み合わせた一例です。",
         "On a physical robot, Nav2 can accept RViz goals after the map, localization, costmaps, and servers are configured. Plugins may include NavFn for planning and DWB or Regulated Pure Pursuit for control. This stage models one simplified configuration using A* and path following.",
       ),
       state: {
@@ -815,19 +815,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Nav2 — /goal_pose から自律航行",
+      ja: "Nav2 — /goal_poseから自律走行する",
       en: "Nav2 — autonomous navigation via /goal_pose",
     },
     learn: {
-      ja: "クリック+ドラッグで /goal_pose を送ると、A* で /plan を計算し、pure pursuit コントローラが /cmd_vel を出してロボが追従します。",
+      ja: "クリックしてドラッグすると/goal_poseが送信され、A*で/planを計算します。その後、Pure Pursuit Controllerが/cmd_velを出力し、ロボットが経路を追従します。",
       en: "Click+drag publishes /goal_pose, A* computes a /plan, and a pure-pursuit controller emits /cmd_vel that the robot follows.",
     },
     goal: {
-      ja: "好きな位置をクリック+ドラッグでゴール指定し、Nav2 にロボを誘導してもらいましょう。",
+      ja: "好きな位置をクリックしてドラッグし、ゴールの位置と向きを指定して、Nav2にロボットを誘導させましょう。",
       en: "Pick any spot with click+drag and let Nav2 navigate the robot for you.",
     },
     first: {
-      ja: "マップ上をクリックしたままドラッグして向きを決め、離すと /goal_pose が送信されます。",
+      ja: "マップ上をクリックしたままドラッグして向きを決め、操作を終えると/goal_poseが送信されます。",
       en: "Click on the map, drag to set heading, and release to publish /goal_pose.",
     },
   },

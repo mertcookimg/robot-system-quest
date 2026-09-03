@@ -94,7 +94,7 @@ let deps: Deps | null = null;
 export function setupGamepad(d: Deps): void {
   deps = d;
   window.addEventListener("gamepadconnected", (e) => {
-    const lab = getLang() === "ja" ? "🎮 Gamepad 接続" : "🎮 Gamepad connected";
+    const lab = getLang() === "ja" ? "🎮 ゲームパッド接続" : "🎮 Gamepad connected";
     setStatusForGamepad(`${lab}: ${e.gamepad.id}`);
   });
   window.addEventListener("gamepaddisconnected", () => {

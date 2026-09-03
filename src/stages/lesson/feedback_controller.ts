@@ -504,12 +504,12 @@ export function makeFeedbackController(): Stage {
     lessonCmd: "ros2 topic echo /robot/odometry/odometry",
     ros2: {
       title: tx(
-        "Feedback ・/odomで正三角形を描く",
+        "Feedback — /odomを使って正三角形を描く",
         "Feedback — draw an equilateral triangle with /odom",
       ),
       summary:
         "Feedforward Controllerと同じ1辺1.4mの正三角形を描きます。" +
-        "/odom をSubscribeし、推定移動距離が1.4m、推定回転角が120°に達するまでcmd_velを送り、" +
+        "/odomをsubscribeし、推定移動距離が1.4m、推定回転角が120°に達するまでcmd_velを送り、" +
         "時間ではなくOdometryの推定結果を使って各辺と回転を終えます。",
       msgTypes: ["geometry_msgs/msg/Twist", "nav_msgs/msg/Odometry"],
       cli: [
@@ -572,7 +572,7 @@ class RobotFeedbackControl(Node):
 #     n.go_straight(1.4)
 #     n.turn_left(120)`,
       realWorld: tx(
-        "実機でも odometry を読み、目標の移動距離や回転角に達したかを判定して停止できます。ただし odometry の誤差、速度制限、停止距離を考慮し、安全な低速から調整する必要があります。",
+        "実機でもOdometryを読み、目標の移動距離や回転角に達したかを判定して停止できます。ただし、Odometryの誤差、速度制限、停止距離を考慮し、安全な低速から調整する必要があります。",
         "A physical robot can also use odometry to decide when it has reached a target distance or rotation. Odometry error, velocity limits, and stopping distance must still be considered, beginning with safe low-speed tests.",
       ),
       state: {
@@ -651,15 +651,15 @@ export default defineStage({
       en: "Feedback Controller — draw a triangle from measured pose",
     },
     learn: {
-      ja: "/odomから推定移動距離と推定回転角を読み、目標値に達したと推定されたら止めます。同じ正三角形でも、時間ではなくOdometryの推定結果で各辺と回転を決めます。",
+      ja: "/odomから推定移動距離と推定回転角を読み、目標値に達したと判断したら止めます。同じ正三角形でも、時間ではなくOdometryの推定結果を使って各辺の移動と旋回を制御します。",
       en: "Read estimated distance and rotation from /odom and stop when each target is estimated to have been reached. The triangle is identical, but the odometry estimate—not elapsed time—decides every side and turn.",
     },
     goal: {
-      ja: "go_straight(1.4m)とturn_left(120°)を3回ずつ組み合わせ、三角形ガイドに沿って始点へ戻りましょう。",
+      ja: "go_straight（1.4m）とturn_left（120°）を3回ずつ組み合わせ、三角形のガイドに沿って始点へ戻りましょう。",
       en: "Combine go_straight(1.4 m) and turn_left(120°) three times each, follow the guide, and return to the start.",
     },
     first: {
-      ja: "最初の2ブロックは未完成です。ガイドの辺の長さと外角を読み取り、distanceとangleを直してから3辺分に増やしましょう。",
+      ja: "最初の2ブロックは未完成です。ガイドの辺の長さと外角を読み取り、distanceとangleを修正してから3辺分に増やしましょう。",
       en: "The first two blocks are incomplete. Read the side length and exterior angle from the guide, correct distance and angle, then expand the pair to all three sides.",
     },
   },

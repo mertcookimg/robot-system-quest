@@ -546,12 +546,12 @@ export function makeTfPuzzle(): Stage {
     lessonCmd: "ros2 run tf2_ros static_transform_publisher",
     ros2: {
       title: tx(
-        "TF — sensor のマウントを transform で表す",
+        "TF — センサーの取り付け位置をTransformで表す",
         "TF — describe a sensor mount with a transform",
       ),
       summary:
-        "ロボの各部品 (LiDAR / camera / wheel) は base_link に対して固定された相対位置を持つ。これを TF tree (map → odom → base_link → laser ...) で表すのが ROS2 の流儀。" +
-        "本ステージは base_link → laser の transform を当てるパズル。間違っているとスキャン点が壁から外れて散らばる。",
+        "ロボットの各部品（LiDAR / camera / wheel）は、base_linkに対して固定された相対的な位置と向きを持ちます。ROS 2では、これをTF Tree（map → odom → base_link → laser ...）で表します。" +
+        "このステージは、base_link → laserのTransformを推定するパズルです。設定が間違っていると、スキャン点が壁から外れて表示されます。",
       msgTypes: [
         "geometry_msgs/msg/TransformStamped",
         "sensor_msgs/msg/LaserScan",
@@ -575,7 +575,7 @@ class StaticTfPub(Node):
         t.transform.rotation = quat_from_euler(0, 0, math.radians(-22))
         self.b.sendTransform(t)`,
       realWorld: tx(
-        '実機ロボのセンサ取り付け位置は URDF または static_transform_publisher で TF tree に登録します。誤った transform は SLAM や Nav2 の認識・走行にずれを生じさせます。本ステージは平面上の tx / ty / yaw に絞っていますが、URDF の <origin xyz="..." rpy="..."/> では 3 次元の位置と姿勢を設定します。',
+        '実機ロボットのセンサー取り付け位置は、URDFまたはstatic_transform_publisherを使ってTF Treeへ登録します。誤ったTransformは、SLAMやNav2の認識・走行にずれを生じさせます。このステージは平面上のtx / ty / yawに絞っていますが、URDFの<origin xyz="..." rpy="..."/>では3次元の位置と姿勢を設定します。',
         "On a physical robot, sensor mounts are registered in the TF tree through URDF or static_transform_publisher. Incorrect transforms can distort perception and navigation. This stage focuses on planar tx, ty, and yaw, while URDF's <origin xyz=... rpy=.../> describes full 3D position and orientation.",
       ),
       state: {
@@ -667,19 +667,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "TF — sensor のマウントを transform で表す",
+      ja: "TF — センサーの取り付け位置をTransformで表す",
       en: "TF — describe a sensor mount with a transform",
     },
     learn: {
-      ja: "ROS2 ではロボの各部品 (base_link / laser / camera) の相対位置を TF tree で表します。LiDAR がどこに何度向きでマウントされているかを base_link → laser の transform で宣言する仕組みで、これが間違うと SLAM や Nav2 がすべて狂います。",
+      ja: "ROS 2では、ロボットの各部品（base_link / laser / camera）の相対的な位置と向きをTF Treeで表します。LiDARがどこにどの向きで取り付けられているかをbase_link → laserのTransformで定義する仕組みです。これが間違っていると、SLAMやNav2も正しく動作しません。",
       en: "In ROS2, each robot part (base_link / laser / camera) has a fixed relative pose, expressed in a TF tree. Where and how a LiDAR is mounted is declared as the base_link → laser transform — get it wrong and SLAM and Nav2 silently break.",
     },
     goal: {
-      ja: "ロボに描かれた青い LiDAR (truth) の位置と向きを観察し、tx / ty / yaw のスライダーで base_link → laser の TF を当てましょう。LiDAR スキャン点の 95% が壁と一致したらクリア。",
+      ja: "ロボットに描かれた青いLiDAR（正解）の位置と向きを観察し、tx / ty / yawのスライダーでbase_link → laserのTFを再現しましょう。LiDARのスキャン点が壁と95%以上一致すればクリアです。",
       en: "Look at the cyan LiDAR icon drawn on the robot (the physical truth) and tune the tx / ty / yaw sliders so your base_link → laser TF matches it. Reach 95% scan-to-wall alignment to clear.",
     },
     first: {
-      ja: "画面下のスライダーを動かして紫の点線サークル (your TF) を青の LiDAR (truth) に重ねます。間違っているとスキャン点が赤くなって壁から外れて散らばります。",
+      ja: "画面下のスライダーを動かし、紫の点線（設定したTF）を青いLiDAR（正解）に重ねます。設定が間違っているとスキャン点が赤くなり、壁から外れて表示されます。",
       en: "Drag the sliders below to move the dashed purple ring (your TF) onto the cyan LiDAR (truth). Wrong values colour the scan points red and scatter them off the walls.",
     },
   },

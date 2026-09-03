@@ -279,14 +279,13 @@ export function makeIkReach(): Stage {
       "ros2 topic pub --once /tip_target geometry_msgs/msg/PoseStamped '{pose: {position: {x: 0.4, y: 0.2, z: 0.0}, orientation: {w: 1.0}}}'",
     ros2: {
       title: tx(
-        "Inverse Kinematics ・手先の目標位置から関節角を逆算する",
+        "Inverse Kinematics — 手先の目標位置から関節角を逆算する",
         "Inverse Kinematics — command the tip pose, solve back for joint angles",
       ),
       summary:
-        "手先 (tip) の目標位置を直接動かすと、アームが逆運動学 (IK) で関節角を逆算して追従する。" +
-        "joint_teleop で苦労した同じコースが一瞬で解ける。IK には elbow-up / elbow-down の 2 解があり、" +
-        "到達できるのはワークスペース (アニュラス) 内だけ。腕が伸びきる特異点付近では、わずかな手先移動に" +
-        "大きな関節移動が必要になる (|dq| メータが跳ねる)。",
+        "手先（tip）の目標位置を動かすと、アームが逆運動学（IK）で関節角を逆算して追従します。" +
+        "IKにはelbow-up / elbow-downの2つの解があり、到達できるのはアームの作業領域内だけです。" +
+        "腕が伸び切る特異点付近では、わずかな手先の移動でも大きな関節角の変化が必要になります（|dq|メーターで確認できます）。",
       msgTypes: ["geometry_msgs/msg/PoseStamped", "sensor_msgs/msg/JointState"],
       cli: [
         "ros2 topic pub /tip_target geometry_msgs/msg/PoseStamped '{...}'",
@@ -309,7 +308,7 @@ def ik(x, y, L1, L2, elbow_up=True):
     q1 = math.atan2(y, x) - math.atan2(L2*math.sin(q2), L1 + L2*math.cos(q2))
     return q1, q2`,
       realWorld: tx(
-        "実機では MoveIt 2 / moveit_servo が Cartesian ジョグ (手先の速度・位置指令) を IK で関節指令に変換して joint_trajectory_controller に渡す。この topic 名や PoseStamped はその入口。",
+        "実機では、MoveIt 2やmoveit_servoがCartesian Jog（手先の速度・位置指令）をIKで関節指令に変換し、joint_trajectory_controllerへ渡します。このステージのTopicとPoseStampedは、その入力部分を表しています。",
         "On real hardware MoveIt 2 / moveit_servo turns a Cartesian jog (tip velocity/pose) into joint commands via IK and hands them to joint_trajectory_controller — PoseStamped here is that entry point.",
       ),
       state: {
@@ -377,15 +376,15 @@ export default defineStage({
       en: "IK Reach — command the tip directly",
     },
     learn: {
-      ja: "逆運動学 (IK) は「手先をここに」という目標から関節角を逆算します。同じ課題が joint_teleop より遥かに楽になるはず。IK には肘の向きで 2 解 (elbow-up/down) があり、到達できるのはワークスペース内だけ。腕が伸びきる特異点では関節が敏感になります。",
+      ja: "逆運動学（IK）は、手先の目標位置から関節角を逆算します。関節を1つずつ操作するjoint_teleopよりも、同じ課題へ簡単に取り組めます。IKには肘の向きによって2つの解（elbow-up / down）があり、手先が到達できるのは作業領域内だけです。腕が伸び切る特異点付近では、関節角が大きく変化しやすくなります。",
       en: "Inverse kinematics (IK) turns a tip goal ('put the hand here') back into joint angles. The same course is far easier than joint_teleop. IK has two solutions (elbow-up/down), only points inside the workspace are reachable, and near full extension (a singularity) the joints get twitchy.",
     },
     goal: {
-      ja: "カーソル (マウス / 矢印) で手先目標を動かし、① → ⑥ に触れましょう。届かない所ではワークスペース境界が赤く光ります。E で肘の向きを切り替えられます。",
+      ja: "カーソル（マウス / 矢印キー）で手先の目標位置を動かし、①から⑥まで順番に触れましょう。届かない位置では作業領域の境界が赤く光ります。Eで肘の向きを切り替えられます。",
       en: "Move the tip target with the cursor (mouse / arrows) and touch ①→⑥. The workspace boundary flashes red where you can't reach. Press E to switch the elbow configuration.",
     },
     first: {
-      ja: "カーソルをターゲット① に重ねるだけ。アームが IK で勝手に追従します。次に E で肘を反転して、腕の形が変わるのを見てください。",
+      ja: "まずカーソルをターゲット①に重ねましょう。アームがIKによって自動的に追従します。次にEで肘の向きを反転し、腕の形が変わる様子を確認してください。",
       en: "Just hover the cursor over target ①; the arm follows via IK. Then press E to flip the elbow and watch the arm change shape.",
     },
   },

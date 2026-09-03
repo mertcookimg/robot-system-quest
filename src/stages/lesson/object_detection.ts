@@ -494,14 +494,14 @@ export function makeObjectDetection(): Stage {
     lesson: "Object Detection",
     lessonCmd: "ros2 topic echo /detection/objects",
     ros2: {
-      title: "Simulated Object Detection",
+      title: tx("物体検出シミュレーション", "Simulated Object Detection"),
       summary:
-        "汎用的な物体検出器ノードを擬似化したステージ。実際の neural network は走らせず、" +
-        "ground-truth から bbox + class + confidence を生成する。" +
-        "このシミュレーションでは model サイズ (n→x) を上げるほど基準 confidence と latency が増える設定。" +
-        "実機の精度・confidence・速度は、モデル、学習データ、入力、hardware によって変わる。" +
-        "confidence_filter で threshold を調整し、false positive を弾きながら全クラスを capture できれば clear。" +
-        "/detection/objects トピックを JSON で擬似 publish。",
+        "一般的なObject Detection Nodeの動作を再現したステージです。実際のNeural Networkは実行せず、" +
+        "正解データからBounding Box・Class・Confidenceを生成します。" +
+        "このシミュレーションでは、model sizeをnからxへ上げるほど基準ConfidenceとLatencyが増える設定です。" +
+        "実機での精度・Confidence・処理速度は、モデル、学習データ、入力、Hardwareによって変わります。" +
+        "confidence_filterのthresholdを調整し、誤検出を除きながらすべてのClassを検出するとクリアです。" +
+        "検出結果は/detection/objectsへJSON形式で擬似的にpublishします。",
       msgTypes: ["sensor_msgs/msg/Image", "std_msgs/msg/String", "geometry_msgs/msg/Twist"],
       cli: [
         "ros2 topic echo /detection/objects",
@@ -528,7 +528,7 @@ class ObjectDetectorNode(Node):
         objs = [{"class": cls, "conf": float(p)} for (cls, p, _bbox) in results]
         self.pub_obj.publish(String(data=json.dumps({"objects": objs})))`,
       realWorld: tx(
-        "実機の物体検出では、モデルの大きさ、推論速度、精度の間にトレードオフが生じることがあります。ただし大きいモデルが常に高精度・高 confidence になるとは限りません。本ステージは threshold と処理時間の関係を単純化して体験するものです。",
+        "実機の物体検出では、モデルの大きさ、推論速度、精度の間にトレードオフが生じることがあります。ただし、大きいモデルが常に高精度・高Confidenceになるとは限りません。このステージでは、thresholdと処理時間の関係を単純化して体験します。",
         "Real object detection can involve trade-offs among model size, inference speed, and accuracy, but a larger model is not guaranteed to be more accurate or more confident. This stage provides a simplified way to explore thresholds and processing time.",
       ),
     },
@@ -577,31 +577,31 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "物体検出 — detector + confidence filter",
+      ja: "物体検出 — DetectorとConfidence Filter",
       en: "Object detection — detector + confidence filter",
     },
     learn: {
-      ja: "物体検出器 (object detector) は、画像に写っている物体のクラス名と confidence (確信度) を bounding box とともに出力します。confidence_filter で閾値以上の検出だけを残し、model size と threshold のトレードオフを学びます。",
+      ja: "物体検出器（Object Detector）は、画像に写っている物体のクラス名と信頼度をBounding Boxとともに出力します。confidence_filterで閾値以上の検出だけを残し、model sizeとthresholdのトレードオフを学びます。",
       en: "An object detector outputs each detected object's class label, confidence, and bounding box. confidence_filter keeps only detections above the threshold. Tune model size vs threshold to balance precision and recall.",
     },
     goal: {
-      ja: "model と threshold を調整して全クラスを検出し、GOAL に到達しましょう。",
+      ja: "modelとthresholdを調整してすべてのクラスを検出し、GOALに到達しましょう。",
       en: "Tune model and threshold to detect every class, then reach GOAL.",
     },
     first: {
-      ja: "detect ブロックの model と confidence_filter の threshold を調整して ▶ RUN しましょう。",
+      ja: "detectブロックのmodelとconfidence_filterのthresholdを調整して、▶ RUNを押しましょう。",
       en: "Set model on the detect block and threshold on confidence_filter, then press ▶ RUN.",
     },
   },
   strings: {
     ja: {
-      hint: "このsimulationでは model大→処理時間と基準confidenceが上昇 / threshold高→FPを減らす一方で見逃しが増える",
-      palette_hint: "detect(model) → confidence_filter(threshold) で物体検出",
-      remaining: "残り {n} 個のクラスを検出",
-      run_msg: "teleop 中 — 検出器で全クラスを見つけて GOAL",
-      run_msg2: "teleop 中 — 検出器で物体を捕捉",
+      hint: "このシミュレーションでは、model大 → 処理時間と基準Confidenceが上昇 / threshold高 → 誤検出と検出数が減少",
+      palette_hint: "detect（model）→ confidence_filter（threshold）で物体を検出",
+      remaining: "残り{n}個のClassを検出してください",
+      run_msg: "遠隔操作中 — 検出器ですべてのClassを見つけてGOALへ",
+      run_msg2: "遠隔操作中 — 検出器で物体を捉えてください",
       stop: "停止",
-      tip: "物体検出器で各クラスを検出 → 全部 capture して GOAL",
+      tip: "物体検出器ですべてのClassを検出 → すべて検出したらGOALへ",
     },
     en: {
       hint: "In this simulation: larger model → more latency and higher base confidence / higher threshold may reduce FP but increase misses",

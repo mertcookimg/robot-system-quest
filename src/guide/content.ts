@@ -33,7 +33,7 @@ const CARD_PREVIEW: Record<string, CardPreview> = {
   robo_baseball: { icon: "⚾", action: "投球を追跡し、照準とタイミングを合わせて打つ" },
   robo_tennis: { icon: "🎾", action: "ボールの高さと着地点を読み、ラリーを続ける" },
   pubsub_builder: { icon: "⇄", action: "PublisherとSubscriberを接続する" },
-  service_builder: { icon: "↔", action: "接続してServiceを1回ずつ呼び出す" },
+  service_builder: { icon: "↔", action: "接続してServiceを1回呼び出す" },
   tf_puzzle: { icon: "⌗", action: "座標フレームを正しい親子関係にする" },
   feedforward_controller: { icon: "△", action: "速度と時間を計算して正三角形を描く" },
   feedforward_mission: { icon: "┄", action: "計算した指令だけで目標位置に止める" },
@@ -43,13 +43,13 @@ const CARD_PREVIEW: Record<string, CardPreview> = {
   param_tuner: { icon: "☷", action: "Parameterを変えて動きを調整する" },
   mapping_mission: { icon: "▦", action: "走行しながら部屋の地図を完成させる" },
   localization_mission: { icon: "⁙", action: "粒子を収束させて現在位置を見つける" },
-  navigation: { icon: "⚑", action: "Goalを指定して自動で経路走行する" },
+  navigation: { icon: "⚑", action: "Goalを指定して経路を計画・走行する" },
   image_processing: { icon: "▧", action: "ノイズを減らして、必要な輪郭を見つける" },
   edge_detection: { icon: "◫", action: "画像から物体の輪郭を取り出す" },
   object_detection: { icon: "▣", action: "画像に映った物体を検出する" },
   joint_teleop: { icon: "⌇", action: "関節角を操作してアームを動かす" },
   ik_reach: { icon: "✣", action: "手先目標から必要な関節角を求める" },
-  pick_place: { icon: "♢", action: "物体を掴んで指定場所へ運ぶ" },
+  pick_place: { icon: "♢", action: "物体をつかんで指定場所へ運ぶ" },
   action_builder: { icon: "▷", action: "Actionを接続してGoalから完了まで確認する" },
   behavior_tree: { icon: "⑂", action: "条件と行動を木構造で組み立てる" },
 };
@@ -306,7 +306,7 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
     exercise:
       "Change the confidence threshold and record how false positives and missed objects change.",
     insight:
-      "AI output is an estimate with uncertainty. The behavior layer must decide how much confidence is enough to act.",
+      "A detector output is an estimate, not guaranteed ground truth. Its confidence score is not necessarily a calibrated probability, so behavior logic must account for false positives and missed detections.",
   },
   joint_teleop: {
     action: "Move the arm by commanding its joint angles",
@@ -370,7 +370,7 @@ const COPY: Record<string, GuideCopy> = {
     exercise:
       "前進速度を半分にした場合、操作感と壁への衝突しやすさがどう変わるか予想してから試してみましょう。",
     insight:
-      "ROS 2では操作方法とロボット本体をTopicで分離できます。同じロボットにキーボード、ゲームパッド、自律走行を付け替えられるのはこのためです。",
+      "ROS 2では操作方法とロボット本体をTopicで分離できます。同じロボットでキーボード、ゲームパッド、自律走行を切り替えて使えるのはこのためです。",
   },
   follower: {
     overview:
@@ -404,11 +404,11 @@ const COPY: Record<string, GuideCopy> = {
     ],
     exercise: "安全距離を大きくすると探索時間と衝突リスクがどう変わるか比較しましょう。",
     insight:
-      "高度な地図がなくても現在のセンサー値へ反応して衝突リスクを減らせますが、安全を保証するものではありません。",
+      "高度な地図がなくても現在のセンサー値に応じて動くことで衝突リスクを減らせますが、安全を保証するものではありません。",
   },
   patrol: {
     overview:
-      "監視ロボットを避けながら複数の機能を停止するミッションです。Topicによる連続データ、Serviceによる一回の要求、Lifecycleによる状態管理を一つのシステムとして扱います。",
+      "監視ロボットを避けながら複数の機能を停止するミッションです。Topicによる連続データ、Serviceによる単発の要求、Lifecycleによる状態管理を一つのシステムとして扱います。",
     goals: [
       "TopicとServiceの使い分けを理解する",
       "Lifecycleノードの状態遷移を説明する",
@@ -470,7 +470,7 @@ const COPY: Record<string, GuideCopy> = {
       "自己位置を基準に観測を地図へ統合する",
       "未探索領域を選んで移動する",
     ],
-    exercise: "同じ場所を何度も通ることが、地図の確かさにどんな影響を与えるか確認しましょう。",
+    exercise: "同じ場所を何度も通ることが、地図の精度にどのような影響を与えるか確認しましょう。",
     insight: "地図は単なる画像ではなく、各セルが障害物である確率を持つロボットの記憶です。",
   },
   tag_chase: {
@@ -556,7 +556,7 @@ const COPY: Record<string, GuideCopy> = {
   },
   pubsub_builder: {
     overview:
-      "Publisher、Topic、Subscriberを正しく接続し、ROS 2の基本通信を組み立てます。送信側と受信側は互いを直接知らず、同じTopic名とMessage型に加えて、互換性のあるQoSを使って通信します。このLessonではTopic名と型の一致を操作します。",
+      "Publisher、Topic、Subscriberを正しく接続し、ROS 2の基本通信を組み立てます。送信側と受信側は互いを直接知らず、同じTopic名とMessage型に加えて、互換性のあるQoSを使って通信します。このレッスンではTopic名と型を一致させる操作を行います。",
     goals: [
       "Node・Topic・Messageの関係を説明する",
       "型が一致しない接続が成立しない理由を理解する",
@@ -572,7 +572,7 @@ const COPY: Record<string, GuideCopy> = {
   },
   service_builder: {
     overview:
-      "Requestを送りResponseを受け取るService通信を組み立てます。連続的に流れるTopicと異なり、短時間で応答できる一回の問い合わせや操作に適しています。接続しただけでは実行されず、CALLを押すたびに一組のRequest/Responseが発生します。",
+      "Requestを送りResponseを受け取るService通信を組み立てます。連続的に流れるTopicと異なり、短時間で完了する単発の問い合わせや操作に適しています。接続しただけでは実行されず、CALLを押すたびに一組のRequest/Responseが発生します。",
     goals: [
       "Service ClientとServerの役割を区別する",
       "Request/Response型を理解する",
@@ -581,12 +581,12 @@ const COPY: Record<string, GuideCopy> = {
     steps: [
       "Clientが型に沿ったRequestを作る",
       "Serverが要求を処理する",
-      "CALLを実行し、対応するResponseを一回受け取る",
+      "CALLを実行し、対応するResponseを1回受け取る",
     ],
     exercise:
       "モーター停止、現在温度、カメラ画像のうちServiceに適するものを理由とともに選びましょう。",
     insight:
-      "頻繁なセンサーデータはTopic、設定変更や一回の問い合わせはService、長時間処理はActionが基本です。",
+      "頻繁なセンサーデータはTopic、設定変更や単発の問い合わせはService、長時間処理はActionが基本です。",
   },
   tf_puzzle: {
     overview:
@@ -659,7 +659,7 @@ const COPY: Record<string, GuideCopy> = {
     goals: [
       "Odometryから推定移動距離を読む",
       "旋回角度をROSの符号で扱う",
-      "時間終了と位置終了の違いを説明する",
+      "時間による終了と位置による終了の違いを説明する",
     ],
     steps: [
       "ブロック開始時の位置または角度を記録する",
@@ -669,11 +669,11 @@ const COPY: Record<string, GuideCopy> = {
     exercise:
       "distanceとangleを変えずにvelocityやyawrateだけを変え、同じ位置で各ブロックが終了するか確認しましょう。",
     insight:
-      "このLessonには外乱を加えていません。測定結果を使って、それぞれの動作を終了するタイミングを決めます。",
+      "このレッスンには外乱を加えていません。測定結果を使って、それぞれの動作を終了するタイミングを決めます。",
   },
   lidar_avoidance: {
     overview:
-      "LaserScanを購読し、前方の障害物へ反応して進行方向を変えます。センサー入力から判断、速度出力までを短い周期で繰り返すリアクティブ制御です。",
+      "LaserScanを購読し、前方の障害物を検知して進行方向を変えます。センサー入力から判断、速度出力までを短い周期で繰り返すリアクティブ制御です。",
     goals: [
       "LaserScanから必要な角度範囲を抽出する",
       "閾値を使った障害物回避判定を設計する",
@@ -736,7 +736,7 @@ const COPY: Record<string, GuideCopy> = {
     ],
     exercise: "特徴の少ない長い廊下と、角が多い部屋で収束速度が違う理由を考えましょう。",
     insight:
-      "ロボットの位置は一点ではなく確率分布です。不確かさを可視化すると安全な判断ができます。",
+      "ロボットの位置は一点ではなく、確率分布として表します。不確かさを可視化すると、より安全な判断につなげられます。",
   },
   navigation: {
     overview:
@@ -751,13 +751,13 @@ const COPY: Record<string, GuideCopy> = {
       "地図上で衝突しないPathを探索する",
       "Pathを追従する/cmd_velを連続出力する",
     ],
-    exercise: "同じGoalへ異なる向きを指定し、最後の接近経路がどう変わるか観察しましょう。",
+    exercise: "同じ位置のGoalに異なる向きを指定し、最後の接近経路がどう変わるか観察しましょう。",
     insight:
       "ナビゲーションは経路を一度作って終わりではありません。障害物や位置誤差に応じて走行中も判断を更新します。",
   },
   image_processing: {
     overview:
-      "カメラ画像には照明やセンサーによる細かなノイズが混ざります。そのまま輪郭を探すと、ノイズまで線として検出されます。このLessonでは、最初にgaussian_blurで画像をなめらかにし、その後cannyで明るさが大きく変わる場所を輪郭として取り出します。「画像を整える → 輪郭を探す」という基本の順番を体験します。",
+      "カメラ画像には照明やセンサーによる細かなノイズが混ざります。そのまま輪郭を探すと、ノイズまで線として検出されます。このレッスンでは、最初にgaussian_blurで画像をなめらかにし、その後cannyで明るさが大きく変わる場所を輪郭として取り出します。「画像を整える → 輪郭を探す」という基本の順番を体験します。",
     goals: [
       "ぼかしを先に行う理由を理解する",
       "見つけた輪郭とお手本を見比べる",
@@ -786,12 +786,12 @@ const COPY: Record<string, GuideCopy> = {
       "近傍画素の勾配を計算する",
       "閾値を超えた輪郭をImageとして出力する",
     ],
-    exercise: "低い閾値と高い閾値を変更し、ノイズと必要な輪郭のバランスを探しましょう。",
+    exercise: "低い閾値と高い閾値を調整し、ノイズと必要な輪郭のバランスを探しましょう。",
     insight: "認識前の前処理を適切に設計すると、後段アルゴリズムを単純かつ安定にできます。",
   },
   object_detection: {
     overview:
-      "カメラ画像から物体の種類と位置を検出し、検出結果をロボットが利用できる情報へ変換します。画像、推論結果、可視化画像を別Topicとして扱う構成を学びます。",
+      "カメラ画像から物体の種類と位置を検出し、検出結果をロボットが利用できる情報に変換します。画像、推論結果、可視化画像を別Topicとして扱う構成を学びます。",
     goals: [
       "画像入力からBounding Boxまでの流れを理解する",
       "信頼度による検出選別を行う",
@@ -804,7 +804,7 @@ const COPY: Record<string, GuideCopy> = {
     ],
     exercise: "信頼度閾値を変え、見逃しと誤検出がどう変化するか記録しましょう。",
     insight:
-      "AIの出力は確定値ではなく信頼度を伴う推定です。行動側は不確かさを考慮する必要があります。",
+      "物体検出器の出力は推定であり、正解を保証しません。信頼度スコアも正しく校正された確率とは限らないため、行動側では誤検出と見逃しを考慮する必要があります。",
   },
   joint_teleop: {
     overview:
@@ -841,7 +841,7 @@ const COPY: Record<string, GuideCopy> = {
   },
   pick_place: {
     overview:
-      "物体を認識し、アームで掴み、指定場所へ置くPick & Placeを完成させます。認識、TF、IK、Gripper、Actionを順番につなぐ総合的なManipulation課題です。",
+      "物体を認識し、アームでつかみ、指定場所へ置くPick & Placeを完成させます。認識、TF、IK、Gripper、Actionを順番につなぐ総合的なManipulation課題です。",
     goals: [
       "Pick & Placeの処理を段階へ分解する",
       "物体Poseをアーム座標へ変換する",
@@ -866,7 +866,7 @@ const COPY: Record<string, GuideCopy> = {
     ],
     steps: [
       "ClientがAction ServerへGoalを送る",
-      "このシミュレーションが実行中に送る定期Feedbackを観察する",
+      "実行中にシミュレーションから定期的に送られるFeedbackを観察する",
       "完了時のResultとGoal Statusを確認し、必要ならCancelを要求する",
     ],
     exercise: "ナビゲーション中に新しいGoalが届いた場合のキャンセル方針を考えましょう。",

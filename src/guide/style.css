@@ -15,6 +15,7 @@
   --purple-rgb: 195, 183, 251;
   --mint: #65e6c4;
   --yellow: #f5c763;
+  --content-max: 1320px;
   --mono: "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --sans: Inter, "Segoe UI Variable", "Yu Gothic UI", "Hiragino Sans", system-ui, sans-serif;
 }
@@ -280,7 +281,7 @@ main {
 .guide-hero {
   position: relative;
   min-height: 620px;
-  padding: 104px clamp(28px, 6vw, 96px) 90px;
+  padding: 104px max(clamp(28px, 6vw, 96px), (100% - var(--content-max)) / 2) 90px;
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.95fr);
   align-items: center;
@@ -630,8 +631,10 @@ main {
   }
 }
 
+/* Content stops widening past --content-max while the background and the
+   divider stay full-bleed: the side padding absorbs the surplus. */
 .guide-section {
-  padding: 96px clamp(28px, 6vw, 96px);
+  padding: 96px max(clamp(28px, 6vw, 96px), (100% - var(--content-max)) / 2);
   border-bottom: 1px solid var(--line);
 }
 
@@ -642,52 +645,339 @@ main {
 }
 .skills-section .section-heading h2 {
   font-size: clamp(28px, 2.6vw, 38px);
-  white-space: nowrap;
+  text-wrap: balance;
 }
-.skill-pipeline {
-  min-height: 76px;
-  margin: -8px 0 28px;
-  padding: 12px 20px;
+
+/* --- Architecture panel ---------------------------------------------------
+   One spacing scale (--arch-gap) and one radius scale keep the nested cards
+   reading as a single diagram instead of five separately tuned boxes. */
+.robot-functions {
+  --arch-gap: 14px;
+  --arch-radius: 12px;
+  margin: 0 0 32px;
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
   display: grid;
-  grid-template-columns: 1fr auto 1fr auto 1fr;
-  align-items: center;
-  gap: 16px;
+  gap: var(--arch-gap);
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: 16px;
   background:
-    linear-gradient(
-      90deg,
-      rgba(var(--cyan-rgb), 0.04),
-      rgba(var(--purple-rgb), 0.04),
-      rgba(101, 230, 196, 0.04)
-    ),
-    rgba(255, 255, 255, 0.012);
+    radial-gradient(circle at 15% 45%, rgba(var(--cyan-rgb), 0.07), transparent 28rem),
+    radial-gradient(circle at 88% 100%, rgba(var(--purple-rgb), 0.08), transparent 25rem),
+    rgba(255, 255, 255, 0.014);
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.22),
+    inset 0 1px rgba(255, 255, 255, 0.025);
 }
-.skill-pipeline > div {
-  text-align: center;
+.robot-functions::before {
+  content: "";
+  position: absolute;
+  inset: 0 20% auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--cyan-rgb), 0.6), transparent);
 }
-.skill-pipeline small,
-.skill-pipeline b {
+.architecture-summary {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr) clamp(170px, 17%, 230px);
+  align-items: center;
+  gap: 28px;
+  padding: 26px 28px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--cyan-rgb), 0.18);
+  border-radius: var(--arch-radius);
+  background:
+    linear-gradient(rgba(var(--cyan-rgb), 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--cyan-rgb), 0.025) 1px, transparent 1px), rgba(9, 13, 19, 0.86);
+  background-size: 28px 28px;
+}
+.architecture-summary > div,
+.architecture-summary > p {
+  position: relative;
+  z-index: 1;
+}
+.architecture-summary small,
+.architecture-row small {
   display: block;
-}
-.skill-pipeline small {
-  margin-bottom: 7px;
   color: var(--cyan);
-  font: 700 7px/1 var(--mono);
-  letter-spacing: 1.6px;
+  font: 700 9.5px/1 var(--mono);
+  letter-spacing: 1.4px;
 }
-.skill-pipeline > div:nth-of-type(2) small {
+.architecture-summary h3 {
+  margin: 11px 0 8px;
+  font-size: 20px;
+  letter-spacing: -0.4px;
+}
+.architecture-summary p {
+  max-width: 44em;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.85;
+}
+.architecture-robot-art {
+  width: 100%;
+  height: auto;
+  justify-self: end;
+  opacity: 0.5;
+}
+.architecture-robot {
+  fill: rgba(var(--cyan-rgb), 0.035);
+  stroke: rgba(var(--cyan-rgb), 0.72);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+.architecture-robot circle:not(:nth-last-child(-n + 2)) {
+  fill: var(--cyan);
+}
+.architecture-robot circle:nth-last-child(-n + 2) {
+  fill: #0a0e14;
+  stroke: #6e8195;
+}
+.architecture-scan {
+  fill: none;
+  stroke: rgba(var(--purple-rgb), 0.48);
+  stroke-dasharray: 4 6;
+  stroke-linecap: round;
+}
+/* auto-fit rather than a fixed 2 columns: English stage names need ~500px of
+   pipeline, so the two cards drop to one per row whenever the panel is too
+   narrow to hold both. min() keeps the track from overflowing on mobile. */
+.architecture-comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(540px, 100%), 1fr));
+  gap: var(--arch-gap);
+}
+.architecture-row {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid rgba(var(--cyan-rgb), 0.22);
+  border-radius: var(--arch-radius);
+  background: rgba(var(--cyan-rgb), 0.035);
+}
+.architecture-vla {
+  border-color: rgba(var(--purple-rgb), 0.27);
+  background: rgba(var(--purple-rgb), 0.045);
+}
+.architecture-vla small {
   color: var(--purple);
 }
-.skill-pipeline > div:nth-of-type(3) small {
-  color: var(--mint);
+.architecture-row h3 {
+  margin: 10px 0 16px;
+  font-size: 17px;
+  line-height: 1.45;
+  letter-spacing: -0.3px;
 }
-.skill-pipeline b {
-  font-size: 11px;
+/* margin-top:auto pins both pipelines to the same baseline even when the
+   headings above them wrap to different heights. */
+.architecture-flow {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  margin-top: auto;
+  min-width: 0;
 }
-.skill-pipeline > span {
-  color: #43536a;
-  font: 700 15px/1 var(--mono);
+/* Basis auto, not 0: equal-width columns are fine for the Japanese labels but
+   break "Decision & Planning" onto three lines in English. Sizing from the
+   label and sharing the leftover space keeps every stage on one line. */
+.architecture-flow span {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  padding: 9px 10px;
+  color: #c2ccdb;
+  border: 1px solid rgba(var(--cyan-rgb), 0.16);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.22);
+  font: 600 10px/1.45 var(--mono);
+  text-align: center;
+}
+.architecture-vla .architecture-flow span {
+  border-color: rgba(var(--purple-rgb), 0.2);
+}
+.architecture-flow i {
+  flex: 0 0 auto;
+  align-self: center;
+  color: #5b6b81;
+  font: normal 13px/1 var(--mono);
+}
+.architecture-note {
+  max-width: 62em;
+  margin: 0;
+  padding: 0 2px;
+  color: #7b8a9f;
+  font-size: 11.5px;
+  line-height: 1.85;
+}
+.robot-function-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--arch-gap);
+}
+.robot-function {
+  position: relative;
+  min-height: 148px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(var(--cyan-rgb), 0.26);
+  border-radius: var(--arch-radius);
+  background:
+    linear-gradient(110deg, rgba(var(--cyan-rgb), 0.075), transparent 48%), rgba(10, 14, 20, 0.82);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+.robot-function::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--cyan);
+  box-shadow: 0 0 12px rgba(var(--cyan-rgb), 0.55);
+}
+.robot-function:hover {
+  z-index: 1;
+  transform: translateX(4px);
+  border-color: rgba(var(--cyan-rgb), 0.48);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+.robot-function-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.robot-function-icon {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  color: var(--cyan);
+  border: 1px solid rgba(var(--cyan-rgb), 0.28);
+  border-radius: 7px;
+  background: rgba(var(--cyan-rgb), 0.07);
+  font: 700 13px/1 var(--mono);
+}
+.robot-function small {
+  margin: 0;
+  color: var(--cyan);
+  font: 700 9.5px/1 var(--mono);
+  letter-spacing: 1.4px;
+}
+.robot-function h3 {
+  margin: 0 0 7px;
+  font-size: 17px;
+  line-height: 1.45;
+  letter-spacing: -0.3px;
+  /* The control heading is long enough to wrap; balance keeps the break near
+     its colon instead of leaving one trailing word on the second line. */
+  text-wrap: balance;
+}
+.robot-function p {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.8;
+}
+.robot-function > span {
+  margin-top: auto;
+  align-self: flex-start;
+  padding: 6px 11px;
+  border: 1px solid rgba(var(--cyan-rgb), 0.18);
+  border-radius: 999px;
+  color: #b8c4d6;
+  background: rgba(0, 0, 0, 0.18);
+  font: 600 9.5px/1.3 var(--mono);
+}
+.function-planning {
+  border-color: rgba(245, 196, 76, 0.3);
+  background:
+    linear-gradient(110deg, rgba(245, 196, 76, 0.07), transparent 48%), rgba(10, 14, 20, 0.82);
+}
+.function-planning::after {
+  background: var(--yellow);
+  box-shadow: 0 0 12px rgba(245, 199, 99, 0.45);
+}
+.function-planning small,
+.function-planning .robot-function-icon {
+  color: #e9c268;
+}
+.function-planning .robot-function-icon {
+  border-color: rgba(245, 196, 76, 0.28);
+  background: rgba(245, 196, 76, 0.07);
+}
+.function-planning > span {
+  border-color: rgba(245, 196, 76, 0.2);
+}
+.function-planning:hover {
+  border-color: rgba(245, 196, 76, 0.52);
+}
+.function-control {
+  border-color: rgba(96, 165, 250, 0.3);
+  background:
+    linear-gradient(110deg, rgba(96, 165, 250, 0.075), transparent 48%), rgba(10, 14, 20, 0.82);
+}
+.function-control::after {
+  background: #86b9f8;
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.48);
+}
+.function-control small,
+.function-control .robot-function-icon {
+  color: #86b9f8;
+}
+.function-control .robot-function-icon {
+  border-color: rgba(96, 165, 250, 0.28);
+  background: rgba(96, 165, 250, 0.07);
+}
+.function-control > span {
+  border-color: rgba(96, 165, 250, 0.2);
+}
+.function-control:hover {
+  border-color: rgba(96, 165, 250, 0.52);
+}
+.physical-context {
+  padding: 16px 20px 16px 48px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid rgba(var(--purple-rgb), 0.25);
+  border-radius: var(--arch-radius);
+  background: linear-gradient(90deg, rgba(var(--purple-rgb), 0.12), rgba(var(--cyan-rgb), 0.035));
+  text-align: left;
+}
+.physical-context::before {
+  content: "";
+  position: absolute;
+  left: 21px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--purple);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(var(--purple-rgb), 0.55);
+}
+.physical-context small {
+  flex: 0 0 auto;
+  color: var(--purple);
+  font: 700 9.5px/1.3 var(--mono);
+  letter-spacing: 1.1px;
+}
+.physical-context strong {
+  padding-left: 16px;
+  border-left: 1px solid rgba(var(--purple-rgb), 0.22);
+  color: #dfe4ef;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
 }
 .skill-grid {
   display: grid;
@@ -864,11 +1154,13 @@ main {
   letter-spacing: 1.2px;
   text-align: right;
 }
+/* Two balanced columns rather than flex space-between, which stranded the
+   lead paragraph against the far right edge on wide screens. */
 .section-heading {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   align-items: end;
-  gap: 40px;
+  gap: clamp(32px, 4vw, 64px);
   margin-bottom: 48px;
 }
 .section-heading > div {
@@ -893,8 +1185,10 @@ main {
   font-size: clamp(28px, 3vw, 42px);
   letter-spacing: -1.8px;
 }
+/* em, not ch: one em is one CJK character, so this caps the Japanese
+   measure at ~38 characters per line. */
 .section-heading > p {
-  max-width: 420px;
+  max-width: 38em;
   margin: 0;
   color: var(--muted);
   font-size: 12px;
@@ -2428,8 +2722,9 @@ main {
     padding: 72px 22px;
   }
   .section-heading {
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
-    flex-direction: column;
+    gap: 18px;
     margin-bottom: 34px;
   }
   .section-heading > p {
@@ -2438,19 +2733,44 @@ main {
   .hero-learn-tags {
     gap: 5px;
   }
-  .skill-pipeline {
-    padding: 18px;
+  .robot-function-grid {
     grid-template-columns: 1fr;
-    gap: 9px;
   }
-  .skill-pipeline > span {
-    transform: rotate(90deg);
+  /* Stack the heading over its description and keep the art in a side column
+     that spans both rows. */
+  .architecture-summary {
+    grid-template-columns: minmax(0, 1fr) 132px;
+    gap: 12px 18px;
+    padding: 20px;
+  }
+  .architecture-summary > div,
+  .architecture-summary > p {
+    grid-column: 1;
+  }
+  .architecture-robot-art {
+    grid-column: 2;
+    grid-row: 1 / -1;
+  }
+  /* Equal-width chips can be squeezed below one CJK word here, so let them
+     size to their own label and wrap onto a second line instead. */
+  .architecture-flow {
+    flex-wrap: wrap;
+  }
+  .architecture-flow span {
+    flex: 1 0 auto;
+  }
+  .physical-context {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+    text-align: left;
+  }
+  .physical-context strong {
+    padding-left: 0;
+    border-left: 0;
   }
   .skill-grid {
     grid-template-columns: 1fr;
-  }
-  .skills-section .section-heading h2 {
-    white-space: normal;
   }
   .skill-card {
     min-height: 305px;
@@ -2662,12 +2982,6 @@ main {
   font-size: 10px;
 }
 
-.skill-pipeline small {
-  font-size: 9px;
-}
-.skill-pipeline b {
-  font-size: 14px;
-}
 .skill-card {
   min-height: 370px;
 }
@@ -2920,6 +3234,29 @@ main {
   }
   .guide-hero {
     grid-template-columns: minmax(0, calc(100vw - 32px));
+  }
+  .robot-functions {
+    --arch-gap: 12px;
+    padding: 12px;
+  }
+  .architecture-summary {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 18px;
+  }
+  .architecture-robot-art {
+    display: none;
+  }
+  .architecture-row {
+    padding: 16px;
+  }
+  .architecture-flow {
+    gap: 5px;
+  }
+  .architecture-flow span {
+    padding-inline: 9px;
+  }
+  .robot-function {
+    padding: 16px;
   }
   .section-heading > p {
     padding-left: 0;

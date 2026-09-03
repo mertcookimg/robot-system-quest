@@ -489,9 +489,9 @@ export function makeRoboKitchen(): Stage {
     lessonCmd:
       "ros2 action send_goal /gripper_controller/gripper_cmd control_msgs/action/GripperCommand '{command: {position: 0.0, max_effort: 20.0}}'",
     ros2: {
-      title: tx("Robo Kitchen ・操作シーケンス", "Robo Kitchen — manipulation sequences"),
+      title: tx("Robo Kitchen — 操作シーケンス", "Robo Kitchen — manipulation sequences"),
       summary: tx(
-        "注文を工程へ分解し、知覚・把持・搬送を順番に実行する。実ロボットのタスクプランニングをスコアアタックにしたゲーム。",
+        "注文を工程に分解し、認識・把持・搬送を順番に実行します。実機のロボットで行うタスクプランニングを、スコアアタック形式で体験するゲームです。",
         "Break an order into steps and execute perception, grasping and transport in sequence — task planning as a score attack.",
       ),
       msgTypes: ["geometry_msgs/msg/PoseStamped", "control_msgs/action/GripperCommand"],
@@ -502,7 +502,7 @@ export function makeRoboKitchen(): Stage {
       ],
       python: `for ingredient in order.recipe:\n    target = vision.wait_for(ingredient)\n    arm.pick(target.pose)\n    arm.place(plate_pose)\nchef.complete_order(order.id)`,
       realWorld: tx(
-        "食品工場や物流セルでは、カメラ認識、MoveIt 2の軌道計画、グリッパーactionをタスクノードが同じように順序制御する。",
+        "食品工場や物流施設では、Task Nodeがカメラ認識、MoveIt 2による軌道計画、Gripper Actionを順番に制御します。",
         "Food and logistics cells similarly orchestrate vision, MoveIt 2 planning and gripper actions from a task node.",
       ),
       state: {
@@ -583,15 +583,15 @@ export default defineStage({
       en: "Robo Kitchen — a 75-second arm cooking battle",
     },
     learn: {
-      ja: "注文カードのNEXTを読み、必要な食材を正しい順番で皿へ積みます。食材は必要な分だけ供給され、取り逃しても回収コンベアで戻るため廃棄されません。",
+      ja: "注文カードのNEXTを確認し、必要な食材を正しい順番で皿に積みます。食材は必要な分だけ供給され、取り逃しても回収コンベアで戻るため廃棄されません。",
       en: "Read NEXT on the order card and stack each required ingredient in sequence. Only needed food is supplied, and missed items return on a closed-loop conveyor instead of being discarded.",
     },
     goal: {
-      ja: "75秒で料理を5皿完成すると★3。取り逃しや皿以外で放した食材は回収ラインへ戻ります。素早く連続完成してコンボボーナスを狙おう!",
+      ja: "75秒で料理を5皿完成させると★3です。取り逃した食材や皿以外の場所で放した食材は、回収ラインへ戻ります。素早く連続で完成させ、コンボボーナスを狙いましょう。",
       en: "Complete five dishes in 75 seconds for ★3. Missed or misplaced ingredients return to the line. Serve dishes quickly and consecutively for combo bonuses!",
     },
     first: {
-      ja: "マウスか矢印で手先を動かし、クリック・Enter・Pad Aで把持／解放します。PadではRBで肘の向きを切り替えられます。まず注文カードのNEXTと同じ食材をつかみ、中央の皿へ置きましょう。",
+      ja: "マウスまたは矢印キーで手先を動かし、クリック・Enter・ゲームパッドのAで把持／解放します。ゲームパッドではRBで肘の向きを切り替えられます。まず注文カードのNEXTと同じ食材をつかみ、中央の皿へ置きましょう。",
       en: "Move the tip with the mouse or arrows; click, press Enter, or use pad A to grab/release. Pad RB flips the elbow. Catch the ingredient shown as NEXT and place it on the centre plate.",
     },
   },

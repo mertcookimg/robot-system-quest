@@ -516,11 +516,11 @@ export function makeSwarmRescue(): Stage {
     lessonCmd: "ros2 topic echo /swarm/status",
     ros2: {
       title: tx(
-        "Swarm Helpers ・複数ロボットのチームワーク",
+        "Swarm Helpers — 複数ロボットのチームワーク",
         "Swarm Helpers — multi-robot teamwork",
       ),
       summary: tx(
-        "探索・送迎・通信中継の役割を分担し、通信グラフを維持しながら迷子のミニロボを家へ連れ帰る。",
+        "探索・搬送・通信中継の役割を分担し、通信グラフを維持しながら迷子のミニロボットをホームへ連れ帰ります。",
         "Split scouting, transport and relay roles while maintaining a communication graph to bring lost mini-bots home.",
       ),
       msgTypes: [
@@ -535,7 +535,7 @@ export function makeSwarmRescue(): Stage {
       ],
       python: `robots = {"scout": Scout(), "carrier": Carrier(), "relay": Relay()}\nwhile mission.active:\n    map_update = robots["scout"].explore()\n    robots["relay"].maintain_link(robots)\n    robots["carrier"].bring_home(map_update.lost_bots)`,
       realWorld: tx(
-        "倉庫や農場では、探索機、搬送機、通信中継機が地図と目標を共有しながら協力する。",
+        "倉庫や農場では、探索機・搬送機・通信中継機が地図と目標を共有しながら協力するシステムを構築できます。",
         "Warehouses and farms use scout, transport and relay robots that cooperate by sharing maps and goals.",
       ),
       state: {
@@ -587,11 +587,11 @@ export default defineStage({
       en: "Unselected robots remain autonomous: 1 patrols unknown areas, 2 brings mini-bots home, and 3 keeps the team linked.",
     },
     goal: {
-      ja: "150秒以内に迷子のミニロボ3体を左の充電ホームへ連れ帰ると★3。通信が弱くなっても速度は75%なので、ゆっくり戻れます。",
+      ja: "150秒以内に迷子のミニロボット3体を左側の充電ホームへ連れ帰ると★3です。通信が弱くなると速度は75%に低下しますが、移動は続けられます。",
       en: "Bring three lost mini-bots to the charging home within 150 seconds for ★3. A weak link only slows a robot to 75%, so it can still return easily.",
     },
     first: {
-      ja: "まずは何も押さず、3機が自動で動く様子を見てみましょう。壁で止まった機体や遠回りしている機体があれば1・2・3、またはPad Yで機体を選び、手動操作で助けます。",
+      ja: "まずは何も押さず、3機が自動で動く様子を観察しましょう。壁で止まった機体や遠回りしている機体があれば、1・2・3またはゲームパッドのYで機体を選び、手動操作で助けます。",
       en: "First, watch all three robots work automatically. If one gets stuck or takes a long route, select it with 1, 2, 3, or pad Y and help manually.",
     },
   },

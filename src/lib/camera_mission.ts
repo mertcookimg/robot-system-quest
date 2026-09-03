@@ -71,8 +71,8 @@ export const WALLS: { x: number; y: number; w: number; h: number }[] = [
 
 registerLang({
   ja: {
-    "camera_mission.mode.drive": "DRIVE モード — パッドで teleop (Y で TUNE)",
-    "camera_mission.mode.tune": "TUNE モード — パッドでブロックエディタ操作 (Y で DRIVE)",
+    "camera_mission.mode.drive": "DRIVEモード — ゲームパッドで遠隔操作（YでTUNE）",
+    "camera_mission.mode.tune": "TUNEモード — ゲームパッドでブロックエディターを操作（YでDRIVE）",
   },
   en: {
     "camera_mission.mode.drive": "DRIVE mode — pad teleops the robot (Y → TUNE)",

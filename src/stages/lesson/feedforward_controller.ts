@@ -392,13 +392,13 @@ export function makeFeedforwardController(): Stage {
       'ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.5}, angular: {z: 0.0}}"',
     ros2: {
       title: tx(
-        "Feedforward ・時間で正三角形を描く",
+        "Feedforward — 時間を基準に正三角形を描く",
         "Feedforward — draw an equilateral triangle by time",
       ),
       summary:
         "1辺1.4mの正三角形を、現在位置を測らずに描きます。" +
-        "直進距離は linear×duration、回転角は angular×duration から計算し、" +
-        "あらかじめ組み立てた geometry_msgs/msg/Twist を順番に /cmd_vel へ publish します。",
+        "直進距離はlinear×duration、回転角はangular×durationから計算し、" +
+        "あらかじめ組み立てたgeometry_msgs/msg/Twistを順番に/cmd_velへpublishします。",
       msgTypes: ["geometry_msgs/msg/Twist"],
       cli: [
         "ros2 topic echo /cmd_vel",
@@ -497,15 +497,15 @@ export default defineStage({
       en: "Feedforward Controller — draw a triangle by time",
     },
     learn: {
-      ja: "現在位置を見ず、linear・angular・durationだけで動かします。1辺1.4mの正三角形には「直進→左120°」を3回組み合わせます。",
+      ja: "現在位置を確認せず、linear・angular・durationだけで動かします。1辺1.4mの正三角形を描くには、「直進 → 左へ120°旋回」を3回組み合わせます。",
       en: "Move without reading pose, using only linear, angular, and duration. Build a 1.4 m equilateral triangle by repeating drive straight, then turn left 120°, three times.",
     },
     goal: {
-      ja: "「距離＝速度×時間」と「回転角＝角速度×時間」を使い、軌跡を三角形ガイドに重ねて始点へ戻しましょう。",
+      ja: "「距離＝速度×時間」と「回転角＝角速度×時間」を使い、三角形のガイドに沿った軌跡を描いて始点へ戻りましょう。",
       en: "Use distance = velocity × time and angle = angular velocity × time. Match the guide and return to the start.",
     },
     first: {
-      ja: "最初の2ブロックは未完成です。「時間＝距離÷速度」と「時間＝回転角÷角速度」で値を直し、同じ組を3辺分に増やしましょう。",
+      ja: "最初の2ブロックは未完成です。「時間＝距離÷速度」と「時間＝回転角÷角速度」で値を修正し、同じ組み合わせを3辺分に増やしましょう。",
       en: "The first two blocks are incomplete. Correct them with time = distance ÷ speed and time = angle ÷ angular speed, then expand the pair to all three sides.",
     },
   },

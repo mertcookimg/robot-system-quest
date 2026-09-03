@@ -456,13 +456,13 @@ export function makeFeedbackMission(): Stage {
     lessonCmd: "ros2 topic echo /robot/odometry/odometry",
     ros2: {
       title: tx(
-        "Feedback Mission ・odom フィードバックで壁を避けて GOAL",
+        "Feedback Mission — Odometryのフィードバックで壁を避けてGOALへ",
         "Feedback Mission — dodge walls and reach GOAL via odom feedback",
       ),
       summary:
-        "feedforward_mission (Feedforward Mission) と全く同じマップ・障害物・GOAL を、" +
-        "今度は feedforward (cmd_vel + duration) ではなく feedback (go_straight + odom) で攻略します。" +
-        "このLessonでは外乱を加えず、時間ではなくOdometryで移動距離と旋回角度を測り、" +
+        "feedforward_mission（Feedforward Mission）と同じマップ・障害物・GOALを、" +
+        "今度はFeedforward（cmd_vel + duration）ではなくFeedback（go_straight + odom）で攻略します。" +
+        "このレッスンでは外乱を加えず、時間ではなくOdometryで移動距離と旋回角度を測り、" +
         "それぞれの目標値へ到達した時点で指令を止めます。",
       msgTypes: ["geometry_msgs/msg/Twist", "nav_msgs/msg/Odometry"],
       cli: [
@@ -480,7 +480,7 @@ n.turn_left(90)
 n.go_straight(4.5, velocity=0.5)
 # ...壁の配置に合わせて続ける`,
       realWorld: tx(
-        "このLessonには外乱がないため、Feedforward Missionと結果が似る場合があります。Odometryで停止を判断すると時間だけで止める方法より移動量の推定値を利用できますが、車輪エンコーダ由来のOdometryはスリップそのものを補正できません。実機では必要に応じてIMUやLiDARなどを融合します。",
+        "このレッスンには外乱がないため、Feedforward Missionと結果が似る場合があります。Odometryによる停止判定では、時間だけで止める方法と異なり移動量の推定値を利用します。ただし、車輪エンコーダー由来のOdometryだけではスリップを補正できません。実機では必要に応じてIMUやLiDARなどの情報を融合します。",
         "This lesson adds no disturbance, so its result may resemble Feedforward Mission. Odometry-based stopping uses an estimate of motion rather than time alone, but wheel-encoder odometry cannot correct wheel slip by itself. Physical robots may fuse IMU, LiDAR, or other sensors when needed.",
       ),
       state: {
@@ -546,19 +546,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Feedback ミッション — 同じマップを閉ループで",
+      ja: "Feedbackミッション — 閉ループ制御で同じマップに挑戦",
       en: "Feedback mission — same map, closed loop",
     },
     learn: {
-      ja: "時間ではなく、Odometryで測った距離・角度を終了条件にします。外乱のない同じマップで、feedforwardとの情報の使い方を比べましょう。",
+      ja: "時間ではなく、Odometryで測った距離と角度を終了条件にします。外乱のない同じマップで、Feedforward制御との情報の使い方の違いを比べましょう。",
       en: "Use distance and angle measured from odometry as stopping conditions instead of elapsed time. Compare the information flow with feedforward on the same disturbance-free map.",
     },
     goal: {
-      ja: "go_straight / turn_left / turn_right だけで壁を避け、GOAL に到達しましょう。",
+      ja: "go_straight / turn_left / turn_rightだけを使って壁を避け、GOALに到達しましょう。",
       en: "Use only go_straight / turn_left / turn_right to dodge the walls and reach GOAL.",
     },
     first: {
-      ja: "go_straight(distance) と turn_left(angle) を組み合わせてブロックを並べ、▶ RUN で確認しましょう。",
+      ja: "go_straight（distance）とturn_left（angle）を組み合わせてブロックを並べ、▶ RUNで確認しましょう。",
       en: "Combine go_straight(distance) and turn_left(angle) blocks, then press ▶ RUN to verify.",
     },
   },

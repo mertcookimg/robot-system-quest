@@ -1010,13 +1010,13 @@ export function makeGrandPrix(): Stage {
     lessonCmd: "ros2 action info /follow_path",
     ros2: {
       title: tx(
-        "Action ・経路追従の自律ナビゲーション",
+        "Action — 経路を追従する自律ナビゲーション",
         "Action — autonomous path-following navigation",
       ),
       summary:
-        "AI 対戦相手は事前計算された /race/path を Nav2 の FollowPath Action で自律走行している、" +
-        "という想定です。Pub-Sub と違い Action は「ゴールを送って結果を待ち、途中でフィードバックを受ける」長時間タスク。" +
-        "/race/lap には現在のラップ数が Int32 で publish されます。",
+        "自動制御の対戦相手は、事前に計算された/race/pathをNav2のFollowPath Actionで追従する想定です。" +
+        "Actionは長時間かかる処理に適しており、Goalを送った後、処理中にFeedbackを受け取り、完了時にResultを受け取れます。" +
+        "/race/lapには現在のラップ数がInt32としてpublishされます。",
       msgTypes: ["nav_msgs/msg/Path", "std_msgs/msg/Int32", "nav2_msgs/action/FollowPath"],
       cli: [
         "ros2 topic echo /race/lap",
@@ -1039,7 +1039,7 @@ class Racer(Node):
         send = await self.cli.send_goal_async(goal)
         result = await send.get_result_async()`,
       realWorld: tx(
-        "Nav2 の FollowPath Action は、実機でも controller server に経路追従を依頼するために使われます。AGV や配送ロボの構成は製品ごとに異なりますが、経路を受け取り追従制御を行う考え方は共通します。",
+        "Nav2のFollowPath Actionは、実機でもController Serverに経路追従を依頼するために使われます。AGVや配送ロボットの構成は製品ごとに異なりますが、経路を受け取って追従制御を行うという考え方は共通しています。",
         "Nav2's FollowPath Action is also used on physical robots to ask the controller server to follow a path. AGV and delivery-robot architectures vary, but many share the idea of receiving a path and executing path-following control.",
       ),
       state: {
@@ -1112,15 +1112,15 @@ export default defineStage({
       en: "Action / Nav2 FollowPath — tracking a path",
     },
     learn: {
-      ja: "Nav2 の FollowPath は Action で実装されており、Goal を送ると Feedback で進捗を返しつつ Result で完了を知らせます。レースでは決まったコースを高速に追従します。",
+      ja: "Nav2のFollowPathはActionで実装されており、Goalを送るとFeedbackで進捗を返しながら、Resultで完了を知らせます。レースでは決められたコースを高速で追従します。",
       en: "Nav2's FollowPath is implemented as an Action: send a Goal, receive progress Feedback while it runs, then get a final Result. Racing means tracking a fixed path as fast as possible.",
     },
     goal: {
-      ja: "WASD で操縦、Shift か X でブースト!\n3 周走り切って AI の対戦相手より先にフィニッシュすれば 1 位クリア。",
+      ja: "WASDで操縦し、ShiftまたはXでブーストします。\n3周を走り切り、AIの対戦相手より先にフィニッシュすれば1位でクリアです。",
       en: "WASD to steer, Shift or X to boost!\nFinish 3 laps before the AI opponents to take 1st place.",
     },
     first: {
-      ja: "1PはWASDで発進し、X（Shift）でBOOST。Pad対戦はPadを2台接続してYを押すと開始できます。P1・P2とも左スティックで走行、LB/RBでBOOSTします。",
+      ja: "1PはWASDで発進し、X（Shift）でBOOSTします。ゲームパッド対戦は2台のゲームパッドを接続してYを押すと開始できます。P1・P2とも左スティックで走行し、LB/RBでBOOSTします。",
       en: "In 1P, drive with WASD and boost with X (Shift). For a pad battle, connect two pads and press Y. Both players drive with the left stick and boost with LB/RB.",
     },
   },

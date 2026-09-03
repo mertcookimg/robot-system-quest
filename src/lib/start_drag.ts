@@ -150,7 +150,7 @@ export function setupStartDrag(
       : (opts.labelOff ?? "🤖 START 位置 (LT)");
     toggleBtn.title = moveMode
       ? (opts.titleOn ?? "もう一度押す or 🎮 LT で確定。WASD / 矢印 / パッドで動かす")
-      : (opts.titleOff ?? "START 位置を動かす (🎮 LT でも切替)");
+      : (opts.titleOff ?? "START位置を動かす（🎮 LTでも切り替え）");
     toggleBtn.style.background = moveMode ? "rgba(251,191,36,0.20)" : "";
     toggleBtn.style.borderColor = moveMode ? "var(--warn)" : "";
     toggleBtn.style.color = moveMode ? "var(--warn)" : "";

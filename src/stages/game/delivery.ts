@@ -237,10 +237,10 @@ export function makeDelivery(): Stage {
     lesson: "",
     lessonCmd: "ros2 topic echo /cmd_vel",
     ros2: defineRos2Concept({
-      title: tx("Publisher ・トピックでロボを動かす", "Publisher — drive the robot via a topic"),
+      title: tx("Publisher — Topicでロボットを動かす", "Publisher — drive the robot via a topic"),
       summary:
-        "WASD のキー入力が geometry_msgs/msg/Twist に変換され、/cmd_vel トピックに publish されます。" +
-        "ROS2 は「ノードがトピックでメッセージを送り合う」ことが基本。これは最も基礎の Pub-Sub。",
+        "WASDのキー入力がgeometry_msgs/msg/Twistに変換され、Topic /cmd_velへpublishされます。" +
+        "ROS 2では、Node同士がTopicを通してMessageをやり取りします。これは最も基本的なPub/Sub通信です。",
       msgTypes: ["geometry_msgs/msg/Twist"],
       cli: [
         "ros2 topic list",
@@ -263,7 +263,7 @@ class Teleop(Node):
         msg.angular.z = ang  # angular velocity [rad/s]
         self.pub.publish(msg)`,
       realWorld: tx(
-        "実機では、base controller が起動し、topic 名・型・安全条件が合っているときに /cmd_vel の指令が走行へ反映されます。操作前に周囲と非常停止手段を確認してください。",
+        "実機では、Base Controllerが起動し、Topic名・型・安全条件が合っているときに/cmd_velの指令が走行へ反映されます。操作前に周囲の安全と非常停止の方法を確認してください。",
         "On a physical robot, /cmd_vel commands affect motion only when the base controller is active and the topic, type, and safety conditions match. Check the surroundings and emergency-stop method before operation.",
       ),
       state: state({
@@ -312,19 +312,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Publisher 入門 — /cmd_vel を発行する",
+      ja: "Publisher入門 — /cmd_velへ速度指令を配信する",
       en: "Publisher basics — publishing /cmd_vel",
     },
     learn: {
-      ja: "キー入力を topic /cmd_vel に publish すると、購読しているロボットが動きます。これが ROS2 の Publisher の役割です。",
+      ja: "キー入力をTopic /cmd_velへpublishすると、そのTopicを購読しているロボットが動きます。これがROS 2におけるPublisherの役割です。",
       en: "Your key presses are published to the topic /cmd_vel; a subscribing robot reads them and moves. This is exactly what a ROS2 Publisher does.",
     },
     goal: {
-      ja: "WASD でロボを動かそう。まず 緑の◯ でパッケージを拾い、青の◯ まで運んだらクリア!\n壁に当たるとやり直しになります。",
+      ja: "WASDでロボットを動かしましょう。まず緑の円で荷物を拾い、青の円まで運べばクリアです。\n壁に当たるとやり直しになります。",
       en: "Drive the robot with WASD. Pick up the package at the green ring, then deliver it to the blue ring to clear!\nHitting a wall = retry.",
     },
     first: {
-      ja: "WASD（またはパッドの左スティック）でロボを動かして緑のリングへ向かいましょう。",
+      ja: "WASD（またはゲームパッドの左スティック）でロボットを動かし、緑のリングへ向かいましょう。",
       en: "Use WASD (or the left stick on a pad) to drive the robot to the green ring.",
     },
   },

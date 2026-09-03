@@ -400,9 +400,9 @@ export function makePickPlace(): Stage {
     lessonCmd:
       "ros2 action send_goal /gripper_controller/gripper_cmd control_msgs/action/GripperCommand '{command: {position: 0.0, max_effort: 20.0}}'",
     ros2: {
-      title: tx("Pick & Place ・把持と搬送の一連動作", "Pick & Place — grasp and transport"),
+      title: tx("Pick & Place — 把持と搬送の一連の動作", "Pick & Place — grasp and transport"),
       summary: tx(
-        "把持は手先を物体へ動かすだけではない。接近、グリッパー閉、持ち上げ、搬送、解放を安全な順序で実行する操作シーケンスである。",
+        "把持は、手先を物体へ動かすだけではありません。接近、Gripperを閉じる、持ち上げる、搬送する、解放するという動作を、安全な順序で実行するシーケンスです。",
         "Manipulation is a sequence, not one pose: approach, close the gripper, lift, transport and release safely.",
       ),
       msgTypes: ["geometry_msgs/msg/PoseStamped", "control_msgs/action/GripperCommand"],
@@ -413,7 +413,7 @@ export function makePickPlace(): Stage {
       ],
       python: `# A real task normally sends these poses through MoveIt 2\nsequence = [approach_pose, grasp_pose, lift_pose, place_pose]\nfor pose in sequence:\n    move_group.set_pose_target(pose)\n    move_group.go(wait=True)\ngripper.close()`,
       realWorld: tx(
-        "実機では MoveIt 2 の経路計画と GripperCommand actionを組み合わせ、衝突を避けながら同じシーケンスを実行する。",
+        "実機ではMoveIt 2の経路計画とGripperCommand Actionを組み合わせ、衝突を避けながら同じシーケンスを実行します。",
         "A real robot combines MoveIt 2 planning with the GripperCommand action to execute the same sequence collision-free.",
       ),
       state: {
@@ -468,11 +468,11 @@ export default defineStage({
       en: "Real manipulation chains approach, grasp, lift, transport and release. A moving object makes timing as important as position.",
     },
     goal: {
-      ja: "コンベア上の6個の荷物をつかみ、A・B・Cの同じ文字と色のドックへ運びましょう。取り逃しと誤配は2秒加算されます。",
+      ja: "コンベア上の6個の荷物をつかみ、同じ文字と色が付いたA・B・Cいずれかのドックへ運びましょう。取り逃したり誤配したりすると、2秒のペナルティーが加算されます。",
       en: "Grab six conveyor parcels and carry each to the dock with the matching letter and colour. Misses and wrong drops add two seconds.",
     },
     first: {
-      ja: "マウスか矢印で手先を荷物へ合わせ、左クリック・Enter・Pad Aでつかみます。同じ文字のドックへ移動し、もう一度押して放します。PadではRBで肘の向きを切り替えられます。",
+      ja: "マウスまたは矢印キーで手先を荷物に合わせ、左クリック・Enter・ゲームパッドのAでつかみます。同じ文字のドックへ移動し、もう一度押して放します。ゲームパッドではRBで肘の向きを切り替えられます。",
       en: "Move the tip onto a parcel with the mouse or arrows and click, press Enter, or use pad A to grab. Move to its matching dock and press again to release. Pad RB flips the elbow.",
     },
   },

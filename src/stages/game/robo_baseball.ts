@@ -1145,7 +1145,7 @@ export function makeRoboBaseball(): Stage {
         "Vision Tracking — predict where the pitch will cross",
       ),
       summary: tx(
-        "カメラ追跡ノードがボールの軌道を推定し、ストライクゾーンを通過する座標を publish します。照準を予測座標へ合わせ、タイミングよくスイングしましょう。",
+        "Camera Tracking Nodeがボールの軌道を推定し、ストライクゾーンを通過する座標をpublishします。照準を予測座標に合わせ、タイミングよくスイングしましょう。",
         "A camera tracking node estimates the ball trajectory and publishes its predicted crossing point. Match the reticle to that prediction and time the swing.",
       ),
       msgTypes: ["geometry_msgs/msg/PointStamped", "std_msgs/msg/Float32"],
@@ -1206,15 +1206,15 @@ export default defineStage({
       en: "Robo Baseball — ten-pitch home run challenge",
     },
     learn: {
-      ja: "ビジョンノードが publish する投球の予測到達点へ照準を合わせることで、未来位置を使った高速物体追跡を体験します。",
+      ja: "Vision Nodeがpublishする投球の予測到達点へ照準を合わせ、将来の位置を使った高速物体追跡を体験します。",
       en: "Experience fast object tracking by aiming at the predicted crossing point published by the vision node.",
     },
     goal: {
-      ja: "10球の投球で高得点を狙いましょう。照準とタイミングの両方が正確ならホームランです。ボール球は見送れます。",
+      ja: "10球の投球で高得点を狙いましょう。照準とタイミングがどちらも正確ならホームランです。ストライクゾーンを外れた球は見送れます。",
       en: "Score high over ten pitches. Accurate aim plus timing makes a home run; you can take pitches outside the zone.",
     },
     first: {
-      ja: "WASD・矢印・PAD・マウス・画面タッチで黄色い照準を動かし、ボールが届く直前にE・Space・Shift・PAD A/X・クリックまたはタップでスイングします。",
+      ja: "WASD・矢印キー・ゲームパッド・マウス・画面タッチで黄色い照準を動かし、ボールが届く直前にE・Space・Shift・ゲームパッドのA/X・クリックまたはタップでスイングします。",
       en: "Aim with WASD, arrows, a pad, mouse, or touch, then swing with E, Space, Shift, pad A/X, click, or tap just before the ball arrives.",
     },
   },

@@ -907,7 +907,7 @@ export function makeRoboTennis(): Stage {
       ],
       python: "",
       realWorld: tx(
-        "飛翔物体を扱うロボットでは、カメラ座標から3次元位置と速度を推定し、未来の接触位置へ先回りします。",
+        "飛翔物体を扱うロボットでは、カメラ座標から3次元位置と速度を推定し、将来の接触位置を予測して先回りします。",
         "Robots handling flying objects estimate 3D position and velocity from cameras, then move ahead to the future contact point.",
       ),
       state: state({
@@ -961,7 +961,7 @@ export default defineStage({
       en: "Robo Tennis — AI and local two-player matches",
     },
     learn: {
-      ja: "飛んでいるボールの3次元位置とバウンドを読み、未来の接触位置へ移動する考え方を体験します。",
+      ja: "飛んでいるボールの3次元位置とバウンドを読み取り、将来の接触位置へ移動する考え方を体験します。",
       en: "Track a flying ball in 3D and move toward its future contact point.",
     },
     goal: {
@@ -969,7 +969,7 @@ export default defineStage({
       en: "Against AI or a friend, win two games using 0, 15, 30, 40, deuce and advantage. A missed return, out, or net gives the opponent a point.",
     },
     first: {
-      ja: "P1はWASD・PAD・マウス/タッチ、P2は矢印・2台目PADで移動します。E・Space・Enter・Shift・PAD A/X・クリック/タップでサービスとスイング。サービスだけは1バウンド後に返球し、その後はボレーも可能です。",
+      ja: "P1はWASD・ゲームパッド・マウス／タッチ、P2は矢印キー・2台目のゲームパッドで移動します。E・Space・Enter・Shift・ゲームパッドのA/X・クリック／タップでサーブまたはスイングします。サーブだけは1バウンド後に返球し、その後はボレーもできます。",
       en: "P1 uses WASD, pad, mouse, or touch; P2 uses arrows or pad 2. Serve and swing with E, Space, Enter, Shift, pad A/X, click, or tap. The serve must bounce before the return; volleys are allowed afterward.",
     },
   },

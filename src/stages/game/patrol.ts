@@ -635,14 +635,14 @@ export function makeWarden(): Stage {
     lessonCmd: "ros2 lifecycle get /warden",
     ros2: {
       title: tx(
-        "Service & Lifecycle ・暴走ノードを止める",
+        "Service & Lifecycle — 暴走したNodeを止める",
         "Service & Lifecycle — shut down a runaway node",
       ),
       summary:
-        "3 つのハック端末は std_srvs/srv/Trigger を呼んで /warden を一段階ずつ無力化するサービス呼び出し。" +
-        "最後の脱出では lifecycle ノードへ shutdown 遷移を要求し、Finalized 状態へ移します。" +
+        "3つの端末ではstd_srvs/srv/Triggerを呼び出し、/wardenの機能を1段階ずつ停止します。" +
+        "最後の脱出ではLifecycle Nodeへshutdown遷移を要求し、Finalized状態へ移します。" +
         "これはノードの運用状態を管理する仕組みを教材向けに表現したもので、緊急停止装置そのものではありません。" +
-        "Pub-Sub と違い、Service は「リクエストして応答を待つ」同期通信。",
+        "継続的にデータを配信するPub/Subとは異なり、Serviceでは1つのRequestに1つのResponseが対応します。",
       msgTypes: ["std_srvs/srv/Trigger", "lifecycle_msgs/srv/ChangeState"],
       cli: [
         "ros2 service list",
@@ -732,19 +732,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Service Trigger — 端末をハックする",
+      ja: "Service Trigger — 端末をハッキングする",
       en: "Service Trigger — hacking modules",
     },
     learn: {
-      ja: "Serviceは、一つのRequestに対してResponseを返す「呼び出し型」の通信です。このGameでは、端末へ触れるとServiceを一度呼び出します。",
+      ja: "Serviceは、1つのRequestに対してResponseを返す呼び出し型の通信です。このゲームでは、端末に触れるとServiceを1回呼び出します。",
       en: "A Service is a request/response interface: one request produces one response. In this Game, touching a terminal makes one service call.",
     },
     goal: {
-      ja: "WASD でこっそり移動。見張り (WARDEN) 5 体に見つからないように、3 つの端末を順番にハックして ESCAPE GATE から脱出!\n敵に触れる・視界に入って捕まるとやり直し。",
+      ja: "WASDで見つからないように移動します。5体の見張り（WARDEN）を避けて3つの端末を順番にハッキングし、ESCAPE GATEから脱出しましょう。\n敵に触れたり、視界に入って捕まったりするとやり直しになります。",
       en: "Sneak around with WASD. Avoid the 5 WARDEN patrols, hack all 3 terminals in order, then reach the ESCAPE GATE!\nGetting touched or spotted = retry.",
     },
     first: {
-      ja: "端末 (α / β / γ) に WASD で近づくだけで Trigger が呼び出され、自動的にハックされます。",
+      ja: "WASDで端末（α / β / γ）に近づくとTriggerが呼び出され、自動的にハッキングが始まります。",
       en: "Just drive up to a module (α / β / γ) with WASD — Trigger is called automatically on contact.",
     },
   },

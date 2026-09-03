@@ -138,19 +138,111 @@
             <div>
               <span class="section-number">01</span>
               <p class="section-kicker">WHAT YOU WILL LEARN</p>
-              <h2>ロボットは、どう動くのか</h2>
+              <h2>ロボットシステムについて</h2>
             </div>
             <p>
-              個別の技術を覚えるだけでなく、入力から出力までのロボットシステム全体を理解します。
+              ロボットシステムは、機構・電源・通信・安全・学習など、多様な要素で成り立ちます。この教材では、その働きを理解するために、認識・判断／計画・制御という多様な視点から学びます。これらは固定された順序ではなく、互いに関わりながら実世界の変化に応答します。
             </p>
           </div>
 
-          <div class="skill-pipeline" aria-label="ロボットシステムの学習フロー">
-            <div><small>INPUT</small><b>見る・受け取る</b></div>
-            <span>→</span>
-            <div><small>THINK</small><b>理解・判断する</b></div>
-            <span>→</span>
-            <div><small>OUTPUT</small><b>動かす・作業する</b></div>
+          <div class="robot-functions" aria-label="ロボットシステムを理解するための多様な視点">
+            <div class="architecture-summary">
+              <div>
+                <small>SYSTEM ARCHITECTURE / EXAMPLES</small>
+                <h3>ロボットシステムには様々な種類があります</h3>
+              </div>
+              <p>
+                ロボットシステムは、機能ごとに分けたモジュールを組み合わせて構成されます。近年は、その一部または複数の役割にVLAなどの学習モデルを用いる構成も広がっています。
+              </p>
+              <svg class="architecture-robot-art" viewBox="0 0 180 120" aria-hidden="true">
+                <g class="architecture-scan">
+                  <path d="M73 43C45 40 23 52 13 72" />
+                  <path d="M78 31C41 24 12 42 3 69" />
+                </g>
+                <g class="architecture-robot">
+                  <rect x="67" y="34" width="47" height="38" rx="12" />
+                  <rect x="74" y="45" width="33" height="13" rx="5" />
+                  <circle cx="83" cy="51.5" r="2.5" />
+                  <circle cx="98" cy="51.5" r="2.5" />
+                  <path d="M91 34V25M82 25H100" />
+                  <rect x="58" y="70" width="66" height="35" rx="12" />
+                  <path d="M124 80L143 65L158 78" />
+                  <circle cx="143" cy="65" r="5" />
+                  <path d="M52 102H130L135 110H47Z" />
+                  <circle cx="67" cy="109" r="7" />
+                  <circle cx="116" cy="109" r="7" />
+                </g>
+              </svg>
+            </div>
+
+            <div class="architecture-comparison">
+              <article class="architecture-row architecture-modular">
+                <header>
+                  <small>ROBOT ARCHITECTURE</small>
+                  <h3>代表的な構成例</h3>
+                </header>
+                <div
+                  class="architecture-flow"
+                  aria-label="センサー、認識、判断と計画、制御、ロボットという代表的な構成"
+                >
+                  <span>センサー</span><i>›</i><span>認識</span><i>›</i><span>判断・計画</span
+                  ><i>›</i><span>制御</span><i>›</i><span>ロボット</span>
+                </div>
+              </article>
+
+              <article class="architecture-row architecture-vla">
+                <header>
+                  <small>VISION · LANGUAGE · ACTION</small>
+                  <h3>VLAを用いた構成例</h3>
+                </header>
+                <div
+                  class="architecture-flow"
+                  aria-label="画像、言語、ロボット状態をVLAポリシーが処理し、ロボット行動を生成する代表的な構成"
+                >
+                  <span>画像・言語・ロボット状態</span><i>›</i><span>VLAポリシー</span><i>›</i
+                  ><span>ロボット行動</span>
+                </div>
+              </article>
+            </div>
+
+            <p class="architecture-note">
+              二つは排他的な分類ではなく、VLAをモジュール型システムの一部として組み込む構成もあります。VLAを用いる場合も低レベル制御や安全機構は必要です。World
+              Modelは構成によって併用されますが、VLAの必須要素ではありません。
+            </p>
+
+            <div class="robot-function-grid">
+              <article class="robot-function function-perception">
+                <div class="robot-function-title">
+                  <span class="robot-function-icon" aria-hidden="true">◉</span>
+                  <small>PERCEPTION</small>
+                </div>
+                <h3>周囲と自分を認識する</h3>
+                <p>カメラやLiDARなどのセンサーから、環境とロボット自身の状態を推定します。</p>
+                <span>画像・距離・自己位置</span>
+              </article>
+              <article class="robot-function function-planning">
+                <div class="robot-function-title">
+                  <span class="robot-function-icon" aria-hidden="true">◇</span>
+                  <small>DECISION &amp; PLANNING</small>
+                </div>
+                <h3>目標に向けて計画・決断する</h3>
+                <p>現在の状況と目標を基に、行動、経路、作業の進め方を決めます。</p>
+                <span>目標・経路・タスク</span>
+              </article>
+              <article class="robot-function function-control">
+                <div class="robot-function-title">
+                  <span class="robot-function-icon" aria-hidden="true">⌁</span>
+                  <small>CONTROL</small>
+                </div>
+                <h3>狙った動きを実現する：適応的に制御する</h3>
+                <p>目標値と現在値を比較し、車輪や関節が安定して動くように指令を調整します。</p>
+                <span>速度・関節・フィードバック</span>
+              </article>
+            </div>
+            <div class="physical-context">
+              <small>PHYSICAL ROBOT / REAL WORLD</small>
+              <strong>多様な機能とハードウェアが連携し、実世界の変化に応答し続ける</strong>
+            </div>
           </div>
 
           <div class="skill-grid">
@@ -195,7 +287,7 @@
               </div>
               <small>PERCEPTION</small>
               <h3>周囲の世界を見る</h3>
-              <p>LiDARとカメラのデータを処理し、障害物や物体をロボットの情報へ変えます。</p>
+              <p>LiDARとカメラのデータを処理し、ロボットが利用できる情報に変換します。</p>
               <div class="skill-can">
                 <span>できるようになること</span>
                 <strong>LiDAR・画像処理・物体検出の概要を理解できる</strong>
@@ -227,7 +319,7 @@
               </div>
               <small>AUTONOMY &amp; NAVIGATION</small>
               <h3>自分で考えて移動する</h3>
-              <p>Goalから経路を作り、障害物を避けながら目的地まで走る仕組みを理解します。</p>
+              <p>Goalを基に経路を作り、障害物を避けながら目的地まで走る仕組みを理解します。</p>
               <div class="skill-can">
                 <span>できるようになること</span>
                 <strong>Nav2・Path・Behavior Treeの概要を理解できる</strong>
@@ -244,7 +336,7 @@
               </div>
               <small>MANIPULATION</small>
               <h3>アームで作業する</h3>
-              <p>関節角、手先位置、把持動作をつなぎ、物を掴んで運ぶ作業を完成させます。</p>
+              <p>関節角、手先位置、把持動作をつなぎ、物をつかんで運ぶ作業を完成させます。</p>
               <div class="skill-can">
                 <span>できるようになること</span>
                 <strong>JointState・IK・Pick &amp; Placeの概要と流れを理解できる</strong>
@@ -272,7 +364,7 @@
               <p class="section-kicker">HOW TO LEARN</p>
               <h2>3つのステップで学ぶ</h2>
             </div>
-            <p>シミュレーションで得た直感を、ROS 2の概念と実際のロボットへ接続します。</p>
+            <p>シミュレーションで得た直感を、ROS 2の概念と実機での実践につなげます。</p>
           </div>
 
           <div class="learning-flow">
@@ -299,7 +391,7 @@
               <div class="flow-icon">⌁</div>
               <small>BUILD</small>
               <h3>実機で実践</h3>
-              <p>講義資料と実機を使い、同じROS 2概念を本物のロボットシステムで確かめます。</p>
+              <p>講義資料と実機を使い、同じROS 2の概念を実際のロボットシステムで確かめます。</p>
               <a href="#real-robot">実機学習を見る →</a>
             </article>
           </div>
@@ -359,15 +451,15 @@
           <div class="real-robot-card">
             <div class="real-copy">
               <div class="eyebrow real-eyebrow"><span></span> NEXT STEP / REAL ROBOT</div>
-              <h2>実機で学ぶ場合はこちら</h2>
+              <h2>次は実機で学ぶ</h2>
               <p>
-                シミュレーションで理解したROS 2を、カチャカと実際の開発環境で試してみましょう。
+                シミュレーションで学んだROS 2の概念を、カチャカの実機と開発環境で試してみましょう。
                 開発環境、ROS 2基礎、制御、センサー、ナビゲーション、画像処理までを扱います。
               </p>
               <ul>
                 <li><span>01</span> 実機の開発環境とROS 2基礎</li>
                 <li><span>02</span> フィードフォワード・フィードバック制御</li>
-                <li><span>03</span> センサー・Nav2・AI画像処理</li>
+                <li><span>03</span> センサー・Nav2・画像認識</li>
               </ul>
               <div class="real-links">
                 <a
@@ -449,7 +541,7 @@
                 <div>
                   <small>CREATOR / MORE PROJECTS</small>
                   <strong>Masato Kobayashi / 小林聖人</strong>
-                  <p>AIロボット等に関する研究や講義等をまとめています。</p>
+                  <p>知能ロボットシステムやROS 2に関する研究・講義をまとめています。</p>
                 </div>
                 <a
                   href="https://mertcookimg.github.io/"

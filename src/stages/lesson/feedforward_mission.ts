@@ -396,15 +396,15 @@ export function makeFeedforwardMission(): Stage {
       'ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.5}, angular: {z: 0.0}}"',
     ros2: {
       title: tx(
-        "Feed-forward ・計画した cmd_vel を順に publish",
+        "Feedforward — 計画したcmd_velを順にpublishする",
         "Feed-forward — publish a planned sequence of cmd_vel",
       ),
       summary:
         "キーボードでリアルタイム操作する代わりに、" +
-        "あらかじめ並べた forward / rotate / wait のブロックを" +
-        "順に geometry_msgs/msg/Twist として /cmd_vel に publish します。" +
-        "ROS 2 入門で扱われる、時間と速度をあらかじめ決めた open-loop control と同じ仕組み。" +
-        "この方式は外乱に弱いのが弱点で、後の Subscribe や Action で改善していきます。",
+        "あらかじめ並べたforward / rotate / waitブロックを、" +
+        "順番にgeometry_msgs/msg/Twistとして/cmd_velへpublishします。" +
+        "これは、時間と速度をあらかじめ決めて動かす開ループ制御です。" +
+        "外乱に応じた補正ができないため、後のレッスンではセンサー情報を使うFeedback制御へ発展させます。",
       msgTypes: ["geometry_msgs/msg/Twist"],
       cli: [
         "ros2 topic echo /cmd_vel",
@@ -441,7 +441,7 @@ class FeedforwardMission(Node):
 # n.cmd_vel(0.0,  1.05, 1.5)   # 左に 90°（反時計回り）
 # n.cmd_vel(0.7,  0.0,  3.5)   # 直進`,
       realWorld: tx(
-        "講義の初期課題と同じく、時間と速度をあらかじめ決めて /cmd_vel を送る開ループ制御を扱います。実機では base controller、安全設定、床や車体の特性によって結果が変わるため、低速かつ安全な環境で確認します。",
+        "講義の初期課題と同様に、時間と速度をあらかじめ決めて/cmd_velを送る開ループ制御を扱います。実機ではBase Controller、安全設定、床や車体の特性によって結果が変わるため、安全な環境で低速から確認します。",
         "Like the introductory lecture exercise, this lesson sends a preplanned sequence of timed /cmd_vel commands as open-loop control. Results on a physical robot depend on its base controller, safety configuration, floor, and mechanics, so testing should begin slowly in a safe area.",
       ),
       state: {
@@ -504,19 +504,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Feedforward ミッション — 時間で壁を避ける",
+      ja: "Feedforwardミッション — 時間を基準に壁を避ける",
       en: "Feedforward mission — dodging walls by time",
     },
     learn: {
-      ja: "feedforward は時間さえ正確なら一直線で目的地に着きますが、誤差があると壁にぶつかります。開ループの限界を体感しましょう。",
+      ja: "Feedforward制御では、あらかじめ計算した速度と時間だけを使って目的地を目指します。モデルや動作に誤差があると壁にぶつかるため、開ループ制御の限界を体感できます。",
       en: "With perfect timing, feedforward reaches the goal in a straight shot — but any drift hits a wall. Feel the limits of open-loop control.",
     },
     goal: {
-      ja: "cmd_vel ブロックを duration の秒数で並べ、壁を避けて GOAL に到達しましょう。",
+      ja: "cmd_velブロックにdurationを設定して並べ、壁を避けながらGOALに到達しましょう。",
       en: "Stack cmd_vel blocks with the right durations to dodge the walls and reach GOAL.",
     },
     first: {
-      ja: "linear / angular / duration を調整したブロックを並べて ▶ RUN。ズレたら R で位置リセットしてやり直しましょう。",
+      ja: "linear / angular / durationを調整したブロックを並べ、▶ RUNで実行します。位置がずれたらRでリセットしてやり直しましょう。",
       en: "Tune linear / angular / duration on each block and press ▶ RUN. Press R to reset position if you drift off.",
     },
   },

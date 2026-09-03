@@ -25,12 +25,38 @@ const STATIC_EN: Record<string, string> = {
     "This is a conceptual browser simulation of ROS 2 data flow; it does not run ROS 2 or DDS itself.",
   Gamesから見る: "Explore Games",
   Lessonsから見る: "Explore Lessons",
-  "ロボットは、どう動くのか": "How Does a Robot Move?",
-  "個別の技術を覚えるだけでなく、入力から出力までのロボットシステム全体を理解します。":
-    "Go beyond isolated technologies and understand the entire robot system, from input to output.",
-  "見る・受け取る": "Sense & Receive",
-  "理解・判断する": "Understand & Decide",
-  "動かす・作業する": "Move & Act",
+  ロボットシステムについて: "About a Robot System",
+  "ロボットシステムは、機構・電源・通信・安全・学習など、多様な要素で成り立ちます。この教材では、その働きを理解するために、認識・判断／計画・制御という多様な視点から学びます。これらは固定された順序ではなく、互いに関わりながら実世界の変化に応答します。":
+    "Robot systems consist of diverse elements, including mechanisms, power systems, communication, safety, and learning. To understand how they work, this course uses several perspectives: perception, decision-making and planning, and control. These are not fixed sequential stages; they interact as the robot responds to changes in the physical world.",
+  周囲と自分を認識する: "Perceive the World and the Robot",
+  "カメラやLiDARなどのセンサーから、環境とロボット自身の状態を推定します。":
+    "Estimate the environment and the robot's own state from cameras, LiDAR, and other sensors.",
+  "画像・距離・自己位置": "Images, distance, and localization",
+  "目標に向けて計画・決断する": "Plan and Decide Toward the Goal",
+  "現在の状況と目標を基に、行動、経路、作業の進め方を決めます。":
+    "Use the current situation and goal to decide actions, paths, and task execution.",
+  "目標・経路・タスク": "Goals, paths, and tasks",
+  "狙った動きを実現する：適応的に制御する": "Produce the Intended Motion with Adaptive Control",
+  "目標値と現在値を比較し、車輪や関節が安定して動くように指令を調整します。":
+    "Compare target and measured states, then adjust commands so wheels and joints move reliably.",
+  "速度・関節・フィードバック": "Velocity, joints, and feedback",
+  "多様な機能とハードウェアが連携し、実世界の変化に応答し続ける":
+    "Diverse functions and hardware work together to continuously respond to changes in the physical world",
+  ロボットシステムには様々な種類があります: "There Is More Than One Way to Build a Robot System",
+  "ロボットシステムは、機能ごとに分けたモジュールを組み合わせて構成されます。近年は、その一部または複数の役割にVLAなどの学習モデルを用いる構成も広がっています。":
+    "Robot systems are composed by combining modules separated by function. Increasingly, learned models such as VLAs are being used for one or more of those roles.",
+  代表的な構成例: "Robot Architecture",
+  VLAを用いた構成例: "Example Architecture Using a VLA",
+  センサー: "Sensors",
+  認識: "Perception",
+  "判断・計画": "Decision & Planning",
+  制御: "Control",
+  ロボット: "Robot",
+  "画像・言語・ロボット状態": "Vision, Language & Robot State",
+  VLAポリシー: "VLA Policy",
+  ロボット行動: "Robot Actions",
+  "二つは排他的な分類ではなく、VLAをモジュール型システムの一部として組み込む構成もあります。VLAを用いる場合も低レベル制御や安全機構は必要です。World Modelは構成によって併用されますが、VLAの必須要素ではありません。":
+    "These are not mutually exclusive categories: a VLA can be integrated as part of a modular system. Systems using VLAs still require low-level control and safety mechanisms. A world model may be used in some architectures, but it is not a required component of a VLA.",
   通信をつなぐ: "Connect Communication",
   "ノード同士がデータや要求を交換する、ROS 2の基本構造を組み立てます。":
     "Build the core ROS 2 structure that lets nodes exchange data and requests.",
@@ -38,12 +64,12 @@ const STATIC_EN: Record<string, string> = {
   "Topic・Service・Actionの概要と使い分けを理解できる":
     "Understand the basics of Topics, Services, Actions, and when each is used",
   動きを制御する: "Control Motion",
-  "目標値と現在値から指令を作り、ロボットを速く安定して動かします。":
-    "Turn targets and measured states into commands that move a robot quickly and reliably.",
+  "目標値と現在値から指令を作り、ロボットを安定して動かします。":
+    "Turn targets and measured states into commands that move a robot reliably and stably.",
   "Feedforward・Feedback・Parameterの概要と役割を理解できる":
     "Understand the basics and roles of feedforward, feedback, and parameters",
   周囲の世界を見る: "Perceive the World",
-  "LiDARとカメラのデータを処理し、障害物や物体をロボットの情報へ変えます。":
+  "LiDARとカメラのデータを処理し、ロボットが利用できる情報に変換します。":
     "Process LiDAR and camera data into information the robot can use.",
   "LiDAR・画像処理・物体検出の概要を理解できる":
     "Understand the basics of LiDAR, image processing, and object detection",
@@ -52,12 +78,12 @@ const STATIC_EN: Record<string, string> = {
     "Follow one continuous path from coordinate transforms to mapping and probabilistic localization.",
   "TF・SLAM・AMCLの概要と役割を理解できる": "Understand the basics and roles of TF, SLAM, and AMCL",
   自分で考えて移動する: "Navigate Autonomously",
-  "Goalから経路を作り、障害物を避けながら目的地まで走る仕組みを理解します。":
+  "Goalを基に経路を作り、障害物を避けながら目的地まで走る仕組みを理解します。":
     "Understand how a robot plans from a goal and drives around obstacles to reach it.",
   "Nav2・Path・Behavior Treeの概要を理解できる":
     "Understand the basics of Nav2, paths, and behavior trees",
   アームで作業する: "Work with a Robot Arm",
-  "関節角、手先位置、把持動作をつなぎ、物を掴んで運ぶ作業を完成させます。":
+  "関節角、手先位置、把持動作をつなぎ、物をつかんで運ぶ作業を完成させます。":
     "Connect joint motion, end-effector poses, and grasping to complete a manipulation task.",
   "JointState・IK・Pick & Placeの概要と流れを理解できる":
     "Understand the basics and workflow of JointState, IK, and Pick & Place",
@@ -79,7 +105,7 @@ const STATIC_EN: Record<string, string> = {
   Lessonsで理解: "Understand through Lessons",
   "Lessonsを見る →": "Explore Lessons →",
   実機で実践: "Apply It on a Real Robot",
-  "講義資料と実機を使い、同じROS 2概念を本物のロボットシステムで確かめます。":
+  "講義資料と実機を使い、同じROS 2の概念を実際のロボットシステムで確かめます。":
     "Use the lecture material and physical hardware to verify the same ROS 2 concepts on a real robot.",
   "実機学習を見る →": "Open Real-Robot Course →",
   ロボットを操作する: "Operate the robot",
@@ -90,14 +116,14 @@ const STATIC_EN: Record<string, string> = {
   "Parameter・Goal・制御": "Parameters, goals, and control",
   動く理由を説明できる: "Explain why the robot behaves that way",
   概念からシステムへ: "From concepts to complete systems",
-  実機で学ぶ場合はこちら: "Continue with a real robot",
+  次は実機で学ぶ: "Continue with a real robot",
   "ブラウザから実機へ。ロボットシステムを、動かしながら学ぶ。":
     "From browser simulation to physical hardware—learn robot systems by making them move.",
-  "シミュレーションで理解したROS 2を、カチャカと実際の開発環境で試してみましょう。 開発環境、ROS 2基礎、制御、センサー、ナビゲーション、画像処理までを扱います。":
+  "シミュレーションで学んだROS 2の概念を、カチャカの実機と開発環境で試してみましょう。 開発環境、ROS 2基礎、制御、センサー、ナビゲーション、画像処理までを扱います。":
     "Apply what you learned in simulation to Kachaka and a real development environment. The course covers setup, ROS 2 fundamentals, control, sensors, navigation, and image processing.",
   "実機の開発環境とROS 2基礎": "Real-robot environment and ROS 2 fundamentals",
   "フィードフォワード・フィードバック制御": "Feedforward and feedback control",
-  "センサー・Nav2・AI画像処理": "Sensors, Nav2, and AI vision",
+  "センサー・Nav2・画像認識": "Sensors, Nav2, and computer vision",
   "ROS 2 AI Lectureを開く": "Open the ROS 2 AI Lecture",
   GitHubでOSSを見る: "View the OSS on GitHub",
   実機で動く様子を見る: "Watch the real robot in action",
@@ -105,9 +131,9 @@ const STATIC_EN: Record<string, string> = {
     "Follow the real-robot exercises and lesson explanations step by step.",
   "講義で使用するROS 2パッケージと実装コードを公開しています。":
     "Explore the ROS 2 packages and implementation used in the course.",
-  "AIロボット等に関する研究や講義等をまとめています。":
-    "Explore research and courses on AI robotics and related topics.",
-  "シミュレーションで得た直感を、ROS 2の概念と実際のロボットへ接続します。":
+  "知能ロボットシステムやROS 2に関する研究・講義をまとめています。":
+    "Explore research and courses on intelligent robot systems and ROS 2.",
+  "シミュレーションで得た直感を、ROS 2の概念と実機での実践につなげます。":
     "Connect intuition from simulation to ROS 2 concepts and physical robots.",
   "アクセス解析にGoogle Analyticsを利用しています。":
     "This site uses Google Analytics for usage insights.",
@@ -118,7 +144,12 @@ const ATTRIBUTE_EN: Record<string, string> = {
   ガイド内ナビゲーション: "Guide navigation",
   メニューを開く: "Open menu",
   学べる分野: "Learning domains",
-  ロボットシステムの学習フロー: "Robot-system learning flow",
+  ロボットシステムを理解するための多様な視点:
+    "Several perspectives for understanding a robot system",
+  "センサー、認識、判断と計画、制御、ロボットという代表的な構成":
+    "Representative architecture: sensors, perception, decision and planning, control, and robot",
+  "画像、言語、ロボット状態をVLAポリシーが処理し、ロボット行動を生成する代表的な構成":
+    "Representative architecture in which a VLA policy processes vision, language, and robot state to generate robot actions",
   "実践！知能ロボットシステム入門 — カチャカとROS 2でAIロボット":
     "Practical Intelligent Robot Systems — AI Robotics with Kachaka and ROS 2",
   kachaka_ros2_lectureをGitHubで開く: "Open kachaka_ros2_lecture on GitHub",

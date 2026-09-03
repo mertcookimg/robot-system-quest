@@ -450,13 +450,13 @@ export function makeLidarExplorer(): Stage {
     lessonCmd: "ros2 topic echo /scan",
     ros2: {
       title: tx(
-        "Sensor Subscribe ・LiDAR で世界を読む",
+        "Sensor Subscribe — LiDARで周囲を把握する",
         "Sensor Subscribe — read the world via LiDAR",
       ),
       summary:
-        "/scan は sensor_msgs/msg/LaserScan 型で、ranges[] にレーザー距離が並びます（本ステージは 96 方向。実機の測定点数や角度範囲は機種・設定で異なります）。" +
-        "暗闇でも障害物を捉えられるのは、Subscribe したスキャン結果をリアルタイムで処理しているから。" +
-        "SLAM・自己位置推定・障害物回避 すべての出発点。",
+        "/scanはsensor_msgs/msg/LaserScan型で、ranges[]に距離データが角度順に並びます。このステージでは96方向を測定しますが、実機の測定点数や角度範囲は機種や設定によって異なります。" +
+        "subscribeしたスキャン結果をリアルタイムで処理することで、暗い環境でも障害物までの距離を把握できます。" +
+        "LaserScanはSLAM・自己位置推定・障害物回避の基礎となるデータです。",
       msgTypes: ["sensor_msgs/msg/LaserScan"],
       cli: [
         "ros2 topic info /scan",
@@ -484,7 +484,7 @@ class Explorer(Node):
             if front < 0.5:
                 self.emergency_stop()`,
       realWorld: tx(
-        "ROS 2 の 2D LiDAR では LaserScan、3D LiDAR では PointCloud2 がよく使われます。実際の topic 名や interface はセンサーとドライバー構成で異なります。",
+        "ROS 2の2D LiDARではLaserScan、3D LiDARではPointCloud2がよく使われます。実際のTopic名やInterfaceは、センサーとDriverの構成によって異なります。",
         "ROS 2 systems commonly use LaserScan for 2D LiDAR and PointCloud2 for 3D LiDAR. Actual topic names and interfaces depend on the sensor and driver configuration.",
       ),
       state: {
@@ -619,19 +619,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Sensor topic — /scan で世界を知る",
+      ja: "Sensor Topic — /scanで周囲を把握する",
       en: "Sensor topics — seeing the world via /scan",
     },
     learn: {
-      ja: "LiDAR は周囲の距離を測って topic /scan に publish します。ロボはこのセンサデータで暗闇を「見る」ことができます。",
+      ja: "LiDARは周囲までの距離を測り、Topic /scanへpublishします。ロボットはこのセンサーデータを使って暗闇でも周囲を把握できます。",
       en: 'A LiDAR measures distance to surroundings and publishes them on /scan. The robot uses this sensor data to \\"see\\" through the dark.',
     },
     goal: {
-      ja: "WASD で迷路を進もう。A・B・C のデータ 3 つを集めて GOAL に到達でクリア!\n壁にぶつかったり、バッテリーが切れるとやり直し。",
+      ja: "WASDで迷路を進みましょう。A・B・Cの3つのデータを集めてGOALに到達すればクリアです。\n壁にぶつかったり、バッテリーが切れたりするとやり直しになります。",
       en: "Drive the maze with WASD. Collect all three data points (A / B / C) and reach GOAL to clear!\nHitting a wall or running out of battery = retry.",
     },
     first: {
-      ja: "WASD で動くと /scan が周囲を照らします。光の届く範囲で進路を決めましょう。",
+      ja: "WASDで動くと、/scanが捉えた範囲が明るく表示されます。その範囲を見ながら進路を決めましょう。",
       en: "Move with WASD — /scan lights up the area around you. Plan paths inside the visible range.",
     },
   },

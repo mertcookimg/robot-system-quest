@@ -438,13 +438,13 @@ export function makeBatteryRush(): Stage {
     lessonCmd: "ros2 topic echo /robot/battery_state",
     ros2: defineRos2Concept({
       title: tx(
-        "BatteryState ・電池残量を監視して自動充電",
+        "BatteryState — バッテリー残量を監視して自動充電",
         "BatteryState — monitor the pack and auto-dock",
       ),
       summary:
-        "実ロボットは sensor_msgs/BatteryState を /battery_state に publish し続けます。" +
-        "監視ノードが残量低下を検知したら充電ドックへ向かわせる — お掃除ロボの帰巣と同じ仕組み。" +
-        "「動くほど減る・ぶつかると減る・ドックで回復」を体で覚えるステージです。",
+        "実機のロボットは、sensor_msgs/BatteryStateを/battery_stateへpublishし続けます。" +
+        "監視Nodeが残量低下を検知したら充電ドックへ向かわせます。これは掃除ロボットの自動帰還にも使われる考え方です。" +
+        "このステージでは、移動や衝突によるバッテリー消費と、ドックでの充電を体験できます。",
       msgTypes: ["sensor_msgs/msg/BatteryState", "geometry_msgs/msg/Twist"],
       cli: [
         "ros2 topic echo /robot/battery_state",
@@ -473,7 +473,7 @@ class BatteryMonitor(Node):
         elif msg.percentage > LOW + 0.15:
             self.warned = False`,
       realWorld: tx(
-        "ルンバの帰巣も Nav2 の docking behavior も原理は同じ。/battery_state を監視して閾値を切ったら充電ステーションへの navigation ゴールを投げます。",
+        "掃除ロボットの自動帰還やNav2のDockingでも、バッテリー残量を監視して充電地点へ移動する考え方が使われます。/battery_stateが閾値を下回ったら、充電ステーションへのNavigation Goalを送ります。",
         "A Roomba returning to base and Nav2's docking behavior work the same way: watch /battery_state and, below a threshold, send a navigation goal to the charging station.",
       ),
       state: state({
@@ -526,19 +526,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "BatteryState — 電池を監視しながら配達スコアアタック",
+      ja: "BatteryState — バッテリーを監視しながら配達に挑戦",
       en: "BatteryState — a delivery score attack on battery power",
     },
     learn: {
-      ja: "実ロボは /battery_state (sensor_msgs/BatteryState) で残量を publish し続け、監視ノードが低下を検知したら充電ドックへ向かいます。HUD のバッテリー % はこのトピックの中身です。",
+      ja: "実際のロボットは/battery_state（sensor_msgs/msg/BatteryState）へ残量をpublishし続け、監視Nodeが残量低下を検知すると充電ドックへ向かいます。HUDのバッテリー残量は、このTopicの内容を表しています。",
       en: "Real robots keep publishing /battery_state (sensor_msgs/BatteryState); a monitor node sends them to the dock when it drops. The battery % in the HUD is exactly that topic.",
     },
     goal: {
-      ja: "75秒間でできるだけ多く配達しよう (6件で ★3)。移動・ブースト・壁ヒットで電池が減り、0% で故障 = ゲームオーバー。⚡ドックに乗ると急速充電!",
+      ja: "75秒間でできるだけ多く配達しましょう（6件で★3）。移動、ブースト、壁への衝突でバッテリーが減り、0%になると故障してゲームオーバーです。⚡ドックに乗ると急速充電できます。",
       en: "Deliver as many packages as you can in 75 seconds (6 = ★3). Driving, boosting and wall hits drain the pack; 0% = breakdown. Park on the ⚡ dock to fast-charge!",
     },
     first: {
-      ja: "まず緑の PICKUP へ。荷物を持ったら矢印の先の DELIVER リングへ運ぼう。残量 25% を切ったら欲張らずにドックへ!",
+      ja: "まず緑のPICKUPへ向かいましょう。荷物を持ったら、矢印の先にあるDELIVERリングへ運びます。残量が25%を切ったら、早めにドックへ戻りましょう。",
       en: "Head to the green PICKUP ring first, then follow the arrow to the DELIVER ring. Below 25%, stop being greedy and go dock!",
     },
   },

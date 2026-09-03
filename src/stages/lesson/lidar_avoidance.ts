@@ -506,15 +506,15 @@ export function makeLidarAvoidance(): Stage {
     lessonCmd: "ros2 topic echo /robot/lidar/scan",
     ros2: {
       title: tx(
-        "Reactive Control ・/scan で前方が空いてれば進む",
+        "Reactive Control — /scanで前方が空いていれば進む",
         "Reactive Control — drive forward when /scan says the front is clear",
       ),
       summary:
-        "講義用の LiDAR 障害物回避を簡略化して再現。" +
-        "/scan を Subscribe して 前方 / 右 / 左 セクターの最小距離を計算し、" +
-        "閾値で 前進 / 左旋回 / 右旋回 / 停止 を切替えるリアクティブ制御。" +
-        "計画も目標もない、純粋に「センサ値で即決」する最も基本的な自律行動。" +
-        "threshold を変えると挙動が劇的に変化（小さい→突進、大きい→慎重）。",
+        "講義用のLiDAR障害物回避を簡略化して再現します。" +
+        "/scanを購読して前方・右・左の各セクターの最小距離を計算し、" +
+        "閾値に応じて前進・左旋回・右旋回・停止を切り替えるリアクティブ制御です。" +
+        "計画や目標を使わず、純粋にセンサー値から即座に判断する、最も基本的な自律行動です。" +
+        "thresholdを変えると挙動が大きく変化します（小さいほど積極的、大きいほど慎重）。",
       msgTypes: ["sensor_msgs/msg/LaserScan", "geometry_msgs/msg/Twist"],
       cli: [
         "ros2 topic hz /robot/lidar/scan",
@@ -572,7 +572,7 @@ class RobotLidarControl(Node):
             vel.angular.z = -0.5     # rotate right
         self.cmd_vel_pub.publish(vel)`,
       realWorld: tx(
-        "実機に移すには、LiDAR と base controller の topic・座標・速度制限に合わせる必要があります。このような反応型制御は障害物を避けられますが、袋小路や同じ動作の繰り返しに陥ることがあります。目的地まで安定して進むには、Nav2 のような経路計画との組み合わせが有効です。",
+        "実機へ移すには、LiDARとBase ControllerのTopic、座標系、速度制限に合わせる必要があります。このようなリアクティブ制御は障害物を避けられますが、袋小路にはまったり、同じ動作を繰り返したりすることがあります。目的地まで安定して進むには、Nav2のような経路計画との組み合わせが有効です。",
         "Moving this logic to a physical robot requires matching the LiDAR and base-controller topics, frames, and velocity limits. Reactive control can avoid obstacles, but may become trapped or repeat behaviors. Combining it with a planner such as Nav2 helps the robot reach destinations more reliably.",
       ),
       state: {
@@ -642,30 +642,30 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "反応制御 — /scan で前進と旋回を切り替え",
+      ja: "リアクティブ制御 — /scanで前進と旋回を切り替える",
       en: "Reactive control — switching on /scan",
     },
     learn: {
-      ja: "/scan の sector の最小値が threshold より近ければ旋回、遠ければ前進。条件分岐だけのシンプルな反応制御 (reactive control) です。",
+      ja: "/scanの各セクターで測った最小距離がthreshold未満なら旋回し、threshold以上なら前進します。条件分岐だけで動くシンプルなリアクティブ制御です。",
       en: "If the sector min from /scan is closer than the threshold, turn; otherwise drive forward. A pure if/else reactive controller — no planning involved.",
     },
     goal: {
-      ja: "threshold / fwd_speed / turn_speed を調整し、衝突せずに GOAL へ到達しましょう。",
+      ja: "threshold / fwd_speed / turn_speedを調整し、衝突せずにGOALへ到達しましょう。",
       en: "Tune threshold / fwd_speed / turn_speed so the robot reaches GOAL without colliding.",
     },
     first: {
-      ja: "デフォルト (threshold 1.0, fwd_speed 0.2, turn_speed 0.5) のまま ▶ RUN。衝突するなら threshold を上げるか fwd_speed を下げましょう。",
+      ja: "まずは初期値（threshold 1.0、fwd_speed 0.2、turn_speed 0.5）のまま▶ RUNを押します。衝突する場合はthresholdを上げるか、fwd_speedを下げましょう。",
       en: "Press ▶ RUN with the defaults (threshold 1.0, fwd_speed 0.2, turn_speed 0.5). If it crashes, raise threshold or lower fwd_speed.",
     },
   },
   strings: {
     ja: {
-      collision: "衝突 — threshold を上げるか fwd_speed を下げて再 RUN",
-      hint: "threshold を上下して反応性を調整 / STOP で停止",
-      palette_hint: "/scan の sector min で反応的に避ける (反応制御)",
-      running: "LiDAR avoidance 実行中 — STOP で停止",
-      stop: "停止 — パラメータを調整して再 RUN",
-      tip: "threshold を調整して RUN — LiDAR で障害物を避けながら GOAL へ",
+      collision: "衝突 — thresholdを上げるかfwd_speedを下げて再度RUN",
+      hint: "thresholdを変えて反応性を調整 / STOPで停止",
+      palette_hint: "/scanの各セクターの最小距離を使ったリアクティブ制御",
+      running: "LiDAR障害物回避を実行中 — STOPで停止",
+      stop: "停止 — パラメータを調整して再度RUN",
+      tip: "thresholdを調整してRUN — LiDARで障害物を避けながらGOALへ",
     },
     en: {
       collision: "Collision — raise threshold or lower fwd_speed and RUN again",

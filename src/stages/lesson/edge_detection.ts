@@ -508,15 +508,15 @@ export function makeCameraMission(): Stage {
     lessonCmd: "ros2 topic echo /image_raw",
     ros2: {
       title: tx(
-        "Camera + Teleop — 走らせながら Image Processing を観察",
+        "Camera + Teleop — 走行しながら画像処理を観察する",
         "Camera + Teleop — observe Image Processing while driving",
       ),
       summary:
-        "lesson7 (Canny) の実機運用を体感するステージ。WASD / 矢印 / ゲームパッドで遠隔操作しながら、" +
-        "/image_raw 相当の疑似カメラ画像に GaussianBlur + Canny を流し続ける。" +
-        "床のライン・色付きターゲット・壁を視点 / 距離 / 角度を変えて見てみると、" +
-        "edge map がどう変わるかが直感的に理解できる。" +
-        "ゴールへ到達するだけならパラメータ無関係 — 画像処理は教材として常時表示。",
+        "lesson7（Canny）の実機運用を体感するステージです。WASD・矢印キー・ゲームパッドで遠隔操作しながら、" +
+        "/image_raw相当の疑似カメラ画像にGaussianBlurとCannyを適用し続けます。" +
+        "床のライン・色付きターゲット・壁を見る視点、距離、角度を変えることで、" +
+        "エッジ画像がどう変化するかを直感的に理解できます。" +
+        "ゴールへの到達条件はパラメータに左右されず、画像処理の結果は常に表示されます。",
       msgTypes: ["sensor_msgs/msg/Image", "geometry_msgs/msg/Twist"],
       cli: ["ros2 topic hz /image_raw", "ros2 topic echo /cmd_vel", "ros2 topic info /image_raw"],
       python: `import cv2
@@ -533,7 +533,7 @@ def image_cb(self, msg):
     cv2.imshow("edges", edges)
     cv2.waitKey(1)`,
       realWorld: tx(
-        "robot 実機: コントローラで teleop しつつ rviz で /image_raw と Canny 出力を眺める。色・テクスチャ・距離で edge の見え方が変わる感覚は、自律走行の前段として重要。",
+        "実機では、Controllerで遠隔操作しながら、RVizで/image_rawとCannyの出力を確認できます。色・模様・距離によってエッジの見え方が変わることを理解するのは、画像認識を利用した自律走行の基礎になります。",
         "On a real robot: teleop with a controller while watching /image_raw and the Canny output in rviz. Building intuition for how edges shift with color, texture, and distance is essential groundwork before autonomous driving.",
       ),
     },
@@ -576,31 +576,31 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "カメラミッション — teleop + canny で 5 色を捕獲",
+      ja: "カメラミッション — 遠隔操作しながらCannyで5色を検出",
       en: "Camera mission — teleop + canny on 5 colors",
     },
     learn: {
-      ja: "teleop で走行しながらカメラ画像を blur → canny にかけ、視野に入った 5 色のターゲットを edge 抽出で capture します。",
+      ja: "遠隔操作で走行しながらカメラ画像にblur → cannyの順で処理をかけ、視野に入った5色のターゲットをエッジ抽出によって検出します。",
       en: "Drive with teleop while the camera image flows through blur → canny. Capture all 5 color targets framed in view via edge detection.",
     },
     goal: {
-      ja: "5 色のターゲット全てを canny edge で捉えて capture し、GOAL に到達しましょう。",
+      ja: "5色すべてのターゲットをCannyで検出し、GOALに到達しましょう。",
       en: "Capture all 5 color targets with canny edges and reach GOAL.",
     },
     first: {
-      ja: "WASD で走り、Y キーで TUNE モードに切り替え blur / canny の閾値を調整しましょう。",
+      ja: "WASDで走行し、YキーでTUNEモードに切り替えてblur / cannyの閾値を調整しましょう。",
       en: "Drive with WASD; press Y to switch to TUNE mode and adjust the blur / canny thresholds.",
     },
   },
   strings: {
     ja: {
-      hint: "全色ターゲットを camera 視野に入れて canny で edge を捉えると capture → 全部集めて GOAL へ",
-      palette_hint: "WASD/矢印で走行。blur → canny で右パネルに edge map がリアルタイム表示",
-      remaining: "残り {n} 個 — canny で全色を捉えて",
-      run_msg: "teleop 中 — WASD/矢印/パッドで GOAL を目指せ",
-      run_msg2: "teleop 中 — GOAL を目指せ",
+      hint: "各色のターゲットをカメラに収め、Cannyで検出 → すべて集めてGOALへ",
+      palette_hint: "WASD / 矢印キーで走行。右パネルにblur → cannyの結果をリアルタイム表示",
+      remaining: "残り{n}個 — Cannyですべての色を検出してください",
+      run_msg: "遠隔操作中 — WASD / 矢印キー / ゲームパッドでGOALを目指してください",
+      run_msg2: "遠隔操作中 — GOALを目指してください",
       stop: "停止",
-      tip: "各色付きターゲットを canny で検出 → 全部 capture したら GOAL",
+      tip: "各色のターゲットをCannyで検出 → すべて検出したらGOALへ",
     },
     en: {
       hint: "Frame each color target in the camera and let canny detect its edges → capture all → GOAL",

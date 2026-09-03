@@ -541,11 +541,11 @@ export function makeMappingMission(): Stage {
     lessonCmd: "ros2 topic echo /map",
     ros2: {
       title: tx(
-        "Teleop SLAM — 自分で走って /map を埋める",
+        "Teleop SLAM — 自分で走行して/mapを完成させる",
         "Teleop SLAM — drive and fill /map yourself",
       ),
       summary:
-        "LiDAR の /scan から occupancy grid を組み立てるのが SLAM の「マッピング」部分。本ステージではロボの pose が既知の前提で地図だけを作る（自己位置推定は省略）。scan_range をスライダーで調整しながら、自分で WASD teleop してロボを走らせ、未知タイルを埋めていく。本来の SLAM は、この地図作成と自己位置推定 (Localization) を同時に行う。",
+        "LiDARの/scanからOccupancy Gridを組み立てる処理が、SLAMの地図作成に当たります。このステージではロボットのPoseが既知であると仮定し、自己位置推定を省略して地図だけを作ります。scan_rangeをスライダーで調整しながらWASDでロボットを走らせ、未知のタイルを埋めていきましょう。本来のSLAMでは、地図作成と自己位置推定（Localization）を同時に行います。",
       msgTypes: [
         "sensor_msgs/msg/LaserScan",
         "nav_msgs/msg/OccupancyGrid",
@@ -566,7 +566,7 @@ class MapBuilder(Node):
                 self.grid[row, col] = 100 if hit else 0
         self.pub.publish(occupancy_grid_msg(self.grid))`,
       realWorld: tx(
-        "実機の SLAM ノード (slam_toolbox / cartographer) の地図構築部分は本ステージとほぼ同じ流れ: LiDAR の /scan を subscribe し、ロボ pose で世界座標に変換、occupancy grid を更新して /map に publish。ただし実機ではその pose 自体もスキャンマッチングで推定する（＝Localization）のが SLAM の肝で、本ステージはそこを既知として省いている。scan_range は実機 launch ファイルのチューニングと同じ感覚。",
+        "実機のSLAM Node（slam_toolbox / Cartographer）でも、LiDARの/scanをsubscribeし、ロボットのPoseを使って世界座標へ変換し、Occupancy Gridを更新して/mapへpublishします。ただし、実際のSLAMではPose自体もセンサー情報や移動情報から推定します。このステージでは、そのPoseが既知であるとして処理を省略しています。scan_rangeの調整では、実機のLaunch FileでParameterを調整する感覚を体験できます。",
         "The map-building part of real SLAM nodes (slam_toolbox / cartographer) follows nearly the same flow: subscribe to LiDAR /scan, transform rays to world coordinates using the robot pose, update an occupancy grid, and publish to /map. The catch: on a real robot that pose is itself estimated from scan matching (Localization) — the heart of SLAM — which this stage skips by treating the pose as known. scan_range here behaves like a real launch-file parameter.",
       ),
       state: {
@@ -674,19 +674,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Teleop SLAM — 自分で走って地図を埋める",
+      ja: "Teleop SLAM — 自分で走行して地図を完成させる",
       en: "Teleop SLAM — drive yourself, fill the map",
     },
     learn: {
-      ja: "SLAM = 自己位置推定 (Localization) と地図作成 (Mapping) を同時に行うこと。本ステージはその「地図作成」に集中し、ロボの位置は既知として LiDAR の /scan から occupancy grid (/map) を組み立てます。画面下のスライダーで scan_range (LiDAR の届く距離) を調整しながら、自分で WASD teleop してロボを走らせ、未知タイルを埋めていきましょう。",
+      ja: "SLAMは、自己位置推定（Localization）と地図作成（Mapping）を同時に行う技術です。このステージでは地図作成に焦点を当て、ロボットの位置は既知であるとして、LiDARの/scanからOccupancy Grid（/map）を組み立てます。画面下のスライダーでscan_range（LiDARの到達距離）を調整し、WASDでロボットを走らせながら未知のタイルを埋めていきましょう。",
       en: "SLAM = Simultaneous Localization And Mapping. This stage focuses on the Mapping half: with the robot's position treated as known, it builds an occupancy grid (/map) from LiDAR /scan readings. Use the slider to tune scan_range (how far the LiDAR sees), then drive with WASD — every cell the LiDAR sweeps across becomes known.",
     },
     goal: {
-      ja: "scan_range をスライダーで調整した上で、WASD で全 explorable セル (到達可能な床 + その隣接壁) を 100% カバーしましょう。スター ★★★ は 70 秒以内、★★ は 100 秒以内、制限時間は 120 秒。",
+      ja: "scan_rangeをスライダーで調整し、WASDで探索可能なすべてのセル（到達可能な床と隣接する壁）を観測して、地図を100%完成させましょう。70秒以内で★★★、100秒以内で★★、制限時間は120秒です。",
       en: "Adjust scan_range with the slider, then teleop with WASD to map 100% of the explorable cells (every reachable free tile + adjacent walls). ★★★ in ≤70s, ★★ in ≤100s, time limit 120s.",
     },
     first: {
-      ja: "ステージに入ったら即座にタイマーが動きます。WASD でロボを動かすと LiDAR が壁を捉え、右側の OCCUPANCY GRID にマップが書き込まれていきます。",
+      ja: "ステージを開始すると、すぐにタイマーが動きます。WASDでロボットを動かすとLiDARが壁を捉え、右側のOCCUPANCY GRIDへ地図が書き込まれていきます。",
       en: "The timer starts immediately when the stage opens. Drive with WASD; the LiDAR rays catch walls and the OCCUPANCY GRID on the right fills in.",
     },
   },

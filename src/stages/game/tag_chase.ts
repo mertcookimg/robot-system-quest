@@ -1075,13 +1075,13 @@ export function makeTagChase(): Stage {
     lessonCmd: "ros2 topic echo /runner/pose",
     ros2: {
       title: tx(
-        "Multi-robot pursuit — 共有 topic で他者位置を読む",
+        "Multi-robot Pursuit — 共有Topicから相手の位置を取得する",
         "Multi-robot pursuit — read peer poses from a shared topic",
       ),
       summary:
-        "鬼ごっこは multi-robot pursuit の典型的なミニマム例。各ロボは自分の pose を /<name>/pose に publish し、" +
-        "他のロボはそれを subscribe して相対位置を計算→ cmd_vel を決める。" +
-        "Pure-pursuit (敵に向かって) と evasion (敵から離れる) の両方が同じ仕組みで書ける。",
+        "鬼ごっこはマルチロボット追跡を単純化した例です。各ロボットは自分のPoseを/<name>/poseへpublishし、" +
+        "ほかのロボットはそれをsubscribeして相対位置を計算し、cmd_velを決めます。" +
+        "同じ仕組みで、Pure Pursuit（相手へ向かう）と回避（相手から離れる）の両方を表現できます。",
       msgTypes: ["geometry_msgs/msg/Pose", "geometry_msgs/msg/Twist"],
       cli: ["ros2 topic list", "ros2 topic echo /runner/pose", "ros2 topic echo /tagger1/pose"],
       python: `# 鬼 (tagger) ロボ — runner を購読して向かう
@@ -1102,7 +1102,7 @@ class Tagger(Node):
         self.pub.publish(Twist(linear=Vector3(x=0.5),
                                angular=Vector3(z=ang*4)))`,
       realWorld: tx(
-        "実機ロボのチェイス・追従・回避は本質的に同じ — 仲間/敵の pose を共有 topic で読み合い、自分の cmd_vel を独立に決める。",
+        "実機のロボットでも、追跡・追従・回避では、仲間や相手のPoseを共有Topicから取得し、自分のcmd_velを個別に決める構成を利用できます。",
         "Real robot chase / follow / evasion is the same recipe: each robot reads peers' poses from shared topics and decides its own cmd_vel. Used in RoboCup, drone formations, auto-park.",
       ),
       state: {
@@ -1174,19 +1174,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "鬼ごっこ — Multi-robot pursuit",
+      ja: "鬼ごっこ — マルチロボット追跡",
       en: "Tag — Multi-robot pursuit",
     },
     learn: {
-      ja: "ロボサッカーと同じ multi-robot 通信のミニマム例。各ロボは自分の pose を topic に publish し、相手 (鬼 / 逃げ手) はそれを subscribe して相対位置を計算→ cmd_vel を決めます。Pure-pursuit と evasion が同じデータフローで書けます。",
+      ja: "ロボサッカーと同様に、マルチロボット通信を単純化した例です。各ロボットは自分のPoseをTopicへpublishし、相手（鬼 / 逃げ手）はそれをsubscribeして相対位置を計算し、cmd_velを決めます。Pure Pursuitと回避行動を同じデータフローで表現できます。",
       en: "A minimum multi-robot pursuit setup. Each robot publishes its pose to a topic; the others subscribe to compute relative positions and pick their cmd_vel. Pure-pursuit and evasion share the same data flow.",
     },
     goal: {
-      ja: "1P: 30 秒間 AI 鬼につかまらなければクリア。難易度 (弱め=AI 1 体 / ふつう=AI 2 体 / 強め=AI 2 体高速&アイテム狙い) を選べる。\n2P: P1 が逃げる人、P2 が鬼。30 秒以内につかまれば鬼の勝ち、生き残れば逃げの勝ち。\n\nアイテム: ⚡ DASH = 速度+60% (2.5s) / ✦ PULSE = 逃げ手が拾うと地雷を設置(鬼を 1.2s スタン)・鬼が拾うとタッチ範囲+40% (3s)。",
+      ja: "1P：AIの鬼につかまらず30秒間逃げ切ればクリアです。難易度は「弱め（AI 1体）」「ふつう（AI 2体）」「強め（高速のAI 2体がアイテムも狙う）」から選べます。\n2P：P1が逃げ手、P2が鬼です。30秒以内につかまえれば鬼の勝ち、逃げ切れば逃げ手の勝ちです。\n\nアイテム：⚡ DASHは速度が2.5秒間60%上昇します。✦ PULSEは、逃げ手が拾うと鬼を1.2秒間停止させる地雷を設置し、鬼が拾うとタッチ範囲が3秒間40%広がります。",
       en: "1P: Survive 30s without being tagged by AI taggers. Pick a difficulty (Easy=1 AI / Normal=2 AI / Hard=2 fast item-seeking AI).\n2P: P1 runs, P2 chases. Tagger wins by tagging within 30s; runner wins by surviving.\n\nItems: ⚡ DASH = +60% speed (2.5s) / ✦ PULSE = runner drops a stun mine (1.2s tagger stun); tagger gets +40% tag reach (3s).",
     },
     first: {
-      ja: "障害物を盾にして視線を切るのが鉄則。Pad対戦はPadを2台接続してYを押します。P1が逃げ手、P2が鬼になり、どちらも左スティックで移動します。",
+      ja: "障害物を盾にして鬼の視線を遮ることが重要です。ゲームパッド対戦は2台のゲームパッドを接続してYを押すと開始できます。P1が逃げ手、P2が鬼になり、どちらも左スティックで移動します。",
       en: "Use obstacles to break line of sight. For a pad battle, connect two pads and press Y. P1 is the runner, P2 is the tagger, and both move with the left stick.",
     },
   },

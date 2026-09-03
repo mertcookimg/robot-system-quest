@@ -341,7 +341,7 @@ function openStage(stage: Stage, syncUrl = true): void {
             data-guide-play-stage="${escapeHtml(stage.id)}"
             data-stage-mode="${mode}"
           >
-            ${mode === "game" ? gt("このGameで遊ぶ", "Play this Game") : gt("このLessonを始める", "Start this Lesson")} <span>↗</span>
+            ${mode === "game" ? gt("このゲームで遊ぶ", "Play this Game") : gt("このレッスンを始める", "Start this Lesson")} <span>↗</span>
           </a>
         </aside>
       </div>

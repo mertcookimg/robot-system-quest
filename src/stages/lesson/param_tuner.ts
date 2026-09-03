@@ -451,14 +451,14 @@ export function makeParamTuner(): Stage {
     lessonCmd: "ros2 param set /waypoint_driver max_speed 0.6",
     ros2: {
       title: tx(
-        "Parameter ・ros2 param set で走りながらチューニング",
+        "Parameter — ros2 param setで走行中に調整する",
         "Parameters — live tuning with ros2 param set",
       ),
       summary:
-        "ROS2 ノードは max_speed のような設定値を Parameter として持ち、" +
-        "コードを書き換えずに ros2 param set で実行中に変更できます。" +
-        "変更は /parameter_events に流れ、ノード側は set_parameters callback で受け取る。" +
-        "実ロボの現場調整（ゲイン合わせ・速度制限）はほぼこの仕組みで行われます。",
+        "ROS 2のNodeは、max_speedのような設定値をParameterとして持ちます。" +
+        "コードを書き換えずに、ros2 param setを使って実行中に変更できます。" +
+        "変更は/parameter_eventsへ流れ、Node側はset_parameters Callbackで受け取ります。" +
+        "実機でも、ゲインや速度制限などの調整にParameterを利用できます。",
       msgTypes: ["rcl_interfaces/msg/ParameterEvent", "geometry_msgs/msg/Twist"],
       cli: [
         "ros2 param list /waypoint_driver",
@@ -496,7 +496,7 @@ class WaypointDriver(Node):
         msg.angular.z = gain * 0.0       # gain * heading_error
         self.pub.publish(msg)`,
       realWorld: tx(
-        "Nav2 も同じ仕組みで動いています。最高速度や膨張半径は全部 Parameter で、YAML を配って現場で ros2 param set しながら調整するのが実務の日常です。",
+        "Nav2でもParameterを使って、最高速度やCostmapのInflation Radiusなどを設定します。設定はYAML Fileで共有でき、必要に応じてros2 param setを使って実行中に調整できます。",
         "Nav2 works exactly this way: max velocity, inflation radius and more are all Parameters, distributed as YAML and tuned in the field with ros2 param set.",
       ),
       state: {
@@ -569,19 +569,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Parameter — 実行中のノードを ros2 param set で調整",
+      ja: "Parameter — ros2 param setで実行中のNodeを調整",
       en: "Parameters — tuning a live node with ros2 param set",
     },
     learn: {
-      ja: "コードを書き換えず、実行中のノードの設定値 (Parameter) を外から変更できます。ブロックの max_speed / turn_gain / accel はそのまま ros2 param set に対応し、変更は /parameter_events に流れます。",
+      ja: "Parameterを使うと、コードを書き換えずに実行中のNodeの設定値を外部から変更できます。ブロックのmax_speed / turn_gain / accelはros2 param setに対応し、変更内容は/parameter_eventsへ流れます。",
       en: "Parameters let you reconfigure a running node without touching its code. The block's max_speed / turn_gain / accel map directly to ros2 param set, and every change flows through /parameter_events.",
     },
     goal: {
-      ja: "コーンに当てずにスラロームを走破して GOAL へ。速いほど星が増えます (24秒未満で ★3)。速すぎるとカーブで膨らんでコーンに衝突!",
+      ja: "コーンに当たらずスラロームを走破し、GOALを目指しましょう。速いほど獲得する星が増えます（24秒未満で★3）。速すぎるとカーブで外側へ膨らみ、コーンに衝突します。",
       en: "Complete the slalom to GOAL without hitting a cone. Faster runs earn more stars (under 24 s = ★3) — but too fast and the robot drifts wide into a cone!",
     },
     first: {
-      ja: "まずデフォルト (max_speed 0.4) のまま ▶ RUN で完走を確認。次は走らせたまま max_speed を上げてみましょう — 実行中に効くのが Parameter の醍醐味です。",
+      ja: "まずは初期値（max_speed 0.4）のまま▶ RUNを押し、完走できることを確認します。次に走らせたままmax_speedを上げ、Parameterが実行中に反映される様子を観察しましょう。",
       en: "First press ▶ RUN with the defaults (max_speed 0.4) and watch it finish. Then raise max_speed while it is still driving — live reconfiguration is the whole point of Parameters.",
     },
   },

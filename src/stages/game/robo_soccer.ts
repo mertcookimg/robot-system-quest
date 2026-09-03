@@ -1130,10 +1130,10 @@ export function makeRoboSoccer(): Stage {
     lesson: "",
     lessonCmd: "ros2 topic echo /ball/pose",
     ros2: {
-      title: tx("Robo Soccer — multi-robot teleop", "Robo Soccer — multi-robot teleop"),
+      title: tx("Robo Soccer — マルチロボット遠隔操作", "Robo Soccer — multi-robot teleop"),
       summary:
-        "プレイヤーは /cmd_vel でロボを動かし、味方 + 相手の AI 計 5 体は /ball/pose を subscribe して各自の役割 (forward / mid / defender) でボールを追う。" +
-        "ROS2 の multi-robot 環境を最小構成で体験。",
+        "プレイヤーは/cmd_velでロボットを動かします。味方と相手の計5体の自動制御ロボットは/ball/poseをsubscribeし、それぞれの役割（forward / mid / defender）に応じてボールを追います。" +
+        "ROS 2のマルチロボット環境を単純化した構成で体験できます。",
       msgTypes: ["geometry_msgs/msg/Twist", "geometry_msgs/msg/Pose"],
       cli: ["ros2 topic list", "ros2 topic echo /ball/pose", "ros2 topic echo /soccer/score"],
       python: `# 各ロボが /ball/pose を subscribe して役割ごとの cmd_vel を計算する
@@ -1148,7 +1148,7 @@ class SoccerBot(Node):
         target = self.target_for_role(ball)
         ...`,
       realWorld: tx(
-        "RoboCup などの実機ロボサッカーも似ている仕組み: 各ロボが共有 topic からボール位置を読み、自分の役割 (Forward / Defender / Goalie) に応じて cmd_vel を計算する。本ステージは最小単位の multi-robot 通信。",
+        "RoboCupなどの実機ロボットサッカーでも、各ロボットが共有Topicからボール位置を取得し、自分の役割（Forward / Defender / Goalie）に応じてcmd_velを計算する構成が使われます。このステージは、そのようなマルチロボット通信を単純化したものです。",
         "Real RoboCup soccer follows the same recipe: each robot subscribes to the shared ball pose and computes its own cmd_vel based on its role (Forward / Defender / Goalie). This stage shows the minimum multi-robot setup.",
       ),
       state: {
@@ -1222,19 +1222,19 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Robo Soccer — 3 vs 3 multi-robot",
+      ja: "Robo Soccer — 3対3のマルチロボット対戦",
       en: "Robo Soccer — 3 vs 3 multi-robot",
     },
     learn: {
-      ja: "プレイヤーは /cmd_vel でロボを teleop し、味方と相手の AI 計 5 体は /ball/pose を subscribe して役割 (forward / mid / defender) ごとに動きます。共有 topic でボール位置を読み合い、各自の cmd_vel を独立に publish する multi-robot 通信の最小例です。",
-      en: "You teleop your robot via /cmd_vel while five AI robots (your two teammates plus three opponents) all subscribe to /ball/pose and act per role (forward / mid / defender). They share one ball topic but publish their own cmd_vel — the minimum multi-robot ROS2 setup.",
+      ja: "プレイヤーは/cmd_velでロボットを遠隔操作します。味方と相手の計5体の自動制御ロボットは/ball/poseをsubscribeし、役割（forward / mid / defender）に応じて動きます。共有Topicからボール位置を取得し、それぞれがcmd_velを独立してpublishする、マルチロボット通信の基本例です。",
+      en: "You teleoperate your robot via /cmd_vel while five rule-based robots (your two teammates and three opponents) subscribe to /ball/pose and act according to their roles (forward, midfielder, or defender). They share one ball topic but independently publish their own cmd_vel commands, illustrating a basic multi-robot ROS 2 setup.",
     },
     goal: {
-      ja: "WASD でロボを操縦、E・Space・PAD A/X でキック! 光るシュートレンジから相手 (右) のゴールを狙おう。\n先に 3 点取れば勝ち! 仲間ロボ 2 体も自動でサポートしてくれます。",
+      ja: "WASDでロボットを操縦し、E・Space・ゲームパッドのA/Xでキックします。光るシュート範囲から相手側（右）のゴールを狙いましょう。\n先に3点取れば勝ちです。2体の仲間ロボットも自動でサポートします。",
       en: "Drive with WASD and kick with E, Space, or pad A/X. Use the glowing shot range to aim at the right goal.\nFirst to 3 wins! Your two teammates help automatically.",
     },
     first: {
-      ja: "1PはWASDで移動しE・Space・PAD A/Xでキック。Pad対戦はPadを2台接続してYを押します。キックは少し早めに押しても受付され、ゴール方向へ自然に補正されます。",
+      ja: "1PはWASDで移動し、E・Space・ゲームパッドのA/Xでキックします。ゲームパッド対戦は2台のゲームパッドを接続してYを押すと開始できます。キック操作は少し早めに入力しても受け付けられ、ゴール方向へ自然に補正されます。",
       en: "In 1P, move with WASD and kick with E, Space, or pad A/X. Connect two pads and press Y for versus mode. Kicks are buffered and gently assisted toward goal.",
     },
   },
