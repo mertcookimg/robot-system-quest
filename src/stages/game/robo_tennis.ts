@@ -34,6 +34,48 @@ const TARGET_GAMES = 2;
 const GRAVITY = 540;
 const SWING_WINDOW = 0.24;
 
+type Difficulty = "easy" | "normal" | "hard";
+
+// Only the computer opponent uses these settings. Hard preserves the original AI.
+const AI_LEVELS = {
+  easy: {
+    moveSpeed: 110,
+    reactionTime: 0.3,
+    prediction: 0,
+    reach: 44,
+    shotSpeed: 300,
+    rallyAcceleration: 0,
+    maxAcceleration: 0,
+    lift: 270,
+    serveLift: 250,
+    cornerAim: 0,
+  },
+  normal: {
+    moveSpeed: 140,
+    reactionTime: 0.15,
+    prediction: 0.06,
+    reach: 50,
+    shotSpeed: 330,
+    rallyAcceleration: 3,
+    maxAcceleration: 40,
+    lift: 250,
+    serveLift: 220,
+    cornerAim: 0.45,
+  },
+  hard: {
+    moveSpeed: 168,
+    reactionTime: 0,
+    prediction: 0.12,
+    reach: 58,
+    shotSpeed: 350,
+    rallyAcceleration: 6,
+    maxAcceleration: 95,
+    lift: 230,
+    serveLift: 190,
+    cornerAim: 1,
+  },
+} satisfies Record<Difficulty, Record<string, number>>;
+
 type Side = "player" | "ai";
 type Phase = "ready" | "rally" | "point" | "finished";
 
@@ -95,6 +137,8 @@ export function makeRoboTennis(): Stage {
   let pointWinner: Side | null = null;
   let pubAcc = 0;
   let mode2P = false;
+  let difficulty: Difficulty = "easy";
+  let aiReactionTimer = 0;
   let overlayPanel: OverlayPanelHandle | null = null;
   let disposeLangSync: (() => void) | null = null;
   let pointerActionPending = false;
@@ -156,6 +200,26 @@ export function makeRoboTennis(): Stage {
           active: () => (mode2P ? "2p" : "1p"),
           onSelect: (key) => setMode2P(key === "2p"),
         },
+        {
+          kind: "choice",
+          label: () => t("robo_tennis.overlay.difficulty"),
+          choices: [
+            { key: "easy", label: () => t("robo_tennis.overlay.easy") },
+            { key: "normal", label: () => t("robo_tennis.overlay.normal") },
+            { key: "hard", label: () => t("robo_tennis.overlay.hard") },
+          ],
+          active: () => difficulty,
+          visible: () => !mode2P,
+          dividerBefore: true,
+          onSelect: (key) => {
+            if (key !== "easy" && key !== "normal" && key !== "hard") return;
+            if (difficulty === key) return;
+            difficulty = key;
+            overlayPanel?.refresh();
+            g.sfx.click();
+            reset();
+          },
+        },
       ],
       { placement: "dock" },
     );
@@ -192,6 +256,7 @@ export function makeRoboTennis(): Stage {
   }
 
   function prepareServe(secondServe = false): void {
+    aiReactionTimer = 0;
     const side = servingSide();
     const server = side === "player" ? player : ai;
     if (!secondServe) serveAttempt = 0;
@@ -226,7 +291,8 @@ export function makeRoboTennis(): Stage {
     ball.x = server.x + dir * 30;
     ball.y = server.y;
     ball.z = 42;
-    ball.vz = 190;
+    ball.vz = side === "ai" && !mode2P ? AI_LEVELS[difficulty].serveLift : 190;
+    if (side === "player" && !mode2P) aiReactionTimer = AI_LEVELS[difficulty].reactionTime;
     const flightTime = (ball.vz + Math.sqrt(ball.vz * ball.vz + 2 * GRAVITY * ball.z)) / GRAVITY;
     const targetX = NET_X + dir * SERVICE_DEPTH * 0.6;
     ball.vx = (targetX - ball.x) / flightTime;
@@ -375,6 +441,7 @@ export function makeRoboTennis(): Stage {
     ball.lastHitter = side;
     ball.bounces = 0;
     lastShotWasServe = false;
+    if (side === "player" && !mode2P) aiReactionTimer = AI_LEVELS[difficulty].reactionTime;
     ball.x = robot.x + dir * 26;
     robot.swing = 0;
     rallyHits++;
@@ -407,16 +474,18 @@ export function makeRoboTennis(): Stage {
 
   function updateAi(dt: number): void {
     if (phase === "ready" && servingSide() === "ai") return;
+    const settings = AI_LEVELS[difficulty];
+    aiReactionTimer = Math.max(0, aiReactionTimer - dt);
     const homeX = COURT.x + COURT.w - 90;
     let targetX = homeX;
     let targetY = COURT.y + COURT.h / 2;
-    if (phase === "rally" && ball.x > NET_X - 35) {
-      targetY = ball.y + ball.vy * 0.12;
+    if (phase === "rally" && ball.x > NET_X - 35 && aiReactionTimer <= 0) {
+      targetY = ball.y + ball.vy * settings.prediction;
     }
     const dx = targetX - ai.x;
     const dy = targetY - ai.y;
     const dist = Math.hypot(dx, dy) || 1;
-    const aiSpeed = 168;
+    const aiSpeed = settings.moveSpeed;
     ai.x += (dx / dist) * Math.min(dist, aiSpeed * dt);
     ai.y += (dy / dist) * Math.min(dist, aiSpeed * dt);
     ai.x = Math.max(NET_X + 42, Math.min(COURT.x + COURT.w - 28, ai.x));
@@ -425,18 +494,24 @@ export function makeRoboTennis(): Stage {
     if (
       phase === "rally" &&
       ai.hitCooldown <= 0 &&
+      aiReactionTimer <= 0 &&
       ball.vx > 0 &&
       !serveActive &&
       ball.z >= 4 &&
       ball.z < 94 &&
-      Math.hypot(ball.x - ai.x, ball.y - ai.y) < 58
+      Math.hypot(ball.x - ai.x, ball.y - ai.y) < settings.reach
     ) {
       ai.swing = 0.22;
       ai.hitCooldown = 0.42;
-      const targetY = player.y < COURT.y + COURT.h / 2 ? COURT.y + COURT.h - 64 : COURT.y + 64;
-      ball.vx = -(350 + Math.min(95, rallyHits * 6));
+      const cornerY = player.y < COURT.y + COURT.h / 2 ? COURT.y + COURT.h - 64 : COURT.y + 64;
+      const gentleY = Math.max(COURT.y + 80, Math.min(COURT.y + COURT.h - 80, player.y));
+      const targetY = gentleY + (cornerY - gentleY) * settings.cornerAim;
+      ball.vx = -(
+        settings.shotSpeed +
+        Math.min(settings.maxAcceleration, rallyHits * settings.rallyAcceleration)
+      );
       ball.vy = (targetY - ball.y) * 0.92 + (Math.random() - 0.5) * 35;
-      ball.vz = 230;
+      ball.vz = settings.lift;
       ball.lastHitter = "ai";
       ball.bounces = 0;
       lastShotWasServe = false;
@@ -995,6 +1070,10 @@ export default defineStage({
       "stats.time": "試合時間",
       "overlay.players": "対戦モード",
       "overlay.1p": "1P vs AI",
+      "overlay.difficulty": "相手の強さ（変更すると再試合）",
+      "overlay.easy": "Lv.1 やさしい",
+      "overlay.normal": "Lv.2 ふつう",
+      "overlay.hard": "Lv.3 つよい",
       "overlay.2p": "2P 対戦",
       hint: "P1: WASD・PAD・マウス/タッチ + E/Space/A/X/タップ ｜ P2: 矢印・PAD2 + Enter/A/X ｜ 2・Y: 1P/2P",
     },
@@ -1018,6 +1097,10 @@ export default defineStage({
       "stats.rally": "Best rally",
       "stats.time": "Match time",
       "overlay.players": "Match mode",
+      "overlay.difficulty": "AI level (restarts match)",
+      "overlay.easy": "Lv.1 Easy",
+      "overlay.normal": "Lv.2 Normal",
+      "overlay.hard": "Lv.3 Hard",
       "overlay.1p": "1P vs AI",
       "overlay.2p": "2P versus",
       hint: "P1: WASD/pad/mouse/touch + E/Space/A/X/tap | P2: arrows/pad 2 + Enter/A/X | 2 or Y: 1P/2P",
