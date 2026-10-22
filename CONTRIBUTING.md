@@ -20,7 +20,9 @@ attacks are not acceptable in project spaces.
 
 ## Development setup
 
-You need Node.js 22.12 or later and a modern browser.
+You need a modern browser and Node.js 24.22.1 or later within the 24.x line.
+Keep your local Node.js 24.x updated. CI and deployment builds use the latest
+24.x release matching `engines.node` in `package.json`.
 
 1. Fork the repository on GitHub.
 2. Clone your fork and install the dependencies:
@@ -141,6 +143,7 @@ Run the same essential checks used by continuous integration:
 ```bash
 npm run format
 npm run format:check
+npm audit --audit-level=high
 npm test
 npm run build
 ```

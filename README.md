@@ -21,10 +21,14 @@ It visualizes concepts such as publishers, subscribers, services, actions, feedf
 
 ## Run locally
 
-You will need Node.js 22.12 or later and a modern browser.
+You will need a modern browser and Node.js 24.22.1 or later within the 24.x line.
+Local development, CI, and deployment builds all use Node.js 24.x. Both GitHub
+Actions workflows read the version range from `engines.node` in `package.json`
+and select the latest matching release. Keep your local Node.js 24.x updated too;
+24.22.1 includes the October 21, 2026 security fixes.
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 

@@ -35,11 +35,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: 22
+          node-version-file: package.json
+          check-latest: true
           cache: npm
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
 
       - name: Test
         run: npm test
