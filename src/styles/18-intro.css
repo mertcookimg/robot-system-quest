@@ -53,7 +53,7 @@ body.intro-open {
 .intro-card {
   position: relative;
   text-align: center;
-  padding: 44px 40px 28px;
+  padding: 16px 40px 28px;
   width: min(980px, calc(100vw - 32px));
   max-height: calc(100vh - 32px);
   overflow-x: hidden;
@@ -107,25 +107,11 @@ body.intro-open {
   border-radius: 0 0 22px;
 }
 
-/* Top-right language toggle */
-.intro-lang-toggle {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  border: 1px solid rgba(125, 211, 252, 0.4);
-  background: rgba(125, 211, 252, 0.1);
-  color: var(--fg);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-family: var(--mono);
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.intro-lang-toggle:hover {
-  border-color: var(--accent);
-  background: rgba(125, 211, 252, 0.22);
+.intro-language-row {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  margin-bottom: 8px;
 }
 
 .intro-mark {
@@ -192,6 +178,7 @@ body.intro-open {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
   justify-content: center;
 }
 .intro-pills li {
@@ -576,7 +563,7 @@ body.intro-open {
     max-width: 460px;
   }
   .intro-card {
-    padding: 32px 22px 20px;
+    padding: 16px 22px 20px;
     border-radius: 16px;
   }
   .intro-title {
@@ -661,7 +648,7 @@ body.intro-open {
   .intro-card {
     width: 100%;
     max-height: 100%;
-    padding: 26px 14px 18px;
+    padding: 12px 14px 18px;
     border-radius: 14px;
   }
   .intro-showcase {
@@ -687,7 +674,7 @@ body.intro-open {
 
 @media (max-height: 700px) {
   .intro-card {
-    padding-top: 28px;
+    padding-top: 12px;
     padding-bottom: 18px;
   }
   .intro-mark {

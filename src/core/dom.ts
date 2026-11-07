@@ -55,11 +55,9 @@ export const ui = {
   homeToggle: $<HTMLElement>("home-toggle"),
   audioToggle: $<HTMLElement>("audio-toggle"),
   ghostToggle: $<HTMLElement>("ghost-toggle"),
-  langToggle: $<HTMLElement>("lang-toggle"),
 
   // Intro
   introScreen: $<HTMLElement>("intro-screen"),
-  introLangToggle: $<HTMLButtonElement>("intro-lang-toggle"),
   introGameCount: $<HTMLElement>("intro-game-count"),
   introGameCountEn: $<HTMLElement>("intro-game-count-en"),
   introLessonCount: $<HTMLElement>("intro-lesson-count"),

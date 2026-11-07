@@ -39,14 +39,30 @@
     <div id="intro-screen" class="intro-screen">
       <div class="intro-bg"></div>
       <div class="intro-card">
-        <button
-          id="intro-lang-toggle"
-          class="intro-lang-toggle"
-          type="button"
-          title="Language / 言語"
-        >
-          JA
-        </button>
+        <div class="intro-language-row">
+          <div
+            id="intro-lang-toggle"
+            class="language-switcher"
+            data-language-switcher
+            role="group"
+            aria-label="Language / 言語"
+          >
+            <span aria-hidden="true">🌏</span>
+            <button type="button" data-lang="ja" lang="ja" aria-label="日本語" aria-pressed="true">
+              JA
+            </button>
+            <span aria-hidden="true">/</span>
+            <button
+              type="button"
+              data-lang="en"
+              lang="en"
+              aria-label="English"
+              aria-pressed="false"
+            >
+              EN
+            </button>
+          </div>
+        </div>
         <div class="intro-mark">◆</div>
         <h1 class="intro-title">
           <span class="intro-title-main">Robot System Quest:</span>
@@ -58,10 +74,9 @@
         </p>
         <p class="intro-mini i18n-en">A browser-based game for learning ROS 2 concepts</p>
         <ul class="intro-pills" aria-hidden="true">
-          <li>🌐 Browser-only</li>
-          <li>🎮 Gamepad / KB / Mouse</li>
-          <li>🌏 JA / EN</li>
-          <li>🤖 34 stages</li>
+          <li aria-hidden="true">🌐 Browser-only</li>
+          <li aria-hidden="true">🎮 Gamepad / KB / Mouse</li>
+          <li aria-hidden="true">🤖 34 stages</li>
         </ul>
         <div class="intro-showcase" aria-hidden="true">
           <div class="showcase-topline">
@@ -108,7 +123,7 @@
             <span class="im-arrow" aria-hidden="true">→</span>
           </button>
         </div>
-        <a class="intro-guide-link" href="./guide/">
+        <a class="intro-guide-link" href="./guide/" data-lang-link>
           <span class="intro-guide-icon" aria-hidden="true">▤</span>
           <span>
             <small>LEARNING GUIDE</small>
@@ -189,6 +204,7 @@
           <a
             class="hdr-btn robotics-guide-link"
             href="./guide/"
+            data-lang-link
             aria-label="Open Robotics Learning Guide / ロボティクス学習ガイドを開く"
             title="GamesとLessonsの学習サイト / Open Robotics Learning Guide"
           >
@@ -201,13 +217,28 @@
         </div>
         <span class="hdr-sep" aria-hidden="true"></span>
         <div class="hdr-group" role="group" aria-label="Settings">
-          <button
-            class="hdr-btn hdr-value"
+          <div
+            class="language-switcher"
             id="lang-toggle"
-            title="表示言語を切り替え / Switch language"
+            data-language-switcher
+            role="group"
+            aria-label="Language / 言語"
           >
-            JA
-          </button>
+            <span aria-hidden="true">🌏</span>
+            <button type="button" data-lang="ja" lang="ja" aria-label="日本語" aria-pressed="true">
+              JA
+            </button>
+            <span aria-hidden="true">/</span>
+            <button
+              type="button"
+              data-lang="en"
+              lang="en"
+              aria-label="English"
+              aria-pressed="false"
+            >
+              EN
+            </button>
+          </div>
           <button
             class="hdr-btn hdr-toggle"
             id="ghost-toggle"

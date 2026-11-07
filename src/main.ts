@@ -54,7 +54,8 @@ import {
 import { startLoop } from "./core/loop";
 import { isAllCleared } from "./core/progress";
 import { sfx } from "./core/audio";
-import { getLang, toggleLang, onLangChange } from "./i18n";
+import { getLang, onLangChange } from "./i18n";
+import { setupLanguageSwitchers } from "./i18n/language_switcher";
 import type { Stage } from "./types";
 import { setupAnalytics, trackStageExit, trackStageStart } from "./core/analytics";
 
@@ -64,15 +65,9 @@ setupTouchCalloutGuard();
 // 0. Apply the background theme tokens to :root before anything paints.
 applyThemeVars();
 
-// 1. Refresh the language toggle label and language-dependent links.
+// 1. Set up language choices and refresh language-dependent links.
 function refreshLangLabel(): void {
   const lang = getLang();
-  ui.langToggle.textContent = lang === "ja" ? "JA" : "EN";
-  const languageLabel =
-    lang === "ja" ? "表示言語: 日本語（英語に切り替え）" : "Language: English (switch to Japanese)";
-  ui.langToggle.title = languageLabel;
-  ui.langToggle.setAttribute("aria-label", languageLabel);
-  ui.introLangToggle.textContent = lang === "ja" ? "JA" : "EN";
   ui.homeToggle.textContent = lang === "ja" ? "ホーム" : "HOME";
   ui.homeToggle.title = lang === "ja" ? "ホーム / 概要へ戻る" : "Back to Home overview";
   const authorLink = document.getElementById("intro-author-link") as HTMLAnchorElement | null;
@@ -85,13 +80,7 @@ function refreshLangLabel(): void {
   if (authorLink) authorLink.href = authorUrl;
 }
 refreshLangLabel();
-const handleToggleLang = (): void => {
-  toggleLang();
-  refreshLangLabel();
-  sfx.click();
-};
-ui.langToggle.addEventListener("click", handleToggleLang);
-ui.introLangToggle.addEventListener("click", handleToggleLang);
+setupLanguageSwitchers(() => sfx.click());
 onLangChange(refreshLangLabel);
 
 // 2. Audio + ghost (state-bearing, persisted).
@@ -211,7 +200,9 @@ loadStage(initial);
 // Consume the one-shot direct-open flag. A later reload of the same stage
 // returns to the normal Home-first behavior.
 if (directStageOpen) {
-  history.replaceState(null, "", location.pathname + location.hash);
+  const url = new URL(location.href);
+  url.searchParams.delete("direct");
+  history.replaceState(null, "", url.pathname + url.search + url.hash);
 }
 
 // `loadStage` calls `history.replaceState(...#${id})` which would append

@@ -46,6 +46,14 @@ export function setupKeyboard(deps: Deps): void {
   window.addEventListener("keydown", (e) => {
     // 1. Intro: ←→ pick GAME/LESSON, Space/Enter confirm.
     if (intro.isShown()) {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        intro.stepTab(e.shiftKey ? -1 : +1);
+        return;
+      }
+      // Language buttons and links retain their native activation behavior.
+      if (ownsNativeKey(e)) return;
+      if ((e.target as Element | null)?.closest?.("[data-language-switcher], a[href]")) return;
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         intro.stepFocus(-1);
@@ -54,11 +62,6 @@ export function setupKeyboard(deps: Deps): void {
       if (e.key === "ArrowRight") {
         e.preventDefault();
         intro.stepFocus(+1);
-        return;
-      }
-      if (e.key === "Tab") {
-        e.preventDefault();
-        intro.stepFocus(e.shiftKey ? -1 : +1);
         return;
       }
       if (e.key === " " || e.key === "Enter") {

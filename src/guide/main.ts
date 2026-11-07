@@ -3,7 +3,8 @@
 
 import { getDiagram, getLessonNumbers, getStageModes, getStages } from "./stages";
 import { startDemo, stopDemo } from "../core/lesson_demo";
-import { getLang, setLang } from "../i18n";
+import { getLang, withLang } from "../i18n";
+import { setupLanguageSwitchers } from "../i18n/language_switcher";
 import type { StageMeta } from "../types";
 import { cardPreviewFor, guideCopyFor } from "./content";
 import { setupCardDemos } from "./card_demos";
@@ -89,7 +90,8 @@ function stageCard(stage: StageMeta, index: number, mode: "game" | "lesson"): st
         </button>
         <a
           class="stage-open-button"
-          href="../?direct=stage#${encodeURIComponent(stage.id)}"
+          href="${escapeHtml(withLang(`../?direct=stage#${encodeURIComponent(stage.id)}`))}"
+          data-lang-link
           data-guide-play-stage="${escapeHtml(stage.id)}"
           data-stage-mode="${mode}"
         >
@@ -343,7 +345,8 @@ function openStage(stage: StageMeta, syncUrl = true): void {
           }
           <a
             class="dialog-play"
-            href="../?direct=stage#${encodeURIComponent(stage.id)}"
+            href="${escapeHtml(withLang(`../?direct=stage#${encodeURIComponent(stage.id)}`))}"
+            data-lang-link
             data-guide-play-stage="${escapeHtml(stage.id)}"
             data-stage-mode="${mode}"
           >
@@ -483,10 +486,7 @@ mobileMenu.addEventListener("change", () => {
 });
 renderMenu();
 
-const langButton = byId<HTMLButtonElement>("guide-lang");
-langButton.textContent = getLang().toUpperCase();
-langButton.addEventListener("click", () => {
-  setLang(getLang() === "ja" ? "en" : "ja");
+setupLanguageSwitchers(() => {
   // Re-render the static shell and stage cards in the selected language.
   location.reload();
 });

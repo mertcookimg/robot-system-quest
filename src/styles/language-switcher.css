@@ -1,0 +1,76 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+.language-switcher {
+  --language-accent: var(--accent, var(--cyan, #7dd3fc));
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 1px 6px;
+  border: 1px solid var(--line, #293447);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--fg-mid, #a8b5ca);
+  font: 600 12px/1 var(--mono, monospace);
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.language-switcher > span:first-child {
+  margin-inline: 2px 4px;
+  font-size: 14px;
+}
+
+.language-switcher > span + button + span {
+  color: var(--fg-dim, #8290a3);
+  font-weight: 400;
+}
+
+.language-switcher > button {
+  position: relative;
+  min-width: 32px;
+  min-height: 30px;
+  margin: 0;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.language-switcher > button:hover {
+  color: var(--fg, #f0f4ff);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.language-switcher > button[aria-pressed="true"] {
+  color: var(--fg, #f0f4ff);
+}
+
+.language-switcher > button[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  bottom: 3px;
+  left: 8px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--language-accent);
+}
+
+.language-switcher > button:focus-visible {
+  outline: 2px solid var(--language-accent);
+  outline-offset: -1px;
+}
+
+@media (pointer: coarse) {
+  .language-switcher > button {
+    min-width: 36px;
+    min-height: 44px;
+  }
+}

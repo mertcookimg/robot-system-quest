@@ -84,7 +84,7 @@ header {
 .brand-author:hover .ba-by {
   color: var(--fg);
 }
-/* Two clusters — [ HOME · GUIDE · ? ] | [ 🌐 · 👻 · 🔊 ] — separated by a
+/* Two clusters — [ HOME · GUIDE · ? ] | [ 🌏 JA / EN · 👻 · 🔊 ] — separated by a
    thin rule so "navigation actions" read apart from "settings toggles". */
 .header-actions {
   display: flex;
@@ -152,16 +152,13 @@ header {
 
 /* Leading glyph so each button's role is guessable at a glance. Rendered via
    ::before because the JS keeps rewriting these buttons' textContent
-   (HOME/localized home label, JA/EN, ON/OFF) and would otherwise wipe an inline icon. */
+   (HOME/localized home label, ON/OFF) and would otherwise wipe an inline icon. */
 #home-toggle::before {
   content: "\1F3E0";
 } /* 🏠 */
 #lesson-toggle::before {
   content: "\1F4D6";
 } /* 📖 */
-#lang-toggle::before {
-  content: "\1F310";
-} /* 🌐 */
 #ghost-toggle::before {
   content: "\1F47B";
 } /* 👻 */
@@ -186,13 +183,6 @@ header {
   padding: 0;
   justify-content: center;
   font-size: 13.5px;
-}
-
-/* Language: not on/off but a current value — always tinted, shows JA or EN. */
-.hdr-value {
-  color: var(--accent);
-  border-color: rgba(125, 211, 252, 0.4);
-  background: rgba(125, 211, 252, 0.08);
 }
 
 /* State toggles (ghost / audio): filled + accent = ON, dim + outline = OFF.
@@ -294,7 +284,7 @@ header {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .hdr-group:last-child {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: auto repeat(2, minmax(0, 1fr));
   }
   .hdr-btn {
     width: 100%;

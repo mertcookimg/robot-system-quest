@@ -19,7 +19,7 @@
       <button class="sidebar-close" id="menu-close" type="button" aria-label="メニューを閉じる">
         ×
       </button>
-      <a class="guide-brand" href="../" aria-label="Robot System Quest Home">
+      <a class="guide-brand" href="../" data-lang-link aria-label="Robot System Quest Home">
         <span class="guide-brand-mark">◆</span>
         <span>
           <strong>Robot System Quest</strong>
@@ -37,7 +37,7 @@
         <a href="#lessons"><span>L</span> Lessons <b id="nav-lesson-count">0</b></a>
         <a href="#real-robot"><span>R</span> 実機で学ぶ</a>
         <p class="guide-nav-label">TRY IT</p>
-        <a class="guide-open-app" href="../"><span>▶</span> Game / Lessonを開く</a>
+        <a class="guide-open-app" href="../" data-lang-link><span>▶</span> Game / Lessonを開く</a>
         <p class="guide-nav-label guide-creator-label">CREATOR</p>
         <a
           class="guide-author-site"
@@ -87,8 +87,29 @@
             <span class="repository-star" aria-hidden="true">☆</span>
             <span aria-hidden="true">↗</span>
           </a>
-          <button id="guide-lang" class="quiet-button" type="button">JA</button>
-          <a class="play-button" href="../">GAME / LESSONへ <span>↗</span></a>
+          <div
+            id="guide-lang"
+            class="language-switcher"
+            data-language-switcher
+            role="group"
+            aria-label="Language / 言語"
+          >
+            <span aria-hidden="true">🌏</span>
+            <button type="button" data-lang="ja" lang="ja" aria-label="日本語" aria-pressed="true">
+              JA
+            </button>
+            <span aria-hidden="true">/</span>
+            <button
+              type="button"
+              data-lang="en"
+              lang="en"
+              aria-label="English"
+              aria-pressed="false"
+            >
+              EN
+            </button>
+          </div>
+          <a class="play-button" href="../" data-lang-link>GAME / LESSONへ <span>↗</span></a>
         </div>
       </header>
 
@@ -568,7 +589,7 @@
       </main>
 
       <footer class="guide-footer">
-        <a class="guide-brand footer-brand" href="../">
+        <a class="guide-brand footer-brand" href="../" data-lang-link>
           <span class="guide-brand-mark">◆</span>
           <span><strong>Robot System Quest</strong><small>Games and Lessons</small></span>
         </a>

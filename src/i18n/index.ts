@@ -12,9 +12,15 @@ import { loadString, saveString, StorageKeys } from "../core/storage";
 export type Lang = "ja" | "en";
 
 function detectInitialLang(): Lang {
+  const requested =
+    typeof location === "undefined" ? null : new URLSearchParams(location.search).get("lang");
+  if (requested === "ja" || requested === "en") {
+    saveString(StorageKeys.lang, requested);
+    return requested;
+  }
   const saved = loadString(StorageKeys.lang);
   if (saved === "ja" || saved === "en") return saved;
-  return navigator.language.startsWith("ja") ? "ja" : "en";
+  return typeof navigator !== "undefined" && navigator.language.startsWith("ja") ? "ja" : "en";
 }
 
 let lang: Lang = detectInitialLang();
@@ -49,6 +55,24 @@ export function getLang(): Lang {
   return lang;
 }
 
+/** Keep the selected language when crossing between the app and Guide. */
+export function withLang(href: string): string {
+  const base = typeof location === "undefined" ? document.baseURI : location.href;
+  const url = new URL(href, base);
+  url.searchParams.set("lang", lang);
+  return url.href;
+}
+
+function syncLangUrl(): void {
+  if (typeof location === "undefined" || typeof history === "undefined") return;
+  try {
+    // Preserve stage, direct-open, unrelated query parameters and the hash.
+    history.replaceState(history.state, "", withLang(location.href));
+  } catch {
+    // Restricted browsing contexts may not allow history updates.
+  }
+}
+
 /**
  * Merge additional translations into the runtime dictionaries. Used by the
  * `defineStage()` helper so each stage can declare its own strings inline
@@ -63,11 +87,12 @@ export function registerLang(extras: {
 }
 
 export function setLang(l: Lang) {
-  if (lang === l) return;
+  const changed = lang !== l;
   lang = l;
   saveString(StorageKeys.lang, l);
+  syncLangUrl();
   applyBodyClass();
-  for (const fn of listeners) fn(l);
+  if (changed) for (const fn of listeners) fn(l);
 }
 
 export function toggleLang() {
@@ -88,5 +113,8 @@ function applyBodyClass() {
   if (!document.body) return;
   document.body.classList.toggle("lang-en", lang === "en");
   document.body.classList.toggle("lang-ja", lang === "ja");
+  for (const link of document.querySelectorAll<HTMLAnchorElement>("a[data-lang-link]")) {
+    link.href = withLang(link.href);
+  }
 }
 applyBodyClass();

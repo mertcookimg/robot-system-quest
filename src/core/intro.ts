@@ -70,7 +70,28 @@ export function stepFocus(d: -1 | 1): void {
   if (!isShown()) return;
   focusIdx = (focusIdx + d + MODE_ORDER.length) % MODE_ORDER.length;
   applyFocus();
+  // Keep native Enter/Space on the same card as the arrow-key highlight.
+  if (document.activeElement?.matches(".intro-mode")) {
+    ui.introScreen.querySelectorAll<HTMLElement>(".intro-mode")[focusIdx]?.focus();
+  }
   sfx.click();
+}
+
+/** Tab through every Home control without moving behind the overlay. */
+export function stepTab(d: -1 | 1): void {
+  if (!isShown()) return;
+  const controls = [
+    ...ui.introScreen.querySelectorAll<HTMLElement>("button:not(:disabled), a[href]"),
+  ];
+  if (!controls.length) return;
+  const current = controls.indexOf(document.activeElement as HTMLElement);
+  const next =
+    current < 0
+      ? d > 0
+        ? 0
+        : controls.length - 1
+      : (current + d + controls.length) % controls.length;
+  controls[next].focus();
 }
 
 /** Confirm the currently focused mode (keyboard Enter / pad A). */
@@ -101,12 +122,14 @@ export function setupIntro(options: SetupIntroOptions): void {
     start();
   });
 
-  // Hover → move focus to that card so the highlight stays consistent.
+  // Hover and native keyboard focus keep the selected mode highlight in sync.
   ui.introScreen.querySelectorAll<HTMLElement>(".intro-mode").forEach((card, i) => {
-    card.addEventListener("mouseenter", () => {
+    const focusCard = () => {
       if (!isShown()) return;
       focusIdx = i;
       applyFocus();
-    });
+    };
+    card.addEventListener("mouseenter", focusCard);
+    card.addEventListener("focus", focusCard);
   });
 }

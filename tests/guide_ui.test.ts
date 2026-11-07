@@ -180,6 +180,24 @@ test("Guide reads bilingual metadata without registering executable stages", asy
   assert.equal(catalog.getLessonNumbers().get("world_model"), 24);
 });
 
+test("Guide keeps the selected language on all app links and stage dialog links", () => {
+  for (const lang of ["en", "ja"] as const) {
+    setLang(lang);
+    openStage("navigation");
+    const links = [...document.querySelectorAll<HTMLAnchorElement>("a[data-lang-link]")];
+    assert.ok(links.length >= 43);
+    for (const link of links) {
+      const url = new URL(link.href);
+      assert.equal(url.searchParams.get("lang"), lang);
+      if (link.dataset.guidePlayStage) {
+        assert.equal(url.searchParams.get("direct"), "stage");
+        assert.equal(url.hash.slice(1), link.dataset.guidePlayStage);
+      }
+    }
+    assert.equal(new URL(location.href).searchParams.get("stage"), "navigation");
+  }
+});
+
 test("Pub/Sub and TF guides describe the available ports and sliders in both languages", () => {
   for (const lang of ["ja", "en"] as const) {
     setLang(lang);

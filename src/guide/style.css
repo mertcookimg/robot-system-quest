@@ -1,6 +1,8 @@
 /* Copyright 2026 Masato Kobayashi */
 /* SPDX-License-Identifier: Apache-2.0 */
 
+@import "../styles/language-switcher.css";
+
 :root {
   --bg: #07080b;
   --panel: #0d1016;
@@ -3254,21 +3256,29 @@ main {
   }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 520px) {
   .guide-header {
-    padding-inline: 10px;
+    gap: 8px;
   }
-  .guide-actions .quiet-button {
-    display: none;
+  .repository-button {
+    gap: 4px;
+    padding-inline: 7px;
   }
   .play-button {
     width: 38px;
+    flex-shrink: 0;
     padding: 0;
     font-size: 0;
   }
   .play-button::before {
     content: "↗";
     font: 700 14px/1 var(--mono);
+  }
+}
+
+@media (max-width: 420px) {
+  .guide-header {
+    padding-inline: 10px;
   }
   .guide-hero,
   .guide-section {
