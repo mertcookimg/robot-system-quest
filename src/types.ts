@@ -58,6 +58,9 @@ export interface GameContext {
   shake(intensity?: number): void;
   /** Trigger the crash overlay; reset() runs once it fades out. */
   crash(reason?: string): void;
+  /** Runtime-managed restart, including telemetry and terminal cleanup.
+   * Standalone stage previews may omit it and use their local reset instead. */
+  resetStage?(): void;
 
   // === ROS topic monitor ===
   publish(topic: string, msg: string): void;
@@ -102,6 +105,11 @@ export interface Ros2State {
   nodes: string[];
   topics: TopicInfo[];
   services?: ServiceInfo[];
+  actions?: ActionInfo[];
+  /** Only values explicitly exposed by the stage, keyed by node and parameter. */
+  parameters?: Record<string, Record<string, string | number | boolean>>;
+  /** Only managed nodes whose current lifecycle state the stage actually models. */
+  lifecycle?: Record<string, { id: number; label: string }>;
 }
 
 export interface TopicInfo {
@@ -115,6 +123,13 @@ export interface ServiceInfo {
   name: string;
   type: string;
   node?: string;
+}
+
+export interface ActionInfo {
+  name: string;
+  type: string;
+  clients?: string[];
+  servers?: string[];
 }
 
 export interface Stage extends StageMeta {

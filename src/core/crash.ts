@@ -38,6 +38,13 @@ export function clearCrashOverlay(): void {
   hitStop = 0;
 }
 
+/** A user closing a failure screen starts the next attempt immediately. */
+export function dismissCrashOverlay(): void {
+  if (!refs || !crashing) return;
+  clearCrashOverlay();
+  refs.onReset();
+}
+
 export function trigger(reason?: string): void {
   if (!refs || crashing) return;
   crashing = true;
@@ -48,10 +55,7 @@ export function trigger(reason?: string): void {
   refs.shake();
   resetTimeout = setStageTimeout(() => {
     resetTimeout = null;
-    if (!refs) return;
-    refs.overlay.classList.remove("show");
-    refs.onReset();
-    crashing = false;
+    dismissCrashOverlay();
   }, 1300);
 }
 

@@ -267,7 +267,7 @@ export function makeJointTeleop(): Stage {
       cli: [
         "ros2 topic echo /joint_states",
         "ros2 topic hz /joint_states",
-        "ros2 run joint_state_publisher_gui joint_state_publisher_gui",
+        "ros2 topic info /joint_states",
       ],
       python: `import rclpy
 from rclpy.node import Node

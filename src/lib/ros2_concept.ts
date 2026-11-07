@@ -7,7 +7,7 @@
 // authors describe the topic graph without nesting `pub` / `sub` arrays
 // by hand.
 
-import type { Ros2Concept, Ros2State, TopicInfo, ServiceInfo } from "../types";
+import type { Ros2Concept, Ros2State, TopicInfo, ServiceInfo, ActionInfo } from "../types";
 
 export interface TopicSpec {
   name: string;
@@ -45,11 +45,13 @@ export function state(opts: {
   nodes?: readonly string[];
   topics?: readonly TopicInfo[];
   services?: readonly ServiceInfo[];
+  actions?: readonly ActionInfo[];
 }): Ros2State {
   return {
     nodes: opts.nodes ? [...opts.nodes] : [],
     topics: opts.topics ? [...opts.topics] : [],
     services: opts.services ? [...opts.services] : undefined,
+    actions: opts.actions ? [...opts.actions] : undefined,
   };
 }
 

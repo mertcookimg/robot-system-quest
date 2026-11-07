@@ -256,7 +256,7 @@ export function makeMazeMapper(): Stage {
         if (collectedCount === 3) {
           exitFlash = 2.4;
           g.setStatus(t("treasure_map.status.exit_open"), "var(--ok)");
-          g.publish("/exit/open", "geometry_msgs/msg/Pose all_treasures_collected");
+          g.publish("/exit/open", 'data: "all_treasures_collected=true"');
         } else {
           g.setStatus(
             t("treasure_map.status.picked", { id: ch.id, n: collectedCount }),
@@ -670,6 +670,7 @@ export function makeMazeMapper(): Stage {
       summary:
         "このステージではロボットの姿勢が既知であると仮定し、LiDARの`/scan`をOccupancy Gridへ反映します。実際のSLAMでは、地図の更新と同時にロボットの姿勢も推定し、Scan MatchingやLoop Closureによってずれを抑えます。",
       msgTypes: [
+        "std_msgs/msg/String",
         "sensor_msgs/msg/LaserScan",
         "nav_msgs/msg/OccupancyGrid",
         "geometry_msgs/msg/Twist",
@@ -700,7 +701,7 @@ class MapBuilder(Node):
         "Real 2D SLAM also uses LiDAR scans and motion information to estimate both the map and robot pose. This stage is a simplified model focused on occupancy-grid updates when the pose is assumed to be known.",
       ),
       state: {
-        nodes: ["/teleop", "/lidar_node", "/map_builder"],
+        nodes: ["/teleop", "/lidar_node", "/map_builder", "/robot", "/world"],
         topics: [
           { name: "/cmd_vel", type: "geometry_msgs/msg/Twist", pub: ["/teleop"], sub: ["/robot"] },
           {
@@ -711,6 +712,7 @@ class MapBuilder(Node):
           },
           { name: "/map", type: "nav_msgs/msg/OccupancyGrid", pub: ["/map_builder"] },
           { name: "/treasure/picked", type: "std_msgs/msg/String", pub: ["/world"] },
+          { name: "/exit/open", type: "std_msgs/msg/String", pub: ["/world"] },
         ],
       },
     },

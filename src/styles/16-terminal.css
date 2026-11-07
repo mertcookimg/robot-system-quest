@@ -164,6 +164,11 @@
 .terminal-command-run:active {
   transform: translateY(1px);
 }
+.terminal-resume {
+  color: var(--fg);
+  background: var(--term-body-bg);
+  border: 1px solid var(--line);
+}
 .terminal-prompt-line {
   color: var(--accent);
   font-weight: 700;

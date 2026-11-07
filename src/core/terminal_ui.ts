@@ -4,7 +4,8 @@
 // Wires the inline ROS 2 terminal: input field + scrollback panel.
 
 import { ui } from "./dom";
-import { execCommand, resetTerminalState, type RuntimeState } from "../lib/terminal";
+import { execCommand, type RuntimeState } from "../lib/terminal";
+import { inspectionCommands, recommendedInspectionCommand } from "../lib/terminal_commands";
 import * as topicMonitor from "./topic_monitor";
 import type { Ros2Concept } from "../types";
 import { t, onLangChange } from "../i18n";
@@ -42,71 +43,15 @@ interface Deps {
 let deps: Deps | null = null;
 let commandSelectEl: HTMLSelectElement | null = null;
 
-/** Commands that inspect the simulation without pretending to mutate it. */
-function isSelectableCommand(command: string): boolean {
-  const line = command.trim();
-  return /^(?:help|clear|ros2 (?:topic (?:list|info|type|echo|hz)|node (?:list|info)|service (?:list|type)|action (?:list|info)|param (?:list|get|dump)|lifecycle get|interface show|doctor)\b)/.test(
-    line,
-  );
-}
-
-function inferredTopicType(name: string, concept?: Ros2Concept): string {
-  const types = concept?.msgTypes ?? [];
-  const preferred = /(?:cmd_vel)$/.test(name)
-    ? "geometry_msgs/msg/Twist"
-    : /(?:joint_states)$/.test(name)
-      ? "sensor_msgs/msg/JointState"
-      : /(?:scan)$/.test(name)
-        ? "sensor_msgs/msg/LaserScan"
-        : /(?:battery_state)$/.test(name)
-          ? "sensor_msgs/msg/BatteryState"
-          : /(?:\/map)$/.test(name)
-            ? "nav_msgs/msg/OccupancyGrid"
-            : /(?:odom|odometry)$/.test(name)
-              ? "nav_msgs/msg/Odometry"
-              : /(?:image|image_raw)$/.test(name)
-                ? "sensor_msgs/msg/Image"
-                : /(?:objects|status|order|score|lap)$/.test(name)
-                  ? "std_msgs/msg/String"
-                  : /(?:pose|goal_pose|tip_target)$/.test(name)
-                    ? "geometry_msgs/msg/PoseStamped"
-                    : undefined;
-  return (
-    (preferred && types.includes(preferred) ? preferred : undefined) ??
-    types.find((type) => type.includes("/msg/")) ??
-    "unknown/msg/Type"
-  );
-}
-
 function buildState(): RuntimeState {
-  const c = deps?.getConcept();
-  const topics = [...(c?.state?.topics ?? [])];
-  const services = [...(c?.state?.services ?? [])];
-
-  // The ROS Lab CLI is part of a stage's contract.  Some teaching stages
-  // intentionally have no live publisher yet (the learner is about to build
-  // it), so also expose resources advertised by those commands.
-  for (const raw of c?.cli ?? []) {
-    const line = raw.replace(/\\\s*\n\s*/g, " ");
-    const topicMatch = line.match(
-      /ros2 topic (?:info|type|echo|hz|pub(?:\s+--once|\s+-1)?)\s+(\/\S+)/,
-    );
-    if (topicMatch && !topics.some((tp) => tp.name === topicMatch[1])) {
-      const pubType = line.match(/ros2 topic pub(?:\s+--once|\s+-1)?\s+\/\S+\s+(\S+)/)?.[1];
-      topics.push({ name: topicMatch[1], type: pubType ?? inferredTopicType(topicMatch[1], c) });
-    }
-    const serviceMatch = line.match(/ros2 service (?:type|call)\s+(\/\S+)(?:\s+(\S+\/srv\/\S+))?/);
-    if (serviceMatch && !services.some((sv) => sv.name === serviceMatch[1])) {
-      services.push({
-        name: serviceMatch[1],
-        type: serviceMatch[2] ?? c?.msgTypes.find((x) => x.includes("/srv/")) ?? "unknown/srv/Type",
-      });
-    }
-  }
+  const state = deps?.getConcept()?.state;
   return {
-    nodes: c?.state?.nodes ?? [],
-    topics,
-    services,
+    nodes: state?.nodes ?? [],
+    topics: state?.topics ?? [],
+    services: state?.services ?? [],
+    actions: state?.actions ?? [],
+    parameters: state?.parameters,
+    lifecycle: state?.lifecycle,
     recentMessages: (topic, n = 10) =>
       topicMonitor.recentMessages(topic, n).map((e) => ({ ts: e.ts, topic: e.topic, msg: e.msg })),
   };
@@ -126,7 +71,7 @@ function runLine(line: string): void {
     return;
   }
   if (result.lines.length) appendLines(result.lines, "out");
-  if (result.effect === "close") ui.terminalInput.blur();
+  if (result.effect === "close") resumeStageControls();
 }
 
 // ── Gamepad quick palette ─────────────────────────────────────────────
@@ -139,44 +84,20 @@ let paletteCmds: string[] = [];
 let paletteIdx = 0;
 
 function buildPaletteCmds(): string[] {
-  const c = deps?.getConcept();
-  const cmds: string[] = ["ros2 topic list", "ros2 node list", "ros2 service list"];
-  for (const raw of c?.cli ?? []) {
-    const cmd = raw.replace(/\\\s*\n\s*/g, " ").trim();
-    if (cmd && isSelectableCommand(cmd) && !cmds.includes(cmd)) cmds.push(cmd);
-  }
-  const runtime = buildState();
-  const topics = runtime.topics;
-  for (const tp of topics.slice(0, 3)) {
-    cmds.push(`ros2 topic echo ${tp.name}`);
-    cmds.push(`ros2 topic hz ${tp.name}`);
-  }
-  for (const sv of runtime.services ?? []) {
-    cmds.push(`ros2 service type ${sv.name}`);
-  }
-  const seenTypes = new Set<string>();
-  for (const tp of topics) {
-    if (seenTypes.size >= 2) break;
-    if (!seenTypes.has(tp.type)) {
-      seenTypes.add(tp.type);
-      cmds.push(`ros2 interface show ${tp.type}`);
-    }
-  }
-  cmds.push("help", "clear");
-  return [...new Set(cmds)];
+  return inspectionCommands(deps?.getConcept());
+}
+
+function refreshPaletteCommands(): boolean {
+  const selected = paletteCmds[paletteIdx];
+  paletteCmds = buildPaletteCmds();
+  const nextIndex = paletteCmds.indexOf(selected);
+  paletteIdx = nextIndex >= 0 ? nextIndex : Math.min(paletteIdx, paletteCmds.length - 1);
+  return nextIndex >= 0;
 }
 
 /** A stage-safe command for the footer; never advertises a fake mutation. */
 export function recommendedCommand(): string {
-  const c = deps?.getConcept();
-  const advertised = (c?.cli ?? [])
-    .map((raw) => raw.replace(/\\\s*\n\s*/g, " ").trim())
-    .find(isSelectableCommand);
-  if (advertised) return advertised;
-  const state = buildState();
-  if (state.topics[0]) return `ros2 topic echo ${state.topics[0].name}`;
-  if (state.nodes[0]) return `ros2 node info ${state.nodes[0]}`;
-  return "ros2 topic list";
+  return recommendedInspectionCommand(deps?.getConcept());
 }
 
 function refreshCommandSelect(select: HTMLSelectElement): void {
@@ -249,14 +170,22 @@ export function closePadPalette(): void {
   paletteEl = null;
 }
 
+/** Explicitly hand input back to the stage, without changing its state. */
+export function resumeStageControls(): void {
+  closePadPalette();
+  if (!ui.canvas.hasAttribute("tabindex")) ui.canvas.tabIndex = -1;
+  ui.canvas.focus({ preventScroll: true });
+}
+
 export function togglePadPalette(): void {
-  if (paletteEl) closePadPalette();
+  if (paletteEl) resumeStageControls();
   else openPadPalette();
 }
 
 /** Move the palette highlight by `dir` (+1 / -1), wrapping around. */
 export function paletteMove(dir: number): void {
   if (!paletteEl || paletteCmds.length === 0) return;
+  refreshPaletteCommands();
   paletteIdx = (paletteIdx + dir + paletteCmds.length) % paletteCmds.length;
   renderPalette();
 }
@@ -264,6 +193,9 @@ export function paletteMove(dir: number): void {
 /** Run the highlighted command; the palette stays open for follow-ups. */
 export function paletteExec(): void {
   if (!paletteEl) return;
+  const stillAvailable = refreshPaletteCommands();
+  renderPalette();
+  if (!stillAvailable) return;
   runLine(paletteCmds[paletteIdx] ?? "");
 }
 
@@ -273,7 +205,6 @@ export function resetForStage(): void {
   ui.terminalInput.value = "";
   cmdHistory.length = 0;
   historyIdx = -1;
-  resetTerminalState();
   closePadPalette();
   ui.terminalStage.textContent = t("terminal.stage", { name: deps?.getStageName() ?? "—" });
   if (commandSelectEl) {
@@ -285,11 +216,25 @@ export function resetForStage(): void {
 
 export function setupTerminal(d: Deps): void {
   deps = d;
+  // Selects and Run also own Enter/Space; they must not activate a stage dialog.
+  document.getElementById("ros-terminal")?.addEventListener("keydown", (event) => {
+    event.stopPropagation();
+    if (event.key === "Escape") {
+      event.preventDefault();
+      resumeStageControls();
+    }
+  });
   const commandSelect = document.getElementById(
     "terminal-command-select",
   ) as HTMLSelectElement | null;
   commandSelectEl = commandSelect;
   const commandRun = document.getElementById("terminal-command-run") as HTMLButtonElement | null;
+  const resumeButton = document.createElement("button");
+  resumeButton.id = "terminal-resume";
+  resumeButton.className = "terminal-command-run terminal-resume";
+  resumeButton.type = "button";
+  resumeButton.addEventListener("click", resumeStageControls);
+  commandRun?.after(resumeButton);
   const terminalTitle = document.getElementById("terminal-title");
   const terminalHint = document.getElementById("terminal-hint");
   const commandLabel = document.getElementById("terminal-command-label");
@@ -298,6 +243,7 @@ export function setupTerminal(d: Deps): void {
     if (terminalHint) terminalHint.textContent = t("terminal.hint");
     if (commandLabel) commandLabel.textContent = t("terminal.command");
     if (commandRun) commandRun.textContent = t("terminal.run");
+    resumeButton.textContent = t("terminal.resume");
     ui.terminalInput.placeholder = t("terminal.input");
     ui.terminalStage.textContent = t("terminal.stage", { name: deps?.getStageName() ?? "—" });
     if (commandSelect) {
@@ -306,6 +252,7 @@ export function setupTerminal(d: Deps): void {
     }
   };
   const executeSelected = (): void => {
+    if (commandSelect) refreshCommandSelect(commandSelect);
     const cmd = commandSelect?.value;
     if (!cmd) return;
     runLine(cmd);
@@ -328,6 +275,13 @@ export function setupTerminal(d: Deps): void {
   resetForStage();
 
   ui.terminalInput.addEventListener("keydown", (e) => {
+    // Input belongs to the shell, including when a lesson overlay is also open.
+    e.stopPropagation();
+    if (e.key === "Escape") {
+      e.preventDefault();
+      resumeStageControls();
+      return;
+    }
     if (e.key === "Enter") {
       e.preventDefault();
       runLine(ui.terminalInput.value);

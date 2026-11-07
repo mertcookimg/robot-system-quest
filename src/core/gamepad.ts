@@ -31,6 +31,7 @@ import * as terminalUi from "./terminal_ui";
 import { sfx } from "./audio";
 import { getCurrentId } from "./stage_manager";
 import { isActive as isDirectPlayerInputActive } from "../lib/two_player";
+import { isPageInactive, isTerminalFocused } from "../lib/input_guard";
 
 const STICK_DEAD = 0.35;
 const DRIVE_KEYS = [
@@ -124,6 +125,11 @@ export function poll(): void {
   if (!deps) return;
   const pad = findPad();
   if (!pad) return;
+  if (isPageInactive()) {
+    input.clearPad();
+    prevButtons = pad.buttons.map((b) => b.pressed);
+    return;
+  }
 
   // 0. Intro / Home screen: ←→ pick GAME/LESSON, A or Start confirms.
   if (intro.isShown()) {
@@ -152,6 +158,41 @@ export function poll(): void {
     return;
   }
 
+  const a = pad.buttons[0]?.pressed ?? false;
+  const start = pad.buttons[9]?.pressed ?? false;
+  const aEdge = a && !(prevButtons[0] ?? false);
+  const startEdge = start && !(prevButtons[9] ?? false);
+
+  // Visible dialogs own input before navigation, terminal or stage controls.
+  if (help.isOpen()) {
+    const closeEdge = [1, 11].some(
+      (index) => (pad.buttons[index]?.pressed ?? false) && !(prevButtons[index] ?? false),
+    );
+    if (closeEdge) help.close();
+    prevButtons = pad.buttons.map((b) => b.pressed);
+    return;
+  }
+  if (allclear.isOpen()) {
+    if (aEdge || startEdge) ui.allclearRestart.click();
+    prevButtons = pad.buttons.map((b) => b.pressed);
+    return;
+  }
+  if (clearOverlay.isOpen()) {
+    pollClearOverlayPad(pad, aEdge, startEdge);
+    prevButtons = pad.buttons.map((b) => b.pressed);
+    return;
+  }
+
+  // Failure dismissal must restart the stage, including stages whose own
+  // input handlers would otherwise consume B before the drive layer.
+  if (crash.isCrashing()) {
+    const bEdge = (pad.buttons[1]?.pressed ?? false) && !(prevButtons[1] ?? false);
+    input.clearPad();
+    if (bEdge || startEdge) crash.dismissCrashOverlay();
+    prevButtons = pad.buttons.map((b) => b.pressed);
+    return;
+  }
+
   // 2. Select button toggles the stage menu (disabled during intro).
   const selectPressed = pad.buttons[8]?.pressed ?? false;
   if (selectPressed && !(prevButtons[8] ?? false) && !intro.isShown()) {
@@ -172,7 +213,13 @@ export function poll(): void {
   // keyboard-only, so this is how pad players run `ros2 ...` commands.
   if ((pad.buttons[10]?.pressed ?? false) && !(prevButtons[10] ?? false)) {
     sfx.click();
+    const wasOpen = terminalUi.isPadPaletteOpen();
     terminalUi.togglePadPalette();
+    if (wasOpen) {
+      input.clearPad();
+      prevButtons = pad.buttons.map((b) => b.pressed);
+      return;
+    }
   }
   if (terminalUi.isPadPaletteOpen()) {
     for (const k of DRIVE_KEYS) input.setPadKey(k, false);
@@ -192,7 +239,7 @@ export function poll(): void {
     }
     if (bPalEdge) {
       sfx.click();
-      terminalUi.closePadPalette();
+      terminalUi.resumeStageControls();
     }
     prevButtons = pad.buttons.map((b) => b.pressed);
     return;
@@ -207,24 +254,11 @@ export function poll(): void {
     else help.open();
   }
 
-  const a = pad.buttons[0]?.pressed ?? false;
-  const start = pad.buttons[9]?.pressed ?? false;
-  const aEdge = a && !(prevButtons[0] ?? false);
-  const startEdge = start && !(prevButtons[9] ?? false);
-
-  // 3. All-clear screen: A or Start triggers restart.
-  if (allclear.isOpen()) {
-    if (aEdge || startEdge) {
-      sfx.click();
-      ui.allclearRestart.click();
+  if (help.isOpen() || isTerminalFocused()) {
+    input.clearPad();
+    if (!help.isOpen() && (pad.buttons[1]?.pressed ?? false) && !(prevButtons[1] ?? false)) {
+      terminalUi.resumeStageControls();
     }
-    prevButtons = pad.buttons.map((b) => b.pressed);
-    return;
-  }
-
-  // 4. Clear overlay: navigate Restart/Next.
-  if (clearOverlay.isOpen()) {
-    pollClearOverlayPad(pad, aEdge, startEdge);
     prevButtons = pad.buttons.map((b) => b.pressed);
     return;
   }
@@ -323,7 +357,7 @@ export function poll(): void {
   if (pad.buttons[1]?.pressed && !(prevButtons[1] ?? false)) {
     help.close();
     clearOverlay.close();
-    crash.clearCrashOverlay();
+    crash.dismissCrashOverlay();
   }
   if (startEdge) {
     clearOverlay.close();

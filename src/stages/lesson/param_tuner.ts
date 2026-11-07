@@ -448,7 +448,7 @@ export function makeParamTuner(): Stage {
     id: "param_tuner",
     name: "Param Tuner",
     lesson: "Parameters",
-    lessonCmd: "ros2 param set /waypoint_driver max_speed 0.6",
+    lessonCmd: "ros2 param get /waypoint_driver max_speed",
     ros2: {
       title: tx(
         "Parameter — ros2 param setで走行中に調整する",
@@ -463,9 +463,8 @@ export function makeParamTuner(): Stage {
       cli: [
         "ros2 param list /waypoint_driver",
         "ros2 param get /waypoint_driver max_speed",
-        "ros2 param set /waypoint_driver max_speed 0.6",
-        "ros2 param dump /waypoint_driver > tuned.yaml",
-        "ros2 run my_pkg waypoint_driver --ros-args --params-file tuned.yaml",
+        "ros2 param dump /waypoint_driver",
+        "ros2 topic echo /parameter_events",
       ],
       python: `import rclpy
 from rclpy.node import Node
@@ -501,6 +500,14 @@ class WaypointDriver(Node):
       ),
       state: {
         nodes: ["/waypoint_driver", "/robot_node"],
+        get parameters(): Record<string, Record<string, number>> {
+          const block = program[0];
+          return {
+            "/waypoint_driver": block
+              ? { max_speed: block.max_speed, turn_gain: block.turn_gain, accel: block.accel }
+              : {},
+          };
+        },
         topics: [
           {
             name: TOPIC_CMD,

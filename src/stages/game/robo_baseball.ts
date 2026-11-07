@@ -11,6 +11,8 @@ import { clearBackground, drawHint, drawRobotBody } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
 import { defineRos2Concept, state, topic } from "../../lib/ros2_concept";
 import { baseballStars, classifyBaseballSwing } from "../../lib/baseball_rules";
+import { readStageGamepads } from "../../lib/stage_gamepads";
+import { isStageInteractionBlocked, ownsNativeKey } from "../../lib/input_guard";
 
 const TOTAL_PITCHES = 10;
 const RELEASE_X = 196;
@@ -76,6 +78,15 @@ export function makeRoboBaseball(): Stage {
   let onPointerDown: ((event: PointerEvent) => void) | null = null;
   let onActionKeyDown: ((event: KeyboardEvent) => void) | null = null;
 
+  function clearPendingSwing(): void {
+    pointerSwingPending = false;
+    lastSwing = false;
+  }
+
+  function onVisibilityChange(): void {
+    if (document.hidden) clearPendingSwing();
+  }
+
   function reset(): void {
     phase = "ready";
     aimX = ZONE.x + ZONE.w / 2;
@@ -126,11 +137,14 @@ export function makeRoboBaseball(): Stage {
     g.canvas.addEventListener("pointermove", onPointerMove);
     g.canvas.addEventListener("pointerdown", onPointerDown);
     onActionKeyDown = (event) => {
+      if (isStageInteractionBlocked() || ownsNativeKey(event)) return;
       if ((event.key === " " || event.key.toLowerCase() === "e") && !event.repeat) {
         pointerSwingPending = true;
       }
     };
     window.addEventListener("keydown", onActionKeyDown);
+    window.addEventListener("blur", clearPendingSwing);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     reset();
   }
 
@@ -209,7 +223,7 @@ export function makeRoboBaseball(): Stage {
     const aimError = Math.hypot(aimX - pitch.targetX, aimY - pitch.targetY);
     g.publish(
       "/bat/swing",
-      `timing=${pitch.progress.toFixed(3)} aim_error=${aimError.toFixed(1)}px`,
+      `data: ${JSON.stringify(`timing=${pitch.progress.toFixed(3)} aim_error=${aimError.toFixed(1)}px`)}`,
     );
 
     const swingResult = classifyBaseballSwing(pitch.progress, aimError);
@@ -280,7 +294,7 @@ export function makeRoboBaseball(): Stage {
     updateAim(dt);
 
     const swingHeld = g.keys.has("shift") || g.keys.has("x") || g.keys.has("e") || g.keys.has(" ");
-    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const pads = readStageGamepads();
     const pad = Array.from(pads).find((candidate): candidate is Gamepad => candidate !== null);
     const padSwing = (pad?.buttons[0]?.pressed ?? false) || (pad?.buttons[2]?.pressed ?? false);
     if (pointerSwingPending || (swingHeld && !lastSwing) || (padSwing && !lastPadSwing)) {
@@ -1129,6 +1143,8 @@ export function makeRoboBaseball(): Stage {
     if (onPointerMove) g.canvas.removeEventListener("pointermove", onPointerMove);
     if (onPointerDown) g.canvas.removeEventListener("pointerdown", onPointerDown);
     if (onActionKeyDown) window.removeEventListener("keydown", onActionKeyDown);
+    window.removeEventListener("blur", clearPendingSwing);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
     onPointerMove = null;
     onPointerDown = null;
     onActionKeyDown = null;
@@ -1148,7 +1164,7 @@ export function makeRoboBaseball(): Stage {
         "Camera Tracking Nodeがボールの軌道を推定し、ストライクゾーンを通過する座標をpublishします。照準を予測座標に合わせ、タイミングよくスイングしましょう。",
         "A camera tracking node estimates the ball trajectory and publishes its predicted crossing point. Match the reticle to that prediction and time the swing.",
       ),
-      msgTypes: ["geometry_msgs/msg/PointStamped", "std_msgs/msg/Float32"],
+      msgTypes: ["geometry_msgs/msg/PointStamped", "std_msgs/msg/String"],
       cli: ["ros2 topic list", "ros2 topic echo /pitch/trajectory", "ros2 topic echo /bat/swing"],
       python: "",
       realWorld: tx(
@@ -1162,7 +1178,7 @@ export function makeRoboBaseball(): Stage {
             pub: ["/trajectory_predictor"],
             sub: ["/robot_batter"],
           }),
-          topic("/bat/swing", "std_msgs/msg/Float32", {
+          topic("/bat/swing", "std_msgs/msg/String", {
             pub: ["/robot_batter"],
           }),
         ],

@@ -1,7 +1,7 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
-import type { Stage } from "../types";
+import type { StageMeta } from "../types";
 import { getLang } from "../i18n";
 
 export interface GuideCopy {
@@ -10,6 +10,7 @@ export interface GuideCopy {
   steps: [string, string, string];
   exercise: string;
   insight: string;
+  details?: string[];
 }
 
 export interface CardPreview {
@@ -34,7 +35,7 @@ const CARD_PREVIEW: Record<string, CardPreview> = {
   robo_tennis: { icon: "🎾", action: "ボールの高さと着地点を読み、ラリーを続ける" },
   pubsub_builder: { icon: "⇄", action: "PublisherとSubscriberを接続する" },
   service_builder: { icon: "↔", action: "接続してServiceを1回呼び出す" },
-  tf_puzzle: { icon: "⌗", action: "座標フレームを正しい親子関係にする" },
+  tf_puzzle: { icon: "⌗", action: "センサーの位置と向きを調整し、壁に点群を合わせる" },
   feedforward_controller: { icon: "△", action: "速度と時間を計算して正三角形を描く" },
   feedforward_mission: { icon: "┄", action: "計算した指令だけで目標位置に止める" },
   feedback_controller: { icon: "△", action: "距離と角度を測って同じ正三角形を描く" },
@@ -60,6 +61,8 @@ interface EnglishGuideSeed {
   observe: string;
   exercise: string;
   insight: string;
+  goals?: [string, string, string];
+  steps?: [string, string, string];
 }
 
 const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
@@ -186,8 +189,19 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
   pubsub_builder: {
     action: "Connect a Publisher to a Subscriber through a Topic",
     goal: "Explain how Node, Topic, Message type, and compatible QoS relate",
-    observe: "Watch one published message reach every compatible subscriber",
-    exercise: "Connect two Subscribers to one Publisher and give each Subscriber a different job.",
+    observe: "Compare the robot and /cmd_vel log before and after connecting the two ports",
+    exercise:
+      "Connect the Publisher's output to the Subscriber's input, then inspect /cmd_vel. Explain why the robot did not move before the connection.",
+    goals: [
+      "Identify the Publisher, Subscriber and Topic",
+      "Check that the Topic name and message type match",
+      "Relate the connection to the robot's motion and saved messages",
+    ],
+    steps: [
+      "Find the /cmd_vel output and input ports",
+      "Connect the ports with the same Topic name and message type",
+      "Watch the robot move and inspect the /cmd_vel log",
+    ],
     insight:
       "Pub/Sub is loosely coupled, so logging, visualization, and control nodes can be added without changing the Publisher.",
   },
@@ -201,10 +215,21 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
       "Use Topics for streams, Services for short request/response operations, and Actions for long-running goals.",
   },
   tf_puzzle: {
-    action: "Build the correct parent-child transform tree",
-    goal: "Compose translation and rotation across coordinate frames",
-    observe: "Watch sensor points snap into place when frame relationships are correct",
-    exercise: "Sketch where a point one meter in front of the camera appears in base_link and map.",
+    action: "Adjust the sensor's position and rotation to align its scan with the walls",
+    goal: "Relate the base_link to laser transform to the scan's placement",
+    observe: "Change tx, ty and yaw one at a time and watch the scan move",
+    exercise:
+      "Change only yaw, then only tx or ty. Explain which setting rotates the scan and which shifts it.",
+    goals: [
+      "Identify the fixed parent base_link and child laser frames",
+      "Distinguish translation from rotation",
+      "Align the observed scan with the walls by changing the transform",
+    ],
+    steps: [
+      "Compare the shifted scan with the walls",
+      "Adjust tx, ty and yaw with the sliders",
+      "Align the scan and inspect the resulting /tf log",
+    ],
     insight: "A correct value in the wrong frame is still wrong. frame_id is part of the data.",
   },
   feedforward_controller: {
@@ -276,11 +301,16 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
   navigation: {
     action: "Set a Goal and let the robot plan and drive",
     goal: "Distinguish a Goal Pose, global Path, and local control",
-    observe: "Watch the planner and controller update while the robot is moving",
+    observe: "Watch A* create a path, then the controller follow it and align the final heading",
     exercise:
-      "Send the same position with different final orientations and compare the approach paths.",
+      "Reset before each run and send the same goal position with a different heading. Observe the same planned path followed by a different final rotation.",
+    steps: [
+      "Click and drag to publish a position and heading on /goal_pose",
+      "Inspect the A* path on /plan and the driving commands on /cmd_vel",
+      "Reach five goals requiring movement or rotation; an already-satisfied goal does not count again",
+    ],
     insight:
-      "Navigation does not end when a path is created; it keeps updating decisions as obstacles and pose estimates change.",
+      "This lesson plans a path when you send a goal, then updates the velocity command while following it. The goal heading controls the final in-place rotation. Full navigation systems can also replan as obstacles or pose estimates change.",
   },
   image_processing: {
     action: "Reduce camera noise, then find useful edges",
@@ -335,21 +365,42 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
       "Pre-grasp and retreat poses make manipulation safer and more repeatable than moving directly to the grasp point.",
   },
   action_builder: {
-    action: "Connect an Action and trace Goal, Feedback, Result, and Goal Status",
-    goal: "Distinguish Action interface data from goal state and cancellation",
+    action: "Connect an Action and trace its Goal, Feedback and Result",
+    goal: "Distinguish goal acceptance, progress feedback and completion",
     observe: "Watch this simulation emit periodic feedback while one goal remains active",
     exercise:
-      "Design a cancellation policy for the case where a new navigation goal arrives during execution.",
+      "Inspect /action_builder/events after connecting the ports. Identify the goal_accepted, feedback and result events, and explain which can occur repeatedly.",
+    goals: [
+      "Connect an Action Client and Server with the same name and type",
+      "Distinguish Goal, Feedback and Result",
+      "Explain why progress feedback is useful for a long-running task",
+    ],
+    steps: [
+      "Connect the matching /navigate_to_pose ports to start the goal",
+      "Watch the robot and the changing distance_remaining feedback",
+      "Inspect the final result and SUCCEEDED status in the diagnostic log",
+    ],
     insight:
-      "An Action is not simply a long Service; progress reporting and cancellation are part of its communication model.",
+      "Actions support progress feedback and cancellation in ROS 2. This lesson demonstrates goal acceptance, feedback and successful completion; cancellation is not an available control here.",
   },
   behavior_tree: {
     action: "Build robot decisions from conditions and actions",
-    goal: "Distinguish Sequence and Fallback control flow",
-    observe: "Trace Success, Failure, and Running status from child nodes to the root",
-    exercise: "Add a recovery branch that rotates and retries when no path can be found.",
+    goal: "Explain how condition order determines the selected action",
+    observe: "Watch which rule becomes active and which velocity command it selects",
+    exercise:
+      "Swap an obstacle-avoidance rule and a goal-direction rule between the upper and lower rows. Compare which action wins when both conditions are true.",
+    goals: [
+      "Pair sensor conditions with movement actions",
+      "Explain why the first matching rule takes priority",
+      "Compare the selected rule with the robot's motion",
+    ],
+    steps: [
+      "Choose a condition and action for each rule",
+      "Place higher-priority rules in the upper rows and choose a default action",
+      "Run the robot and watch the highlighted rule and /cmd_vel",
+    ],
     insight:
-      "Behavior Trees make decision flow visible and let teams replace or test one branch without redesigning the whole policy.",
+      "This lesson simplifies a Behavior Tree to ordered condition-action rules: the first match selects a velocity, otherwise the default action runs. General Behavior Trees also propagate Success, Failure and Running, and can express retries and recovery; those mechanisms are not controls in this lesson.",
   },
 };
 
@@ -560,14 +611,15 @@ const COPY: Record<string, GuideCopy> = {
     goals: [
       "Node・Topic・Messageの関係を説明する",
       "型が一致しない接続が成立しない理由を理解する",
-      "一対多通信の特徴を知る",
+      "接続とロボットの動き・ログを対応させる",
     ],
     steps: [
-      "PublisherがMessageを生成する",
-      "DDSがTopic名とQoSに基づいて配送する",
-      "SubscriberのCallbackがMessageを処理する",
+      "/cmd_velの出力ポートと入力ポートを見つける",
+      "Topic名とMessage型が同じポート同士を接続する",
+      "ロボットの動きと/cmd_velのログを確認する",
     ],
-    exercise: "一つのPublisherに二つのSubscriberを接続し、それぞれ別の処理をさせてみましょう。",
+    exercise:
+      "Publisherの出力をSubscriberの入力へ接続し、/cmd_velのログを見ましょう。接続する前にロボットが動かなかった理由を説明してみましょう。",
     insight: "Pub/Subの疎結合性により、記録・可視化・制御ノードを後から追加できます。",
   },
   service_builder: {
@@ -590,18 +642,19 @@ const COPY: Record<string, GuideCopy> = {
   },
   tf_puzzle: {
     overview:
-      "map、odom、base_link、sensorなどの座標フレームを正しく接続します。TFは、別々の場所と向きで測られたデータを同じ世界で比較するための座標変換システムです。",
+      "センサーの位置と向きを調整し、ずれている点群を壁に合わせます。このLessonでは親のbase_linkと子のlaserは固定されており、その間の平行移動tx・tyと回転yawをスライダーで変えます。TFが測定値の見える位置を変えることを確かめましょう。",
     goals: [
-      "親子フレームの関係を理解する",
-      "平行移動と回転を順番に合成する",
-      "TF Treeが木構造である理由を知る",
+      "親base_linkと子laserの関係を確認する",
+      "平行移動と回転の違いを理解する",
+      "座標変換を調整して点群を壁へ合わせる",
     ],
     steps: [
-      "各センサー値が属するframe_idを確認する",
-      "TF Treeから目的フレームまでの変換を探す",
-      "変換を合成して座標を移す",
+      "ずれた点群と壁の位置を見比べる",
+      "tx・ty・yawのスライダーを一つずつ調整する",
+      "点群を壁に合わせ、/tfのログで変換を確認する",
     ],
-    exercise: "カメラ前方1mの点がbase_linkとmapでどこになるか、図を描いて考えましょう。",
+    exercise:
+      "yawだけを変えたときと、txまたはtyだけを変えたときを比べましょう。点群を回転させる値と、平行に移動させる値を説明してみましょう。",
     insight: "値が正しくても座標系を間違えるとロボットは誤動作します。frame_idはデータの一部です。",
   },
   feedforward_controller: {
@@ -747,13 +800,14 @@ const COPY: Record<string, GuideCopy> = {
       "Actionが長時間処理に適する理由を知る",
     ],
     steps: [
-      "/goal_poseまたはAction Goalを受け取る",
-      "地図上で衝突しないPathを探索する",
-      "Pathを追従する/cmd_velを連続出力する",
+      "クリックとドラッグで位置・向きを/goal_poseへ送る",
+      "A*の経路/planと、走行中の速度指令/cmd_velを観察する",
+      "移動か回転が必要なゴールを5回達成する（すでに満たしているゴールは加算なし）",
     ],
-    exercise: "同じ位置のGoalに異なる向きを指定し、最後の接近経路がどう変わるか観察しましょう。",
+    exercise:
+      "毎回リセットしてから、同じゴール位置に異なる向きを指定しましょう。計画される経路は同じで、到着後のその場回転が変わることを観察しましょう。",
     insight:
-      "ナビゲーションは経路を一度作って終わりではありません。障害物や位置誤差に応じて走行中も判断を更新します。",
+      "このLessonはゴールを送ったときに経路を計画し、走行中は速度指令を更新します。ゴールの向きは到着後のその場回転に使います。実際のナビゲーションでは、障害物や自己位置の変化に応じて経路を再計画する構成もあります。",
   },
   image_processing: {
     overview:
@@ -858,40 +912,209 @@ const COPY: Record<string, GuideCopy> = {
   },
   action_builder: {
     overview:
-      "時間のかかるGoalを送り、完了またはCancelを待つAction通信を組み立てます。Serverは実行中に必要に応じてFeedbackを返せるため、ナビゲーションやアーム動作など、途中経過を扱いたい処理に適しています。",
+      "同じAction名と型のポートを接続してGoalを開始し、途中のFeedbackから完了時のResultまで観察します。Serverは実行中に進み具合を返せるため、ナビゲーションなど時間のかかる処理に適しています。このLessonの操作は接続と成功完了の確認までです。",
     goals: [
-      "ActionのGoal・Feedback・ResultとGoal Statusを区別する",
-      "Cancel可能な処理を設計する",
-      "Serviceとの使い分けを説明する",
+      "同じAction名と型のClientとServerを接続する",
+      "Goal・Feedback・Resultを区別する",
+      "時間のかかる処理で途中経過が役立つ理由を説明する",
     ],
     steps: [
-      "ClientがAction ServerへGoalを送る",
-      "実行中にシミュレーションから定期的に送られるFeedbackを観察する",
-      "完了時のResultとGoal Statusを確認し、必要ならCancelを要求する",
+      "/navigate_to_poseのポートを接続し、Goalを開始する",
+      "ロボットと、Feedbackのdistance_remainingの変化を見る",
+      "診断ログで最後のResultとSUCCEEDEDを確認する",
     ],
-    exercise: "ナビゲーション中に新しいGoalが届いた場合のキャンセル方針を考えましょう。",
+    exercise:
+      "/action_builder/eventsを確認し、goal_accepted・feedback・resultを見分けましょう。実行中に何度も出るのはどのイベントでしょうか。",
     insight:
-      "ActionはServiceを長くしたものではなく、進捗確認と中断を通信モデルに含めた仕組みです。",
+      "ROS 2のActionには途中経過の通知とキャンセル要求の仕組みがあります。このLessonで体験するのはGoalの受付・Feedback・成功完了で、キャンセル操作は実装していません。",
   },
   behavior_tree: {
     overview:
-      "複数の行動を成功・失敗・実行中の状態で組み合わせ、ロボットの判断をBehavior Treeとして構築します。Nav2でもタスク実行の制御に使われています。",
+      "センサーの条件と動作を組み合わせ、ロボットの判断を作ります。このLessonはBehavior Treeの考え方を簡略化したもので、上から順に条件を調べ、最初に成立したルールの動作を選びます。",
     goals: [
-      "SequenceとFallbackの違いを理解する",
-      "Success・Failure・Runningを使い分ける",
-      "再試行や回復行動を木構造で表す",
+      "センサーの条件と移動・回転の動作を組み合わせる",
+      "最初に成立したルールが優先されることを説明する",
+      "選ばれたルールとロボットの動きを比べる",
     ],
     steps: [
-      "条件ノードで現在の状況を確認する",
-      "Control Nodeが実行する子を選ぶ",
-      "Action Nodeの結果を親へ返して次を決める",
+      "各ルールの条件と動作を選ぶ",
+      "優先するルールを上の行に置き、どの条件にも合わないときの動作を選ぶ",
+      "実行し、強調されるルールと/cmd_velを観察する",
     ],
-    exercise: "経路が見つからない場合に、回転して再探索するRecoveryを追加しましょう。",
-    insight: "Behavior Treeは判断の流れを可視化し、部分ごとに交換・テストできる点が強みです。",
+    exercise:
+      "障害物を避けるルールとゴール方向を向くルールを、上下の行で入れ替えてみましょう。両方の条件が成立したとき、どちらの動作が優先されるか比べましょう。",
+    insight:
+      "このLessonは、最初に成立した条件で速度を選び、どれも成立しなければ既定の動作を行います。一般のBehavior TreeにはSuccess・Failure・Runningの伝播や再試行・回復行動もありますが、このLessonではそれらを編集・実行する機能は扱いません。",
   },
 };
 
-export function guideCopyFor(stage: Stage): GuideCopy {
+export function guideCopyFor(stage: StageMeta): GuideCopy {
+  if (stage.id === "world_model") {
+    return getLang() === "ja"
+      ? {
+          overview:
+            "ボールを押す前に、「軽く押せば少し、強く押せば遠くへ動きそう」と考えることがあります。ロボットも、動きの記録から「こう押すと、こう動く」を学べます。ここでは箱の動きを予想してから、実際に動かして確かめましょう。同じ表と、同じ場所のボタンで進めます。学習待ちはありません。",
+          goals: [
+            "動かす前の予想と、動かして確かめた結果を比べる",
+            "予想を作るために、動きの記録から学んだしくみを知る",
+            "目標だけを変えた場合と、箱が動いている場合の違いを見つける",
+          ],
+          steps: [
+            "止まっている箱で「予想を見る」→「2秒動かして確かめる」。表の予想と実際を比べる",
+            "同じ場所のボタンで次へ。目標だけが遠くなると、どの押し方が選ばれるか見る",
+            "もう一度次へ。最初から右へ動いている箱では、同じ押し方の予想も変わるか見る",
+          ],
+          exercise:
+            "目標を遠くしただけで、箱の動き方まで変わるでしょうか。箱が最初から動いていたらどうでしょう。表の「弱く押す」の予想を比べてみましょう。実際の結果が入るのは、動かして確かめた行だけです。予想が実際に近いことと、箱が目標に近いことも別です。3つの実験で確かめれば完了でき、正解を当てる必要はありません。",
+          insight:
+            "世界モデルは、今の状態と押し方から次の状態を予想するために学んだしくみです。予想を実際の動きと比べ、目標を変えたときと箱が動いているときの違いを確かめましょう。",
+          details: [
+            "箱を押す強さや、箱がすでに動いているかによって、その後の動きは変わります。このLessonでは、動きの記録から学んだ「今の状態と押し方から、次の状態を予想するしくみ」を世界モデルと呼びます。表に出る数字は、そのしくみを使って計算した予想です。予想を作るしくみと、予想という結果は別です。さらに、3つの予想を目標と比べて押し方を選ぶ処理を計画と呼びます。最初の2実験は、目標だけを0.47 m先から1.05 m先へ変えます。同じ押し方なら、箱の動き方は変わらないため、予想は同じです。3つ目では目標は同じでも、箱が最初から右へ動いているため予想が変わります。3実験とも、同じ学習済みのしくみを使っています。",
+            "詳しく見ると、この教材の世界モデルは、箱の位置・速度・力を数値で受け取る小さなニューラルネットです。シミュレーションの4,000件の記録から事前に学び、次の状態の予測を40回つなげて2秒後を求めます。目標はこのモデルの入力に含めず、別の計画器が予想位置と目標の距離で押し方を選びます。予想を計算するときは、実行結果や正解の物理シミュレーターを参照しません。選んだ1候補だけを同じ開始状態・力の予定で実行し、同じ2秒時点で比べます。",
+            "実際の動きもシミュレーションです。2秒後に停止しているとは限らず、予想が外れることもあります。画像からの状態推定、実行途中の計画の更新、報酬による行動の学習は扱いません。研究には画像や潜在表現の予測を使う世界モデルもありますが、ここでは数値で表した箱の動きに範囲を絞っています。",
+          ],
+        }
+      : {
+          overview:
+            "Before pushing a ball, you might expect a gentle push to move it a little and a strong push to move it farther. A robot can learn how pushes affect motion from recorded examples. Here, predict how a box will move, then try it and check. Keep watching the same table and use the button in the same place to continue. There is no training wait.",
+          goals: [
+            "Compare a prediction made before acting with the result after acting",
+            "Understand the learned mechanism that turns motion records into predictions",
+            "Compare changing only the target with starting from a box already in motion",
+          ],
+          steps: [
+            "For a stationary box, view the predictions, then run for two seconds and compare the table's prediction and actual result",
+            "Continue with the same button. Only the target moves farther away: see which push is selected",
+            "Continue again. The box now starts moving right: see whether the same push has a different predicted result",
+          ],
+          exercise:
+            "Does moving the target farther away change how the box moves? What if the box is already moving? Compare the gentle-push predictions. An actual result appears only for the push you tried. Predicting the result accurately and reaching the target are different things. Check all three experiments to finish; you do not have to guess the right answer.",
+          insight:
+            "A world model learns to predict the next state from the current state and an action. Compare its predictions with motion, then distinguish changing the target from changing the starting motion.",
+          details: [
+            "A box's motion depends on how hard it is pushed and whether it is already moving. In this lesson, a world model is a mechanism learned from motion records that predicts the next state from the current state and a push. The numbers in the table are predictions calculated using that mechanism. The mechanism and its predictions are different things. Comparing three predictions with a target to choose a push is called planning. The first two trials change only the target, from 0.47 m to 1.05 m right of the start. For the same push, how the box moves is unchanged, so its prediction stays the same. The third keeps the target but starts the box moving right, so the predictions change. All three use the same learned mechanism.",
+            "In more detail, this lesson's world model is a small neural network that receives numerical position, velocity and force. It was trained beforehand on 4,000 simulated transitions and repeats its next-state prediction 40 times to predict two seconds ahead. The target is not an input to this model: a separate planner chooses the push whose predicted position is closest to it. Prediction does not consult the actual result or the ground-truth physics simulator. Only the selected candidate is executed with the same initial state and force schedule, then compared at the same two-second instant.",
+            "Actual motion is simulated too. The box may still be moving at two seconds, and predictions can be wrong. This lesson does not estimate state from images, update its plan during execution or learn actions from rewards. Research also uses world models that predict images or latent representations; this lesson focuses on the box's motion represented by numbers.",
+          ],
+        };
+  }
+  if (stage.id === "vla_lab") {
+    return getLang() === "ja"
+      ? {
+          overview:
+            "「赤い箱へ」「青い箱へ」を選び、ロボットを動かしましょう。画像で周りを見て、言葉の指示に合わせて次の動作を選びます。画像・指示・動作の3つを見比べる、小さなVLAの体験です。",
+          goals: [
+            "画像と指示の両方が、動作を決める材料になると気づく",
+            "同じ景色でも、指示を変えると行き先が変わることを確かめる",
+            "同じ指示でも、箱の場所を変えると動きが変わることを確かめる",
+          ],
+          steps: [
+            "「赤い箱へ」を選び、ロボットを動かす",
+            "同じ配置で「青い箱へ」に変え、動きを比べる",
+            "指示をそのままにして箱の配置を変え、もう一度動かす",
+          ],
+          exercise:
+            "指示だけを変えたときと、配置だけを変えたときに、最初の動作はどう変わりましたか。画像・指示・動作のカードを見て、どの入力が変わったか説明してみましょう。",
+          insight:
+            "VLAはVision（画像）・Language（言葉）・Action（動作）をつなぐモデルの構成を表します。模倣学習や強化学習は学び方の名前なので、VLAと別の軸です。この教材は7×5の簡略RGB俯瞰画像と、選択した2種類の指示コードから、上下左右・停止の5動作を選びます。赤箱をR、ロボットをG、青箱をBに符号化した105個の画素値を入力し、指示に応じた線形softmax方策で動作を予測します。合成したお手本で事前に行動模倣（BC）を行い、実行中は固定の係数で推論するため学習待ちはありません。一般の写真や自由な文章を理解するモデルではなく、赤青の箱へ向かう限定タスクの教材です。OpenVLAそのものや実機の汎用性能を再現するものではありません。",
+        }
+      : {
+          overview:
+            "Choose the red or blue box and watch the robot move. It uses an image of the scene and your instruction to choose its next action. Compare the three cards: image, instruction and action.",
+          goals: [
+            "Notice that both the image and the instruction help select an action",
+            "Keep the scene fixed and see how a new instruction changes the destination",
+            "Keep the instruction fixed and see how moving the boxes changes the actions",
+          ],
+          steps: [
+            "Choose the red box and run the robot",
+            "Keep the layout and choose the blue box to compare the movement",
+            "Keep the instruction, change the layout and run again",
+          ],
+          exercise:
+            "How does the first action change when you change only the instruction, or only the layout? Use the image, instruction and action cards to explain which input changed.",
+          insight:
+            "VLA connects Vision, Language and Action: it describes a model's inputs and outputs. Imitation learning and reinforcement learning describe ways to train, so they are a different axis. This lesson encodes a 7×5 overhead image as 105 RGB values: red box in R, robot in G and blue box in B. An instruction-conditioned linear softmax policy takes these pixels and one of two instruction codes, then chooses up, right, down, left or stop. It was trained by behavior cloning on synthetic demonstrations; the lesson uses fixed coefficients for inference, with no training wait. It is a limited red/blue-box task, not general photo or free-form language understanding, OpenVLA itself, or evidence of general robot performance.",
+        };
+  }
+  if (stage.id === "reinforcement_learning") {
+    return getLang() === "ja"
+      ? {
+          overview:
+            "ごほうびを選び、ロボットに旗のゴールを目指してもらいましょう。ロボットは自分で動きを試して、ごほうび（報酬）から学びます。操作のお手本を渡す模倣学習とは違う学び方です。",
+          goals: [
+            "試行とごほうびから学んだ動きを、学習前と比べる",
+            "いろいろ試して学ぶ時間と、学んだ動きを見る時間を区別する",
+            "ごほうびを集めることと、ゴールに着くことを分けて考える",
+          ],
+          steps: [
+            "「ゴール重視」で、ゴール到着にごほうびを付ける",
+            "「学習する（約2秒）」→「動きを見る」で、学習前後を比べる",
+            "結果を見てLessonを完了する。発展として「ボーナス追加」で学び直し、報酬の違いを比べる",
+          ],
+          exercise:
+            "まず同じごほうび設定で学習前と学習後の3地点の結果を比べましょう。ここまででLessonを完了できます。発展課題は「ボーナス追加」での再学習です。★への寄り道でごほうびを集めても、ゴールへ行かないことはありますか。結果はすぐ表示され、短い動きの抜粋で様子を確認できます。",
+          insight:
+            "この実装は、マップ上の位置と上下左右の行動ごとに値を保存する表形式のQ学習です。ニューラルネットや操作のお手本は使いません。学習中は確率的に行動を試す探索を行い、比較中は探索と値の更新を止めます。各学習は同じ初期値と乱数シードから600回試行します。比較は80手を上限に同じマップの固定3開始位置で評価し、動きは最大16手の抜粋を再生します。3地点は学習にも使うため、未知のマップへの汎化や成功確率を示すものではありません。報酬設定が違うモデル同士では、報酬の合計だけで優劣を決められません。",
+        }
+      : {
+          overview:
+            "Choose a reward and help the robot reach the goal flag. The robot tries moves and learns from the rewards it receives. Unlike imitation learning, it learns without being shown example actions.",
+          goals: [
+            "Compare behavior before and after learning from trials and rewards",
+            "Distinguish trying moves to learn from watching a learned behavior",
+            "Consider collecting rewards separately from reaching the goal",
+          ],
+          steps: [
+            "Choose Goal reward to reward reaching the flag",
+            "Select Learn (about 2 sec), then Watch the robots to compare before and after",
+            "Inspect the results to finish the lesson. Optionally choose Bonus reward and learn again to compare reward rules",
+          ],
+          exercise:
+            "First compare the same three starts before and after learning with one reward setting; this is enough to finish. As an optional extension, learn again with Bonus reward. Can the robot collect rewards by revisiting ★ without reaching the flag? Results appear immediately, with a short motion excerpt.",
+          insight:
+            "This lesson uses tabular Q-learning, storing a value for each grid position and each of four actions. It uses neither a neural network nor demonstrated actions. Training includes random exploration; evaluation disables both exploration and value updates. Each fit runs 600 trials from the same initial values and random seed. Evaluation allows up to 80 moves from three fixed starts; playback shows an excerpt of at most 16 moves. The starts also appear in training, so these results do not establish success probabilities or generalization to unseen maps. Reward totals under different rules are not directly comparable measures of performance.",
+        };
+  }
+  if (stage.id === "imitation_learning") {
+    return getLang() === "ja"
+      ? {
+          overview:
+            "まず自分で操作を記録し、模倣学習の一種、Behavior Cloningを体験します。そのときの状況と操作のペアから、あなたの操作に近い値を予測するようニューラルネットの重みを学習します。操作の模倣誤差と、実際の走行成績を分けて確認します。",
+          goals: [
+            "実演の操作をまねる学習目標と、走行の成功を区別する",
+            "同じ条件で学習前と学習後の走行を比べる",
+            "プログラムで生成した復帰データを追加し、走行の変化を比べる",
+          ],
+          steps: [
+            "「操作データを集める」から上下キー・タッチの説明を確認して開始する。3秒のカウントダウン後、約11秒の操作を失敗も含めて記録する",
+            "選択した記録が20件以上になったら学習する。記録した操作と学習前・学習後の予測を見て、同じ3条件で走行を比較する",
+            "必要なら復帰データ100件を追加して再学習する。前回と今回の使用データ・成功コース数・コース内にいた時間の割合を比較する",
+          ],
+          exercise:
+            "自分の操作データだけで学習したモデルと、同じ操作データに復帰データを加えたモデルを比較しましょう。操作をよくまねられても走行に失敗する場合はありますか。操作データ・復帰データは各100件まで。使うカテゴリを選べ、選択を外しても記録は消えません。復帰データは操作を20件以上記録すると用意できます。",
+          insight:
+            "この実装は2→12→1のtanhネットで、記録した操作との二乗誤差をAdamで240エポック学習します。操作データはあなたの入力、復帰データはずれた位置から中央へ戻るプログラムの走行記録です。学習処理に制御式や試験成績は渡さず、失敗操作も学習対象になります。学習データでの一致は未知状態での成功を保証せず、閉ループでは小さな誤差から記録とは違う状態へ進むことがあります。固定試験の反復も実機への汎化を証明しません。",
+        }
+      : {
+          overview:
+            "Start by recording your own controls, then explore Behavior Cloning, one form of imitation learning. Fit a neural network to predict your recorded actions from observations, and inspect imitation error separately from driving performance.",
+          goals: [
+            "Distinguish imitating demonstrated actions from succeeding at driving",
+            "Compare driving before and after training under identical conditions",
+            "Compare driving after adding Recovery data generated by a programmed controller",
+          ],
+          steps: [
+            "Choose Record your driving, read the Up/Down keyboard and touch instructions, and start. After a 3-second countdown, record about 11 seconds of your controls, including mistakes",
+            "Train with at least 20 selected pairs. Inspect the recorded action and before/after predictions, then compare driving under the same 3 conditions",
+            "Optionally add 100 Recovery pairs and retrain. Compare previous and current models by their training data, successful courses and percentage of time inside the course band",
+          ],
+          exercise:
+            "Compare training on your controls alone with training on the same controls plus Recovery data. Can imitation error be low while driving fails? Each of the two categories holds up to 100 pairs. Choose which categories to use; turning one off does not delete its data. Recovery collection becomes available after recording at least 20 manual pairs.",
+          insight:
+            "This implementation fits a 2→12→1 tanh network to recorded actions using MSE and Adam for 240 epochs. Manual data records your inputs; Recovery data records a programmed controller returning toward the course center from displaced positions. Fitting has no access to the controller formula or test scores. Mistakes remain training targets. A good fit does not guarantee success in unseen states; small errors in closed-loop execution can lead away from recorded states. Repeated fixed tests do not establish transfer to hardware.",
+        };
+  }
   if (getLang() === "en") {
     const seed = ENGLISH_GUIDE[stage.id];
     const interfaceName = stage.ros2?.msgTypes[0]?.split("/").at(-1) ?? "ROS 2 data";
@@ -899,12 +1122,12 @@ export function guideCopyFor(stage: Stage): GuideCopy {
       const lowerFirst = (value: string): string => value.charAt(0).toLowerCase() + value.slice(1);
       return {
         overview: `Your task is to ${lowerFirst(seed.action)}. This stage helps you ${lowerFirst(seed.goal)}. ${seed.observe}, then connect what you see to the underlying ROS 2 data flow.`,
-        goals: [
+        goals: seed.goals ?? [
           seed.goal,
           `Connect the onscreen behavior to ${interfaceName} and the ROS 2 graph`,
           "Explain how the same design transfers from simulation to a physical robot",
         ],
-        steps: [
+        steps: seed.steps ?? [
           seed.action,
           seed.observe,
           "Compare the result with the mission goal, then adjust one variable at a time",
@@ -954,7 +1177,37 @@ export function guideCopyFor(stage: Stage): GuideCopy {
   );
 }
 
-export function cardPreviewFor(stage: Stage): CardPreview {
+export function cardPreviewFor(stage: StageMeta): CardPreview {
+  if (stage.id === "world_model")
+    return {
+      icon: "◇",
+      action:
+        getLang() === "ja" ? "動かす前に、結果を予想しよう" : "Predict the outcome before moving",
+    };
+  if (stage.id === "vla_lab")
+    return {
+      icon: "◉",
+      action:
+        getLang() === "ja"
+          ? "画像 ＋ 指示 → ロボットの動き。言葉と配置を変えて試す"
+          : "Image + instruction → action. Try a new instruction or layout",
+    };
+  if (stage.id === "reinforcement_learning")
+    return {
+      icon: "↗",
+      action:
+        getLang() === "ja"
+          ? "ごほうびを選ぶ → 学習する → ロボットの動きを見る"
+          : "Choose rewards → learn → watch the robots",
+    };
+  if (stage.id === "imitation_learning")
+    return {
+      icon: "◎",
+      action:
+        getLang() === "ja"
+          ? "自分の操作を記録し、学習前後の走行を比べる"
+          : "Record your controls and compare driving before and after training",
+    };
   if (getLang() === "en") {
     return {
       icon: CARD_PREVIEW[stage.id]?.icon ?? "◆",

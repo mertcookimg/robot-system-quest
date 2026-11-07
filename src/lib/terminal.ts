@@ -24,8 +24,8 @@ export interface ExecResult {
   effect?: "clear" | "close";
 }
 
-// ROS 2 standard message definitions (formatted to match real
-// `ros2 interface show` output).
+// Compact interface summaries. Nested definitions are intentionally abbreviated
+// and labeled as such rather than presented as a complete ROS installation.
 const INTERFACES: Record<string, string[]> = {
   "geometry_msgs/msg/Twist": [
     "# A velocity in free space.",
@@ -120,6 +120,14 @@ const INTERFACES: Record<string, string[]> = {
     "int8[] data",
   ],
   "std_msgs/msg/String": ["string data"],
+  "std_msgs/msg/Int32": ["int32 data"],
+  "std_msgs/msg/Float32": ["float32 data"],
+  "std_msgs/msg/Bool": ["bool data"],
+  "std_srvs/srv/Empty": ["---"],
+  "std_srvs/srv/SetBool": ["bool data", "---", "bool success", "string message"],
+  "geometry_msgs/msg/PointStamped": ["std_msgs/Header header", "geometry_msgs/Point point"],
+  "geometry_msgs/msg/PoseArray": ["std_msgs/Header header", "geometry_msgs/Pose[] poses"],
+  "nav_msgs/msg/Path": ["std_msgs/Header header", "geometry_msgs/PoseStamped[] poses"],
   "geometry_msgs/msg/Pose": ["Point position", "Quaternion orientation"],
   "rcl_interfaces/msg/ParameterEvent": [
     "builtin_interfaces/Time stamp",
@@ -128,10 +136,32 @@ const INTERFACES: Record<string, string[]> = {
     "Parameter[] changed_parameters",
     "Parameter[] deleted_parameters",
   ],
+  "rcl_interfaces/srv/SetParameters": [
+    "Parameter[] parameters",
+    "---",
+    "SetParametersResult[] results",
+  ],
+  "rcl_interfaces/srv/GetParameters": ["string[] names", "---", "ParameterValue[] values"],
+  "nav2_msgs/action/NavigateToPose": [
+    "# Goal",
+    "geometry_msgs/PoseStamped pose",
+    "string behavior_tree",
+    "---",
+    "# Result (error constants omitted)",
+    "uint16 error_code",
+    "string error_msg",
+    "---",
+    "# Feedback (selected fields)",
+    "geometry_msgs/PoseStamped current_pose",
+    "builtin_interfaces/Duration navigation_time",
+    "builtin_interfaces/Duration estimated_time_remaining",
+    "int16 number_of_recoveries",
+    "float32 distance_remaining",
+  ],
 };
 
 const HELP = [
-  "Available commands  (T or Esc to close):",
+  "Available commands  (Esc to leave input; q / exit to unfocus):",
   "",
   "  ros2 topic list [-t]",
   "  ros2 topic info  <topic>",
@@ -140,7 +170,7 @@ const HELP = [
   "  ros2 topic hz    <topic>",
   "  ros2 node list",
   "  ros2 node info   <node>",
-  "  ros2 service list",
+  "  ros2 service list [-t]",
   "  ros2 service type <service>",
   "  ros2 action list [-t]",
   "  ros2 action info <action>",
@@ -149,7 +179,7 @@ const HELP = [
   "  ros2 interface show <type>",
   "  ros2 doctor",
   "  clear      # clear screen",
-  "  q | exit   # close terminal",
+  "  q | exit   # leave terminal input",
   "",
   "history navigation: ↑ / ↓",
 ];
@@ -190,18 +220,20 @@ export function execCommand(raw: string, state: RuntimeState, concept?: Ros2Conc
     case "service":
       return { lines: execService(noun, rest, state) };
     case "action":
-      return { lines: execAction(noun, rest, concept) };
+      return { lines: execAction(noun, rest, state) };
     case "param":
-      return { lines: execParam(noun, rest, concept) };
+      return { lines: execParam(noun, rest, state) };
     case "lifecycle":
       return { lines: execLifecycle(noun, rest, state) };
     case "interface":
-      return { lines: execInterface(noun, rest, concept) };
+      return { lines: execInterface(noun, rest, state, concept) };
     case "run":
     case "launch":
       return { lines: [unsupportedMutation(`ros2 ${verb}`)] };
     case "doctor":
-      return { lines: ["All 1 checks passed"] };
+      return {
+        lines: [t("terminal.doctor", { nodes: state.nodes.length, topics: state.topics.length })],
+      };
     default:
       return { lines: [`Command not implemented: ros2 ${verb}`, `try: help`] };
   }
@@ -233,12 +265,8 @@ function execTopic(verb: string, rest: string[], s: RuntimeState): string[] {
       if (!valid) return [`Topic '${rest[0]}' not found.`];
       const recent = s.recentMessages(rest[0], 5);
       if (recent.length === 0)
-        return [
-          `(waiting for messages on ${rest[0]} ...)`,
-          `// このトピックは存在しますが、まだメッセージが流れていません。`,
-          `// ステージで操作するとここに流れます。`,
-        ];
-      const lines: string[] = [];
+        return [t("terminal.noMessages", { topic: rest[0] }), t("terminal.snapshot", { count: 0 })];
+      const lines: string[] = [t("terminal.snapshot", { count: recent.length })];
       recent.forEach((m, i) => {
         lines.push(m.msg);
         if (i < recent.length - 1) lines.push("---");
@@ -252,7 +280,11 @@ function execTopic(verb: string, rest: string[], s: RuntimeState): string[] {
       if (recent.length < 2) return [`(not enough messages on ${rest[0]} yet)`];
       const dt = recent[recent.length - 1].ts - recent[0].ts;
       const hz = (recent.length - 1) / Math.max(dt, 0.001);
-      return [`average rate: ${hz.toFixed(2)} Hz`, `\twindow: ${recent.length} samples`];
+      return [
+        `average rate: ${hz.toFixed(2)} Hz`,
+        `\twindow: ${recent.length} samples`,
+        t("terminal.rateSnapshot"),
+      ];
     }
     case "pub": {
       return [unsupportedMutation("ros2 topic pub")];
@@ -274,6 +306,8 @@ function execNode(verb: string, rest: string[], s: RuntimeState): string[] {
       const subs = s.topics.filter((t) => t.sub?.includes(name));
       const pubs = s.topics.filter((t) => t.pub?.includes(name));
       const services = (s.services ?? []).filter((sv) => sv.node === name);
+      const clients = (s.actions ?? []).filter((action) => action.clients?.includes(name));
+      const servers = (s.actions ?? []).filter((action) => action.servers?.includes(name));
       const out: string[] = [name, ""];
       out.push("  Subscribers:");
       if (subs.length === 0) out.push("    (none)");
@@ -284,6 +318,12 @@ function execNode(verb: string, rest: string[], s: RuntimeState): string[] {
       out.push("", "  Service Servers:");
       if (services.length === 0) out.push("    (none)");
       else services.forEach((sv) => out.push(`    ${sv.name}: ${sv.type}`));
+      out.push("", "  Action Clients:");
+      if (clients.length === 0) out.push("    (none)");
+      else clients.forEach((action) => out.push(`    ${action.name}: ${action.type}`));
+      out.push("", "  Action Servers:");
+      if (servers.length === 0) out.push("    (none)");
+      else servers.forEach((action) => out.push(`    ${action.name}: ${action.type}`));
       return out;
     }
     default:
@@ -296,7 +336,9 @@ function execService(verb: string, rest: string[], s: RuntimeState): string[] {
   switch (verb) {
     case "list":
       return (s.services ?? []).length
-        ? (s.services ?? []).map((sv) => sv.name)
+        ? (s.services ?? []).map((sv) =>
+            rest.includes("-t") ? `${sv.name} [${sv.type}]` : sv.name,
+          )
         : ["(no services in this stage)"];
     case "type": {
       const sv = (s.services ?? []).find((x) => x.name === rest[0]);
@@ -310,34 +352,8 @@ function execService(verb: string, rest: string[], s: RuntimeState): string[] {
   }
 }
 
-interface ActionSpec {
-  name: string;
-  type: string;
-}
-
-function actionSpecs(concept?: Ros2Concept): ActionSpec[] {
-  const found = new Map<string, string>();
-  for (const line of concept?.cli ?? []) {
-    const m = line
-      .replace(/\\\s*\n\s*/g, " ")
-      .match(/ros2 action (?:info|send_goal)\s+(\/\S+)(?:\s+([^\s'\"]+\/action\/[^\s'\"]+))?/);
-    if (m)
-      found.set(
-        m[1],
-        m[2] ?? concept?.msgTypes.find((x) => x.includes("/action/")) ?? "(unknown action type)",
-      );
-  }
-  if (found.size === 0) {
-    const type = concept?.msgTypes.find((x) => x.includes("/action/"));
-    if (type?.endsWith("/GripperCommand")) found.set("/gripper_controller/gripper_cmd", type);
-    else if (type?.endsWith("/NavigateToPose")) found.set("/navigate_to_pose", type);
-    else if (type?.endsWith("/FollowPath")) found.set("/follow_path", type);
-  }
-  return [...found].map(([name, type]) => ({ name, type }));
-}
-
-function execAction(verb: string, rest: string[], concept?: Ros2Concept): string[] {
-  const actions = actionSpecs(concept);
+function execAction(verb: string, rest: string[], state: RuntimeState): string[] {
+  const actions = state.actions ?? [];
   if (!verb) return ["Usage: ros2 action <list|info|send_goal> ..."];
   if (verb === "list")
     return actions.length
@@ -348,50 +364,34 @@ function execAction(verb: string, rest: string[], concept?: Ros2Concept): string
   if (!name) return [`Usage: ros2 action ${verb} <action> ...`];
   if (!action) return [`Action '${name}' not found in this stage.`];
   if (verb === "info")
-    return [`Action: ${name}`, `Action clients: 1`, `Action servers: 1`, `Type: ${action.type}`];
+    return [
+      `Action: ${name}`,
+      `Action clients: ${action.clients?.length ?? 0}`,
+      ...(action.clients ?? []).map((node) => `  ${node}`),
+      `Action servers: ${action.servers?.length ?? 0}`,
+      ...(action.servers ?? []).map((node) => `  ${node}`),
+      `Type: ${action.type}`,
+    ];
   if (verb === "send_goal") {
     return [unsupportedMutation("ros2 action send_goal")];
   }
   return [`Unknown action verb: ${verb}`];
 }
 
-const paramValues = new Map<string, Map<string, string>>();
-
-/** Clear mutable state owned by the simulated shell between stages. */
-export function resetTerminalState(): void {
-  paramValues.clear();
-}
-
-function paramsFor(node: string): Map<string, string> {
-  let params = paramValues.get(node);
-  if (!params) {
-    params = new Map([
-      ["max_speed", "0.4"],
-      ["turn_gain", "1.0"],
-      ["accel", "0.8"],
-      ["use_sim_time", "false"],
-    ]);
-    paramValues.set(node, params);
-  }
-  return params;
-}
-
-function execParam(verb: string, rest: string[], concept?: Ros2Concept): string[] {
+function execParam(verb: string, rest: string[], state: RuntimeState): string[] {
   if (!verb) return ["Usage: ros2 param <list|get|set|dump> <node> ..."];
   const node = rest[0];
   if (!node) return [`Usage: ros2 param ${verb} <node> ...`];
-  if (!(concept?.state?.nodes ?? []).includes(node))
-    return [`Node '${node}' not found in this stage.`];
-  const params = paramsFor(node);
+  if (!state.nodes.includes(node)) return [`Node '${node}' not found in this stage.`];
+  if (verb === "set") return [unsupportedMutation("ros2 param set")];
+  const params = new Map(Object.entries(state.parameters?.[node] ?? {}));
+  if (params.size === 0) return [t("terminal.noParameters", { node })];
   if (verb === "list") return [...params.keys()].map((k) => `  ${k}`);
   const key = rest[1];
   if (verb === "get")
     return key && params.has(key)
       ? [`${key}: ${params.get(key)}`]
       : [`Parameter '${key ?? "(missing)"}' not found.`];
-  if (verb === "set") {
-    return [unsupportedMutation("ros2 param set")];
-  }
   if (verb === "dump")
     return [
       `${node.replace(/^\//, "")}:`,
@@ -405,7 +405,12 @@ function execLifecycle(verb: string, rest: string[], s: RuntimeState): string[] 
   if (!verb || !rest[0]) return ["Usage: ros2 lifecycle <get|set> <node> [transition]"];
   const node = rest[0];
   if (!s.nodes.includes(node)) return [`Node '${node}' not found.`];
-  if (verb === "get") return ["active [3]"];
+  if (verb === "get") {
+    const lifecycle = s.lifecycle?.[node];
+    return lifecycle
+      ? [`${lifecycle.label} [${lifecycle.id}]`]
+      : [t("terminal.noLifecycle", { node })];
+  }
   if (verb === "set") {
     return [unsupportedMutation("ros2 lifecycle set")];
   }
@@ -416,15 +421,26 @@ function unsupportedMutation(command: string): string {
   return t("terminal.unsupported", { command });
 }
 
-function execInterface(verb: string, rest: string[], concept?: Ros2Concept): string[] {
+function execInterface(
+  verb: string,
+  rest: string[],
+  state: RuntimeState,
+  concept?: Ros2Concept,
+): string[] {
   if (verb !== "show") return [`Usage: ros2 interface show <type>`];
   const t = rest[0];
   if (!t) return [`Usage: ros2 interface show <type>`];
   const lines = INTERFACES[t];
-  if (!lines && concept?.msgTypes.includes(t))
+  const declared = [
+    ...(concept?.msgTypes ?? []),
+    ...state.topics.map((topic) => topic.type),
+    ...(state.services ?? []).map((service) => service.type),
+    ...(state.actions ?? []).map((action) => action.type),
+  ];
+  if (!lines && declared.includes(t))
     return [
       `# ${t}`,
-      "# This interface is active in the current stage.",
+      "# Interface type declared by this simulation.",
       "# Its complete field definition is omitted by the lightweight simulator.",
     ];
   if (!lines)
@@ -433,5 +449,16 @@ function execInterface(verb: string, rest: string[], concept?: Ros2Concept): str
       `Available:`,
       ...Object.keys(INTERFACES).map((k) => `  ${k}`),
     ];
-  return lines;
+  const complete = new Set([
+    "std_msgs/msg/String",
+    "std_msgs/msg/Int32",
+    "std_msgs/msg/Float32",
+    "std_msgs/msg/Bool",
+    "std_srvs/srv/Empty",
+    "std_srvs/srv/SetBool",
+    "std_srvs/srv/Trigger",
+  ]);
+  return complete.has(t)
+    ? lines
+    : ["# Simplified interface summary; nested fields may be omitted.", ...lines];
 }

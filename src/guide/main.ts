@@ -1,16 +1,16 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
-import "../core/stage_collect";
-import { getDiagram, getLessonNumbers, getStageModes, getStages } from "../core/stage_def";
+import { getDiagram, getLessonNumbers, getStageModes, getStages } from "./stages";
 import { startDemo, stopDemo } from "../core/lesson_demo";
 import { getLang, setLang } from "../i18n";
-import type { Stage } from "../types";
+import type { StageMeta } from "../types";
 import { cardPreviewFor, guideCopyFor } from "./content";
 import { setupCardDemos } from "./card_demos";
 import { setupHeroShowcase } from "./hero_showcase";
 import { guideText as gt, localizeStaticGuide } from "./localization";
 import { stageDisplayLesson, stageDisplayName } from "../core/stage_labels";
+import { recommendedInspectionCommand } from "../lib/terminal_commands";
 import {
   setupAnalytics,
   trackGuideOpen,
@@ -45,22 +45,7 @@ const escapeHtml = (value: string): string =>
       })[char] ?? char,
   );
 
-function stageDescription(stage: Stage): string {
-  const displayName = stageDisplayName(stage);
-  if (getLang() === "en") {
-    const interfaceName = stage.ros2?.msgTypes[0]?.split("/").at(-1) ?? "ROS 2 interfaces";
-    return `Follow how ${displayName} receives input, updates its internal state, and produces an output through ${interfaceName}. Use the animation and ROS 2 graph to connect each visible change with the data exchanged by the nodes.`;
-  }
-  return (
-    stage.ros2?.summary ??
-    gt(
-      `${displayName}を通して、ロボットシステムの基本的な考え方を体験します。`,
-      `Use ${displayName} to explore the fundamental structure of a robot system.`,
-    )
-  );
-}
-
-function stageCard(stage: Stage, index: number, mode: "game" | "lesson"): string {
+function stageCard(stage: StageMeta, index: number, mode: "game" | "lesson"): string {
   const concept =
     getLang() === "ja"
       ? stageDisplayLesson(stage)
@@ -115,7 +100,11 @@ function stageCard(stage: Stage, index: number, mode: "game" | "lesson"): string
   `;
 }
 
-function renderGrid(container: HTMLElement, collection: Stage[], mode: "game" | "lesson"): void {
+function renderGrid(
+  container: HTMLElement,
+  collection: StageMeta[],
+  mode: "game" | "lesson",
+): void {
   container.innerHTML = collection.map((stage, index) => stageCard(stage, index, mode)).join("");
 }
 
@@ -138,13 +127,14 @@ function setStageQuery(stageId?: string): void {
   history.replaceState(null, "", url.pathname + url.search + url.hash);
 }
 
-function openStage(stage: Stage, syncUrl = true): void {
+function openStage(stage: StageMeta, syncUrl = true): void {
   stopDemo();
   const mode = modes.get(stage.id) ?? "game";
   const ros = stage.ros2;
   const copy = guideCopyFor(stage);
   const topics = ros?.state?.topics ?? [];
   const services = ros?.state?.services ?? [];
+  const actions = ros?.state?.actions ?? [];
   const nodes = ros?.state?.nodes ?? [];
   const diagram = getDiagram(stage.id);
   const displayName = stageDisplayName(stage);
@@ -160,7 +150,7 @@ function openStage(stage: Stage, syncUrl = true): void {
       <header class="lesson-page-header">
         <div>
           <div class="dialog-kicker">${number} / ${mode.toUpperCase()}</div>
-          <h2>${escapeHtml(displayName)}</h2>
+          <h2 id="dialog-stage-title">${escapeHtml(displayName)}</h2>
           <p class="dialog-lead">${escapeHtml(getLang() === "ja" ? displayLesson : (ros?.title ?? stage.lesson ?? "Robot System"))}</p>
         </div>
         <span class="lesson-page-id">${escapeHtml(stage.id)}</span>
@@ -169,7 +159,7 @@ function openStage(stage: Stage, syncUrl = true): void {
       <div class="lesson-visual">
         <div class="lesson-visual-bar">
           <span><i></i> ${mode === "game" ? gt("プレイ例", "PLAY DEMO") : gt("しくみ図", "SYSTEM DIAGRAM")}</span>
-          <span>${mode === "game" ? gt("シミュレーション / 再生中", "SIMULATION / LIVE") : gt("メッセージの流れ", "MESSAGE FLOW / LIVE")}</span>
+          <span>${mode === "game" ? gt("デモアニメーション", "DEMO ANIMATION") : gt("教材の説明図", "CONCEPT DIAGRAM")}</span>
         </div>
         <div class="lesson-visual-stage">
           ${
@@ -187,8 +177,8 @@ function openStage(stage: Stage, syncUrl = true): void {
           <div class="visual-scanline"></div>
         </div>
         <div class="lesson-visual-status">
-          <span>&gt;_ ${escapeHtml(stage.lessonCmd || ros?.cli[0] || "ros2 node list")}</span>
-          <b><i></i> RUNNING</b>
+          <span>&gt;_ ${escapeHtml(recommendedInspectionCommand(ros))}</span>
+          <b>${gt("コマンド例", "COMMAND EXAMPLE")}</b>
         </div>
       </div>
 
@@ -240,11 +230,11 @@ function openStage(stage: Stage, syncUrl = true): void {
                 )
                 .join("")}
             </div>
-            <p class="article-body">${escapeHtml(stageDescription(stage))}</p>
+            <p class="article-body">${gt("図と通信一覧はブラウザ内の教材を表しています。下のコマンドはLesson・Game内の疑似ターミナルで使う例です。", "The diagram and graph describe this browser simulation. The command examples can be used in the Lesson or Game's simulated terminal.")}</p>
           </section>
 
           ${
-            topics.length || services.length || nodes.length
+            topics.length || services.length || actions.length || nodes.length
               ? `
             <section class="article-section">
               <div class="article-heading">
@@ -260,7 +250,7 @@ function openStage(stage: Stage, syncUrl = true): void {
               `
                   : ""
               }
-              <div class="topic-list topic-list--animated">
+              <div class="topic-list">
                 ${topics
                   .map(
                     (topic) => `
@@ -268,7 +258,6 @@ function openStage(stage: Stage, syncUrl = true): void {
                     <b>TOPIC</b>
                     <code>${escapeHtml(topic.name)}</code>
                     <span>${escapeHtml(topic.type)}</span>
-                    <i class="topic-pulse"></i>
                   </div>
                 `,
                   )
@@ -280,7 +269,18 @@ function openStage(stage: Stage, syncUrl = true): void {
                     <b>SERVICE</b>
                     <code>${escapeHtml(service.name)}</code>
                     <span>${escapeHtml(service.type)}</span>
-                    <i class="topic-pulse"></i>
+                  </div>
+                `,
+                  )
+                  .join("")}
+                ${actions
+                  .map(
+                    (action) => `
+                  <div class="action-graph-entry">
+                    <b>ACTION</b>
+                    <code>${escapeHtml(action.name)}</code>
+                    <span>${escapeHtml(action.type)}</span>
+                    <p><strong>Client</strong> ${escapeHtml((action.clients ?? []).join(", ") || "—")}<br><strong>Server</strong> ${escapeHtml((action.servers ?? []).join(", ") || "—")}</p>
                   </div>
                 `,
                   )
@@ -301,6 +301,11 @@ function openStage(stage: Stage, syncUrl = true): void {
               <p>${escapeHtml(copy.exercise)}</p>
             </div>
           </section>
+          ${
+            copy.details?.length
+              ? `<details class="guide-details"><summary>${gt("詳しく読む：モデルのしくみと教材の範囲", "Read more: the model and the scope of this lesson")}</summary>${copy.details.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")}</details>`
+              : ""
+          }
         </div>
 
         <aside class="lesson-rail">
@@ -319,7 +324,7 @@ function openStage(stage: Stage, syncUrl = true): void {
               ? `
             <div class="rail-card">
               <span class="dialog-label">TRY THIS COMMAND</span>
-              <pre class="command-block"><span>$</span> ${escapeHtml(ros.cli[0])}</pre>
+              <pre class="command-block"><span>$</span> ${escapeHtml(recommendedInspectionCommand(ros))}</pre>
             </div>
           `
               : ""
@@ -348,6 +353,8 @@ function openStage(stage: Stage, syncUrl = true): void {
     </article>
   `;
   dialog.showModal();
+  dialog.scrollTop = 0;
+  dialogContent.scrollTop = 0;
   trackGuideOpen(stage.id, mode);
   if (syncUrl) setStageQuery(stage.id);
   if (mode === "game") requestAnimationFrame(() => startDemo(stage.id));
@@ -380,23 +387,106 @@ dialog.addEventListener("click", (event) => {
 
 const sidebar = byId("guide-sidebar");
 const scrim = byId("mobile-scrim");
-const closeMenu = (): void => {
-  sidebar.classList.remove("open");
-  scrim.classList.remove("show");
-};
-byId("menu-toggle").addEventListener("click", () => {
-  sidebar.classList.toggle("open");
-  scrim.classList.toggle("show");
+const menuToggle = byId<HTMLButtonElement>("menu-toggle");
+const menuClose = byId<HTMLButtonElement>("menu-close");
+const guideShell = document.querySelector<HTMLElement>(".guide-shell")!;
+const mobileMenu = window.matchMedia("(max-width: 760px)");
+let menuOpen = false;
+let menuPreviousFocus: HTMLElement | null = null;
+
+function renderMenu(): void {
+  const open = mobileMenu.matches && menuOpen;
+  sidebar.classList.toggle("open", open);
+  scrim.classList.toggle("show", open);
+  sidebar.inert = mobileMenu.matches && !open;
+  sidebar.setAttribute("aria-hidden", String(sidebar.inert));
+  guideShell.inert = open;
+  menuToggle.setAttribute("aria-expanded", String(open));
+  menuToggle.setAttribute("aria-label", gt("メニューを開く", "Open menu"));
+  menuClose.setAttribute("aria-label", gt("メニューを閉じる", "Close menu"));
+  if (open) {
+    sidebar.setAttribute("role", "dialog");
+    sidebar.setAttribute("aria-modal", "true");
+    sidebar.setAttribute("aria-label", gt("ガイドメニュー", "Guide menu"));
+  } else {
+    sidebar.removeAttribute("role");
+    sidebar.removeAttribute("aria-modal");
+    sidebar.removeAttribute("aria-label");
+  }
+}
+
+function closeMenu(restoreFocus = true): void {
+  const wasOpen = menuOpen;
+  menuOpen = false;
+  renderMenu();
+  if (wasOpen && restoreFocus) {
+    const target = menuPreviousFocus?.isConnected ? menuPreviousFocus : menuToggle;
+    target.focus({ preventScroll: true });
+  }
+  menuPreviousFocus = null;
+}
+
+menuToggle.addEventListener("click", () => {
+  if (menuOpen) return closeMenu();
+  if (!mobileMenu.matches) return;
+  menuPreviousFocus = document.activeElement as HTMLElement | null;
+  menuOpen = true;
+  renderMenu();
+  menuClose.focus({ preventScroll: true });
 });
-scrim.addEventListener("click", closeMenu);
-sidebar.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
+menuClose.addEventListener("click", () => closeMenu());
+scrim.addEventListener("click", () => closeMenu());
+sidebar.querySelectorAll("a").forEach((link) => {
+  link.addEventListener("click", () => {
+    if (!menuOpen) return;
+    closeMenu(false);
+    if (link.getAttribute("href")?.startsWith("#")) {
+      const section = document.getElementById(link.hash.slice(1));
+      section?.setAttribute("tabindex", "-1");
+      section?.focus({ preventScroll: true });
+    }
+  });
+});
+document.addEventListener("keydown", (event) => {
+  if (!menuOpen || !mobileMenu.matches) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeMenu();
+  } else if (event.key === "Tab") {
+    const controls = [...sidebar.querySelectorAll<HTMLElement>("a[href], button:not(:disabled)")];
+    const first = controls[0];
+    const last = controls.at(-1);
+    if (
+      event.shiftKey &&
+      (document.activeElement === first || !sidebar.contains(document.activeElement))
+    ) {
+      event.preventDefault();
+      last?.focus();
+    } else if (
+      !event.shiftKey &&
+      (document.activeElement === last || !sidebar.contains(document.activeElement))
+    ) {
+      event.preventDefault();
+      first?.focus();
+    }
+  }
+});
+mobileMenu.addEventListener("change", () => {
+  const focusWasInMenu = sidebar.contains(document.activeElement);
+  const focusWasToggle = document.activeElement === menuToggle;
+  closeMenu(false);
+  if (mobileMenu.matches && focusWasInMenu) menuToggle.focus({ preventScroll: true });
+  else if (!mobileMenu.matches && (focusWasInMenu || focusWasToggle)) {
+    sidebar.querySelector<HTMLAnchorElement>("a[href]")?.focus({ preventScroll: true });
+  }
+});
+renderMenu();
 
 const langButton = byId<HTMLButtonElement>("guide-lang");
 langButton.textContent = getLang().toUpperCase();
 langButton.addEventListener("click", () => {
   setLang(getLang() === "ja" ? "en" : "ja");
-  // Stage metadata is created when modules register, so reload to rebuild all
-  // stage copy in the newly selected language.
+  // Re-render the static shell and stage cards in the selected language.
   location.reload();
 });
 

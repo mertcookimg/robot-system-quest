@@ -197,7 +197,7 @@ export function setupModes(d: Deps): void {
       // Tab click opens the stage popup with that mode pre-selected.
       // The current stage isn't replaced until the user picks a pill.
       const target = btn.dataset.mode as Mode;
-      if (stageMenu.isOpen()) stageMenu.closeMenu();
+      if (stageMenu.isOpen() && target === currentMode) stageMenu.closeMenu();
       else stageMenu.openMenu(target);
     });
     btn.addEventListener("mouseenter", () => sfx.hover());

@@ -17,14 +17,25 @@ export const JA: Record<string, string> = {
   "ui.toast.newrecord": "ベスト更新",
   "terminal.title": "ROS 2概念端末（シミュレーション）",
   "terminal.stage": "ステージ: {name}",
-  "terminal.hint": "クリックして入力・↑/↓で履歴・helpで一覧",
+  "terminal.hint": "↑/↓で履歴・helpで一覧・Esc / Bで画面へ戻る",
   "terminal.command": "コマンド",
   "terminal.select": "コマンドを選択…",
   "terminal.inspect": "観察",
   "terminal.run": "▶ 実行",
+  "terminal.resume": "画面へ戻る",
   "terminal.input": "ROS 2コマンドを入力（helpで一覧）",
   "terminal.welcome": "Robot System Quest ROS 2概念端末（シミュレーション）",
-  "terminal.guide": "下からコマンドを選ぶか、直接入力してください。helpで一覧を表示します。",
+  "terminal.guide":
+    "コマンドを選ぶか、直接入力してください。操作中は一時停止します。「画面へ戻る」・Esc・ゲームパッドBで再開します。",
+  "terminal.noMessages":
+    "{topic} の保存ログはまだありません。Lessonで操作してから再実行してください。",
+  "terminal.snapshot": "# 実行時点の保存ログ：最新{count}件。更新するにはコマンドを再実行します。",
+  "terminal.rateSnapshot":
+    "# 保存ログの間隔から算出した値です。操作時だけ出るイベントは一定周期ではありません。",
+  "terminal.noParameters": "{node} は、この教材で参照できるパラメータを公開していません。",
+  "terminal.noLifecycle": "{node} は、この教材でライフサイクル状態を管理していません。",
+  "terminal.doctor":
+    "疑似グラフ：ノード{nodes}個・トピック{topics}個。実際のROS 2環境や実機の診断は行いません。",
   "terminal.unsupported":
     "{command}: このステージでは実行できません。観察用のコマンドを選んでください。",
 

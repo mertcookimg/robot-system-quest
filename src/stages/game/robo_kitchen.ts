@@ -69,6 +69,7 @@ export function makeRoboKitchen(): Stage {
   let spawnDelay = 0;
   let beltPhase = 0;
   let animTime = 0;
+  let pubAcc = 0;
   let mistakeFlash = 0;
   let edgeFlash = 0;
   let cleared = false;
@@ -195,6 +196,7 @@ export function makeRoboKitchen(): Stage {
     spawnDelay = 0.6;
     beltPhase = 0;
     animTime = 0;
+    pubAcc = 0;
     mistakeFlash = 0;
     edgeFlash = 0;
     cleared = false;
@@ -296,6 +298,25 @@ export function makeRoboKitchen(): Stage {
           ingredient.y = BELT.y + 20;
           g.setStatus(t("robo_kitchen.status.looped"), "");
         }
+      }
+    }
+
+    pubAcc += dt;
+    if (pubAcc >= 0.2) {
+      pubAcc = 0;
+      g.publish(
+        "/kitchen/order",
+        `data: ${JSON.stringify(`recipe=${recipe().name} layer=${layerIdx + 1}/${recipe().layers.length} next=${needed()} completed=${completed} score=${score}`)}`,
+      );
+      g.publish(
+        "/joint_states",
+        `name: [shoulder, elbow] position_rad: [${q1.toFixed(3)}, ${q2.toFixed(3)}] gripper_closed: ${gripClosed}`,
+      );
+      if (ingredient) {
+        g.publish(
+          "/ingredient_pose",
+          `frame: kitchen position_px: {x: ${ingredient.x.toFixed(1)}, y: ${ingredient.y.toFixed(1)}} yaw: ${ingredient.angle.toFixed(3)} kind: ${ingredient.kind} held: ${held}`,
+        );
       }
     }
 
@@ -486,19 +507,23 @@ export function makeRoboKitchen(): Stage {
     id: "robo_kitchen",
     name: "Robo Kitchen",
     lesson: "Arm Cooking Challenge",
-    lessonCmd:
-      "ros2 action send_goal /gripper_controller/gripper_cmd control_msgs/action/GripperCommand '{command: {position: 0.0, max_effort: 20.0}}'",
+    lessonCmd: "ros2 topic echo /kitchen/order",
     ros2: {
       title: tx("Robo Kitchen — 操作シーケンス", "Robo Kitchen — manipulation sequences"),
       summary: tx(
         "注文を工程に分解し、認識・把持・搬送を順番に実行します。実機のロボットで行うタスクプランニングを、スコアアタック形式で体験するゲームです。",
         "Break an order into steps and execute perception, grasping and transport in sequence — task planning as a score attack.",
       ),
-      msgTypes: ["geometry_msgs/msg/PoseStamped", "control_msgs/action/GripperCommand"],
+      msgTypes: [
+        "std_msgs/msg/String",
+        "sensor_msgs/msg/JointState",
+        "geometry_msgs/msg/PoseStamped",
+      ],
       cli: [
-        "ros2 action list -t",
+        "ros2 node info /robo_chef",
         "ros2 topic echo /kitchen/order",
         "ros2 topic echo /joint_states",
+        "ros2 topic echo /ingredient_pose",
       ],
       python: `for ingredient in order.recipe:\n    target = vision.wait_for(ingredient)\n    arm.pick(target.pose)\n    arm.place(plate_pose)\nchef.complete_order(order.id)`,
       realWorld: tx(
@@ -506,7 +531,7 @@ export function makeRoboKitchen(): Stage {
         "Food and logistics cells similarly orchestrate vision, MoveIt 2 planning and gripper actions from a task node.",
       ),
       state: {
-        nodes: ["/robo_chef", "/ingredient_detector", "/move_group", "/gripper_controller"],
+        nodes: ["/robo_chef", "/ingredient_detector", "/order_server", "/arm_controller"],
         topics: [
           {
             name: "/kitchen/order",
@@ -524,7 +549,7 @@ export function makeRoboKitchen(): Stage {
             name: "/joint_states",
             type: "sensor_msgs/msg/JointState",
             pub: ["/arm_controller"],
-            sub: ["/move_group"],
+            sub: ["/robo_chef"],
           },
         ],
       },

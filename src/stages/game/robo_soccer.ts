@@ -291,7 +291,7 @@ export function makeRoboSoccer(): Stage {
     mode2P = active;
     overlayPanel?.refresh();
     g.sfx.click();
-    reset();
+    (g.resetStage ?? reset)();
   }
 
   function dispose() {
@@ -1134,7 +1134,7 @@ export function makeRoboSoccer(): Stage {
       summary:
         "プレイヤーは/cmd_velでロボットを動かします。味方と相手の計5体の自動制御ロボットは/ball/poseをsubscribeし、それぞれの役割（forward / mid / defender）に応じてボールを追います。" +
         "ROS 2のマルチロボット環境を単純化した構成で体験できます。",
-      msgTypes: ["geometry_msgs/msg/Twist", "geometry_msgs/msg/Pose"],
+      msgTypes: ["geometry_msgs/msg/Twist", "geometry_msgs/msg/Pose", "std_msgs/msg/String"],
       cli: ["ros2 topic list", "ros2 topic echo /ball/pose", "ros2 topic echo /soccer/score"],
       python: `# 各ロボが /ball/pose を subscribe して役割ごとの cmd_vel を計算する
 class SoccerBot(Node):
@@ -1152,23 +1152,53 @@ class SoccerBot(Node):
         "Real RoboCup soccer follows the same recipe: each robot subscribes to the shared ball pose and computes its own cmd_vel based on its role (Forward / Defender / Goalie). This stage shows the minimum multi-robot setup.",
       ),
       state: {
-        nodes: ["/player_node", "/ai_p2", "/ai_p3", "/ai_o1", "/ai_o2", "/ai_o3", "/ball_tracker"],
-        topics: [
-          {
-            name: "/cmd_vel",
-            type: "geometry_msgs/msg/Twist",
-            pub: ["/player_node"],
-            sub: ["/robot"],
-          },
-          {
-            name: "/ball/pose",
-            type: "geometry_msgs/msg/Pose",
-            pub: ["/ball_tracker"],
-            sub: ["/player_node", "/ai_p2", "/ai_p3", "/ai_o1", "/ai_o2", "/ai_o3"],
-          },
-          { name: "/soccer/score", type: "std_msgs/msg/String", pub: ["/ball_tracker"] },
-          { name: "/goal/scored", type: "std_msgs/msg/String", pub: ["/ball_tracker"] },
-        ],
+        get nodes() {
+          return [
+            "/player_node",
+            "/robot",
+            "/ai_p2",
+            "/ai_p3",
+            ...(mode2P ? ["/player2_node", "/p2_robot"] : ["/ai_o1"]),
+            "/ai_o2",
+            "/ai_o3",
+            "/ball_tracker",
+          ];
+        },
+        get topics() {
+          return [
+            {
+              name: "/cmd_vel",
+              type: "geometry_msgs/msg/Twist",
+              pub: ["/player_node"],
+              sub: ["/robot"],
+            },
+            ...(mode2P
+              ? [
+                  {
+                    name: "/p2/cmd_vel",
+                    type: "geometry_msgs/msg/Twist",
+                    pub: ["/player2_node"],
+                    sub: ["/p2_robot"],
+                  },
+                ]
+              : []),
+            {
+              name: "/ball/pose",
+              type: "geometry_msgs/msg/Pose",
+              pub: ["/ball_tracker"],
+              sub: [
+                "/player_node",
+                "/ai_p2",
+                "/ai_p3",
+                ...(mode2P ? ["/player2_node"] : ["/ai_o1"]),
+                "/ai_o2",
+                "/ai_o3",
+              ],
+            },
+            { name: "/soccer/score", type: "std_msgs/msg/String", pub: ["/ball_tracker"] },
+            { name: "/goal/scored", type: "std_msgs/msg/String", pub: ["/ball_tracker"] },
+          ];
+        },
       },
     },
     init,

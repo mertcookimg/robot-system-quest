@@ -178,20 +178,19 @@ export function makeWarden(): Stage {
         particles.burst(hp.x, hp.y, "#7dd3fc", 36, 260);
         g.sfx.pickup();
         g.shake(0.4);
-        // The hack IS a std_srvs/srv/Trigger call on the warden's service —
-        // publish under that service name so `ros2 service call ...` / echo in
-        // the terminal matches what the game actually does.
+        // Record the modeled service response on a diagnostic topic. A service
+        // endpoint is not a topic and cannot be inspected with topic echo.
         g.publish(
-          hp.srv,
-          `Trigger.Response success:true message:"${hp.id} disabled, enemy_speed:${enemySpeedMul.toFixed(2)}"`,
+          "/warden/events",
+          `data: ${JSON.stringify(`service=${hp.srv} success=true module=${hp.id} enemy_speed=${enemySpeedMul.toFixed(2)}`)}`,
         );
         if (hacked.size === 3) {
           escapeOpen = true;
           enemySpeedMul = 0; // all enemies disabled
           g.setStatus(t("patrol.status.disabled"), "var(--ok)");
           g.publish(
-            "/warden/change_state",
-            "ChangeState.Response: transition=shutdown success:true",
+            "/warden/events",
+            'data: "service=/warden/change_state transition=shutdown success=true"',
           );
         } else {
           g.setStatus(t("patrol.status.hack_ok", { id: hp.id, n: hacked.size }), "var(--accent)");
@@ -226,6 +225,10 @@ export function makeWarden(): Stage {
     if (pubAcc > 1 / 20) {
       pubAcc = 0;
       g.publish("/cmd_vel", fmtTwist(cmd.lin / BASE_LIN, cmd.ang));
+      g.publish(
+        "/warden/pose",
+        `frame: world leader_position_px: {x: ${enemies[0].x.toFixed(1)}, y: ${enemies[0].y.toFixed(1)}} yaw: ${enemies[0].theta.toFixed(3)}`,
+      );
       g.publish(
         "/warden/state",
         `units:${enemies.length} speed_mul:${enemySpeedMul.toFixed(2)} lockon:${((lockon / LOCKON_TIME) * 100).toFixed(0)}%`,
@@ -643,8 +646,16 @@ export function makeWarden(): Stage {
         "最後の脱出ではLifecycle Nodeへshutdown遷移を要求し、Finalized状態へ移します。" +
         "これはノードの運用状態を管理する仕組みを教材向けに表現したもので、緊急停止装置そのものではありません。" +
         "継続的にデータを配信するPub/Subとは異なり、Serviceでは1つのRequestに1つのResponseが対応します。",
-      msgTypes: ["std_srvs/srv/Trigger", "lifecycle_msgs/srv/ChangeState"],
+      msgTypes: [
+        "std_srvs/srv/Trigger",
+        "lifecycle_msgs/srv/ChangeState",
+        "geometry_msgs/msg/Twist",
+        "geometry_msgs/msg/PoseStamped",
+        "std_msgs/msg/String",
+      ],
       cli: [
+        "ros2 lifecycle get /warden",
+        "ros2 topic echo /warden/events",
         "ros2 service list",
         "ros2 service type /warden/disable_camera",
         "ros2 service call /warden/disable_camera std_srvs/srv/Trigger",
@@ -673,7 +684,13 @@ class Hacker(Node):
       ),
       state: {
         nodes: ["/player", "/warden"],
+        get lifecycle() {
+          return {
+            "/warden": escapeOpen ? { id: 4, label: "finalized" } : { id: 3, label: "active" },
+          };
+        },
         topics: [
+          { name: "/warden/events", type: "std_msgs/msg/String", pub: ["/warden"] },
           { name: "/cmd_vel", type: "geometry_msgs/msg/Twist", pub: ["/player"], sub: [] },
           {
             name: "/warden/pose",

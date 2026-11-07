@@ -10,7 +10,6 @@
 // The teleop + pseudo-camera plumbing lives in lib/camera_mission — this
 // file keeps only the simulated detector and its right-hand panel.
 import { type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
 import { drawHint, COLORS, clearBackground } from "../../lib/draw";
@@ -26,7 +25,7 @@ import {
   FOCAL_LEN,
 } from "../../lib/camera_mission";
 import { formatPose } from "../../lib/hud";
-import { t, tx } from "../../i18n";
+import { t, tx, onLangChange } from "../../i18n";
 
 const TOPIC_CMD = "/cmd_vel";
 const TOPIC_DETECTION_IMG = "/obj_detection/image";
@@ -87,6 +86,9 @@ export function makeObjectDetection(): Stage {
   let editorEl: HTMLElement | null = null;
   let statusBadgeEl: HTMLElement | null = null;
   let bp: BlockProgramHandle | null = null;
+  let readoutEl: HTMLElement | null = null;
+  let viewEl: HTMLElement | null = null;
+  let offReadoutLanguage = () => {};
 
   function setStatusBadge(text: string, kind: "" | "running" | "success" | "error") {
     if (!statusBadgeEl) return;
@@ -102,11 +104,115 @@ export function makeObjectDetection(): Stage {
     cleared = false;
     isRunning = false;
     lastV = lastW = 0;
+    const modelBlock = [...program].reverse().find((block) => block.kind === "obj");
+    const filterBlock = [...program].reverse().find((block) => block.kind === "confidence_filter");
+    lastModel =
+      modelBlock?.kind === "obj" ? Math.max(0, Math.min(4, Math.round(modelBlock.model))) : 0;
+    lastThreshold =
+      filterBlock?.kind === "confidence_filter"
+        ? Math.max(0, Math.min(1, filterBlock.threshold))
+        : 0;
+    lastSimMs = 0;
     detections = [];
     g.ghost.startRecording();
     setStatusBadge("idle", "");
     g.setStatus(t("object_detection.tip"), "");
     refreshProgramUI();
+    refreshReadout();
+  }
+
+  function detectionMessage() {
+    return {
+      objects: detections.map((d) => ({
+        class: d.cls,
+        conf: Number(d.conf.toFixed(2)),
+        bbox: [d.bbox.x, d.bbox.y, d.bbox.w, d.bbox.h].map(Math.round),
+      })),
+    };
+  }
+
+  function setupReadout() {
+    const canvasWrap = g.canvas.closest<HTMLElement>(".canvas-wrap");
+    if (!canvasWrap?.parentNode) return;
+    const view = document.createElement("div");
+    view.className = "object-detection-view";
+    canvasWrap.before(view);
+    view.appendChild(canvasWrap);
+    viewEl = view;
+    const panel = document.createElement("section");
+    panel.className = "object-detection-readout";
+    panel.setAttribute("aria-labelledby", "object-detection-readout-title");
+    panel.innerHTML = `
+      <h3 id="object-detection-readout-title"></h3>
+      <dl class="object-detection-metrics">
+        ${["model", "threshold", "captured", "latency", "linear", "angular"]
+          .map((key) => `<div><dt data-label="${key}"></dt><dd data-value="${key}"></dd></div>`)
+          .join("")}
+      </dl>
+      <p class="object-detection-list-label"></p>
+      <ul class="object-detection-list"></ul>
+      <details class="object-detection-json">
+        <summary></summary>
+        <pre></pre>
+      </details>
+    `;
+    view.appendChild(panel);
+    readoutEl = panel;
+    const localize = () => {
+      panel.querySelector("h3")!.textContent = tx("検出結果", "Detection results");
+      const labels: Record<string, string> = {
+        model: tx("モデル", "Model"),
+        threshold: tx("信頼度の閾値", "Confidence threshold"),
+        captured: tx("見つけた物体", "Objects found"),
+        latency: tx("処理時間（疑似）", "Latency (simulated)"),
+        linear: tx("前進速度", "Linear speed"),
+        angular: tx("回転速度", "Angular speed"),
+      };
+      panel.querySelectorAll<HTMLElement>("[data-label]").forEach((label) => {
+        label.textContent = labels[label.dataset.label!];
+      });
+      panel.querySelector(".object-detection-list-label")!.textContent = tx(
+        "画像の番号 / クラス / 信頼度",
+        "Image number / class / confidence",
+      );
+      panel.querySelector("summary")!.textContent = tx("検出JSONを見る", "View detection JSON");
+      refreshReadout();
+    };
+    localize();
+    offReadoutLanguage = onLangChange(localize);
+  }
+
+  function refreshReadout() {
+    if (!readoutEl) return;
+    const values: Record<string, string> = {
+      model: MODELS[lastModel],
+      threshold: lastThreshold.toFixed(2),
+      captured: `${mission.capturedCount()} / ${OBJECTS.length}`,
+      latency: `${lastSimMs.toFixed(1)} ms`,
+      linear: `${lastV.toFixed(2)} m/s`,
+      angular: `${lastW.toFixed(2)} rad/s`,
+    };
+    readoutEl.querySelectorAll<HTMLElement>("[data-value]").forEach((element) => {
+      element.textContent = values[element.dataset.value!];
+    });
+    const list = readoutEl.querySelector("ul")!;
+    list.replaceChildren();
+    if (!detections.length) {
+      const empty = document.createElement("li");
+      empty.className = "object-detection-empty";
+      empty.textContent = tx("検出なし", "No detections");
+      list.appendChild(empty);
+    }
+    detections.forEach((d, index) => {
+      const row = document.createElement("li");
+      const name = document.createElement("span");
+      name.textContent = `${index + 1} ${d.cls}`;
+      const confidence = document.createElement("strong");
+      confidence.textContent = d.conf.toFixed(2);
+      row.append(name, confidence);
+      list.appendChild(row);
+    });
+    readoutEl.querySelector("pre")!.textContent = JSON.stringify(detectionMessage(), null, 2);
   }
 
   // -- Pseudo object inference.
@@ -214,6 +320,7 @@ export function makeObjectDetection(): Stage {
     statusBadgeEl = document.getElementById("be-status");
     if (editorEl) editorEl.style.display = "";
     mission.enter(ctx);
+    setupReadout();
 
     if (program.length === 0 && runCount === 0) {
       // Default: small model + slightly low threshold → FPs slip through
@@ -266,6 +373,14 @@ export function makeObjectDetection(): Stage {
     bp?.dispose();
     bp = null;
     mission.leave();
+    offReadoutLanguage();
+    if (viewEl) {
+      const canvasWrap = viewEl.querySelector(".canvas-wrap");
+      if (canvasWrap) viewEl.before(canvasWrap);
+      viewEl.remove();
+    }
+    viewEl = null;
+    readoutEl = null;
   }
 
   function refreshProgramUI() {
@@ -281,11 +396,13 @@ export function makeObjectDetection(): Stage {
     isRunning = true;
     captured.fill(false);
     detections = [];
+    lastSimMs = 0;
     lastV = lastW = 0;
     g.ghost.startRecording();
     setStatusBadge("running", "running");
     g.setStatus(t("object_detection.run_msg"), "var(--accent)");
     refreshProgramUI();
+    refreshReadout();
   }
 
   function onStop() {
@@ -296,6 +413,7 @@ export function makeObjectDetection(): Stage {
     setStatusBadge("stopped", "");
     g.setStatus(t("object_detection.stop"), "var(--warn)");
     refreshProgramUI();
+    refreshReadout();
   }
 
   // ── Update
@@ -330,14 +448,9 @@ export function makeObjectDetection(): Stage {
         TOPIC_DETECTION_IMG,
         `sensor_msgs/msg/Image ${IMG_W}x${IMG_H} bgr8 + N=${detections.length} bboxes`,
       );
-      // Publish detection as JSON (same shape as lesson 7/yl output).
-      const objList = detections
-        .map(
-          (d) =>
-            `{"class":"${d.cls}","conf":${d.conf.toFixed(2)},"bbox":[${d.bbox.x.toFixed(0)},${d.bbox.y.toFixed(0)},${d.bbox.w.toFixed(0)},${d.bbox.h.toFixed(0)}]}`,
-        )
-        .join(",");
-      g.publish(TOPIC_DETECTION_OBJ, `std_msgs/msg/String  {"objects":[${objList}]}`);
+      // The readable result panel and pseudo ROS message share the same values.
+      g.publish(TOPIC_DETECTION_OBJ, `std_msgs/msg/String  ${JSON.stringify(detectionMessage())}`);
+      refreshReadout();
     }
 
     // Physics + collision.
@@ -399,12 +512,9 @@ export function makeObjectDetection(): Stage {
     mission.drawRightPanelFrame(c);
 
     c.fillStyle = "#7dd3fc";
-    c.font = "700 12px ui-monospace, monospace";
+    c.font = "700 16px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText("CAMERA + DETECTOR", x0, 22);
-    c.fillStyle = "#6e7a9c";
-    c.font = "9px ui-monospace, monospace";
-    c.fillText(`${MODELS[lastModel]} thr=${lastThreshold.toFixed(2)}`, x0 + 110, 22);
 
     // INPUT camera image.
     c.drawImage(mission.camCanvas, x0, 32);
@@ -412,78 +522,26 @@ export function makeObjectDetection(): Stage {
     c.strokeRect(x0 - 1, 31, IMG_W + 2, IMG_H + 2);
 
     // Draw bboxes on the camera image.
-    for (const d of detections) {
+    for (const [index, d] of detections.entries()) {
       const col = d.color || "#7dd3fc";
       c.save();
       c.strokeStyle = col;
       c.lineWidth = d.isReal ? 1.6 : 1;
       c.globalAlpha = d.isReal ? 0.95 : 0.7;
       c.strokeRect(x0 + d.bbox.x, 32 + d.bbox.y, d.bbox.w, d.bbox.h);
-      // Label.
-      const label = `${d.cls} ${d.conf.toFixed(2)}`;
-      c.font = "700 9px ui-monospace, monospace";
+      // Match each box to the unscaled HTML result, without tiny repeated text.
+      const label = String(index + 1);
+      c.font = "700 16px ui-monospace, monospace";
       const tw = c.measureText(label).width;
       c.globalAlpha = d.isReal ? 0.85 : 0.55;
       c.fillStyle = col;
-      c.fillRect(x0 + d.bbox.x, 32 + d.bbox.y - 11, tw + 6, 11);
+      c.fillRect(x0 + d.bbox.x, 32 + d.bbox.y - 19, tw + 8, 19);
       c.fillStyle = COLORS.BG_DARK;
       c.globalAlpha = 1;
       c.textAlign = "left";
-      c.fillText(label, x0 + d.bbox.x + 3, 32 + d.bbox.y - 2);
+      c.fillText(label, x0 + d.bbox.x + 4, 32 + d.bbox.y - 3);
       c.restore();
     }
-
-    // Progress counter.
-    const capN = mission.capturedCount();
-    c.fillStyle = "rgba(0,0,0,0.55)";
-    c.fillRect(x0 + 6, 32 + IMG_H - 22, 110, 16);
-    c.fillStyle = capN === OBJECTS.length ? COLORS.OK : "#fbbf24";
-    c.font = "700 11px ui-monospace, monospace";
-    c.textAlign = "left";
-    c.fillText(`CAPTURED ${capN} / ${OBJECTS.length}`, x0 + 10, 32 + IMG_H - 10);
-
-    // DETECTION JSON (mock ROS publish view).
-    const yJson = 32 + IMG_H + 26;
-    c.fillStyle = "#7dd3fc";
-    c.font = "700 12px ui-monospace, monospace";
-    c.fillText("/obj_detection/objects", x0, yJson);
-    // JSON body.
-    c.fillStyle = withA(theme.scrim, 0.85);
-    c.fillRect(x0 - 1, yJson + 6, IMG_W + 2, 110);
-    c.strokeStyle = "rgba(35,44,77,0.9)";
-    c.strokeRect(x0 - 1, yJson + 6, IMG_W + 2, 110);
-    c.fillStyle = "#9aa6c8";
-    c.font = "9px ui-monospace, monospace";
-    let yLine = yJson + 18;
-    c.fillText(`{"objects": [`, x0 + 4, yLine);
-    yLine += 12;
-    const visible = detections.slice(0, 6);
-    for (const d of visible) {
-      const col = d.isReal ? "#5eead4" : "#fb7185";
-      c.fillStyle = col;
-      c.fillText(`  {"class":"${d.cls}","conf":${d.conf.toFixed(2)}},`, x0 + 4, yLine);
-      yLine += 11;
-    }
-    if (detections.length > visible.length) {
-      c.fillStyle = "#6e7a9c";
-      c.fillText(`  ... +${detections.length - visible.length}`, x0 + 4, yLine);
-      yLine += 11;
-    }
-    c.fillStyle = "#9aa6c8";
-    c.fillText(`]}`, x0 + 4, yLine);
-
-    // cmd_vel + latency
-    const yCmd = yJson + 130;
-    c.textAlign = "left";
-    c.fillStyle = "#9aa6c8";
-    c.font = "11px ui-monospace, monospace";
-    c.fillText(`cmd_vel:`, x0, yCmd);
-    c.fillStyle = "#eef2ff";
-    c.fillText(`v=${lastV.toFixed(2)}`, x0 + 60, yCmd);
-    c.fillText(`w=${lastW.toFixed(2)}`, x0 + 130, yCmd);
-    c.fillStyle = "#6e7a9c";
-    c.font = "10px ui-monospace, monospace";
-    c.fillText(`sim ${lastSimMs.toFixed(1)} ms`, x0, yCmd + 16);
 
     c.restore();
   }
@@ -492,7 +550,7 @@ export function makeObjectDetection(): Stage {
     id: "object_detection",
     name: "Object Detection",
     lesson: "Object Detection",
-    lessonCmd: "ros2 topic echo /detection/objects",
+    lessonCmd: "ros2 topic echo /obj_detection/objects",
     ros2: {
       title: tx("物体検出シミュレーション", "Simulated Object Detection"),
       summary:
@@ -501,12 +559,25 @@ export function makeObjectDetection(): Stage {
         "このシミュレーションでは、model sizeをnからxへ上げるほど基準ConfidenceとLatencyが増える設定です。" +
         "実機での精度・Confidence・処理速度は、モデル、学習データ、入力、Hardwareによって変わります。" +
         "confidence_filterのthresholdを調整し、誤検出を除きながらすべてのClassを検出するとクリアです。" +
-        "検出結果は/detection/objectsへJSON形式で擬似的にpublishします。",
+        "検出結果は/obj_detection/objectsへJSON形式で擬似的にpublishします。",
       msgTypes: ["sensor_msgs/msg/Image", "std_msgs/msg/String", "geometry_msgs/msg/Twist"],
+      state: {
+        nodes: ["/teleop", "/robot_node", "/object_detector"],
+        topics: [
+          {
+            name: TOPIC_CMD,
+            type: "geometry_msgs/msg/Twist",
+            pub: ["/teleop"],
+            sub: ["/robot_node"],
+          },
+          { name: TOPIC_DETECTION_IMG, type: "sensor_msgs/msg/Image", pub: ["/object_detector"] },
+          { name: TOPIC_DETECTION_OBJ, type: "std_msgs/msg/String", pub: ["/object_detector"] },
+        ],
+      },
       cli: [
-        "ros2 topic echo /detection/objects",
-        "ros2 topic hz /detection/image",
-        "ros2 topic info /detection/objects",
+        "ros2 topic echo /obj_detection/objects",
+        "ros2 topic hz /obj_detection/image",
+        "ros2 topic info /obj_detection/objects",
       ],
       python: `from cv_bridge import CvBridge
 import json
@@ -519,8 +590,8 @@ class ObjectDetectorNode(Node):
         self.model = load_detector("det_n")
         self.conf = 0.5
         self.sub = self.create_subscription(Image, "/image_raw", self.cb, 10)
-        self.pub_img = self.create_publisher(Image, "/detection/image", 10)
-        self.pub_obj = self.create_publisher(String, "/detection/objects", 10)
+        self.pub_img = self.create_publisher(Image, "/obj_detection/image", 10)
+        self.pub_obj = self.create_publisher(String, "/obj_detection/objects", 10)
     def cb(self, msg):
         img = bridge.imgmsg_to_cv2(msg, "bgr8")
         results = self.model(img, conf=self.conf)

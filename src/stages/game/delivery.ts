@@ -101,6 +101,14 @@ export function makeDelivery(): Stage {
     if (pubAcc > 1 / 20) {
       pubAcc = 0;
       g.publish(TOPIC, fmtTwist(cmd.lin / BASE_LIN, cmd.ang));
+      g.publish(
+        "/robot/odom",
+        `pose_px: {x: ${robot.x.toFixed(1)}, y: ${robot.y.toFixed(1)}} yaw: ${robot.theta.toFixed(3)}`,
+      );
+      g.publish(
+        "/robot/pose",
+        `frame: world position_px: {x: ${robot.x.toFixed(1)}, y: ${robot.y.toFixed(1)}} yaw: ${robot.theta.toFixed(3)}`,
+      );
     }
 
     g.ghost.recordPose(elapsed, robot.x, robot.y, robot.theta);
@@ -235,18 +243,22 @@ export function makeDelivery(): Stage {
     id: "delivery",
     name: "Delivery",
     lesson: "",
-    lessonCmd: "ros2 topic echo /cmd_vel",
+    lessonCmd: "ros2 topic echo /robot/manual_control/cmd_vel",
     ros2: defineRos2Concept({
       title: tx("Publisher — Topicでロボットを動かす", "Publisher — drive the robot via a topic"),
       summary:
-        "WASDのキー入力がgeometry_msgs/msg/Twistに変換され、Topic /cmd_velへpublishされます。" +
+        "WASDのキー入力がgeometry_msgs/msg/Twistに変換され、Topic /robot/manual_control/cmd_velへpublishされます。" +
         "ROS 2では、Node同士がTopicを通してMessageをやり取りします。これは最も基本的なPub/Sub通信です。",
-      msgTypes: ["geometry_msgs/msg/Twist"],
+      msgTypes: [
+        "geometry_msgs/msg/Twist",
+        "nav_msgs/msg/Odometry",
+        "geometry_msgs/msg/PoseStamped",
+      ],
       cli: [
         "ros2 topic list",
         "ros2 topic info /robot/manual_control/cmd_vel",
         "ros2 topic echo /robot/manual_control/cmd_vel",
-        'ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist \\\n  "{linear: {x: 0.3}, angular: {z: 0.0}}"',
+        "ros2 topic echo /robot/odom",
       ],
       python: `import rclpy
 from rclpy.node import Node
@@ -255,7 +267,7 @@ from geometry_msgs.msg import Twist
 class Teleop(Node):
     def __init__(self):
         super().__init__('teleop')
-        self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.pub = self.create_publisher(Twist, '/robot/manual_control/cmd_vel', 10)
 
     def send(self, lin: float, ang: float):
         msg = Twist()

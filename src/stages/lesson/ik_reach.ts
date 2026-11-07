@@ -43,6 +43,7 @@ export function makeIkReach(): Stage {
   let activeIdx = 0;
   let dwell = 0;
   let elapsed = 0;
+  let pubAcc = 0;
   let cleared = false;
   let edgeFlash = 0;
   let manip = 1; // |sin(q2)| — manipulability; →0 at a singularity
@@ -74,6 +75,7 @@ export function makeIkReach(): Stage {
     activeIdx = 0;
     dwell = 0;
     elapsed = 0;
+    pubAcc = 0;
     cleared = false;
     edgeFlash = 0;
     manip = 1;
@@ -136,6 +138,19 @@ export function makeIkReach(): Stage {
     // tip loses a degree of freedom and the joints get twitchy.
     const target = Math.abs(Math.sin(q2));
     manip += (target - manip) * Math.min(1, dt * 8);
+
+    pubAcc += dt;
+    if (pubAcc >= 0.2) {
+      pubAcc = 0;
+      g.publish(
+        "/tip_target",
+        `geometry_msgs/msg/PoseStamped frame_id:world x:${(cursor.x / PX_PER_M).toFixed(3)} y:${((H - cursor.y) / PX_PER_M).toFixed(3)} z:0.000`,
+      );
+      g.publish(
+        "/joint_states",
+        `sensor_msgs/msg/JointState name:[shoulder,elbow] position:[${q1.toFixed(3)},${q2.toFixed(3)}]`,
+      );
+    }
 
     // ── Target dwell / collect (only when the tip actually reaches it) ──
     const { ee } = fk(q1, q2);
@@ -275,8 +290,7 @@ export function makeIkReach(): Stage {
     id: "ik_reach",
     name: "IK Reach",
     lesson: "Inverse Kinematics",
-    lessonCmd:
-      "ros2 topic pub --once /tip_target geometry_msgs/msg/PoseStamped '{pose: {position: {x: 0.4, y: 0.2, z: 0.0}, orientation: {w: 1.0}}}'",
+    lessonCmd: "ros2 topic echo /joint_states",
     ros2: {
       title: tx(
         "Inverse Kinematics — 手先の目標位置から関節角を逆算する",
@@ -288,9 +302,9 @@ export function makeIkReach(): Stage {
         "腕が伸び切る特異点付近では、わずかな手先の移動でも大きな関節角の変化が必要になります（|dq|メーターで確認できます）。",
       msgTypes: ["geometry_msgs/msg/PoseStamped", "sensor_msgs/msg/JointState"],
       cli: [
-        "ros2 topic pub /tip_target geometry_msgs/msg/PoseStamped '{...}'",
+        "ros2 topic echo /tip_target",
         "ros2 topic echo /joint_states",
-        "ros2 launch moveit_servo servo.launch.py",
+        "ros2 node info /ik_reach",
       ],
       python: `import math
 

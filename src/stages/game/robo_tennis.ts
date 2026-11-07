@@ -217,7 +217,7 @@ export function makeRoboTennis(): Stage {
             difficulty = key;
             overlayPanel?.refresh();
             g.sfx.click();
-            reset();
+            (g.resetStage ?? reset)();
           },
         },
       ],
@@ -252,7 +252,7 @@ export function makeRoboTennis(): Stage {
     mode2P = active;
     overlayPanel?.refresh();
     g.sfx.click();
-    reset();
+    (g.resetStage ?? reset)();
   }
 
   function prepareServe(secondServe = false): void {
@@ -448,7 +448,10 @@ export function makeRoboTennis(): Stage {
     bestRally = Math.max(bestRally, rallyHits);
     particles.burst(ball.x, ball.y - ball.z, side === "player" ? "#7dd3fc" : "#f472b6", 12, 145);
     g.sfx.pickup();
-    g.publish("/racket/swing", `side=${side} quality=${quality.toFixed(2)}`);
+    g.publish(
+      "/racket/swing",
+      `data: ${JSON.stringify(`side=${side} quality=${quality.toFixed(2)}`)}`,
+    );
   }
 
   function updateHuman(side: Side, robot: Robot, input: twoPlayer.PlayerInput, dt: number): void {
@@ -520,7 +523,7 @@ export function makeRoboTennis(): Stage {
       bestRally = Math.max(bestRally, rallyHits);
       particles.burst(ball.x, ball.y - ball.z, "#f472b6", 10, 130);
       g.sfx.pickup();
-      g.publish("/racket/swing", "side=ai quality=0.82");
+      g.publish("/racket/swing", 'data: "side=ai quality=0.82"');
     }
   }
 
@@ -974,7 +977,7 @@ export function makeRoboTennis(): Stage {
         "追跡ノードがテニスボールのx・y・z座標をpublishします。移動ロボは着地点を予測してラケットを振ります。",
         "A tracking node publishes the tennis ball's x, y and z coordinates. The mobile robot predicts its landing point and swings the racket.",
       ),
-      msgTypes: ["geometry_msgs/msg/PointStamped", "std_msgs/msg/Float32"],
+      msgTypes: ["geometry_msgs/msg/PointStamped", "std_msgs/msg/String"],
       cli: [
         "ros2 topic list",
         "ros2 topic echo /tennis/ball/pose",
@@ -992,7 +995,7 @@ export function makeRoboTennis(): Stage {
             pub: ["/ball_tracker"],
             sub: ["/player_robot", "/return_ai"],
           }),
-          topic("/racket/swing", "std_msgs/msg/Float32", {
+          topic("/racket/swing", "std_msgs/msg/String", {
             pub: ["/player_robot", "/return_ai"],
           }),
         ],

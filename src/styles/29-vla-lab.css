@@ -1,0 +1,222 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+.vla-lab {
+  box-sizing: border-box;
+  container: vla-lab / inline-size;
+  width: min(800px, 100%);
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--fg);
+  font: 13px/1.6 var(--sans);
+  text-align: left;
+}
+.vla-lab [hidden] {
+  display: none !important;
+}
+.vla-lab h3,
+.vla-lab h4,
+.vla-lab p {
+  margin: 0;
+}
+.vla-lab h3 {
+  font-size: 16px;
+}
+.vla-lab h4 {
+  font-size: 14px;
+}
+.vla-intro {
+  color: var(--fg-mid);
+  margin-top: 6px !important;
+}
+.vla-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.vla-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.vla-card h4 span {
+  color: var(--accent);
+  font: 700 20px var(--mono);
+  margin-right: 4px;
+}
+.vla-card p {
+  color: var(--fg-mid);
+  font-size: 12px;
+  margin-top: 8px;
+}
+.vla-pixels {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  width: min(140px, 100%);
+  aspect-ratio: 7 / 5;
+  border: 1px solid var(--line);
+  margin: 10px auto;
+  background: #334155;
+}
+.vla-pixels span {
+  display: block;
+  min-width: 0;
+}
+.vla-instructions {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.vla-button {
+  min-height: 44px;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--fg);
+  font: 600 13px/1.5 var(--sans);
+  cursor: pointer;
+}
+.vla-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+  box-shadow: inset 0 -3px var(--accent);
+}
+.vla-button[data-action="red"] {
+  color: #fca5a5;
+}
+.vla-button[data-action="blue"] {
+  color: #93c5fd;
+}
+.vla-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.vla-button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.vla-primary {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: var(--bg);
+}
+.vla-button:focus-visible,
+.vla-lab .opad-focus {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 3px !important;
+  box-shadow: none !important;
+}
+.vla-action {
+  display: block;
+  color: var(--accent);
+  font-size: 30px;
+  line-height: 1.4;
+  text-align: center;
+  padding: 20px 0;
+}
+.vla-status {
+  font-weight: 600;
+  margin-top: 12px !important;
+}
+.vla-change {
+  margin-top: 12px !important;
+  border-left: 3px solid var(--accent);
+  padding: 8px 10px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--panel));
+}
+.vla-actions,
+.vla-utilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.vla-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 14px;
+  color: var(--fg-mid);
+}
+.vla-scope {
+  margin-top: 10px !important;
+  font-size: 12px;
+  color: var(--fg-mid);
+}
+.vla-results,
+.vla-details {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.vla-records {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+.vla-records article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+}
+.vla-records strong {
+  color: var(--accent);
+}
+.vla-record-image {
+  width: 84px;
+  margin: 8px 0 2px;
+}
+.vla-record-caption {
+  font-size: 11px;
+  color: var(--fg-mid);
+}
+.vla-insight {
+  margin-top: 8px !important;
+}
+.vla-details p {
+  color: var(--fg-mid);
+  margin-top: 10px;
+}
+.vla-utilities .vla-button {
+  color: var(--fg-mid);
+}
+@container vla-lab (max-width: 520px) {
+  .vla-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .vla-card {
+    padding: 10px;
+  }
+  .vla-card:last-child {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+  }
+  .vla-card p {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+  .vla-pixels {
+    margin: 8px auto 0;
+  }
+  .vla-instructions {
+    margin-top: 8px;
+  }
+  .vla-action {
+    padding: 0;
+    font-size: 26px;
+  }
+  .vla-actions > button {
+    flex: 1 1 140px;
+  }
+}

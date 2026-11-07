@@ -29,6 +29,7 @@ import { setupLessonModal } from "./core/lesson_modal";
 import { setupAllClear, show as showAllClear } from "./core/allclear";
 import { setupClearOverlay } from "./core/clear_overlay";
 import { setupModes, isLessonStage, setMode, setModeView, isGameStage } from "./core/modes";
+import { stageDisplayName } from "./core/stage_labels";
 import * as lessonModal from "./core/lesson_modal";
 import { setupStageMenu } from "./core/stage_menu";
 import { setupTerminal } from "./core/terminal_ui";
@@ -39,6 +40,7 @@ import { setNavpadCanvas } from "./lib/navpad";
 import { setupTouchpad } from "./lib/touchpad";
 import { setupCanvasTouch } from "./lib/canvas_touch";
 import { setupTouchCalloutGuard } from "./lib/touch_callout";
+import { setupCanvasReadout } from "./lib/canvas_readout";
 import { shake } from "./core/dom";
 import {
   setStages,
@@ -136,6 +138,7 @@ renderStageList(stages, getStageModes());
 // 6. Build GameContext (must happen before loadStage).
 const ctx2d = ui.canvas.getContext("2d")!;
 buildGameContext(ui.canvas, ctx2d);
+setupCanvasReadout(ui.canvas);
 
 // 7. Modes / stage selector / stage menu.
 setupModes({
@@ -162,7 +165,10 @@ setupTerminal({
     const id = getCurrentId();
     return getStages().find((s) => s.id === id)?.ros2;
   },
-  getStageName: () => getStages().find((s) => s.id === getCurrentId())?.name ?? "—",
+  getStageName: () => {
+    const stage = getStages().find((s) => s.id === getCurrentId());
+    return stage ? stageDisplayName(stage) : "—";
+  },
 });
 
 // 10. Input dispatchers.

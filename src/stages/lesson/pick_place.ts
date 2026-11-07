@@ -7,7 +7,7 @@ import { W, H, type GameContext, type Stage } from "../../types";
 import { defineStage } from "../../core/stage_def";
 import { clearBackground, drawGrid, drawHint, drawTimer } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
-import { ARM, drawArm, drawWorkspace, fk, ik, slew } from "../../lib/arm";
+import { ARM, drawArm, drawWorkspace, fk, ik, slew, PX_PER_M } from "../../lib/arm";
 import * as armpad from "../../lib/armpad";
 import { formatSeconds } from "../../lib/hud";
 import { withA } from "../../core/theme";
@@ -56,6 +56,7 @@ export function makePickPlace(): Stage {
   let bestCombo = 0;
   let mistakes = 0;
   let elapsed = 0;
+  let pubAcc = 0;
   let penalty = 0;
   let spawnDelay = 0;
   let beltPhase = 0;
@@ -134,6 +135,7 @@ export function makePickPlace(): Stage {
       } else {
         resetParcel("pick_place.status.wrong");
       }
+      publishGripper();
       return;
     }
 
@@ -148,6 +150,14 @@ export function makePickPlace(): Stage {
       g.sfx.click();
       g.setStatus(t("pick_place.status.miss_grab"), "var(--warn)");
     }
+    publishGripper();
+  }
+
+  function publishGripper() {
+    g.publish(
+      "/gripper/events",
+      `std_msgs/msg/String data: ${JSON.stringify(JSON.stringify({ closed: gripClosed, holding: held, delivered, mistakes }))}`,
+    );
   }
 
   function reset() {
@@ -164,6 +174,7 @@ export function makePickPlace(): Stage {
     bestCombo = 0;
     mistakes = 0;
     elapsed = 0;
+    pubAcc = 0;
     penalty = 0;
     spawnDelay = 0.5;
     beltPhase = 0;
@@ -231,6 +242,19 @@ export function makePickPlace(): Stage {
     q1 = slew(q1, sol.q1, step);
     q2 = slew(q2, sol.q2, step);
     const tip = fk(q1, q2).ee;
+
+    pubAcc += dt;
+    if (pubAcc >= 0.2) {
+      pubAcc = 0;
+      g.publish(
+        "/target_pose",
+        `geometry_msgs/msg/PoseStamped frame_id:world x:${(cursor.x / PX_PER_M).toFixed(3)} y:${((H - cursor.y) / PX_PER_M).toFixed(3)} z:0.000`,
+      );
+      g.publish(
+        "/joint_states",
+        `sensor_msgs/msg/JointState name:[shoulder,elbow] position:[${q1.toFixed(3)},${q2.toFixed(3)}]`,
+      );
+    }
 
     if (spawnDelay > 0) {
       spawnDelay -= dt;
@@ -397,19 +421,22 @@ export function makePickPlace(): Stage {
     id: "pick_place",
     name: "Pick & Place",
     lesson: "Grasping & Manipulation",
-    lessonCmd:
-      "ros2 action send_goal /gripper_controller/gripper_cmd control_msgs/action/GripperCommand '{command: {position: 0.0, max_effort: 20.0}}'",
+    lessonCmd: "ros2 topic echo /joint_states",
     ros2: {
       title: tx("Pick & Place — 把持と搬送の一連の動作", "Pick & Place — grasp and transport"),
       summary: tx(
         "把持は、手先を物体へ動かすだけではありません。接近、Gripperを閉じる、持ち上げる、搬送する、解放するという動作を、安全な順序で実行するシーケンスです。",
         "Manipulation is a sequence, not one pose: approach, close the gripper, lift, transport and release safely.",
       ),
-      msgTypes: ["geometry_msgs/msg/PoseStamped", "control_msgs/action/GripperCommand"],
+      msgTypes: [
+        "geometry_msgs/msg/PoseStamped",
+        "sensor_msgs/msg/JointState",
+        "std_msgs/msg/String",
+      ],
       cli: [
-        "ros2 action list -t",
-        "ros2 action send_goal /gripper_controller/gripper_cmd control_msgs/action/GripperCommand '{command: {position: 0.0, max_effort: 20.0}}'",
         "ros2 topic echo /joint_states",
+        "ros2 topic echo /target_pose",
+        "ros2 topic echo /gripper/events",
       ],
       python: `# A real task normally sends these poses through MoveIt 2\nsequence = [approach_pose, grasp_pose, lift_pose, place_pose]\nfor pose in sequence:\n    move_group.set_pose_target(pose)\n    move_group.go(wait=True)\ngripper.close()`,
       realWorld: tx(
@@ -417,20 +444,21 @@ export function makePickPlace(): Stage {
         "A real robot combines MoveIt 2 planning with the GripperCommand action to execute the same sequence collision-free.",
       ),
       state: {
-        nodes: ["/pick_place", "/move_group", "/gripper_controller"],
+        nodes: ["/pick_place", "/arm_controller", "/gripper_controller"],
         topics: [
           {
             name: "/joint_states",
             type: "sensor_msgs/msg/JointState",
             pub: ["/arm_controller"],
-            sub: ["/move_group"],
+            sub: ["/pick_place"],
           },
           {
             name: "/target_pose",
             type: "geometry_msgs/msg/PoseStamped",
             pub: ["/pick_place"],
-            sub: ["/move_group"],
+            sub: ["/arm_controller"],
           },
+          { name: "/gripper/events", type: "std_msgs/msg/String", pub: ["/gripper_controller"] },
         ],
       },
     },

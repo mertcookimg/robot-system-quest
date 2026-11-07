@@ -11,6 +11,7 @@ import { theme } from "../../core/theme";
 
 import { drawHint, COLORS, clearBackground } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
+import { readStageGamepads } from "../../lib/stage_gamepads";
 import { toGray, gaussianBlur, cannyEdges, f1Score } from "../../lib/imgproc";
 import { setupBlockProgram, type BlockProgramHandle } from "../../lib/block_program";
 import { t, tx } from "../../i18n";
@@ -563,7 +564,7 @@ export function makeImageProcessing(): Stage {
   // I/J/K/L or the right stick move the pixel inspector. Arrows/left stick
   // remain reserved for block-editor navigation.
   function pollInspectorInput(dt: number) {
-    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const pads = readStageGamepads();
     let pad: Gamepad | null = null;
     for (const p of pads) {
       if (p) {
@@ -622,6 +623,14 @@ export function makeImageProcessing(): Stage {
     lastPipelineMs = performance.now() - t0;
     needsRecompute = false;
     void blurredApplied;
+    g.publish(
+      "/robot/front_camera/image_raw",
+      `sensor_msgs/msg/Image width:${IMG_W} height:${IMG_H} encoding:rgba8 (simulated camera summary)`,
+    );
+    g.publish(
+      "/image_processing/result",
+      `std_msgs/msg/String data: ${JSON.stringify(JSON.stringify({ f1: Number(lastF1.toFixed(3)), pipeline_ms: Number(lastPipelineMs.toFixed(1)), blocks: program.length, canny_applied: cannyApplied }))}`,
+    );
 
     // Clear check (live: any threshold ≥ 1★ unlocks clear).
     if (isRunning && !cleared && lastF1 >= STAR_THRESHOLDS[0]) {
@@ -1100,12 +1109,28 @@ export function makeImageProcessing(): Stage {
         "OpenCVのcv2.cvtColor・cv2.GaussianBlur・cv2.Cannyを疑似カメラ画像で再現します。このステージのCannyはSobelと二重閾値を使った簡易版で、線を細くする非最大値抑制（NMS）は省略しているため、実際より線が太く表示されます。" +
         "ノイズを含む画像から正解のエッジをどれだけ正確に抽出できるかを、F1スコアで評価します。F1スコアは再現率と適合率の調和平均で、1.0が満点です。" +
         "low / high閾値の比率とblurのσを調整し、結果のバランスを確かめましょう。",
-      msgTypes: ["sensor_msgs/msg/Image", "sensor_msgs/msg/CompressedImage"],
+      msgTypes: ["sensor_msgs/msg/Image", "std_msgs/msg/String"],
       cli: [
-        "ros2 topic echo /image_raw --once",
-        "ros2 run image_view image_view image:=/image_raw",
+        "ros2 topic echo /robot/front_camera/image_raw --once",
+        "ros2 topic echo /image_processing/result",
         "ros2 topic info /robot/front_camera/image_raw",
       ],
+      state: {
+        nodes: ["/camera", "/image_processing"],
+        topics: [
+          {
+            name: "/robot/front_camera/image_raw",
+            type: "sensor_msgs/msg/Image",
+            pub: ["/camera"],
+            sub: ["/image_processing"],
+          },
+          {
+            name: "/image_processing/result",
+            type: "std_msgs/msg/String",
+            pub: ["/image_processing"],
+          },
+        ],
+      },
       python: `# cv_bridge で sensor_msgs/msg/Image を OpenCV 画像に変換し edge 検出
 import cv2
 from cv_bridge import CvBridge

@@ -10,8 +10,9 @@ import * as topicMonitor from "./topic_monitor";
 import * as ambient from "./ambient";
 import * as crash from "./crash";
 import * as stageManager from "./stage_manager";
-import * as intro from "./intro";
-import * as lessonModal from "./lesson_modal";
+import { isStageInteractionBlocked } from "../lib/input_guard";
+import { releaseStageInputs } from "./input_reset";
+import { beginCanvasReadoutFrame, endCanvasReadoutFrame } from "../lib/canvas_readout";
 import { ui } from "./dom";
 import { isNavpadActive, pollNavpad } from "../lib/navpad";
 
@@ -27,11 +28,16 @@ export function startLoop(): void {
     // Wrap stage ticks in try/catch — a single throwing stage shouldn't
     // freeze the canvas or desync overlays. The rAF is requeued either way.
     try {
+      const wasGated = isStageInteractionBlocked();
       gamepad.poll();
+
+      // A press used to close a dialog is consumed for this whole frame.
+      const gated = wasGated || isStageInteractionBlocked();
+      if (gated) releaseStageInputs();
 
       // Navpad runs even with no gamepad (keyboard-only). Polled outside
       // gamepad.poll() so it gets called every frame.
-      if (isNavpadActive()) {
+      if (!gated && isNavpadActive()) {
         const pads = navigator.getGamepads ? navigator.getGamepads() : [];
         let pad: Gamepad | null = null;
         for (const p of pads) {
@@ -46,15 +52,17 @@ export function startLoop(): void {
       input.syncKeys();
 
       const stage = stageManager.getCurrent();
-      // Pause stage logic while a gating modal is open (intro / lesson).
-      // Drawing still happens so the canvas isn't frozen visually, but
-      // update() is skipped so timers and physics don't advance until
-      // the player presses START / dismisses the popup.
-      const gated = intro.isShown() || lessonModal.isOpen();
+      // Menus, help, completion and terminal interaction pause timers/physics
+      // as well as raw per-stage gamepad readers. Drawing remains available.
       if (!gated && !crash.consumeHitStop(dt)) {
         stage.update(dt);
       }
-      stage.draw();
+      beginCanvasReadoutFrame();
+      try {
+        stage.draw();
+      } finally {
+        endCanvasReadoutFrame();
+      }
       topicMonitor.render(ui.topic);
       ambient.tick(dt);
     } catch (err) {

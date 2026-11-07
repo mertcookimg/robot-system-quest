@@ -11,6 +11,8 @@
 // Call poll() once at the top of a stage's update(), then query. No wiring in
 // main.ts / loop.ts is required.
 
+import { isStageInteractionBlocked } from "./input_guard";
+
 const DEAD = 0.35;
 
 let prev: boolean[] = [];
@@ -25,6 +27,10 @@ function findPad(): Gamepad | null {
 
 /** Snapshot the pad for this frame. Safe to call when no pad is connected. */
 export function poll(): void {
+  if (isStageInteractionBlocked()) {
+    suspend();
+    return;
+  }
   const pad = findPad();
   prev = cur;
   if (!pad) {
@@ -55,11 +61,13 @@ export function rightStickX(): number {
 
 /** True only on the frame `idx` transitions from released to pressed. */
 export function buttonEdge(idx: number): boolean {
+  if (isStageInteractionBlocked()) return false;
   return (cur[idx] ?? false) && !(prev[idx] ?? false);
 }
 
 /** True while button `idx` is held. */
 export function buttonDown(idx: number): boolean {
+  if (isStageInteractionBlocked()) return false;
   return cur[idx] ?? false;
 }
 
@@ -67,5 +75,12 @@ export function buttonDown(idx: number): boolean {
 export function reset(): void {
   prev = [];
   cur = [];
+  axes = [];
+}
+
+export function suspend(): void {
+  const pad = findPad();
+  cur = pad?.buttons.map((button) => button.pressed) ?? [];
+  prev = cur;
   axes = [];
 }

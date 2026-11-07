@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { getLang } from "../i18n";
-import type { Stage } from "../types";
+import type { StageMeta } from "../types";
 
 interface JapaneseStageLabel {
   name: string;
@@ -10,6 +10,10 @@ interface JapaneseStageLabel {
 }
 
 const JAPANESE_STAGE_LABELS: Readonly<Record<string, JapaneseStageLabel>> = {
+  imitation_learning: { name: "模倣学習ミニラボ", lesson: "実演からの学習と操作再生の比較" },
+  reinforcement_learning: { name: "強化学習ミニラボ", lesson: "試行錯誤と報酬から行動を学ぶ" },
+  vla_lab: { name: "VLAミニラボ", lesson: "画像と言葉からロボットの動作を選ぶ" },
+  world_model: { name: "世界モデルミニラボ", lesson: "動かす前に、結果を予想しよう" },
   delivery: { name: "配達ミッション", lesson: "荷物を拾ってゴールへ届ける" },
   follower: { name: "追従チャレンジ", lesson: "移動する目標を追いかける" },
   lidar_explorer: { name: "LiDAR探索", lesson: "障害物を避けながらフィールドを探索する" },
@@ -49,14 +53,14 @@ const JAPANESE_STAGE_LABELS: Readonly<Record<string, JapaneseStageLabel>> = {
   behavior_tree: { name: "ビヘイビアツリー", lesson: "条件と行動の組み立て" },
 };
 
-export function stageDisplayName(stage: Stage): string {
+export function stageDisplayName(stage: StageMeta): string {
   if (getLang() !== "ja") return stage.name;
   const japaneseName = JAPANESE_STAGE_LABELS[stage.id]?.name;
   if (!japaneseName) return stage.name;
   return `${japaneseName} / ${stage.name}`;
 }
 
-export function stageDisplayLesson(stage: Stage): string {
+export function stageDisplayLesson(stage: StageMeta): string {
   if (getLang() !== "ja") return stage.lesson;
   return JAPANESE_STAGE_LABELS[stage.id]?.lesson ?? stage.lesson;
 }

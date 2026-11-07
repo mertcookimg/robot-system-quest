@@ -307,6 +307,10 @@ export function makeFeedforwardMission(): Stage {
     if (pubAcc > 1 / 10) {
       pubAcc = 0;
       g.publish(TOPIC_CMD, fmtTwist(lv / PX_PER_M, av));
+      g.publish(
+        "/robot/odom",
+        `nav_msgs/msg/Odometry x:${(robot.x / PX_PER_M).toFixed(3)} y:${((H - robot.y) / PX_PER_M).toFixed(3)} yaw:${(-robot.theta).toFixed(3)}`,
+      );
     }
 
     // Block done.
@@ -392,8 +396,7 @@ export function makeFeedforwardMission(): Stage {
     id: "feedforward_mission",
     name: "Feedforward Mission",
     lesson: "Feedforward Mission",
-    lessonCmd:
-      'ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.5}, angular: {z: 0.0}}"',
+    lessonCmd: "ros2 topic echo /cmd_vel",
     ros2: {
       title: tx(
         "Feedforward — 計画したcmd_velを順にpublishする",
@@ -405,12 +408,8 @@ export function makeFeedforwardMission(): Stage {
         "順番にgeometry_msgs/msg/Twistとして/cmd_velへpublishします。" +
         "これは、時間と速度をあらかじめ決めて動かす開ループ制御です。" +
         "外乱に応じた補正ができないため、後のレッスンではセンサー情報を使うFeedback制御へ発展させます。",
-      msgTypes: ["geometry_msgs/msg/Twist"],
-      cli: [
-        "ros2 topic echo /cmd_vel",
-        'ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist \\\n  "{linear: {x: 0.5}, angular: {z: 0.0}}"',
-        "ros2 topic hz /cmd_vel",
-      ],
+      msgTypes: ["geometry_msgs/msg/Twist", "nav_msgs/msg/Odometry"],
+      cli: ["ros2 topic echo /cmd_vel", "ros2 topic echo /robot/odom", "ros2 topic hz /cmd_vel"],
       python: `import rclpy, time
 from rclpy.node import Node
 from geometry_msgs.msg import Twist

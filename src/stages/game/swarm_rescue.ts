@@ -369,6 +369,15 @@ export function makeSwarmRescue(): Stage {
     if (pubAcc >= 0.25) {
       pubAcc = 0;
       g.publish("/swarm/status", `active=${bot.role} link=${bot.connected} rescued=${rescued}`);
+      g.publish(
+        "/map",
+        `width: ${COLS} height: ${ROWS} cell_size_px: ${CELL} explored_cells: ${explored.reduce((sum, cell) => sum + cell, 0)}/${explored.length}`,
+      );
+      const found = victims.filter((victim) => !victim.rescued && visible(victim.x, victim.y));
+      g.publish(
+        "/lost_bot_locations",
+        `frame: world positions_px: [${found.map((victim) => `{x: ${victim.x.toFixed(1)}, y: ${victim.y.toFixed(1)}}`).join(", ")}]`,
+      );
     }
     g.setHud([
       `TIME       ${remaining.toFixed(1)} s`,
@@ -524,7 +533,7 @@ export function makeSwarmRescue(): Stage {
         "Split scouting, transport and relay roles while maintaining a communication graph to bring lost mini-bots home.",
       ),
       msgTypes: [
-        "geometry_msgs/msg/PoseStamped",
+        "geometry_msgs/msg/PoseArray",
         "nav_msgs/msg/OccupancyGrid",
         "std_msgs/msg/String",
       ],

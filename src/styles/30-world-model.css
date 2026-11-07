@@ -1,0 +1,337 @@
+﻿/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+.world-workbench {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  width: min(800px, 100%);
+  min-width: 0;
+  max-width: 100%;
+}
+.world-workbench > .canvas-wrap,
+.world-workbench > .stage-controls-dock {
+  width: 100%;
+  min-width: 0;
+}
+/* L24 keeps the same guide entry point without repeating its two task cards. */
+body:has(.world-workbench) .lesson-brief {
+  box-sizing: border-box;
+  padding: 4px 10px;
+}
+body:has(.world-workbench) .lesson-brief-head {
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+}
+body:has(.world-workbench) .lesson-brief-heading {
+  flex: 1 1 auto;
+}
+body:has(.world-workbench) .lesson-brief-heading > span,
+body:has(.world-workbench) .lesson-brief-steps {
+  display: none !important;
+}
+body:has(.world-workbench) .lesson-brief-heading strong {
+  font-size: 14px;
+  white-space: nowrap;
+}
+body:has(.world-workbench) .lesson-brief-guide {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 7px 8px;
+  font: 600 14px/1.3 var(--sans);
+}
+/* Portaled to body so canvas shake/overflow and the control dock cannot clip it. */
+#clear-overlay.world-completion-layer {
+  box-sizing: border-box;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  padding: 16px;
+  border-radius: 0;
+}
+#clear-overlay.world-completion-layer .card {
+  box-sizing: border-box;
+  width: min(440px, 100%);
+  min-width: 0;
+  max-height: calc(100dvh - 32px);
+  padding: 24px;
+  overflow-y: auto;
+}
+.world-lab {
+  box-sizing: border-box;
+  container: world-lab / inline-size;
+  width: min(800px, 100%);
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--fg);
+  font: 14px/1.5 var(--sans);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  overflow-anchor: none;
+}
+.world-lab [hidden] {
+  display: none !important;
+}
+.world-lab h3,
+.world-lab h4,
+.world-lab p {
+  margin: 0;
+}
+.world-lab h3 {
+  font-size: 17px;
+  line-height: 1.4;
+}
+.world-lab h4 {
+  font-size: 14px;
+  font-weight: 700;
+}
+.world-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.world-badge {
+  flex: none;
+  color: var(--fg-mid);
+  font: 600 12px/1.4 var(--mono);
+}
+.world-conditions {
+  margin-top: 4px !important;
+  color: var(--fg-mid);
+}
+.world-scope {
+  margin-top: 4px !important;
+  color: var(--fg-mid);
+  font-size: 12px;
+}
+.world-next {
+  margin-top: 8px;
+}
+.world-next > .world-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.world-status {
+  min-block-size: 3em;
+  margin-top: 6px !important;
+  color: var(--fg-mid);
+  font-size: 14px;
+}
+.world-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.world-button {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--fg);
+  font: 600 14px/1.4 var(--sans);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.world-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 -2px var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--panel));
+}
+.world-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.world-button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.world-primary {
+  border-color: var(--ok);
+  background: var(--ok);
+  color: var(--bg);
+}
+.world-primary:hover:not(:disabled) {
+  border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 88%, white);
+}
+.world-lab button:focus-visible,
+.world-lab .opad-focus {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 3px !important;
+}
+.world-candidates {
+  width: 100%;
+  margin-top: 4px;
+  border-spacing: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  table-layout: fixed;
+  overflow: hidden;
+}
+.world-candidates caption {
+  padding: 0 0 6px;
+  color: var(--fg-mid);
+  text-align: left;
+  font-size: 12px;
+}
+.world-candidates th,
+.world-candidates td {
+  box-sizing: border-box;
+  padding: 8px;
+  text-align: right;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+.world-candidates th:first-child {
+  width: 40%;
+  text-align: left;
+}
+.world-candidates thead th {
+  color: var(--fg-mid);
+  background: color-mix(in srgb, var(--fg) 3%, var(--panel));
+  font-size: 12px;
+}
+.world-candidates tbody th,
+.world-candidates tbody td {
+  height: 44px;
+  border-top: 1px solid var(--line-soft);
+}
+.world-candidates [data-forecast],
+.world-candidates [data-actual] {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+}
+.world-candidates [data-forecast] {
+  color: var(--accent);
+}
+.world-candidates [data-actual] {
+  color: #f5c17a;
+}
+.world-candidates [data-pick] {
+  display: inline-block;
+  width: 1em;
+  margin-left: 3px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+}
+.world-candidates tr[data-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 8%, var(--panel));
+}
+.world-candidates tr[data-selected="true"] > th {
+  box-shadow: inset 3px 0 var(--accent);
+}
+.world-comparison {
+  margin-top: 8px !important;
+  color: var(--fg-mid);
+  font-size: 14px;
+}
+.world-insight {
+  margin-top: 8px !important;
+  padding: 8px 10px;
+  border-left: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 4%, var(--panel));
+}
+.world-details {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.world-details p {
+  margin-top: 8px !important;
+  color: var(--fg-mid);
+}
+.world-details h4:not(:first-child) {
+  margin-top: 14px;
+}
+.world-details a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+.world-utilities {
+  margin-top: 8px;
+}
+.world-utilities .world-button {
+  font-size: 13px;
+}
+.world-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.world-records {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.world-records article {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.world-records article > small {
+  display: block;
+  margin-top: 3px;
+  color: var(--fg-mid);
+  font-size: 12px;
+}
+.world-metrics {
+  display: flex;
+  gap: 10px;
+}
+.world-metrics > p {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: 12px;
+}
+.world-metrics strong {
+  display: block;
+  color: var(--fg);
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+.world-error,
+.world-target-error {
+  font-size: 12px;
+}
+@container world-lab (max-width:420px) {
+  .world-heading h3 {
+    font-size: 16px;
+  }
+  .world-candidates th,
+  .world-candidates td {
+    padding-inline: 6px;
+  }
+  .world-candidates [data-forecast],
+  .world-candidates [data-actual] {
+    font-size: 14px;
+  }
+  .world-choices {
+    grid-template-columns: 1fr;
+  }
+}
+@media (min-width: 900px) {
+  .world-workbench {
+    /* Give the scene spare width while keeping the controls readable. */
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 28vw, 380px);
+    gap: 12px;
+    width: min(1280px, 100%);
+  }
+  body:has(.world-workbench) .lesson-brief {
+    width: min(1280px, 100%);
+  }
+}

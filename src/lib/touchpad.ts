@@ -14,7 +14,16 @@ const STORE_KEY = "robot_quest_touch_layout_v1";
 const MOVE_KEYS: MoveKey[] = ["w", "a", "s", "d"];
 const JOINT_KEYS = ["i", "k"] as const;
 const TOUCH_KEYS = [...MOVE_KEYS, ...JOINT_KEYS, "Shift", " ", "Escape", "r"] as const;
-const NO_TOUCHPAD_STAGES = new Set(["pubsub_builder", "service_builder", "action_builder"]);
+// These lessons supply task-specific controls instead of the general driving pad.
+const NO_TOUCHPAD_STAGES = new Set([
+  "pubsub_builder",
+  "service_builder",
+  "action_builder",
+  "imitation_learning",
+  "reinforcement_learning",
+  "vla_lab",
+  "world_model",
+]);
 const BLOCK_EDITOR_DRIVE_STAGES = new Set(["edge_detection", "object_detection"]);
 
 let touchpadRoot: HTMLElement | null = null;

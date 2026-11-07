@@ -4,6 +4,7 @@
 // Common Canvas-2D drawing utilities shared by every stage.
 import { W, H, type Particle } from "../types";
 import { theme, withA } from "../core/theme";
+import { reportCanvasHint, reportCanvasTimer } from "./canvas_readout";
 
 const ACCENT = "#7dd3fc";
 const ACCENT_2 = "#c4b5fd";
@@ -214,6 +215,7 @@ export function drawRobotLabel(_ctx: CanvasRenderingContext2D) {
 }
 
 export function drawTimer(ctx: CanvasRenderingContext2D, elapsed: number, best?: number) {
+  if (reportCanvasTimer(ctx, elapsed, best)) return;
   ctx.save();
   const w = 110;
   const h = best != null ? 42 : 26;
@@ -257,6 +259,7 @@ export function drawTimer(ctx: CanvasRenderingContext2D, elapsed: number, best?:
 }
 
 export function drawHint(ctx: CanvasRenderingContext2D, text: string) {
+  if (reportCanvasHint(ctx, text)) return;
   ctx.save();
   ctx.fillStyle = FG_DIM;
   ctx.font = "10px ui-monospace, monospace";

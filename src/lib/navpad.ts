@@ -6,6 +6,8 @@
 // dispatch synthesized MouseEvents to the canvas. navigation.ts itself stays
 // untouched.
 
+import { isStageInteractionBlocked } from "./input_guard";
+
 const STICK_DEAD = 0.15;
 const DPAD_STEP = 5.5; // px/frame (digital)
 const STICK_MAX_STEP = 9; // px/frame (analog full deflection)
@@ -50,9 +52,17 @@ export function activateNavpad() {
 
 export function deactivateNavpad() {
   active = false;
+  cancelNavpadInput();
+}
+
+export function cancelNavpadInput(): void {
+  if (dragging) dispatchCanvasMouseEvent("mouseleave");
   dragging = false;
-  prevAction = false;
-  prevB = false;
+  // Closing a dialog must not turn its held A press into a new canvas goal.
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  const pad = Array.from(pads).find((candidate) => candidate !== null);
+  prevAction = pad?.buttons[0]?.pressed ?? false;
+  prevB = pad?.buttons[1]?.pressed ?? false;
   kbAction = false;
   heldKbArrows.clear();
   if (cursorEl) cursorEl.style.display = "none";
@@ -60,7 +70,7 @@ export function deactivateNavpad() {
 
 // Returns true when navpad consumed the event (caller should preventDefault).
 export function onNavpadKeyDown(key: string): boolean {
-  if (!active) return false;
+  if (!active || isStageInteractionBlocked()) return false;
   if (key === "ArrowUp" || key === "ArrowDown" || key === "ArrowLeft" || key === "ArrowRight") {
     heldKbArrows.add(key);
     return true;
@@ -114,6 +124,12 @@ function updateCursorDOM() {
 
 export function pollNavpad(pad: Gamepad | null): void {
   if (!active || !canvasEl) return;
+  if (isStageInteractionBlocked()) {
+    cancelNavpadInput();
+    prevAction = pad?.buttons[0]?.pressed ?? false;
+    prevB = pad?.buttons[1]?.pressed ?? false;
+    return;
+  }
 
   let dx = 0,
     dy = 0;

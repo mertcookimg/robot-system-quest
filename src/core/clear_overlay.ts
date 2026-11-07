@@ -3,7 +3,7 @@
 
 // Stage clear overlay: shows stars, time, leaderboard, and Restart/Next
 // buttons. Both the keyboard and the gamepad share a single focus state
-// (Restart / Next) which is rendered as a CSS class on the buttons.
+// (Restart / Next) which follows the native keyboard focus as well.
 
 import { sfx } from "./audio";
 import { ui, shake } from "./dom";
@@ -15,26 +15,33 @@ import { toast } from "./toast";
 import { t } from "../i18n";
 import * as allclear from "./allclear";
 import type { Stage } from "../types";
-import { setStageTimeout } from "./stage_timers";
+import { cancelStageTimeout, setStageTimeout, type StageTimeout } from "./stage_timers";
 import { trackStageComplete } from "./analytics";
+import { getStageModes } from "./stage_def";
 
 type Focus = "restart" | "next";
+export type ClearOverlayCloseReason = "dismiss" | "restart" | "next" | "allclear";
 let focus: Focus = "next";
+let allclearTimeout: StageTimeout | null = null;
+let focusBeforeOpen: HTMLElement | null = null;
 
 export function isOpen(): boolean {
   return ui.clearOverlay.classList.contains("show");
 }
 
-function applyFocus(): void {
+function applyFocus(moveFocus = false): void {
   ui.restartBtn.classList.toggle("gp-focus", focus === "restart");
   ui.nextBtn.classList.toggle("gp-focus", focus === "next");
+  if (moveFocus) {
+    (focus === "restart" ? ui.restartBtn : ui.nextBtn).focus({ preventScroll: true });
+  }
 }
 
 export function setFocus(target: Focus): void {
-  if (focus === target) return;
+  const changed = focus !== target;
   focus = target;
-  applyFocus();
-  sfx.click();
+  applyFocus(true);
+  if (changed) sfx.click();
 }
 
 export function confirmFocus(): void {
@@ -48,9 +55,31 @@ export function clearOverlayFocus(): void {
   ui.nextBtn.classList.remove("gp-focus");
 }
 
-export function close(): void {
+export function close(reason: ClearOverlayCloseReason = "dismiss"): void {
+  const wasOpen = isOpen();
+  const restoreFocus = focusBeforeOpen;
+  focusBeforeOpen = null;
+  if (allclearTimeout !== null) {
+    cancelStageTimeout(allclearTimeout);
+    allclearTimeout = null;
+  }
   ui.clearOverlay.classList.remove("show");
+  ui.clearOverlay.inert = true;
+  ui.clearOverlay.setAttribute("aria-hidden", "true");
   clearOverlayFocus();
+  if (!wasOpen) return;
+  // A stage may re-enable its completed results before focus returns to it.
+  ui.clearOverlay.dispatchEvent(
+    new window.CustomEvent("clear-overlay-close", { detail: { reason } }),
+  );
+  if (
+    reason === "dismiss" &&
+    restoreFocus?.isConnected &&
+    !restoreFocus.matches(":disabled") &&
+    !restoreFocus.closest("[inert], [hidden]")
+  ) {
+    restoreFocus.focus({ preventScroll: true });
+  }
 }
 
 interface ShowDeps {
@@ -60,6 +89,14 @@ interface ShowDeps {
 }
 
 export function show(stars: number, statsHtml: string, deps: ShowDeps): void {
+  if (allclearTimeout !== null) {
+    cancelStageTimeout(allclearTimeout);
+    allclearTimeout = null;
+  }
+  if (!isOpen()) {
+    const active = document.activeElement;
+    focusBeforeOpen = active instanceof HTMLElement && active !== document.body ? active : null;
+  }
   trackStageComplete(deps.current.id, stars);
 
   // Pull elapsed time out of the stats HTML — stages embed it as
@@ -105,17 +142,31 @@ export function show(stars: number, statsHtml: string, deps: ShowDeps): void {
     </div>`;
   }
   ui.clearStats.innerHTML = html;
+  ui.clearOverlay.inert = false;
+  ui.clearOverlay.setAttribute("aria-hidden", "false");
   ui.clearOverlay.classList.add("show");
-
-  // Reset gamepad focus state
-  focus = "next";
-  applyFocus();
-  shake();
 
   // Star progress
   const prevStars = loadProgress()[deps.current.id]?.stars ?? 0;
   const isNewStarBest = stars > prevStars;
   saveProgress(deps.current.id, stars);
+  const progress = loadProgress();
+  const allDone = deps.stages.every((stage) => (progress[stage.id]?.stars ?? 0) > 0);
+  const modes = getStageModes();
+  const mode = modes.get(deps.current.id);
+  const modeStages = deps.stages.filter((stage) => modes.get(stage.id) === mode);
+  const isModeEnd = mode !== undefined && modeStages.at(-1)?.id === deps.current.id;
+  const [nextJa, nextEn] = allDone
+    ? ["全クリアを見る", "View all clear"]
+    : isModeEnd
+      ? mode === "lesson"
+        ? ["レッスン一覧へ", "Lesson list"]
+        : ["ゲーム一覧へ", "Game list"]
+      : ["次へ →", "Next →"];
+  ui.nextBtn.innerHTML = `<span class="i18n-ja">${nextJa}</span><span class="i18n-en">${nextEn}</span>`;
+  focus = "next";
+  applyFocus(true);
+  shake();
   deps.onRenderSelector();
   spawnConfetti(stars === 3 ? 90 : 50);
 
@@ -129,11 +180,13 @@ export function show(stars: number, statsHtml: string, deps: ShowDeps): void {
   }
 
   // If this clear completed every stage, transition to the all-clear screen.
-  const allDone = deps.stages.every((s) => (loadProgress()[s.id]?.stars ?? 0) > 0);
   if (allDone) {
-    setStageTimeout(() => {
-      ui.clearOverlay.classList.remove("show");
+    allclearTimeout = setStageTimeout(() => {
+      allclearTimeout = null;
+      if (!isOpen()) return;
+      close("allclear");
       allclear.show(deps.stages);
+      ui.allclearRestart.focus({ preventScroll: true });
     }, 2400);
   }
 }
@@ -146,16 +199,42 @@ interface WireDeps {
 }
 
 export function setupClearOverlay(deps: WireDeps): void {
+  ui.clearOverlay.setAttribute("role", "dialog");
+  ui.clearOverlay.setAttribute("aria-modal", "true");
+  const title = ui.clearOverlay.querySelector<HTMLElement>(".card-title");
+  if (title) {
+    if (!title.id) title.id = "clear-overlay-title";
+    ui.clearOverlay.setAttribute("aria-labelledby", title.id);
+  }
+  ui.clearOverlay.inert = !isOpen();
+  ui.clearOverlay.setAttribute("aria-hidden", String(!isOpen()));
+  for (const [target, button] of [
+    ["restart", ui.restartBtn],
+    ["next", ui.nextBtn],
+  ] as const) {
+    button.addEventListener("focus", () => {
+      if (!isOpen()) return;
+      focus = target;
+      applyFocus();
+    });
+  }
+  ui.clearOverlay.addEventListener("keydown", (event) => {
+    if (!isOpen() || event.key !== "Tab") return;
+    event.preventDefault();
+    event.stopPropagation();
+    setFocus(focus === "next" ? "restart" : "next");
+  });
   ui.restartBtn.addEventListener("click", () => {
     sfx.click();
-    close();
+    close("restart");
     deps.onRestart();
   });
   ui.nextBtn.addEventListener("click", () => {
     sfx.click();
-    close();
+    close("next");
     if (deps.isAllCleared()) {
       deps.showAllClear();
+      ui.allclearRestart.focus({ preventScroll: true });
       return;
     }
     deps.onNext();

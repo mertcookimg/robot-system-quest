@@ -1,57 +1,84 @@
 # Adding a New Game or Lesson
 
-In this project, each stage is generally implemented as a single TypeScript file.
+Each stage has a TypeScript entry point in `src/stages/game/` or `src/stages/lesson/`.
+Keep reusable controls, simulation logic, and learning models in `src/lib/`.
 
-Vite automatically collects `src/stages/**/*.ts` with `import.meta.glob`. The `defineStage()` call in each file registers the Game / Lesson list, display order, Japanese and English text, and diagrams used by the Guide.
+The playable app collects stages with Vite's `import.meta.glob`. Each file's `defineStage()`
+manifest registers its mode, display order, translations, lesson modal, and diagram. The Guide
+uses a separately generated metadata catalog so it does not load playable stages or model weights.
 
 ## Workflow
 
-1. Create a file in `src/stages/game/` or `src/stages/lesson/`.
-2. Implement a factory function that returns a `Stage`.
-3. Default-export `defineStage()`.
-4. Add a custom Guide explanation or animation when needed.
-5. Verify formatting, tests, the build, and browser controls.
+1. Create a stage file and implement a factory that returns a `Stage`.
+2. Default-export `defineStage()` with a unique order within its mode and Japanese/English content.
+3. Add Japanese display labels in `src/core/stage_labels.ts`.
+4. Describe the stage's actual simulated ROS graph and publish observable events.
+5. Add Guide explanations, diagrams, and animations appropriate to the stage.
+6. Run `npm run gen:stages` and `npm run gen:guide`, and update affected test expectations.
+7. Verify formatting, tests, the build, and browser controls.
 
-You do not need to add the stage ID manually to `main.ts`, `core/modes.ts`, or the shared i18n dictionaries.
+You do not need to add the stage ID to `main.ts`, `core/modes.ts`, or the shared i18n
+dictionaries for automatic registration. Specialized controls or layouts may need integration
+with their shared helpers, as described below.
 
 ## 1. Create the file
 
-Place the file in the directory that matches its purpose:
+Place the entry point directly in the directory that matches its purpose:
 
 ```text
 src/stages/game/treasure_rush.ts
 src/stages/lesson/pid_tuning.ts
 ```
 
-The filename and `Stage.id` must match and use lowercase snake_case.
+- Game: introduces a concept through play or a mission.
+- Lesson: explains a concept through interaction, comparison, construction, or observation.
+- The filename and `Stage.id` must match and use lowercase snake_case. IDs must be unique.
+- Keep helper files outside these directories: the README generator treats each `.ts` file as a stage.
+- Do not nest stage entry points in subdirectories; the runtime glob recurses, but the README generator does not.
 
-- Game: introduces a concept through play or a mission
-- Lesson: explains a concept through interaction, comparison, construction, or observation
+The README generator currently parses source text. Keep `id: "...",` followed by
+`name: "...",` on the next line, using literal double-quoted strings. Keep `mode` and
+`order` as literals in the `defineStage()` call as well.
 
 ## 2. Implement `Stage`
 
-See [`src/types.ts`](../src/types.ts) for the complete type definitions.
-
-A minimal implementation looks like this:
+See [`src/types.ts`](../src/types.ts) for the complete types. The following factory and the
+manifest in the next section belong in the same `treasure_rush.ts` file:
 
 ```ts
+// Copyright 2026 Masato Kobayashi
+// SPDX-License-Identifier: Apache-2.0
+
 import { H, W, type GameContext, type Stage } from "../../types";
 import { defineStage } from "../../core/stage_def";
-import { t } from "../../i18n";
+import { t, tx } from "../../i18n";
+import {
+  clearBackground,
+  drawHint,
+  drawRobotBody,
+  drawTimer,
+  drawZone,
+  fmtTwist,
+} from "../../lib/draw";
+import { defineRos2Concept, state, topic } from "../../lib/ros2_concept";
 import { teleop } from "../../lib/teleop";
 
 const START = { x: 100, y: 250, theta: 0 };
 const GOAL = { x: 700, y: 250, r: 30 };
+const SPEED = 180;
+const RADIUS = 16;
 
 export function makeTreasureRush(): Stage {
   let g!: GameContext;
   const robot = { ...START };
   let elapsed = 0;
+  let publishElapsed = 0;
   let cleared = false;
 
   function reset(): void {
     Object.assign(robot, START);
     elapsed = 0;
+    publishElapsed = 0;
     cleared = false;
     g.ghost.startRecording();
     g.setStatus(t("treasure_rush.status.start"));
@@ -66,13 +93,23 @@ export function makeTreasureRush(): Stage {
     if (cleared) return;
     elapsed += dt;
 
-    // g.keys combines keyboard and gamepad input.
-    const cmd = teleop(g.keys, { baseLin: 180, baseAng: 2.4 });
+    const cmd = teleop(g.keys, { baseLin: SPEED, baseAng: 2.4 });
     robot.theta += cmd.ang * dt;
-    robot.x += Math.cos(robot.theta) * cmd.lin * dt;
-    robot.y += Math.sin(robot.theta) * cmd.lin * dt;
+    robot.x = Math.max(
+      RADIUS,
+      Math.min(W - RADIUS, robot.x + Math.cos(robot.theta) * cmd.lin * dt),
+    );
+    robot.y = Math.max(
+      RADIUS,
+      Math.min(H - RADIUS, robot.y + Math.sin(robot.theta) * cmd.lin * dt),
+    );
 
-    g.publish("/cmd_vel", `linear.x=${cmd.lin} angular.z=${cmd.ang}`);
+    publishElapsed += dt;
+    if (publishElapsed >= 1 / 20) {
+      publishElapsed = 0;
+      // This example uses SPEED pixels per simulated meter.
+      g.publish("/cmd_vel", fmtTwist(cmd.lin / SPEED, cmd.ang));
+    }
     g.ghost.recordPose(elapsed, robot.x, robot.y, robot.theta);
 
     const dx = robot.x - GOAL.x;
@@ -85,22 +122,20 @@ export function makeTreasureRush(): Stage {
 
   function draw(): void {
     const c = g.ctx;
-    c.fillStyle = "#03060d";
-    c.fillRect(0, 0, W, H);
-
-    c.fillStyle = "#5eead4";
-    c.beginPath();
-    c.arc(GOAL.x, GOAL.y, GOAL.r, 0, Math.PI * 2);
-    c.stroke();
-
-    c.fillStyle = "#7dd3fc";
-    c.beginPath();
-    c.arc(robot.x, robot.y, 16, 0, Math.PI * 2);
-    c.fill();
+    clearBackground(c);
+    drawZone(c, GOAL, "#5eead4", tx("ゴール", "GOAL"), elapsed);
+    g.ghost.draw(c, elapsed, elapsed);
+    c.save();
+    c.translate(robot.x, robot.y);
+    c.rotate(robot.theta);
+    drawRobotBody(c, 0, elapsed);
+    c.restore();
+    drawTimer(c, elapsed, g.getBestTime());
+    drawHint(c, t("treasure_rush.hint"));
   }
 
   function dispose(): void {
-    // Release event listeners, timers, and stage-specific UI here.
+    // This example has no stage-owned listeners, timers, or UI to release.
   }
 
   return {
@@ -108,6 +143,27 @@ export function makeTreasureRush(): Stage {
     name: "Treasure Rush",
     lesson: "Publisher and cmd_vel",
     lessonCmd: "ros2 topic echo /cmd_vel",
+    get ros2() {
+      return defineRos2Concept({
+        title: tx("Publisher — 速度指令を配信する", "Publisher — publish velocity commands"),
+        summary: tx(
+          "操作入力が速度指令に変わり、Topicへ配信される流れを観察します。",
+          "Observe how control input becomes a velocity command published to a topic.",
+        ),
+        msgTypes: ["geometry_msgs/msg/Twist"],
+        cli: ["ros2 topic echo /cmd_vel", "ros2 topic info /cmd_vel"],
+        realWorld: "",
+        state: state({
+          nodes: ["/teleop", "/robot"],
+          topics: [
+            topic("/cmd_vel", "geometry_msgs/msg/Twist", {
+              pub: ["/teleop"],
+              sub: ["/robot"],
+            }),
+          ],
+        }),
+      });
+    },
     init,
     update,
     draw,
@@ -117,251 +173,283 @@ export function makeTreasureRush(): Stage {
 }
 ```
 
-### `Stage` lifecycle
+### Lifecycle and cleanup
 
-| Method | Purpose |
-|---|---|
-| `init(ctx)` | Initializes the selected stage and receives its `GameContext` |
-| `update(dt)` | Updates state every frame; `dt` is measured in seconds |
-| `draw()` | Renders to the 800 × 500 canvas |
-| `reset()` | Restores the initial state on restart |
-| `dispose()` | Releases events, timers, and stage-specific UI |
+| Method       | Purpose                                                                               |
+| ------------ | ------------------------------------------------------------------------------------- |
+| `init(ctx)`  | Receives `GameContext`, mounts stage UI/listeners, and initializes the selected stage |
+| `update(dt)` | Updates simulation state; `dt` is measured in seconds                                 |
+| `draw()`     | Renders to the default 800 × 500 logical canvas                                       |
+| `reset()`    | Restarts the current stage without duplicating UI or listeners                        |
+| `dispose()`  | Releases stage-owned listeners, timers, animation handles, and UI                     |
 
-Because `init()` also calls `reset()`, save the `GameContext` before resetting the stage.
+`defineStage()` calls the factory during registration, before `init()`. Defer runtime DOM
+setup, event registration, and work that needs `GameContext` until `init()`. Metadata must be
+readable and serializable before initialization because the Guide generator evaluates it then.
+Do not resolve manifest-owned `t()` strings in the factory before `defineStage()` registers them.
+
+Stage instances are reused across visits. Save the context before calling `reset()` and make
+`dispose()` safe even if the instance has not been initialized. Restore any changed canvas
+dimensions, layout, language subscriptions, and global listeners when leaving a stage.
+
+The shell pauses `update()` while a menu, lesson/help/completion dialog, or terminal owns input,
+and while the page is inactive. `draw()` can still run, so keep simulation changes in `update()`.
+Use `g.setTimeout()` for delayed stage actions; the shell cancels these callbacks on reset or
+stage change. Set your own `cleared` flag before calling `g.awardStars()` to avoid repeated awards.
+
+For a stage-owned Retry button or a player/difficulty change that restarts the run, call
+`(g.resetStage ?? reset)()`. The runtime path also clears held inputs, pending stage callbacks,
+topic history, and terminal state. The fallback supports standalone previews that omit
+`resetStage`. Do not call it from `reset()` itself.
 
 ### Main `GameContext` APIs
 
-| API | Purpose |
-|---|---|
-| `g.canvas` / `g.ctx` | Canvas and 2D rendering context |
-| `g.keys` | Combined keyboard and gamepad input |
-| `g.overlay` | Container for stage-specific HTML UI |
-| `g.setStatus(text, color?)` | Updates the status display |
-| `g.setHud(lines)` | Updates the Robot State display |
-| `g.publish(topic, message)` | Simulates publishing to the Topic Monitor |
-| `g.awardStars(stars, html, delay?)` | Shows the clear screen with a sound effect |
-| `g.showClear(stars, html)` | Shows the clear screen |
-| `g.crash(reason?)` | Plays the failure effect and resets the stage |
-| `g.shake(intensity?)` | Shakes the screen |
-| `g.sfx` | Sound effects |
-| `g.ghost` | Best-run recording and playback |
-| `g.getBestTime(stageId?)` | Reads a saved best time |
+| API                                        | Purpose                                                                             |
+| ------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `g.canvas` / `g.ctx`                       | Canvas and 2D rendering context                                                     |
+| `g.keys`                                   | Read-only set of combined input keys; use lowercase names such as `w` and `arrowup` |
+| `g.overlay`                                | Stage-owned HTML controls and editor area                                           |
+| `g.setStatus(text, color?)`                | Updates the visible status message                                                  |
+| `g.setHud(lines)`                          | Updates the telemetry HUD                                                           |
+| `g.publish(topic, msg)`                    | Records simulated topic data for the monitor and learning terminal                  |
+| `g.awardStars(stars, statsHtml, delayMs?)` | Plays the clear sound and shows completion after a managed delay                    |
+| `g.showClear(stars, statsHtml)`            | Shows completion immediately                                                        |
+| `g.setTimeout(callback, delayMs)`          | Schedules a callback cancelled on reset or stage change                             |
+| `g.crash(reason?)`                         | Triggers failure feedback and the runtime restart sequence                          |
+| `g.resetStage?.()`                         | Restarts through the runtime, including telemetry and terminal cleanup              |
+| `g.shake()` / `g.sfx`                      | Shared visual and audio feedback                                                    |
+| `g.ghost`                                  | Records, reads, and draws replay poses                                              |
+| `g.getBestTime(stageId?)`                  | Returns the best saved time for the specified or current stage                      |
 
-## 3. Add `defineStage()`
+## 3. Register the manifest and translations
 
-Default-export the stage manifest after the factory function:
+Append this manifest to the example factory. Choose an unused positive numeric `order` within
+the same mode; `100` is an example, not a reserved slot.
 
 ```ts
 export default defineStage({
   mode: "game",
-  order: 13,
-  diagram: `
-    <svg viewBox="0 0 420 120" role="img" aria-label="Controller publishes cmd_vel to robot">
-      <!-- Diagram displayed in the Guide and Lesson modal -->
-    </svg>
-  `,
+  order: 100,
   lessonModal: {
-    title: {
-      ja: "Publisherで速度指令を送る",
-      en: "Send velocity commands with a Publisher",
-    },
+    title: { ja: "速度指令をTopicへ配信する", en: "Publish velocity commands to a topic" },
     learn: {
-      ja: "操作入力をTwistメッセージへ変換し、topicへ送る流れを理解します。",
-      en: "Understand how control input becomes a Twist message published to a topic.",
+      ja: "操作入力が /cmd_vel のメッセージになる流れを観察します。",
+      en: "Observe how your controls become messages on /cmd_vel.",
     },
-    goal: {
-      ja: "ロボットを操作してGOALへ移動します。",
-      en: "Drive the robot to the goal.",
-    },
+    goal: { ja: "緑のリングまで移動しましょう。", en: "Drive to the green ring." },
     first: {
-      ja: "WASDまたは左スティックで動かしてみましょう。",
-      en: "Start by driving with WASD or the left stick.",
+      ja: "WASD・矢印キー、または左スティックで移動します。",
+      en: "Move with WASD, arrow keys, or the left stick.",
     },
   },
   strings: {
     ja: {
-      "status.start": "GOALまでロボットを動かそう",
+      "status.start": "緑のリングまで移動しましょう。",
+      hint: "WASD / 矢印キー / 左スティックで移動・Rでリスタート",
     },
     en: {
-      "status.start": "Drive the robot to the goal",
+      "status.start": "Drive to the green ring.",
+      hint: "WASD / arrows / left stick to move · R to restart",
     },
   },
   build: makeTreasureRush,
 });
 ```
 
-The Japanese strings in this example are intentional: every user-facing string must provide both `ja` and `en` translations.
+- `mode`, `order`, and `build` are required. `lessonModal`, `diagram`, and `strings` are optional manifest fields.
+- `mode` must match the parent directory. Orders must be unique within a mode; smaller values come first.
+- Lesson numbers are derived from order. Put only concept text in `Stage.lesson`, without an `L<number>` prefix.
+- `strings` keys are prefixed automatically: `status.start` becomes `treasure_rush.status.start`.
+- `lessonModal` provides bilingual `title`, `learn`, `goal`, and `first` text for the in-game briefing.
+- Add an optional `diagram` SVG string for the lesson modal and Guide Lesson details. Use stage-specific SVG IDs and a descriptive `aria-label`.
+- Add `{ name, lesson }` Japanese labels under the new stage ID in [`src/core/stage_labels.ts`](../src/core/stage_labels.ts). Manifest strings do not populate these display labels.
+- Use `t()` or `tx()` at render time, or getters for language-dependent metadata, so language changes do not leave cached text behind.
 
-### Manifest fields
+## 4. Describe the simulated ROS graph
 
-| Field | Required | Description |
-|---|---|---|
-| `mode` | Yes | `"game"` or `"lesson"` |
-| `order` | Yes | Display order within the selected mode |
-| `build` | Yes | Factory function that returns a `Stage` |
-| `lessonModal` | No | Bilingual title, learning objective, goal, and first action |
-| `diagram` | No | SVG displayed in the Lesson modal and Guide details |
-| `strings` | No | Japanese and English strings used by the stage |
+The example's `ros2` metadata supplies descriptions and the graph inspected by the learning
+terminal. Use [`src/lib/ros2_concept.ts`](../src/lib/ros2_concept.ts) for `defineRos2Concept()`,
+`state()`, `topic()`, and `service()` helpers.
 
-The stage ID is automatically prepended to keys in `strings`. For example, the key above is accessed with `t("treasure_rush.status.start")`.
+- Declare only nodes, topics, services, and actions that the stage actually models. Publisher/subscriber and service/action endpoints must refer to declared nodes.
+- Every topic passed to `g.publish()` must exist in the current `ros2.state.topics`. Emit actual simulation values or events, including a final result before stopping updates.
+- Expose a dynamic graph when wiring or player modes change. A getter can derive it from stage state without depending on an initialized `GameContext`.
+- Parameters and lifecycle queries require explicit `Ros2State.parameters` and `Ros2State.lifecycle` values. The `state()` helper only accepts nodes, topics, services, and actions; extend its result or provide a typed state object for the extra fields.
+- Keep Japanese and English descriptions consistent with what the learner can observe. `python` is author-only reference material and is excluded from the Guide catalog. `realWorld` is shown in Guide details when provided; neither field is displayed in the game UI.
 
-When a Lesson defines `lessonModal`, the modal opens automatically the first time the Lesson is selected. In a Game, it opens from the on-screen Guide button.
+The Guide, footer, command selector, and gamepad palette use the shared observation-command
+rules in [`src/lib/terminal_commands.ts`](../src/lib/terminal_commands.ts). `lessonCmd` alone
+does not determine the displayed recommendation. Put supported commands such as
+`ros2 topic echo /cmd_vel`, `ros2 node info /teleop`, or `ros2 service type /toggle_lamp`
+in `ros2.cli` only when the corresponding resource exists.
 
-## Display ROS 2 information
+`topic echo` shows recorded message snapshots, and `topic hz` estimates frequency from recent
+samples. Neither creates telemetry. Publishing, service calls, action goals, parameter writes,
+and shell pipelines are not supported terminal operations. Stage controls perform the simulated
+actions; the terminal observes their results. This app does not communicate with real ROS 2
+systems or hardware.
 
-Add `ros2` to the `Stage` to show information in the ROS 2 panel and simulated terminal at the bottom of the screen:
+## 5. Integrate the Guide
 
-```ts
-import { tx } from "../../i18n";
-import { defineRos2Concept, state, topic } from "../../lib/ros2_concept";
+Run `npm run gen:guide` after editing stage metadata. It evaluates the manifests in Japanese
+and English and writes [`src/guide/stages.generated.json`](../src/guide/stages.generated.json).
+The catalog includes `StageMeta`, mode, derived lesson number, and diagram. `lessonModal`
+belongs to the in-game briefing and is not copied into the Guide catalog.
 
-// Inside the object returned by makeTreasureRush()
-ros2: defineRos2Concept({
-  title: tx("Publisherとcmd_vel", "Publisher and cmd_vel"),
-  summary: tx(
-    "操作入力から速度指令を作り、topicへpublishする流れを観察します。",
-    "Observe how control input becomes a velocity command published to a topic.",
-  ),
-  msgTypes: ["geometry_msgs/msg/Twist"],
-  cli: [
-    "ros2 topic list",
-    "ros2 topic info /cmd_vel",
-    "ros2 topic echo /cmd_vel",
-  ],
-  realWorld: "",
-  state: state({
-    nodes: ["/teleop", "/robot"],
-    topics: [
-      topic("/cmd_vel", "geometry_msgs/msg/Twist", {
-        pub: ["/teleop"],
-        sub: ["/robot"],
-      }),
-    ],
-  }),
-}),
-```
+[`src/guide/stages.ts`](../src/guide/stages.ts) exposes the catalog to the Guide. Do not import
+playable stage factories, `stage_collect`, or model weights into Guide code. The Vite build
+checks this dependency boundary. Shared drawing helpers and metadata-only types are suitable
+for Guide animations.
 
-Register only nodes, topics, services, and safe observation commands that exist in the stage. Do not describe simulated ROS 2 communication as if it were communicating with real hardware.
+| File                                                    | What to add or update                                                                                                    |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| [`src/guide/content.ts`](../src/guide/content.ts)       | Bilingual card actions, overview, learning goals, steps, exercise, and insight via `guideCopyFor()` / `cardPreviewFor()` |
+| [`src/guide/card_demos.ts`](../src/guide/card_demos.ts) | Lightweight card animation; include new Lesson IDs in `LESSON_IDS` for Lesson styling                                    |
+| [`src/core/lesson_demo.ts`](../src/core/lesson_demo.ts) | Game detail animation in `STAGE_DEMO`                                                                                    |
+| Stage manifest's `diagram`                              | SVG shown in Lesson details                                                                                              |
 
-## Guide integration
+Generic copy, diagrams, and animations are available as fallbacks. Check that they actually
+explain the new activity; an unrelated driving animation is not sufficient for a new learning
+lab. Verify both languages and the direct links: `/?direct=stage#<id>` opens the playable
+stage, and `/guide/?stage=<id>` opens its Guide detail (relative to the app's deployment base).
 
-New stages are added automatically to the Game / Lesson lists in the Guide. The basic page is generated from the stage's `name`, `lesson`, `ros2`, `lessonModal`, and `diagram` data.
+`npm run dev` regenerates the catalog through `predev`, and `npm run build` regenerates it
+before type-checking and bundling. If the dev server is already running, run `npm run gen:guide`
+again after metadata changes. Do not hand-edit the generated JSON.
 
-Update the following files when a stage needs a custom, publication-quality explanation or animation:
-
-| File | Purpose |
-|---|---|
-| [`src/guide/content.ts`](../src/guide/content.ts) | Card text, detailed explanations, observation points, and bilingual copy |
-| [`src/guide/card_demos.ts`](../src/guide/card_demos.ts) | Canvas animations for Guide cards |
-| [`src/core/lesson_demo.ts`](../src/core/lesson_demo.ts) | Game demonstrations shown in Guide details |
-
-A fallback view is displayed without custom data, but verify both Japanese and English content before publishing.
-
-## Input support
+## Input support and responsive controls
 
 ### Single-player movement
 
-Use `teleop(g.keys, ...)` to handle keyboard `WASD` / arrow keys, the gamepad left stick, and the D-pad through the same code path:
+Use `teleop(g.keys, ...)` as in the example to share movement across keyboard `WASD` / arrow
+keys, gamepad left stick / D-pad, and shared touch movement controls. Stages must not mutate
+`g.keys` or duplicate the shell's input merging.
 
-```ts
-const cmd = teleop(g.keys, { baseLin: 180, baseAng: 2.4 });
-```
+Custom keyboard listeners must respect `isStageInteractionBlocked()` and `ownsNativeKey()`
+from [`src/lib/input_guard.ts`](../src/lib/input_guard.ts). Preserve native input editing and
+button activation. If a stage needs direct gamepad buttons, use `readStageGamepads()` from
+[`src/lib/stage_gamepads.ts`](../src/lib/stage_gamepads.ts); it masks dialog-consumed presses
+until release so closing a menu cannot also trigger a stage action.
 
-Stages normally do not need to call `navigator.getGamepads()` directly.
+### Editors, settings panels, and touch
 
-### Editors and settings panels
+| Module                                                    | Purpose                                                                   |
+| --------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [`src/lib/block_program.ts`](../src/lib/block_program.ts) | Block editing with shared controls                                        |
+| [`src/lib/overlay_panel.ts`](../src/lib/overlay_panel.ts) | Sliders and choices; `placement: "dock"` places controls below the canvas |
+| [`src/lib/overlaypad.ts`](../src/lib/overlaypad.ts)       | Register/unregister custom panels for gamepad navigation                  |
+| [`src/lib/navpad.ts`](../src/lib/navpad.ts)               | Nav2 goal cursor and orientation input                                    |
+| [`src/lib/armpad.ts`](../src/lib/armpad.ts)               | Arm controls                                                              |
+| [`src/lib/touchpad.ts`](../src/lib/touchpad.ts)           | Shared touch layouts and stage-specific control selection                 |
 
-- Block editing: [`src/lib/block_program.ts`](../src/lib/block_program.ts)
-- HTML settings panels: [`src/lib/overlay_panel.ts`](../src/lib/overlay_panel.ts)
-- Nav2 goal cursor: [`src/lib/navpad.ts`](../src/lib/navpad.ts)
-- Arm controls: [`src/lib/armpad.ts`](../src/lib/armpad.ts)
+Do not introduce mouse-only tasks. Keep the stage completable with keyboard and gamepad, and
+provide suitable touch controls. Check any stage-ID-specific control selection when reusing a
+specialized layout; the manifest does not activate every controller automatically.
 
-Do not add mouse-only interfaces. The same task must also be completable with a keyboard and gamepad.
+Use `drawHint()` and `drawTimer()` from `lib/draw.ts` for common canvas text. They integrate
+with [`src/lib/canvas_readout.ts`](../src/lib/canvas_readout.ts), which presents hints and times
+as readable HTML on narrow screens. Keep essential instructions and experiment results in
+readable HTML panels when they would become too small on the scaled canvas.
+
+For experiment-style Lessons, [`src/lib/lab_completion.ts`](../src/lib/lab_completion.ts)
+provides `mountLabCompletion()` and `mountLabWorkbench()`. These keep completion feedback
+visible and group the scene with its controls. Save their returned cleanup functions and call
+them in `dispose()` to restore the shared shell.
 
 ### Two-player games
 
-Use [`src/lib/two_player.ts`](../src/lib/two_player.ts) for local two-player controls.
+Use [`src/lib/two_player.ts`](../src/lib/two_player.ts) for separate player inputs:
 
-- Player 1: gamepad 1 or `WASD`
-- Player 2: gamepad 2 or arrow keys
-- Action: gamepad `X`; `E` for Player 1 and `Enter` for Player 2
-- Boost: shoulder button or trigger; left `Shift` for Player 1 and right `Shift` for Player 2
+- Player 1: gamepad 1 or `WASD`; action with `A` / `X` on the pad or `E` / `Space` on the keyboard.
+- Player 2: gamepad 2 or arrow keys; action with `A` / `X` on the pad or `Enter` on the keyboard.
+- Boost: shoulder button or trigger; left `Shift` / `X` for Player 1 and right `Shift` for Player 2.
 
-Always call `setActive(true)` when the stage starts and `setActive(false)` in `dispose()`.
+Call `setActive(true)` when entering two-player mode and `setActive(false)` when leaving it
+or disposing the stage. Reset button-edge state on restart as in the reference games, and
+update the observable graph when a second player is added or removed.
 
-## Common shared modules
+## Shared modules and reference stages
 
-| Module | Purpose |
-|---|---|
-| `lib/draw.ts` | Draws robots, grids, zones, timers, and other shared elements |
-| `lib/teleop.ts` | Calculates velocity commands from combined input |
-| `lib/walls.ts` | Detects collisions between a circular robot and walls |
-| `lib/trail.ts` | Records and draws paths |
-| `lib/particles.ts` | Particle effects |
-| `lib/hud.ts` | Formats pose, Twist, and time displays |
-| `lib/ros2_concept.ts` | Typed builder for ROS 2 information |
-| `lib/block_program.ts` | Block-programming UI |
-| `lib/start_drag.ts` | START movement for Feedforward / Feedback stages |
-| `lib/camera_mission.ts` | Shared camera Lesson behavior |
-| `lib/arm.ts` | Arm kinematics and rendering data |
+Reuse existing modules where they provide the required behavior:
 
-Reuse an existing shared module when it provides the required behavior instead of duplicating the implementation inside a stage.
+| Module                                                                        | Purpose                                                            |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `lib/draw.ts`, `lib/hud.ts`                                                   | Shared drawing and pose, Twist, and time formatting                |
+| `lib/walls.ts`, `lib/trail.ts`, `lib/particles.ts`                            | Collision checks, paths, and effects                               |
+| `lib/start_drag.ts`                                                           | START movement for Feedforward / Feedback stages                   |
+| `lib/camera_mission.ts`                                                       | Shared camera Lesson behavior                                      |
+| `lib/arm.ts`                                                                  | Arm kinematics and rendering data                                  |
+| `lib/imitation_data.ts`, `lib/imitation_model.ts`, `lib/imitation_visuals.ts` | Demonstration data, behavior-cloning model, and shared lab visuals |
+| `lib/reinforcement_model.ts`                                                  | Reinforcement-learning simulation and policy                       |
+| `lib/vla_model.ts`, `lib/world_model.ts`                                      | VLA and world-model inference / experiment logic                   |
 
-## Reference stages
-
-| What you want to build | Reference implementation |
-|---|---|
-| Simple single-player Game | [`delivery.ts`](../src/stages/game/delivery.ts) |
-| Two-player Game | [`robo_soccer.ts`](../src/stages/game/robo_soccer.ts) |
-| Mapping Game | [`treasure_map.ts`](../src/stages/game/treasure_map.ts) |
-| Node-wiring Lesson | [`pubsub_builder.ts`](../src/stages/lesson/pubsub_builder.ts) |
-| Block-editing Lesson | [`lidar_avoidance.ts`](../src/stages/lesson/lidar_avoidance.ts) |
-| Feedforward / Feedback comparison | [`feedforward_controller.ts`](../src/stages/lesson/feedforward_controller.ts), [`feedback_controller.ts`](../src/stages/lesson/feedback_controller.ts) |
-| Image-processing Lesson | [`image_processing.ts`](../src/stages/lesson/image_processing.ts) |
-| Arm Lesson | [`joint_teleop.ts`](../src/stages/lesson/joint_teleop.ts) |
+| What you want to build                        | Reference implementation                                                                                                                               |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Simple single-player Game                     | [`delivery.ts`](../src/stages/game/delivery.ts)                                                                                                        |
+| Two-player Game                               | [`robo_soccer.ts`](../src/stages/game/robo_soccer.ts)                                                                                                  |
+| Mapping Game                                  | [`treasure_map.ts`](../src/stages/game/treasure_map.ts)                                                                                                |
+| Node-wiring Lesson                            | [`pubsub_builder.ts`](../src/stages/lesson/pubsub_builder.ts)                                                                                          |
+| Block-editing Lesson                          | [`lidar_avoidance.ts`](../src/stages/lesson/lidar_avoidance.ts)                                                                                        |
+| Feedforward / Feedback comparison             | [`feedforward_controller.ts`](../src/stages/lesson/feedforward_controller.ts), [`feedback_controller.ts`](../src/stages/lesson/feedback_controller.ts) |
+| Live parameters and terminal state            | [`param_tuner.ts`](../src/stages/lesson/param_tuner.ts)                                                                                                |
+| Image-processing Lesson                       | [`image_processing.ts`](../src/stages/lesson/image_processing.ts)                                                                                      |
+| Arm Lesson                                    | [`joint_teleop.ts`](../src/stages/lesson/joint_teleop.ts)                                                                                              |
+| Demonstration collection and behavior cloning | [`imitation_learning.ts`](../src/stages/lesson/imitation_learning.ts)                                                                                  |
+| Reward design and policy evaluation           | [`reinforcement_learning.ts`](../src/stages/lesson/reinforcement_learning.ts)                                                                          |
+| Image-and-language action selection           | [`vla_lab.ts`](../src/stages/lesson/vla_lab.ts)                                                                                                        |
+| Learned prediction and planning               | [`world_model.ts`](../src/stages/lesson/world_model.ts)                                                                                                |
 
 ## Completion checklist
 
-Run the following commands:
-
-```bash
-npm run format
-npm run format:check
-npm test
-npm run build
-npm run dev
-```
-
-At minimum, verify the following behavior in a browser:
-
-- A Game or Lesson can be started from Home.
-- Stage selection and transitions to the next stage work correctly.
-- No state, UI, or event handlers remain after a reset.
-- The stage can be completed with a keyboard.
-- The stage can be completed with a gamepad.
-- The Lesson modal and Guide explanations are readable in Japanese and English.
-- The target Game or Lesson opens directly from the Guide.
-- Essential controls remain visible at narrow screen widths.
-
-Update the stage lists before committing:
+Use the Node.js version declared in `package.json` and install dependencies with `npm ci`.
+After changing manifests, regenerate both catalogs before running tests:
 
 ```bash
 npm run gen:stages
-```
-
-The final CI-equivalent checks are:
-
-```bash
+npm run gen:guide
 npm run format:check
 npm test
 npm run build
 ```
 
+Format changed source files with Prettier when needed. `npm run format` formats all files
+covered by the repository configuration, so review its diff before committing.
+
+`npm test` runs the TypeScript tests plus `check:stages` and `check:guide`. The all-stage
+terminal tests discover new stage files automatically and validate cold metadata, graph
+endpoints, available commands, and emitted topics. Add focused behavior tests for new controls,
+simulation logic, or learning models.
+
+When adding or reordering stages, update catalog-count and numbering expectations in
+[`tests/guide_ui.test.ts`](../tests/guide_ui.test.ts),
+[`tests/stage_terminal_contracts.test.ts`](../tests/stage_terminal_contracts.test.ts), and
+[`tests/world_completion.test.ts`](../tests/world_completion.test.ts) as appropriate.
+Also update descriptive counts outside the generated README tables. Commit the regenerated
+README tables and Guide JSON together with the stage changes.
+
+CI currently runs `npm ci`, `npm audit --audit-level=high`, `npm test`, and `npm run build`.
+Formatting is an additional local check. DOM tests do not validate rendered canvas pixels or
+physical controller drivers, so start `npm run dev` and verify:
+
+- Home, the stage picker, and Guide links open the intended Game or Lesson; next-stage navigation stays in the same mode.
+- Resetting and changing stages clears stale input, telemetry, terminal history, callbacks, and stage-specific UI without duplicating listeners.
+- Keyboard, gamepad, and applicable touch controls can complete the activity, including custom panels and editors.
+- Opening help, menus, or the terminal pauses the simulation; returning or refocusing the window does not replay a held action.
+- Declared topics and terminal observations match real stage interactions, including final results and player-mode changes.
+- Lesson briefings, Japanese display labels, Guide copy, diagrams, and animations explain the activity in both languages.
+- Instructions, controls, results, and completion actions remain visible at narrow and wide widths (for example 375, 768, and 1280 px).
+
 ## How automatic registration works
 
-- [`src/core/stage_collect.ts`](../src/core/stage_collect.ts) — eagerly imports `src/stages/**/*.ts`
-- [`src/core/stage_def.ts`](../src/core/stage_def.ts) — registers manifests, i18n data, diagrams, and display order
-- [`src/core/modes.ts`](../src/core/modes.ts) — generates the Game / Lesson lists from registered stages
-- [`scripts/gen-stage-list.mjs`](../scripts/gen-stage-list.mjs) — generates the README tables from the manifests
+| File                                                                | Responsibility                                                     |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [`src/core/stage_collect.ts`](../src/core/stage_collect.ts)         | Eagerly imports playable `src/stages/**/*.ts` modules              |
+| [`src/core/stage_def.ts`](../src/core/stage_def.ts)                 | Registers manifests, translations, diagrams, modes, and ordering   |
+| [`src/core/modes.ts`](../src/core/modes.ts)                         | Builds the runtime Game / Lesson lists                             |
+| [`scripts/gen-stage-list.mjs`](../scripts/gen-stage-list.mjs)       | Validates IDs/orders and generates the README stage tables         |
+| [`scripts/gen-guide-catalog.mjs`](../scripts/gen-guide-catalog.mjs) | Evaluates manifests in both languages and generates Guide metadata |
+| [`src/guide/stages.ts`](../src/guide/stages.ts)                     | Reads the generated catalog without loading playable stages        |
 
-If a new file does not appear, check the default export of `defineStage()`, its `mode` and `order`, and whether the factory's `id` matches the filename.
+If a stage is missing from the playable app, check its `defineStage()` export, `mode`,
+`order`, and filename/ID match. If it is missing or stale only in the Guide, regenerate
+the Guide catalog and verify the entry in `stages.generated.json`.

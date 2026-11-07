@@ -13,6 +13,8 @@
 //
 // RShift is disambiguated from LShift via KeyboardEvent.location === 2.
 
+import { isStageInteractionBlocked, isTypingTarget, ownsNativeKey } from "./input_guard";
+
 const STICK_DEAD = 0.35;
 
 const p1Keys = new Set<string>();
@@ -38,6 +40,7 @@ export interface PlayerInput {
 }
 
 function onKeyDown(e: KeyboardEvent): void {
+  if (isStageInteractionBlocked() || ownsNativeKey(e)) return;
   const k = e.key.toLowerCase();
   if (k === "shift") {
     if (e.location === 2) p2Keys.add("rshift");
@@ -118,6 +121,17 @@ export function resetEdges(): void {
   prevP2Action = false;
 }
 
+/** Drop held keys and consume currently held pad actions across UI transitions. */
+export function releasePlayerInput(): void {
+  p1Keys.clear();
+  p2Keys.clear();
+  const { p1, p2 } = findPads();
+  prevP1Action = p1 ? readPad(p1).action : false;
+  prevP2Action = p2 ? readPad(p2).action : false;
+  prevToggleY = p1?.buttons[3]?.pressed ?? false;
+  key2Pending = false;
+}
+
 function findPads(): { p1: Gamepad | null; p2: Gamepad | null } {
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
   let p1: Gamepad | null = null;
@@ -173,6 +187,10 @@ function blend(pad: PadAxes | null, kb: PadAxes): PadAxes {
 }
 
 export function pollP1(): PlayerInput {
+  if (isStageInteractionBlocked()) {
+    releasePlayerInput();
+    return neutralInput();
+  }
   const { p1 } = findPads();
   const pad = p1 ? readPad(p1) : null;
   const kb: PadAxes = {
@@ -190,6 +208,10 @@ export function pollP1(): PlayerInput {
 }
 
 export function pollP2(): PlayerInput {
+  if (isStageInteractionBlocked()) {
+    releasePlayerInput();
+    return neutralInput();
+  }
   const { p2 } = findPads();
   const pad = p2 ? readPad(p2) : null;
   const kb: PadAxes = {
@@ -216,19 +238,28 @@ export function padCount(): number {
   return (p1 ? 1 : 0) + (p2 ? 1 : 0);
 }
 
+function neutralInput(): PlayerInput {
+  return {
+    fwd: false,
+    back: false,
+    left: false,
+    right: false,
+    action: false,
+    actionEdge: false,
+    boost: false,
+    hasPad: false,
+  };
+}
+
 // 1P/2P toggle: pad-1 Y button (button 3) + keyboard "2".
 let prevToggleY = false;
 let key2Pending = false;
 let toggleListenerInstalled = false;
 
-function isInInputField(): boolean {
-  const ae = document.activeElement;
-  return !!(ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.tagName === "SELECT"));
-}
-
 function key2Listener(e: KeyboardEvent): void {
   if (e.repeat) return;
-  if (e.key === "2" && !isInInputField()) key2Pending = true;
+  if (e.key === "2" && !isStageInteractionBlocked() && !isTypingTarget(e.target))
+    key2Pending = true;
 }
 
 /** Install the "2" key listener (call from stage init regardless of 1P/2P). */
@@ -254,6 +285,10 @@ export function uninstallToggleListener(): void {
  *   - "2" key pressed (one shot per press, repeats ignored).
  */
 export function pollToggleEdge(): boolean {
+  if (isStageInteractionBlocked()) {
+    releasePlayerInput();
+    return false;
+  }
   const { p1 } = findPads();
   const yHeld = p1?.buttons[3]?.pressed ?? false;
   const yEdge = yHeld && !prevToggleY;

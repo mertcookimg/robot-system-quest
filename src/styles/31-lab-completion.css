@@ -1,0 +1,43 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+.lab-workbench {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  width: min(800px, 100%);
+  min-width: 0;
+  max-width: 100%;
+}
+.lab-workbench > * {
+  min-width: 0;
+  width: 100%;
+}
+@media (min-width: 1100px) {
+  .lab-workbench {
+    width: min(1280px, 100%);
+    grid-template-columns: minmax(0, 1.2fr) minmax(420px, 1fr);
+    gap: 14px;
+  }
+  body:has(.lab-workbench) .lesson-brief {
+    width: min(1280px, 100%);
+  }
+}
+#clear-overlay.lab-completion-layer {
+  box-sizing: border-box;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  padding: 16px;
+  border-radius: 0;
+}
+#clear-overlay.lab-completion-layer .card {
+  box-sizing: border-box;
+  width: min(440px, 100%);
+  min-width: 0;
+  max-height: calc(100dvh - 32px);
+  padding: 24px;
+  overflow-y: auto;
+}

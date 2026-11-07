@@ -12,6 +12,7 @@ import { defineStage } from "../../core/stage_def";
 import { drawHint, drawRobotBody, drawRobotLabel, COLORS, clearBackground } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
 import { canvasInteractionRadius } from "../../lib/canvas_touch";
+import { readStageGamepads } from "../../lib/stage_gamepads";
 import { t, tx } from "../../i18n";
 
 interface Port {
@@ -265,7 +266,7 @@ export function makeAction(): Stage {
   }
 
   function pollPuzzleNav() {
-    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const pads = readStageGamepads();
     let pad: Gamepad | null = null;
     for (const p of pads) {
       if (p) {
@@ -332,6 +333,11 @@ export function makeAction(): Stage {
     return lastPadAt > lastMouseAt;
   }
 
+  function publishActionEvent(event: string, detail: Record<string, string | number> = {}) {
+    const data = JSON.stringify({ action: "/navigate_to_pose", event, ...detail });
+    g.publish("/action_builder/events", `std_msgs/msg/String data: ${JSON.stringify(data)}`);
+  }
+
   function update(dt: number) {
     particles.update(dt);
     if (cleared) return;
@@ -340,6 +346,7 @@ export function makeAction(): Stage {
 
     const valid = checkAllValid();
     if (valid && !allValid) {
+      publishActionEvent("goal_accepted");
       g.shake(0.3);
       particles.burst(400, 280, "#c4b5fd", 24);
       g.setStatus(t("action_builder.status.success"), "var(--ok)");
@@ -356,18 +363,13 @@ export function makeAction(): Stage {
       if (pubAcc > 0.3) {
         pubAcc = 0;
         const progress = (robotX - ROBOT_START_X) / (ROBOT_GOAL_X - ROBOT_START_X);
-        g.publish(
-          "/navigate_to_pose/_action/feedback",
-          `nav2_msgs/action/NavigateToPose.Feedback distance_remaining: ${((1 - progress) * 6).toFixed(2)}m`,
-        );
+        publishActionEvent("feedback", {
+          distance_remaining: Number((Math.max(0, 1 - progress) * 6).toFixed(2)),
+        });
       }
       if (robotX >= ROBOT_GOAL_X) {
         cleared = true;
-        g.publish(
-          "/navigate_to_pose/_action/result",
-          `nav2_msgs/action/NavigateToPose.Result {error_code: 0, error_msg: ""}`,
-        );
-        g.publish("/navigate_to_pose/_action/status", `Goal status: SUCCEEDED (4)`);
+        publishActionEvent("result", { error_code: 0, status: "SUCCEEDED" });
         particles.burst(ROBOT_GOAL_X, ROBOT_Y, "#c4b5fd", 36);
         g.shake(0.4);
         const stars = elapsed < 25 ? 3 : elapsed < 50 ? 2 : 1;
@@ -668,13 +670,28 @@ export function makeAction(): Stage {
         "ROS 2のActionは、ナビゲーション・把持・移動など、完了まで時間のかかる処理に適した仕組みです。" +
         "ClientがGoalを送るとServerが処理を始め、実行中は必要に応じてFeedbackを返し、完了時にResultを返します。" +
         "Serviceと異なり、途中経過の通知とキャンセル要求を扱えます。" +
-        "接続するにはAction名とAction型の両方が一致している必要があります。",
-      msgTypes: ["nav2_msgs/action/NavigateToPose"],
+        "接続するにはAction名とAction型の両方が一致している必要があります。" +
+        "この教材の/action_builder/eventsは進行状況を観察するための要約ログで、ROS 2内部のAction通信そのものではありません。",
+      msgTypes: ["nav2_msgs/action/NavigateToPose", "std_msgs/msg/String"],
       cli: [
         "ros2 action list",
         "ros2 action info /navigate_to_pose",
-        'ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose "{pose: {header: {frame_id: map}, pose: {position: {x: 2.0, y: 0.0}, orientation: {w: 1.0}}}}" --feedback',
+        "ros2 topic echo /action_builder/events",
       ],
+      state: {
+        nodes: ["/nav_client", "/nav_server"],
+        topics: [
+          { name: "/action_builder/events", type: "std_msgs/msg/String", pub: ["/nav_server"] },
+        ],
+        actions: [
+          {
+            name: "/navigate_to_pose",
+            type: "nav2_msgs/action/NavigateToPose",
+            clients: ["/nav_client"],
+            servers: ["/nav_server"],
+          },
+        ],
+      },
       realWorld: tx(
         "Nav2やMoveIt 2では、完了まで時間のかかる処理にActionが使われます。Goalの受付、途中経過のFeedback、完了時のResult、キャンセル要求を扱える点がServiceとの大きな違いです。",
         "Nav2 and MoveIt 2 use Actions for tasks that take time to finish. Compared with Services, Actions add goal handling, progress feedback, a final result, and cancellation requests.",

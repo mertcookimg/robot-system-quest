@@ -409,7 +409,6 @@ class Follower(Node):
             pub: ["/follower"],
             sub: [],
           },
-          { name: "/tf", type: "tf2_msgs/msg/TFMessage", pub: ["/leader", "/follower"], sub: [] },
         ],
       },
     },

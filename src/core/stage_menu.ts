@@ -16,6 +16,7 @@ let open = false;
 let level: "tab" | "stage" = "stage";
 let tabIdx = 0;
 let focusIdx = 0;
+let focusBeforeOpen: HTMLElement | null = null;
 
 const TAB_MODES: modes.Mode[] = ["game", "lesson"];
 
@@ -34,16 +35,21 @@ function refreshFocus(): void {
     el.classList.remove("gp-focus");
   });
   if (!open) return;
+  updateExpanded();
   if (level === "tab") {
     const targetMode = TAB_MODES[tabIdx];
     ui.modeTabs.querySelectorAll<HTMLButtonElement>(".mode-tab").forEach((b) => {
-      if (b.dataset.mode === targetMode) b.classList.add("gp-focus");
+      if (b.dataset.mode === targetMode) {
+        b.classList.add("gp-focus");
+        b.focus({ preventScroll: true });
+      }
     });
   } else {
     const pills = ui.stageSelector.querySelectorAll<HTMLButtonElement>(".stage-pill");
     const pill = pills[focusIdx];
     if (pill) {
       pill.classList.add("gp-focus");
+      pill.focus({ preventScroll: true });
       pill.scrollIntoView({ block: "nearest", inline: "center" });
     }
   }
@@ -51,6 +57,10 @@ function refreshFocus(): void {
 
 export function openMenu(targetMode?: modes.Mode): void {
   if (!deps) return;
+  if (!open) {
+    const active = document.activeElement;
+    focusBeforeOpen = active instanceof HTMLElement && active !== document.body ? active : null;
+  }
   // Optional pre-select a tab (called by the GAME / LESSON tab click).
   if (targetMode && targetMode !== modes.getMode()) modes.setModeView(targetMode);
   open = true;
@@ -59,6 +69,7 @@ export function openMenu(targetMode?: modes.Mode): void {
   focusIdx = Math.max(0, ids.indexOf(deps.getCurrentStageId()));
   tabIdx = TAB_MODES.indexOf(modes.getMode());
   document.body.classList.add("stage-menu-open");
+  updateExpanded();
   // Drop residual held keys from both input streams.
   input.clearAll();
   clearBlockpadHighlights();
@@ -113,13 +124,23 @@ export function stepVertical(d: -1 | 1): void {
 
 export function closeMenu(): void {
   if (!open) return;
+  const restoreFocus = focusBeforeOpen;
+  focusBeforeOpen = null;
   open = false;
   document.body.classList.remove("stage-menu-open");
+  updateExpanded();
   document.querySelectorAll(".stage-pill.gp-focus, .mode-tab.gp-focus").forEach((el) => {
     el.classList.remove("gp-focus");
   });
   prevPad = makePrev();
   clearBlockpadHighlights();
+  if (
+    restoreFocus?.isConnected &&
+    !restoreFocus.matches(":disabled") &&
+    !restoreFocus.closest("[inert]")
+  ) {
+    restoreFocus.focus({ preventScroll: true });
+  }
 }
 
 export function stepHorizontal(d: -1 | 1): void {
@@ -153,6 +174,10 @@ export function levelDown(): void {
 
 export function confirm(): void {
   if (!deps) return;
+  if (document.activeElement?.matches(".stage-menu-close")) {
+    closeMenu();
+    return;
+  }
   if (level === "tab") {
     const target = TAB_MODES[tabIdx];
     if (target !== modes.getMode()) modes.setModeView(target);
@@ -204,6 +229,26 @@ export function pollPad(pad: Gamepad): void {
 
 export function setupStageMenu(d: Deps): void {
   deps = d;
+  updateExpanded();
+  // Native Tab navigation and pointer focus must select the same item as
+  // arrows and the controller. There is only one current selection.
+  document.addEventListener("focusin", (event) => {
+    if (!open || !(event.target instanceof HTMLElement)) return;
+    const target = event.target;
+    const pills = [...ui.stageSelector.querySelectorAll(".stage-pill")];
+    const index = pills.indexOf(target);
+    if (index >= 0) {
+      level = "stage";
+      focusIdx = index;
+    } else if (target.matches(".mode-tab")) {
+      level = "tab";
+      tabIdx = TAB_MODES.indexOf(target.dataset.mode as modes.Mode);
+    } else if (!target.matches(".stage-menu-close")) return;
+    document.querySelectorAll(".stage-pill.gp-focus, .mode-tab.gp-focus").forEach((el) => {
+      el.classList.remove("gp-focus");
+    });
+    if (!target.matches(".stage-menu-close")) target.classList.add("gp-focus");
+  });
   // Click outside the popup or the mode tabs closes the menu.
   document.addEventListener("mousedown", (e) => {
     if (!open) return;
@@ -213,4 +258,22 @@ export function setupStageMenu(d: Deps): void {
     if (target.closest(".mode-tabs")) return;
     closeMenu();
   });
+}
+
+function updateExpanded(): void {
+  ui.modeTabs.querySelectorAll<HTMLButtonElement>(".mode-tab").forEach((button) => {
+    button.setAttribute("aria-controls", ui.stageSelector.id);
+    button.setAttribute("aria-expanded", String(open && button.dataset.mode === modes.getMode()));
+  });
+}
+
+/** Keep Tab within the open picker, including the close button and both modes. */
+export function stepTab(direction: -1 | 1): void {
+  const controls = [
+    ...ui.modeTabs.querySelectorAll<HTMLButtonElement>(".mode-tab"),
+    ...ui.stageSelector.querySelectorAll<HTMLButtonElement>("button"),
+  ].filter((button) => !button.disabled && !button.closest("[hidden], [inert]"));
+  if (!controls.length) return;
+  const index = controls.indexOf(document.activeElement as HTMLButtonElement);
+  controls[(index + direction + controls.length) % controls.length].focus({ preventScroll: true });
 }

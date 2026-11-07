@@ -10,6 +10,10 @@ let raf = 0;
 let startedAt = 0;
 
 const LESSON_IDS = new Set([
+  "imitation_learning",
+  "reinforcement_learning",
+  "vla_lab",
+  "world_model",
   "pubsub_builder",
   "service_builder",
   "tf_puzzle",
@@ -987,6 +991,179 @@ function draw(canvas: DemoCanvas, t: number): void {
     string,
     (c: CanvasRenderingContext2D, width: number, height: number, time: number) => void
   > = {
+    world_model: (c, width, height, time) => {
+      // Concept illustration, not model output: first change only the target,
+      // then only the initial velocity. The latter changes candidate forecasts.
+      const y = height * 0.6;
+      const experiment = Math.floor(time / 3) % 3;
+      const moving = experiment === 2;
+      const start = width * 0.28;
+      const predictions = moving
+        ? [width * 0.5, width * 0.79, width * 0.92]
+        : [start, width * 0.53, width * 0.79];
+      const selected = experiment === 1 ? 2 : 1;
+      const target = width * (experiment === 0 ? 0.565 : 0.825);
+      c.fillStyle = "#172638";
+      c.fillRect(12, y + 11, width - 24, 4);
+      predictions.forEach((x) => {
+        c.fillStyle = "rgba(196,181,253,.2)";
+        c.fillRect(x - 8, y - 8, 16, 16);
+      });
+      // The solid starting box has the same dimensions as every forecast box.
+      c.fillStyle = "#f4bd69";
+      c.fillRect(start - 8, y - 8, 16, 16);
+      predictions.forEach((x, index) => {
+        c.strokeStyle = index === selected ? "#65e6c4" : "#c4b5fd";
+        c.lineWidth = index === selected ? 2 : 1;
+        c.setLineDash([3, 2]);
+        c.strokeRect(x - 8, y - 8, 16, 16);
+        label(c, ["NONE", "WEAK", "STRONG"][index], x, y + 23, "#c4b5fd");
+      });
+      c.setLineDash([]);
+      c.lineWidth = 1;
+      c.strokeStyle = "#65e6c4";
+      c.beginPath();
+      c.moveTo(target, y - 12);
+      c.lineTo(target, y - 27);
+      c.lineTo(target + 7, y - 24);
+      c.lineTo(target, y - 21);
+      c.stroke();
+      label(c, "PICK", predictions[selected], y - 33, "#65e6c4");
+      label(c, experiment === 0 ? "NEAR TARGET" : "FAR TARGET", target, y + 35, "#65e6c4");
+      label(
+        c,
+        ["1. START AT REST", "2. CHANGE TARGET", "3. CHANGE INITIAL SPEED"][experiment],
+        width * 0.5,
+        10,
+        "#c4b5fd",
+      );
+      if (moving) {
+        c.strokeStyle = "#f4bd69";
+        c.beginPath();
+        c.moveTo(start + 3, y - 18);
+        c.lineTo(start + 25, y - 18);
+        c.lineTo(start + 20, y - 22);
+        c.moveTo(start + 25, y - 18);
+        c.lineTo(start + 20, y - 14);
+        c.stroke();
+      }
+      robot(c, start - 22, y, 0, time, 0.65);
+    },
+    vla_lab: (c, width, height, time) => {
+      // Concept illustration: image + the selected word leads to an action.
+      const size = Math.min((width * 0.48 - 12) / 7, (height - 35) / 5);
+      const left = 9;
+      const top = (height - size * 5) / 2 + 8;
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 7; col++) {
+          c.fillStyle = "#142339";
+          c.fillRect(left + col * size + 0.5, top + row * size + 0.5, size - 1, size - 1);
+        }
+      }
+      for (const [row, color, mark] of [
+        [2, "#f87171", "R"],
+        [4, "#60a5fa", "B"],
+      ] as const) {
+        c.fillStyle = color;
+        c.fillRect(left + 5 * size + 1, top + row * size + 1, size - 2, size - 2);
+        label(c, mark, left + 5.5 * size, top + (row + 0.5) * size + 2, "#0b1629");
+      }
+      label(c, "IMAGE", left + 3.5 * size, top - 4, "#c3b7fb");
+      robot(c, left + (1.5 + Math.min(3, time % 4)) * size, top + 2.5 * size, 0, time, size / 28);
+      const centerY = height * 0.58;
+      label(c, "+", width * 0.52, centerY + 2, "#c3b7fb");
+      c.fillStyle = "#34202c";
+      c.strokeStyle = "#f87171";
+      c.lineWidth = 1;
+      c.beginPath();
+      c.roundRect(width * 0.57, centerY - 12, width * 0.19, 24, 4);
+      c.fill();
+      c.stroke();
+      label(c, '"red"', width * 0.665, centerY + 2, "#fca5a5");
+      label(c, "WORD", width * 0.665, centerY - 18, "#c3b7fb");
+      c.fillStyle = "#7dd3fc";
+      c.font = "700 19px system-ui, sans-serif";
+      c.textAlign = "center";
+      c.fillText("→", width * 0.88, centerY + 6);
+      label(c, "ACTION", width * 0.88, centerY - 18, "#c3b7fb");
+    },
+    reinforcement_learning: (c, width, height, time) => {
+      // Concept illustration only: this preview does not train or evaluate a policy.
+      const size = Math.min((width - 24) / 7, (height - 28) / 5);
+      const left = (width - size * 7) / 2;
+      const top = (height - size * 5) / 2 + 5;
+      const walls = new Set([3, 10, 24, 31]);
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 7; col++) {
+          const cell = row * 7 + col;
+          c.fillStyle = walls.has(cell) ? "#33465e" : "#111c2b";
+          if (cell === 20) c.fillStyle = "#145e4e";
+          if (cell === 8) c.fillStyle = "#70521d";
+          c.fillRect(left + col * size + 1, top + row * size + 1, size - 2, size - 2);
+        }
+      }
+      const flagX = left + 6.35 * size;
+      const flagY = top + 2.2 * size;
+      c.strokeStyle = "#e0fff5";
+      c.lineWidth = 1.5;
+      c.beginPath();
+      c.moveTo(flagX, flagY);
+      c.lineTo(flagX, flagY + size * 0.65);
+      c.stroke();
+      c.fillStyle = "#5eead4";
+      c.beginPath();
+      c.moveTo(flagX, flagY);
+      c.lineTo(flagX + size * 0.45, flagY + size * 0.2);
+      c.lineTo(flagX, flagY + size * 0.35);
+      c.fill();
+      c.fillStyle = "#fbbf24";
+      c.font = `700 ${size * 0.7}px system-ui, sans-serif`;
+      c.textAlign = "center";
+      c.fillText("★", left + 1.5 * size, top + 1.75 * size);
+      const route = [0, 7, 14, 15, 16, 17, 18, 19, 20];
+      const progress = (time * 2) % route.length;
+      const index = Math.floor(progress);
+      const from = route[index];
+      const to = route[Math.min(index + 1, route.length - 1)];
+      const fraction = progress - index;
+      const dx = (to % 7) - (from % 7);
+      const dy = Math.floor(to / 7) - Math.floor(from / 7);
+      robot(
+        c,
+        left + ((from % 7) + 0.5 + dx * fraction) * size,
+        top + (Math.floor(from / 7) + 0.5 + dy * fraction) * size,
+        Math.atan2(dy, dx),
+        time,
+        size / 32,
+      );
+    },
+    imitation_learning: (c, width, height, time) => {
+      // Concept illustration: recorded samples and an observation query.
+      const y = (x: number) => height * 0.52 + Math.sin((x / width) * Math.PI * 2) * height * 0.17;
+      c.beginPath();
+      for (let x = 15; x < width - 15; x += 3) {
+        if (x === 15) c.moveTo(x, y(x));
+        else c.lineTo(x, y(x));
+      }
+      c.strokeStyle = "#33465e";
+      c.lineWidth = 22;
+      c.stroke();
+      for (let i = 0; i < 12; i++) {
+        const x = 20 + (i * (width - 40)) / 12;
+        c.fillStyle = "#fbbf24";
+        c.fillRect(x - 2, y(x) - 2, 4, 4);
+      }
+      const x = 20 + ((time % 5) / 5) * (width - 40);
+      c.fillStyle = "#5eead4";
+      c.beginPath();
+      c.arc(x, y(x), 6, 0, Math.PI * 2);
+      c.fill();
+      c.strokeStyle = "#5eead4";
+      c.lineWidth = 1;
+      c.beginPath();
+      c.arc(x, y(x), 17, 0, Math.PI * 2);
+      c.stroke();
+    },
     delivery,
     follower,
     lidar_explorer: lidar,

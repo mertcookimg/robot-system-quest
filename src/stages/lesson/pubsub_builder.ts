@@ -14,6 +14,7 @@ import { defineStage } from "../../core/stage_def";
 import { drawHint, drawRobotBody, drawRobotLabel, COLORS, clearBackground } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
 import { canvasInteractionRadius } from "../../lib/canvas_touch";
+import { readStageGamepads } from "../../lib/stage_gamepads";
 import { t, tx } from "../../i18n";
 
 interface Port {
@@ -279,7 +280,7 @@ export function makePubsub(): Stage {
 
   // Pad + keyboard handle port focus and A/B confirm/cancel.
   function pollPuzzleNav() {
-    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const pads = readStageGamepads();
     let pad: Gamepad | null = null;
     for (const p of pads) {
       if (p) {
@@ -640,7 +641,7 @@ export function makePubsub(): Stage {
     id: "pubsub_builder",
     name: "Pub/Sub Builder",
     lesson: "Pub/Sub Basics",
-    lessonCmd: "rqt_graph",
+    lessonCmd: "ros2 topic echo /cmd_vel",
     ros2: {
       title: tx("Pub/Sub — NodeをTopicでつなぐ", "Pub/Sub — link nodes via topics"),
       summary:
@@ -649,7 +650,24 @@ export function makePubsub(): Stage {
         "実機で通信するにはQoSにも互換性が必要です。" +
         "すべて正しく接続すると擬似的なpublishが始まり、ロボットが動き出します。",
       msgTypes: ["geometry_msgs/msg/Twist", "nav_msgs/msg/Odometry"],
-      cli: ["ros2 node list", "ros2 topic list", "ros2 topic info /cmd_vel", "rqt_graph"],
+      cli: [
+        "ros2 node list",
+        "ros2 topic list",
+        "ros2 topic info /cmd_vel",
+        "ros2 topic echo /cmd_vel",
+      ],
+      state: {
+        nodes: ["/command_node", "/robot_node"],
+        topics: [
+          {
+            name: "/cmd_vel",
+            type: "geometry_msgs/msg/Twist",
+            pub: ["/command_node"],
+            sub: ["/robot_node"],
+          },
+          { name: "/odom", type: "nav_msgs/msg/Odometry", pub: ["/robot_node"] },
+        ],
+      },
       realWorld: tx(
         "実機のROS 2では、Launch Fileで複数のNodeを起動し、rqt_graphで接続を可視化できます。通信できない場合は、Topic名とMessage型に加えてQoSの互換性も確認します。",
         "Real ROS 2: bring up nodes via launch files, then visualize the graph in rqt_graph. If data does not flow, check the topic name, message type, and QoS compatibility.",

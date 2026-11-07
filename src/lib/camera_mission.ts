@@ -23,6 +23,7 @@ import { theme, withA } from "../core/theme";
 import { drawGrid, drawZone, drawRobotBody, drawRobotLabel, COLORS } from "./draw";
 import { Trail } from "./trail";
 import { Particles } from "./particles";
+import { readStageGamepads } from "./stage_gamepads";
 import { setBlockpadGamepadDisabled } from "./blockpad";
 import { registerLang, t } from "../i18n";
 
@@ -366,7 +367,7 @@ export function createCameraMission(opts: CameraMissionOpts) {
 
   /** Pad Y button toggles DRIVE ↔ TUNE. Call once per update. */
   function pollTuneToggle() {
-    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const pads = readStageGamepads();
     let pad: Gamepad | null = null;
     for (const p of pads) {
       if (p) {

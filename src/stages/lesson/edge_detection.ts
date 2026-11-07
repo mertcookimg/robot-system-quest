@@ -294,7 +294,10 @@ export function makeCameraMission(): Stage {
         g.shake(0.18);
         particles.burst(t.x, t.y, t.color, 18, 180);
         g.sfx.pickup();
-        g.publish("/scan_target", `captured ${t.label} (score ${score.toFixed(2)})`);
+        g.publish(
+          "/scan_target",
+          `std_msgs/msg/String data: ${JSON.stringify(`captured ${t.label} (score ${score.toFixed(2)})`)}`,
+        );
       }
     }
   }
@@ -517,8 +520,26 @@ export function makeCameraMission(): Stage {
         "床のライン・色付きターゲット・壁を見る視点、距離、角度を変えることで、" +
         "エッジ画像がどう変化するかを直感的に理解できます。" +
         "ゴールへの到達条件はパラメータに左右されず、画像処理の結果は常に表示されます。",
-      msgTypes: ["sensor_msgs/msg/Image", "geometry_msgs/msg/Twist"],
+      msgTypes: ["sensor_msgs/msg/Image", "geometry_msgs/msg/Twist", "std_msgs/msg/String"],
       cli: ["ros2 topic hz /image_raw", "ros2 topic echo /cmd_vel", "ros2 topic info /image_raw"],
+      state: {
+        nodes: ["/teleop", "/robot_node", "/camera", "/edge_observer"],
+        topics: [
+          {
+            name: TOPIC_CMD,
+            type: "geometry_msgs/msg/Twist",
+            pub: ["/teleop"],
+            sub: ["/robot_node"],
+          },
+          {
+            name: TOPIC_IMG,
+            type: "sensor_msgs/msg/Image",
+            pub: ["/camera"],
+            sub: ["/edge_observer"],
+          },
+          { name: "/scan_target", type: "std_msgs/msg/String", pub: ["/edge_observer"] },
+        ],
+      },
       python: `import cv2
 from cv_bridge import CvBridge
 bridge = CvBridge()

@@ -570,7 +570,7 @@ class MapBuilder(Node):
         "The map-building part of real SLAM nodes (slam_toolbox / cartographer) follows nearly the same flow: subscribe to LiDAR /scan, transform rays to world coordinates using the robot pose, update an occupancy grid, and publish to /map. The catch: on a real robot that pose is itself estimated from scan matching (Localization) — the heart of SLAM — which this stage skips by treating the pose as known. scan_range here behaves like a real launch-file parameter.",
       ),
       state: {
-        nodes: ["/teleop", "/lidar_node", "/map_builder"],
+        nodes: ["/teleop", "/robot", "/lidar_node", "/map_builder"],
         topics: [
           { name: "/cmd_vel", type: "geometry_msgs/msg/Twist", pub: ["/teleop"], sub: ["/robot"] },
           {

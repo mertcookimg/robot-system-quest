@@ -4,6 +4,12 @@ dist/
 .vite/
 *.tsbuildinfo
 
+# Test output
+coverage/
+
+# Generated source is versioned: src/guide/stages.generated.json,
+# src/lib/vla_weights.ts, and src/lib/world_model_weights.ts.
+
 # Logs
 *.log
 npm-debug.log*
@@ -17,8 +23,11 @@ desktop.ini
 
 # Environment
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.*.example
+!.env.template
+!.env.*.template
 
 # Claude Code (per-machine local settings)
 .claude/

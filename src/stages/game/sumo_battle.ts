@@ -190,7 +190,7 @@ export function makeSumoBattle(): Stage {
     mode2P = active;
     overlayPanel?.refresh();
     g.sfx.click();
-    reset();
+    (g.resetStage ?? reset)();
   }
 
   function setDifficulty(d: Difficulty) {
@@ -198,7 +198,7 @@ export function makeSumoBattle(): Stage {
     difficulty = d;
     overlayPanel?.refresh();
     g.sfx.click();
-    if (!mode2P) reset();
+    if (!mode2P) (g.resetStage ?? reset)();
   }
 
   function distFromCenter(p: { x: number; y: number }): number {
@@ -686,7 +686,7 @@ class SumoReferee(Node):
         "On real robots wheel odometry always drifts (slip, contact). That is why practical robots fuse it with LiDAR or IMU data for correction.",
       ),
       state: state({
-        nodes: ["/robot_node", "/rival_node", "/sumo_referee"],
+        nodes: ["/robot_node", "/rival_node", "/sumo_referee", "/teleop"],
         topics: [
           topic("/robot/manual_control/cmd_vel", "geometry_msgs/msg/Twist", {
             pub: ["/teleop"],

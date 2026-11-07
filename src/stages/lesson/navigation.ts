@@ -38,6 +38,7 @@ const MAX_LIN = 1.4 * PX_PER_M;
 const MAX_ANG = 1.8;
 const KW = 1.5; // turn gain — too high overshoots and oscillates
 const REACH_TOL = 14;
+const YAW_TOL = 0.07;
 const LOOKAHEAD = 50; // larger value → smoother tracking
 
 const START = { x: 80, y: 80, theta: 0 };
@@ -149,7 +150,7 @@ export function makeNav2Goal(): Stage {
   }
 
   function onMouseDown(e: MouseEvent) {
-    if (e.button !== 0) return;
+    if (cleared || e.button !== 0) return;
     const p = canvasCoords(e);
     if (p.x < 0 || p.x > W || p.y < 0 || p.y > H) return;
     dragging = true;
@@ -211,12 +212,13 @@ export function makeNav2Goal(): Stage {
     // Anchor the start of the plan to the current pose for smoother
     // initial tracking.
     plan[0] = { x: robot.x, y: robot.y };
+    if (plan.length === 1 && (gp.x !== robot.x || gp.y !== robot.y)) {
+      plan.push({ x: gp.x, y: gp.y });
+    }
     // Replace the last waypoint with the exact goal so the robot stops
     // precisely on it.
     plan[plan.length - 1] = { x: gp.x, y: gp.y };
     pathIndex = 0;
-    isFollowing = true;
-    elapsed = 0;
     trail.length = 0;
 
     g.publish(
@@ -224,6 +226,18 @@ export function makeNav2Goal(): Stage {
       `nav_msgs/msg/Path waypoints:${plan.length} length:${pathLength(plan).toFixed(0)}px`,
     );
     lastPlanInfo = `plan: ${plan.length} pts, ${(pathLength(plan) / PX_PER_M).toFixed(2)} m`;
+    // A goal already satisfied by the current pose can stop a previous
+    // command, but must not add another achievement without any motion.
+    if (
+      Math.hypot(gp.x - robot.x, gp.y - robot.y) < REACH_TOL &&
+      Math.abs(yawError(gp.theta, robot.theta)) < YAW_TOL
+    ) {
+      isFollowing = false;
+      g.publish(TOPIC_CMD, fmtTwist(0, 0));
+      g.setStatus(t("navigation.status.already_reached"), "");
+      return;
+    }
+    isFollowing = true;
     g.setStatus(t("navigation.status.navigating", { info: lastPlanInfo }), "var(--ok)");
     particles.burst(gp.x, gp.y, "#5eead4", 16, 180);
     g.sfx.click();
@@ -364,16 +378,18 @@ export function makeNav2Goal(): Stage {
   }
 
   // ── pure pursuit
+  function yawError(target: number, current: number): number {
+    return Math.atan2(Math.sin(target - current), Math.cos(target - current));
+  }
+
   function followStep(): { v: number; w: number; done: boolean } {
-    if (plan.length < 2 || !goal) return { v: 0, w: 0, done: true };
+    if (!plan.length || !goal) return { v: 0, w: 0, done: false };
     const last = plan[plan.length - 1];
     const goalDist = Math.hypot(last.x - robot.x, last.y - robot.y);
     if (goalDist < REACH_TOL) {
       // Reached the goal — now align yaw to the goal heading.
-      let yawErr = goal.theta - robot.theta;
-      while (yawErr > Math.PI) yawErr -= 2 * Math.PI;
-      while (yawErr < -Math.PI) yawErr += 2 * Math.PI;
-      if (Math.abs(yawErr) < 0.07) return { v: 0, w: 0, done: true };
+      const yawErr = yawError(goal.theta, robot.theta);
+      if (Math.abs(yawErr) < YAW_TOL) return { v: 0, w: 0, done: true };
       const w = Math.max(-MAX_ANG, Math.min(MAX_ANG, yawErr * KW));
       return { v: 0, w, done: false };
     }
@@ -688,7 +704,7 @@ export function makeNav2Goal(): Stage {
     id: "navigation",
     name: "Navigation",
     lesson: "Nav2",
-    lessonCmd: "ros2 action info /navigate_to_pose",
+    lessonCmd: "ros2 topic echo /plan",
     ros2: {
       title: tx(
         "Nav2 — クリックでGoalを送り、A*で経路を計画する",
@@ -699,17 +715,8 @@ export function makeNav2Goal(): Stage {
         "PoseStampedを/goal_poseへpublishすると、Global Plannerが/plan（nav_msgs/msg/Path）を計算し、" +
         "Local Controller（ここではPure Pursuit）が/cmd_velを出力してロボットを経路に追従させます。" +
         "このステージは、Nav2でGoalの指定から自動走行までが行われる仕組みを単純化したものです。",
-      msgTypes: [
-        "geometry_msgs/msg/PoseStamped",
-        "nav_msgs/msg/Path",
-        "geometry_msgs/msg/Twist",
-        "nav2_msgs/action/NavigateToPose",
-      ],
-      cli: [
-        "ros2 topic pub --once /goal_pose geometry_msgs/msg/PoseStamped \\\n  '{pose: {position: {x: 2.0, y: 1.0}, orientation: {w: 1.0}}}'",
-        "ros2 topic echo /plan",
-        "ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \\\n  '{pose: {pose: {position: {x: 2.0, y: 1.0}}}}'",
-      ],
+      msgTypes: ["geometry_msgs/msg/PoseStamped", "nav_msgs/msg/Path", "geometry_msgs/msg/Twist"],
+      cli: ["ros2 topic echo /goal_pose", "ros2 topic echo /plan", "ros2 topic echo /cmd_vel"],
       python: `# nav2_simple_commander で 1 行
 from nav2_simple_commander.robot_navigator import BasicNavigator
 from geometry_msgs.msg import PoseStamped
@@ -733,12 +740,12 @@ result = nav.getResult()`,
         "On a physical robot, Nav2 can accept RViz goals after the map, localization, costmaps, and servers are configured. Plugins may include NavFn for planning and DWB or Regulated Pure Pursuit for control. This stage models one simplified configuration using A* and path following.",
       ),
       state: {
-        nodes: ["/nav2_planner", "/nav2_controller", "/robot_node"],
+        nodes: ["/goal_input", "/nav2_planner", "/nav2_controller", "/robot_node"],
         topics: [
           {
             name: TOPIC_GOAL,
             type: "geometry_msgs/msg/PoseStamped",
-            pub: ["/rviz2"],
+            pub: ["/goal_input"],
             sub: ["/nav2_planner"],
           },
           {
@@ -823,8 +830,8 @@ export default defineStage({
       en: "Click+drag publishes /goal_pose, A* computes a /plan, and a pure-pursuit controller emits /cmd_vel that the robot follows.",
     },
     goal: {
-      ja: "好きな位置をクリックしてドラッグし、ゴールの位置と向きを指定して、Nav2にロボットを誘導させましょう。",
-      en: "Pick any spot with click+drag and let Nav2 navigate the robot for you.",
+      ja: "位置と向きを指定し、移動または回転が必要なゴールを5回達成しましょう。すでに満たしているゴールは数えません。",
+      en: "Reach five goals that require movement or rotation. A goal already satisfied by the current pose does not count again.",
     },
     first: {
       ja: "マップ上をクリックしたままドラッグして向きを決め、操作を終えると/goal_poseが送信されます。",
@@ -839,6 +846,8 @@ export default defineStage({
       "status.navigating": "navigating — {info}",
       "status.plan_fail": "× plan 失敗 (障害物に囲まれている?)",
       "status.reached": "Goal reached. 次のゴールをクリック",
+      "status.already_reached":
+        "この位置と向きには到達済みです。別の位置か向きを指定しましょう（加算なし）",
       "status.reached_n": "Goal reached ({n}/{total}) — 次のゴールをクリック",
       "status.cleared": "5 ゴール達成 — クリア",
       "status.tip": "マップをクリック+ドラッグして 2D Nav Goal を送る (R でリセット)",
@@ -851,6 +860,8 @@ export default defineStage({
       "status.navigating": "navigating — {info}",
       "status.plan_fail": "× plan failed (surrounded by obstacles?)",
       "status.reached": "Goal reached. Click the next goal",
+      "status.already_reached":
+        "This position and heading are already reached. Choose a different position or heading (no added goal)",
       "status.reached_n": "Goal reached ({n}/{total}) — click the next goal",
       "status.cleared": "5 goals completed — stage clear",
       "status.tip": "Click and drag on the map to send a 2D Nav Goal (R to reset)",

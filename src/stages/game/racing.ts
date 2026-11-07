@@ -212,7 +212,7 @@ export function makeGrandPrix(): Stage {
     mode2P = active;
     overlayPanel?.refresh();
     g.sfx.click();
-    reset();
+    (g.resetStage ?? reset)();
   }
 
   // Closest-point info to the center line.
@@ -502,12 +502,11 @@ export function makeGrandPrix(): Stage {
       g.publish("/cmd_vel", fmtTwist(player.v / BASE_LIN, player.w));
       if (mode2P) {
         g.publish("/p2/cmd_vel", fmtTwist(opp1.v / BASE_LIN, opp1.w));
-      } else {
-        g.publish(
-          "/opponent_red/odom",
-          `nav_msgs/msg/Odometry pose:(${opp1.x.toFixed(0)},${opp1.y.toFixed(0)})`,
-        );
       }
+      g.publish(
+        "/opponent_red/odom",
+        `position_px: {x: ${opp1.x.toFixed(1)}, y: ${opp1.y.toFixed(1)}} yaw: ${opp1.theta.toFixed(3)}`,
+      );
       g.publish(
         "/opponent_lime/odom",
         `nav_msgs/msg/Odometry pose:(${opp2.x.toFixed(0)},${opp2.y.toFixed(0)})`,
@@ -517,6 +516,10 @@ export function makeGrandPrix(): Stage {
     if (lastLapPubAcc > 0.5) {
       lastLapPubAcc = 0;
       g.publish("/race/lap", `std_msgs/msg/Int32 data:${player.lap}`);
+      g.publish(
+        "/race/path",
+        `frame: world waypoints_px: [${waypoints.map((point) => `{x: ${point.x}, y: ${point.y}}`).join(", ")}]`,
+      );
     }
 
     const ranked = rankRacers();
@@ -1007,22 +1010,27 @@ export function makeGrandPrix(): Stage {
     id: "racing",
     name: "Racing",
     lesson: "",
-    lessonCmd: "ros2 action info /follow_path",
+    lessonCmd: "ros2 topic echo /race/lap",
     ros2: {
       title: tx(
         "Action — 経路を追従する自律ナビゲーション",
         "Action — autonomous path-following navigation",
       ),
       summary:
-        "自動制御の対戦相手は、事前に計算された/race/pathをNav2のFollowPath Actionで追従する想定です。" +
+        "このゲームでは、自動制御の対戦相手が/race/pathの経由点を追従し、経路・位置・ラップ数を疑似Topicで確認できます。Nav2のFollowPath Actionは実機への応用例で、このゲーム内でActionサーバーは動作していません。" +
         "Actionは長時間かかる処理に適しており、Goalを送った後、処理中にFeedbackを受け取り、完了時にResultを受け取れます。" +
         "/race/lapには現在のラップ数がInt32としてpublishされます。",
-      msgTypes: ["nav_msgs/msg/Path", "std_msgs/msg/Int32", "nav2_msgs/action/FollowPath"],
+      msgTypes: [
+        "nav_msgs/msg/Path",
+        "std_msgs/msg/Int32",
+        "geometry_msgs/msg/Twist",
+        "nav_msgs/msg/Odometry",
+      ],
       cli: [
         "ros2 topic echo /race/lap",
         "ros2 topic echo /opponent_red/odom",
-        "ros2 action list",
-        "ros2 action info /follow_path",
+        "ros2 topic echo /race/path",
+        "ros2 node info /race_director",
       ],
       python: `from rclpy.action import ActionClient
 from nav2_msgs.action import FollowPath
@@ -1043,29 +1051,49 @@ class Racer(Node):
         "Nav2's FollowPath Action is also used on physical robots to ask the controller server to follow a path. AGV and delivery-robot architectures vary, but many share the idea of receiving a path and executing path-following control.",
       ),
       state: {
-        nodes: ["/player", "/opponent_red", "/opponent_lime", "/race_director"],
-        topics: [
-          { name: "/cmd_vel", type: "geometry_msgs/msg/Twist", pub: ["/player"], sub: [] },
-          {
-            name: "/opponent_red/odom",
-            type: "nav_msgs/msg/Odometry",
-            pub: ["/opponent_red"],
-            sub: [],
-          },
-          {
-            name: "/opponent_lime/odom",
-            type: "nav_msgs/msg/Odometry",
-            pub: ["/opponent_lime"],
-            sub: [],
-          },
-          { name: "/race/lap", type: "std_msgs/msg/Int32", pub: ["/race_director"], sub: [] },
-          {
-            name: "/race/path",
-            type: "nav_msgs/msg/Path",
-            pub: ["/race_director"],
-            sub: ["/opponent_red", "/opponent_lime"],
-          },
-        ],
+        get nodes() {
+          return [
+            "/player",
+            "/opponent_red",
+            "/opponent_lime",
+            "/race_director",
+            ...(mode2P ? ["/p2"] : []),
+          ];
+        },
+        get topics() {
+          return [
+            { name: "/cmd_vel", type: "geometry_msgs/msg/Twist", pub: ["/player"], sub: [] },
+            ...(mode2P
+              ? [
+                  {
+                    name: "/p2/cmd_vel",
+                    type: "geometry_msgs/msg/Twist",
+                    pub: ["/p2"],
+                    sub: ["/opponent_red"],
+                  },
+                ]
+              : []),
+            {
+              name: "/opponent_red/odom",
+              type: "nav_msgs/msg/Odometry",
+              pub: ["/opponent_red"],
+              sub: [],
+            },
+            {
+              name: "/opponent_lime/odom",
+              type: "nav_msgs/msg/Odometry",
+              pub: ["/opponent_lime"],
+              sub: [],
+            },
+            { name: "/race/lap", type: "std_msgs/msg/Int32", pub: ["/race_director"], sub: [] },
+            {
+              name: "/race/path",
+              type: "nav_msgs/msg/Path",
+              pub: ["/race_director"],
+              sub: [...(mode2P ? [] : ["/opponent_red"]), "/opponent_lime"],
+            },
+          ];
+        },
       },
     },
     init,

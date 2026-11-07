@@ -16,6 +16,9 @@
   </head>
   <body>
     <aside class="guide-sidebar" id="guide-sidebar">
+      <button class="sidebar-close" id="menu-close" type="button" aria-label="メニューを閉じる">
+        ×
+      </button>
       <a class="guide-brand" href="../" aria-label="Robot System Quest Home">
         <span class="guide-brand-mark">◆</span>
         <span>
@@ -54,7 +57,14 @@
 
     <div class="guide-shell">
       <header class="guide-header">
-        <button class="menu-toggle" id="menu-toggle" type="button" aria-label="メニューを開く">
+        <button
+          class="menu-toggle"
+          id="menu-toggle"
+          type="button"
+          aria-label="メニューを開く"
+          aria-expanded="false"
+          aria-controls="guide-sidebar"
+        >
           ☰
         </button>
         <div class="guide-breadcrumb"><span>GUIDE</span> / OVERVIEW</div>
@@ -568,7 +578,7 @@
       </footer>
     </div>
 
-    <dialog class="stage-dialog" id="stage-dialog">
+    <dialog class="stage-dialog" id="stage-dialog" aria-labelledby="dialog-stage-title">
       <button class="dialog-close" id="dialog-close" type="button" aria-label="閉じる">×</button>
       <div id="dialog-content"></div>
     </dialog>

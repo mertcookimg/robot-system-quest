@@ -16,6 +16,8 @@ import * as stageMenu from "./stage_menu";
 import * as crash from "./crash";
 import { ui } from "./dom";
 import { isNavpadActive, onNavpadKeyDown, onNavpadKeyUp } from "../lib/navpad";
+import { isStageInteractionBlocked, ownsNativeKey, setupInputGuard } from "../lib/input_guard";
+import { releaseStageInputs } from "./input_reset";
 
 interface Deps {
   getCurrentStageId: () => string;
@@ -39,12 +41,8 @@ const PREVENT_KEYS = [
   "r",
 ];
 
-function isInInputField(): boolean {
-  const ae = document.activeElement;
-  return !!(ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.tagName === "SELECT"));
-}
-
 export function setupKeyboard(deps: Deps): void {
+  setupInputGuard(releaseStageInputs);
   window.addEventListener("keydown", (e) => {
     // 1. Intro: ←→ pick GAME/LESSON, Space/Enter confirm.
     if (intro.isShown()) {
@@ -80,8 +78,21 @@ export function setupKeyboard(deps: Deps): void {
       return;
     }
 
+    if (help.isOpen()) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        help.close();
+      }
+      return;
+    }
+
     // 3. Stage menu: arrows / Enter / Escape.
     if (stageMenu.isOpen()) {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        stageMenu.stepTab(e.shiftKey ? -1 : 1);
+        return;
+      }
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         stageMenu.stepHorizontal(-1);
@@ -117,6 +128,7 @@ export function setupKeyboard(deps: Deps): void {
 
     // 4. All-clear screen: Enter triggers the restart button.
     if (allclear.isOpen()) {
+      if (ownsNativeKey(e)) return;
       if (e.key === "Enter") {
         e.preventDefault();
         ui.allclearRestart.click();
@@ -124,16 +136,7 @@ export function setupKeyboard(deps: Deps): void {
       }
     }
 
-    // 5. Navpad (Nav2 click-to-goal stage): consume arrows / Space / Enter / Escape
-    //    when the user is not typing into a real input field.
-    if (isNavpadActive() && !isInInputField()) {
-      if (onNavpadKeyDown(e.key)) {
-        e.preventDefault();
-        return;
-      }
-    }
-
-    // 6. Clear overlay: ←→ select Restart/Next, Enter/Space confirm.
+    // Completion owns input before the canvas, including Navigation's cursor.
     if (clearOverlay.isOpen()) {
       if (e.key === "ArrowLeft") {
         e.preventDefault();
@@ -153,18 +156,37 @@ export function setupKeyboard(deps: Deps): void {
       // R / Escape fall through to the global handler below (R = restart, Esc = close).
     }
 
-    // 7. Input field focused: don't intercept game keys (terminal, block editor inputs).
-    if (isInInputField()) return;
+    if ((clearOverlay.isOpen() || allclear.isOpen()) && e.key.toLowerCase() === "r") {
+      e.preventDefault();
+      clearOverlay.close("restart");
+      allclear.hide();
+      crash.clearCrashOverlay();
+      deps.resetCurrentStage();
+      return;
+    }
+
+    // Native buttons/links keep Enter and Space; text controls keep their keys.
+    if (ownsNativeKey(e)) return;
 
     // 8. Global modal close.
     if (e.key === "Escape") {
+      if (!isStageInteractionBlocked() && isNavpadActive() && onNavpadKeyDown(e.key)) {
+        e.preventDefault();
+        return;
+      }
       help.close();
       clearOverlay.close();
-      crash.clearCrashOverlay();
+      crash.dismissCrashOverlay();
       return;
     }
     if (e.key === "?" || e.key === "/") {
       help.open();
+      return;
+    }
+
+    if (isStageInteractionBlocked()) return;
+    if (isNavpadActive() && onNavpadKeyDown(e.key)) {
+      e.preventDefault();
       return;
     }
 

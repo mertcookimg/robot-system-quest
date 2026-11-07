@@ -21,6 +21,9 @@
 }
 
 .allclear-card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
   border: 1px solid var(--accent);
   border-radius: 18px;
@@ -28,10 +31,15 @@
   text-align: center;
   min-width: 460px;
   max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   box-shadow:
     0 0 0 1px rgba(125, 211, 252, 0.25),
     0 20px 80px rgba(0, 0, 0, 0.7);
   animation: pop 0.6s cubic-bezier(0.2, 1, 0.3, 1.1);
+}
+.allclear-card > :not(.allclear-stars) {
+  flex-shrink: 0;
 }
 
 @media (max-width: 520px) {
@@ -58,6 +66,8 @@
 }
 .allclear-stars {
   display: grid;
+  min-height: 0;
+  overflow-y: auto;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-bottom: 24px;

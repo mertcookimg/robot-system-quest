@@ -21,6 +21,15 @@
 //   A             — exit edit mode (commit)
 //   B             — exit edit mode
 
+import { tx, onLangChange } from "../i18n";
+
+const listHint = () =>
+  tx("🎮 ↑↓ 選ぶ · A 決定 · B キャンセル", "🎮 ↑↓ Choose · A Confirm · B Cancel");
+onLangChange(() => {
+  const foot = expandedListEl?.querySelector(".opad-list-foot");
+  if (foot) foot.textContent = listHint();
+});
+
 const STICK_DEAD = 0.4;
 const REPEAT_FIRST_MS = 360;
 const REPEAT_INTERVAL_MS = 80;
@@ -32,6 +41,14 @@ let capturing = false;
 let focusIdx = 0;
 let lastFocusedEl: HTMLElement | null = null;
 let lastFocusedRow: HTMLElement | null = null;
+
+function syncPanelFocus(event: FocusEvent): void {
+  if (!(event.target instanceof HTMLElement)) return;
+  const index = getItems().indexOf(event.target);
+  if (index < 0) return;
+  focusIdx = index;
+  paintFocus(event.target, false);
+}
 
 // Expanded-select-list state. When expandedSel is non-null, all pad input
 // is routed to the floating list instead of the underlying panel.
@@ -52,27 +69,22 @@ const fireCount: Record<string, number> = {};
  * immediately; compact in-game panels can register passively.
  */
 export function registerOverlayPad(panel: HTMLElement, active = true): void {
+  container?.removeEventListener("focusin", syncPanelFocus);
   container = panel;
+  panel.addEventListener("focusin", syncPanelFocus);
   capturing = active;
   focusIdx = 0;
   ensureStyle();
-  // Defer focus until the panel has actually been laid out, then bind
-  // focus listeners so mouse clicks keep our cursor in sync.
+  // Defer focus until layout. Delegation also covers newly revealed/inserted controls.
   queueMicrotask(() => {
     if (container !== panel) return;
-    const items = getItems();
-    items.forEach((el, i) => {
-      el.addEventListener("focus", () => {
-        focusIdx = i;
-        paintFocus(el);
-      });
-    });
     if (capturing) focusCurrent();
   });
 }
 
 export function unregisterOverlayPad(expected?: HTMLElement): void {
   if (expected && container !== expected) return;
+  container?.removeEventListener("focusin", syncPanelFocus);
   closeExpanded();
   exitSliderEdit();
   clearFocusPaint();
@@ -141,7 +153,7 @@ function ensureStyle(): void {
   document.head.appendChild(s);
 }
 
-function paintFocus(el: HTMLElement): void {
+function paintFocus(el: HTMLElement, scroll = true): void {
   if (lastFocusedEl && lastFocusedEl !== el) {
     lastFocusedEl.classList.remove("opad-focus");
   }
@@ -156,7 +168,9 @@ function paintFocus(el: HTMLElement): void {
     row.classList.add("opad-focus-row");
     lastFocusedRow = row;
   }
-  // Bring it into view in case the panel scrolls.
+  // Only deliberate gamepad navigation should request scrolling. Ordinary
+  // focus events must respect the caller's preventScroll option.
+  if (!scroll) return;
   try {
     el.scrollIntoView({ block: "nearest", inline: "nearest" });
   } catch {}
@@ -215,7 +229,7 @@ function focusCurrent(): void {
   if (focusIdx < 0) focusIdx = list.length - 1;
   if (focusIdx >= list.length) focusIdx = 0;
   const el = list[focusIdx];
-  el.focus({ preventScroll: false });
+  el.focus({ preventScroll: true });
   paintFocus(el);
 }
 
@@ -243,7 +257,7 @@ function openExpanded(sel: HTMLSelectElement): void {
   }
   const foot = document.createElement("div");
   foot.className = "opad-list-foot";
-  foot.textContent = "🎮 ↑↓ 選ぶ · A 決定 · B キャンセル";
+  foot.textContent = listHint();
   list.appendChild(foot);
 
   document.body.appendChild(list);
@@ -347,6 +361,9 @@ function shouldFire(key: string, held: boolean): FireKind {
 export function pollOverlayPad(pad: Gamepad, click: () => void): boolean {
   const list = getItems();
   if (!list.length && !expandedSel) return false;
+  // Disabled/hidden controls can change the list while focus stays on the same item.
+  const focusedIndex = list.indexOf(document.activeElement as HTMLElement);
+  if (focusedIndex >= 0) focusIdx = focusedIndex;
 
   const ax = pad.axes[0] ?? 0;
   const ay = pad.axes[1] ?? 0;

@@ -471,8 +471,8 @@ export function makeLocalizationMission(): Stage {
     g.sfx.bump();
     // Mirrors: ros2 service call /reinitialize_global_localization std_srvs/srv/Empty
     g.publish(
-      "/reinitialize_global_localization",
-      `std_srvs/srv/Empty  → re-scattered ${N_PARTICLES} particles across the map`,
+      "/localization/events",
+      `std_msgs/msg/String data: ${JSON.stringify(JSON.stringify({ service: "/reinitialize_global_localization", success: true, particles: N_PARTICLES }))}`,
     );
     g.setStatus(t("localization_mission.status.relocalize"), "var(--accent)");
   }
@@ -603,6 +603,12 @@ export function makeLocalizationMission(): Stage {
         "/particle_cloud",
         `nav2_msgs/msg/ParticleCloud particles:${cloud.length} spread:${(spread / PX_PER_M).toFixed(2)}m`,
       );
+      if (lastScan.length) {
+        g.publish(
+          "/scan",
+          `sensor_msgs/msg/LaserScan ranges:[${lastScan.map((ray) => (ray.dist / PX_PER_M).toFixed(2)).join(",")}]`,
+        );
+      }
     }
 
     g.setHud(makeHud());
@@ -965,11 +971,14 @@ export function makeLocalizationMission(): Stage {
         "geometry_msgs/msg/PoseWithCovarianceStamped",
         "nav2_msgs/msg/ParticleCloud",
         "sensor_msgs/msg/LaserScan",
+        "std_msgs/msg/String",
+        "geometry_msgs/msg/Twist",
       ],
       cli: [
         "ros2 topic echo /amcl_pose",
         "ros2 topic echo /particle_cloud --once",
-        "ros2 service call /reinitialize_global_localization std_srvs/srv/Empty",
+        "ros2 service type /reinitialize_global_localization",
+        "ros2 topic echo /localization/events",
       ],
       python: `# Minimal AMCL loop: motion update -> measurement update -> resample
 import numpy as np
@@ -1025,9 +1034,9 @@ class ParticleFilter:
           },
           { name: "/particle_cloud", type: "nav2_msgs/msg/ParticleCloud", pub: ["/amcl"] },
           {
-            name: "/initialpose",
-            type: "geometry_msgs/msg/PoseWithCovarianceStamped",
-            sub: ["/amcl"],
+            name: "/localization/events",
+            type: "std_msgs/msg/String",
+            pub: ["/amcl"],
           },
         ],
         services: [

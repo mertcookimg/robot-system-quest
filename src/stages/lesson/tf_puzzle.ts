@@ -14,7 +14,7 @@ import { defineStage } from "../../core/stage_def";
 import { registerOverlayPad, unregisterOverlayPad } from "../../lib/overlaypad";
 import { drawHint, drawTimer, drawRobotBody, clearBackground } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
-import { t, tx } from "../../i18n";
+import { t, tx, onLangChange } from "../../i18n";
 
 // World layout
 const WORLD_X = 16;
@@ -65,6 +65,7 @@ interface TFParams {
 export function makeTfPuzzle(): Stage {
   let g!: GameContext;
   let elapsed = 0;
+  let pubAcc = 0;
   let cleared = false;
   const particles = new Particles();
 
@@ -72,9 +73,11 @@ export function makeTfPuzzle(): Stage {
   const playerTF: TFParams = { tx: 0, ty: 0, yaw: 0 };
 
   let overlayPanel: HTMLElement | null = null;
+  let offPanelLanguage = () => {};
 
   function reset() {
     elapsed = 0;
+    pubAcc = 0;
     cleared = false;
     particles.reset();
     playerTF.tx = 0;
@@ -101,6 +104,7 @@ export function makeTfPuzzle(): Stage {
   }
 
   function dispose() {
+    offPanelLanguage();
     unregisterOverlayPad();
     if (overlayPanel?.parentNode) overlayPanel.parentNode.removeChild(overlayPanel);
     overlayPanel = null;
@@ -117,8 +121,8 @@ export function makeTfPuzzle(): Stage {
     panel.className = "stage-tool-panel tf-puzzle-panel";
     panel.style.cssText =
       "width:min(800px, 100%); margin:10px auto 0; padding:10px 14px; background:rgba(var(--scrim-rgb), 0.92);" +
-      "border:1px solid rgba(125,211,252,0.5); border-radius:8px; display:flex; gap:14px; align-items:center;" +
-      "font-family:ui-monospace,monospace; font-size:11px; color:#eef2ff;";
+      "border:1px solid rgba(125,211,252,0.5); border-radius:8px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;" +
+      "font-family:ui-monospace,monospace; font-size:14px; color:#eef2ff;";
 
     const make = (
       key: keyof TFParams,
@@ -144,7 +148,7 @@ export function makeTfPuzzle(): Stage {
       inp.max = String(max);
       inp.step = String(step);
       inp.value = String(playerTF[key]);
-      inp.style.cssText = "width:110px; accent-color:#7dd3fc;";
+      inp.style.cssText = "width:110px; min-height:44px; accent-color:#7dd3fc;";
       const val = document.createElement("span");
       val.className = "slider-val";
       val.textContent = `${playerTF[key]} ${unit}`;
@@ -164,11 +168,15 @@ export function makeTfPuzzle(): Stage {
 
     const reminder = document.createElement("span");
     reminder.className = "tf-puzzle-reminder";
-    reminder.style.cssText = "color:#9aa6c8; font-size:10px; line-height:1.4;";
-    reminder.innerHTML =
-      "base_link → laser を当てよう / R リセット<br>" +
-      "<span style='color:#fbbf24;'>🎮 ←→ ↑↓</span> スライダー選択 · " +
-      "<span style='color:#fbbf24;'>A</span> 編集 ON/OFF · 編集中は <span style='color:#5eead4;'>←→ ↑↓</span> で値調整";
+    reminder.style.cssText = "color:#9aa6c8; font-size:14px; line-height:1.5; flex-basis:100%;";
+    const localize = () => {
+      reminder.textContent = tx(
+        "base_link → laser を合わせよう / R リセット。🎮 方向キーで選択 · Aで編集 · 編集中は方向キーで調整",
+        "Align base_link → laser / R Reset. 🎮 D-pad selects · A edits · D-pad adjusts while editing",
+      );
+    };
+    localize();
+    offPanelLanguage = onLangChange(localize);
     panel.appendChild(reminder);
 
     const canvasWrap = document.getElementById("canvas-wrap");
@@ -275,6 +283,21 @@ export function makeTfPuzzle(): Stage {
     const matchedCount = lastScan.filter((r) => r.matched).length;
     const score = lastScan.length > 0 ? matchedCount / lastScan.length : 0;
 
+    // Keep the winning transform visible too; completion stops later updates.
+    pubAcc += dt;
+    if (pubAcc >= 0.2 || score >= TARGET_MATCH) {
+      pubAcc = 0;
+      g.publish(
+        "/tf_static",
+        `tf2_msgs/msg/TFMessage transform: frame_id=base_link child_frame_id=laser ` +
+          `tx=${playerTF.tx}px ty=${playerTF.ty}px yaw=${playerTF.yaw}°`,
+      );
+      g.publish(
+        "/scan",
+        `sensor_msgs/msg/LaserScan summary hits:${lastScan.length}/${N_RAYS} ranges_px:[${lastScan.map((ray) => Math.hypot(ray.lx, ray.ly).toFixed(1)).join(",")}]`,
+      );
+    }
+
     if (score >= TARGET_MATCH) {
       cleared = true;
       particles.burst(ROBOT_POS.x, ROBOT_POS.y, "#5eead4", 36, 240);
@@ -292,12 +315,6 @@ export function makeTfPuzzle(): Stage {
       }, 700);
       return;
     }
-
-    g.publish(
-      "/tf_static",
-      `geometry_msgs/msg/TransformStamped frame_id=base_link child_frame_id=laser ` +
-        `tx=${playerTF.tx}px ty=${playerTF.ty}px yaw=${playerTF.yaw}°`,
-    );
 
     g.setHud([
       `mode:    TF puzzle (base_link → laser)`,
@@ -543,7 +560,7 @@ export function makeTfPuzzle(): Stage {
     id: "tf_puzzle",
     name: "TF Puzzle",
     lesson: "TF Frames",
-    lessonCmd: "ros2 run tf2_ros static_transform_publisher",
+    lessonCmd: "ros2 topic echo /tf_static",
     ros2: {
       title: tx(
         "TF — センサーの取り付け位置をTransformで表す",
@@ -557,11 +574,7 @@ export function makeTfPuzzle(): Stage {
         "sensor_msgs/msg/LaserScan",
         "tf2_msgs/msg/TFMessage",
       ],
-      cli: [
-        "ros2 run tf2_ros tf2_echo base_link laser",
-        "ros2 run rqt_tf_tree rqt_tf_tree",
-        "ros2 run tf2_ros static_transform_publisher --x 0.14 --y 0.08 --yaw -0.38 \\\n  --frame-id base_link --child-frame-id laser",
-      ],
+      cli: ["ros2 topic echo /tf_static", "ros2 topic echo /scan", "ros2 node info /static_tf_pub"],
       python: `# 静的 TF を 1 回だけ publish するノード
 class StaticTfPub(Node):
     def __init__(self):

@@ -1,0 +1,220 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+.reinforcement-lab {
+  box-sizing: border-box;
+  position: relative;
+  width: min(800px, 100%);
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--fg);
+  font: 13px/1.65 var(--sans);
+  text-align: left;
+}
+.reinforcement-lab [hidden] {
+  display: none !important;
+}
+.reinforcement-lab h3,
+.reinforcement-lab h4,
+.reinforcement-lab p {
+  margin: 0;
+}
+.reinforcement-lab h3 {
+  font-size: 16px;
+}
+.reinforcement-lab h4 {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.rl-intro,
+.rl-muted {
+  color: var(--fg-mid);
+}
+.rl-intro {
+  margin-top: 8px !important;
+  max-width: 65ch;
+}
+.rl-choice strong,
+.rl-choice span {
+  display: block;
+}
+.rl-choice strong {
+  font-size: 15px;
+}
+.rl-choice span {
+  margin-top: 4px;
+  color: var(--fg-mid);
+  font-size: 12px;
+  font-weight: 400;
+}
+.rl-live {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--fg-mid);
+}
+[data-rl="details"] > p + p {
+  margin-top: 10px;
+}
+.rl-workflow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  gap: 8px;
+  padding: 0 0 10px;
+  margin: 0 0 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.rl-workflow li {
+  text-align: center;
+  color: var(--fg-mid);
+  font-weight: 600;
+}
+.rl-workflow [aria-current] {
+  color: var(--accent);
+}
+.rl-section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+  min-width: 0;
+}
+.rl-choice,
+.rl-actions,
+.rl-utilities {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.rl-choice .rl-button {
+  flex: 1 1 160px;
+}
+.rl-button,
+.reinforcement-lab select {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--fg);
+  cursor: pointer;
+  font: 600 13px/1.5 var(--sans);
+}
+.rl-button:hover:not(:disabled),
+.rl-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+}
+.rl-button[aria-pressed="true"] {
+  box-shadow: inset 0 -3px var(--accent);
+}
+.rl-primary {
+  background: var(--ok);
+  color: var(--bg);
+  border-color: var(--ok);
+}
+.rl-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ok) 85%, white);
+  border-color: var(--ok);
+}
+.rl-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.rl-button:focus-visible,
+.reinforcement-lab select:focus-visible,
+.reinforcement-lab .opad-focus {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 3px !important;
+  box-shadow: none !important;
+}
+.rl-rule {
+  color: var(--accent);
+  padding: 6px 0;
+}
+.rl-status {
+  margin-top: 14px !important;
+  font-weight: 600;
+}
+.reinforcement-lab progress {
+  display: block;
+  width: 100%;
+  height: 14px;
+  accent-color: var(--accent);
+  margin: 8px 0;
+}
+.rl-chart {
+  color: var(--accent);
+  width: 100%;
+  margin-top: 8px;
+}
+.rl-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.rl-example,
+.rl-callout {
+  margin-top: 10px !important;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--panel));
+  border-left: 3px solid var(--accent);
+}
+.rl-results {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.rl-result-card {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-width: 0;
+}
+.rl-result-card strong {
+  display: block;
+  font-size: 20px;
+  color: var(--accent);
+  margin: 6px 0;
+}
+.rl-result-card p {
+  color: var(--fg-mid);
+}
+.rl-reflection {
+  margin: 18px 0;
+}
+.rl-utilities {
+  border-top: 1px solid var(--line-soft);
+  padding-top: 12px;
+}
+.rl-utilities .rl-button {
+  color: var(--fg-mid);
+}
+.rl-formula {
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+  margin: 10px 0 !important;
+}
+.rl-input-help {
+  margin-top: 12px !important;
+  color: var(--fg-mid);
+  font-size: 12px;
+}
+@media (max-width: 520px) {
+  .reinforcement-lab {
+    padding: 12px;
+  }
+  .rl-results {
+    grid-template-columns: 1fr;
+  }
+  .rl-actions > .rl-button {
+    flex: 1 1 140px;
+  }
+  .rl-choice .rl-button {
+    flex-basis: 100px;
+  }
+}

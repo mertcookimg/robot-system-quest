@@ -14,12 +14,13 @@ import * as crash from "./crash";
 import * as input from "./input";
 import * as clearOverlay from "./clear_overlay";
 import * as modes from "./modes";
+import * as stageMenu from "./stage_menu";
 import * as lessonModal from "./lesson_modal";
 import * as intro from "./intro";
 import * as help from "./help";
 import * as allclear from "./allclear";
 import { getBestTime as rankingBestTime } from "./rankings";
-import { getLessonNumbers } from "./stage_def";
+import { getLessonNumbers, getStageModes } from "./stage_def";
 import { setStatus, setHud } from "./status";
 import { clearBlockpadHighlights } from "../lib/blockpad";
 import { activateNavpad, deactivateNavpad } from "../lib/navpad";
@@ -28,6 +29,8 @@ import { clearStageTimeouts, setStageTimeout } from "./stage_timers";
 import { trackStageReset, trackStageStart } from "./analytics";
 import { setTouchpadStage } from "../lib/touchpad";
 import { stageDisplayName } from "./stage_labels";
+import { clearCanvasReadout } from "../lib/canvas_readout";
+import { releaseStageInputs } from "./input_reset";
 
 let stages: Stage[] = [];
 let current: Stage;
@@ -105,6 +108,7 @@ export function buildGameContext(
     setTimeout: setStageTimeout,
     shake: () => shake(),
     crash: (reason) => crash.trigger(reason),
+    resetStage: resetCurrent,
 
     publish: (topic, msg) => topicMonitor.publish(topic, msg),
     sfx,
@@ -116,6 +120,8 @@ export function buildGameContext(
 }
 
 export function loadStage(id: string): void {
+  releaseStageInputs();
+  clearCanvasReadout();
   clearStageTimeouts();
   crash.clearCrashOverlay();
   if (current) current.dispose();
@@ -133,6 +139,7 @@ export function loadStage(id: string): void {
   current = next;
   document.body.classList.toggle("mobile-live-editor", MOBILE_LIVE_EDITOR_STAGES.has(current.id));
   current.init(gameContext);
+  releaseStageInputs();
   setTouchpadStage(current.id);
   if (!intro.isShown()) {
     trackStageStart(current.id, modes.isGameStage(current.id) ? "game" : "lesson");
@@ -150,8 +157,10 @@ export function loadStage(id: string): void {
   ui.topicLabel.textContent = `stage: ${stageDisplayName(current)}`;
   lessonModal.renderBrief(current.id);
   terminalUi.resetForStage();
-  history.replaceState(null, "", `#${id}`);
-  modes.renderSelector();
+  history.replaceState(null, "", `#${current.id}`);
+  const mode = getStageModes().get(current.id);
+  if (mode && mode !== modes.getMode()) modes.setModeView(mode);
+  else modes.renderSelector();
   sfx.click();
 
   lessonModal.maybeAutoOpen(id, modes.isGameStage(id), {
@@ -162,13 +171,32 @@ export function loadStage(id: string): void {
 }
 
 export function loadNextStage(): void {
+  const stageModes = getStageModes();
+  const mode = stageModes.get(current.id);
+  if (mode) {
+    const sameMode = stages.filter((stage) => stageModes.get(stage.id) === mode);
+    const idx = sameMode.findIndex((stage) => stage.id === current.id);
+    if (idx === sameMode.length - 1) {
+      stageMenu.openMenu(mode);
+      ui.stageSelector.querySelector<HTMLButtonElement>(".stage-pill.active")?.focus();
+      return;
+    }
+    modes.setModeView(mode);
+    loadStage(sameMode[idx + 1].id);
+    return;
+  }
   const idx = stages.findIndex((s) => s.id === current.id);
   loadStage(stages[(idx + 1) % stages.length].id);
 }
 
 export function resetCurrent(): void {
+  releaseStageInputs();
+  clearCanvasReadout();
   trackStageReset(current.id, modes.isGameStage(current.id) ? "game" : "lesson");
   clearStageTimeouts();
   crash.clearCrashOverlay();
+  topicMonitor.clearLog();
   current.reset();
+  releaseStageInputs();
+  terminalUi.resetForStage();
 }

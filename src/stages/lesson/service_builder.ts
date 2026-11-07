@@ -11,6 +11,7 @@ import { defineStage } from "../../core/stage_def";
 import { drawHint, drawRobotBody, drawRobotLabel, COLORS, clearBackground } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
 import { canvasInteractionRadius } from "../../lib/canvas_touch";
+import { readStageGamepads } from "../../lib/stage_gamepads";
 import { makeOverlayPanel, type OverlayPanelHandle } from "../../lib/overlay_panel";
 import { onLangChange, t, tx } from "../../i18n";
 
@@ -261,6 +262,10 @@ export function makeService(): Stage {
 
     lampOn = !lampOn;
     serviceCalls += 1;
+    g.publish(
+      "/service/events",
+      `std_msgs/msg/String data: ${JSON.stringify(JSON.stringify({ service: "/toggle_lamp", success: true, lamp_on: lampOn, calls: serviceCalls }))}`,
+    );
     serviceAnimUntil = elapsed + 1.2;
     robotX = Math.min(ROBOT_GOAL_X, robotX + 80);
     particles.burst(robotX, ROBOT_Y, lampOn ? COLORS.WARN : COLORS.ACCENT, 12, 100);
@@ -319,7 +324,7 @@ export function makeService(): Stage {
   }
 
   function pollPuzzleNav() {
-    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const pads = readStageGamepads();
     let pad: Gamepad | null = null;
     for (const p of pads) {
       if (p) {
@@ -682,12 +687,17 @@ export function makeService(): Stage {
         "通常、1つのService名に1つのServerを用意し、複数のClientから呼び出せます。" +
         "継続的にデータを配信するPub/Subとは異なり、処理を要求して結果を受け取る用途に適しています（例：lamp on/off、take_picture、reset_odom）。" +
         "接続するにはService名とsrv型の両方が一致している必要があります。",
-      msgTypes: ["std_srvs/srv/Trigger", "std_srvs/srv/SetBool"],
+      msgTypes: ["std_srvs/srv/Trigger", "std_msgs/msg/String"],
       cli: [
         "ros2 service list",
         "ros2 service type /toggle_lamp",
-        "ros2 service call /toggle_lamp std_srvs/srv/Trigger {}",
+        "ros2 topic echo /service/events",
       ],
+      state: {
+        nodes: ["/lamp_client", "/lamp_server"],
+        topics: [{ name: "/service/events", type: "std_msgs/msg/String", pub: ["/lamp_server"] }],
+        services: [{ name: "/toggle_lamp", type: "std_srvs/srv/Trigger", node: "/lamp_server" }],
+      },
       realWorld: tx(
         "実機のROS 2では、ros2 service listで利用可能なServiceを確認し、ros2 service callで動作を試せます。LifecycleやParameterなどの機能でも、内部でServiceが利用されています。",
         "Real ROS2: list available services with ros2 service list, then test them via ros2 service call. Most of Lifecycle, Param, and the various tools rely on Service under the hood.",

@@ -143,6 +143,8 @@ const STATIC_EN: Record<string, string> = {
 const ATTRIBUTE_EN: Record<string, string> = {
   ガイド内ナビゲーション: "Guide navigation",
   メニューを開く: "Open menu",
+  メニューを閉じる: "Close menu",
+  閉じる: "Close",
   学べる分野: "Learning domains",
   ロボットシステムを理解するための多様な視点:
     "Several perspectives for understanding a robot system",

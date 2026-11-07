@@ -331,7 +331,7 @@ export function makeTagChase(): Stage {
     mode2P = active;
     overlayPanel?.refresh();
     g.sfx.click();
-    reset();
+    (g.resetStage ?? reset)();
   }
 
   function setDifficulty(d: Difficulty) {
@@ -339,7 +339,7 @@ export function makeTagChase(): Stage {
     difficulty = d;
     overlayPanel?.refresh();
     g.sfx.click();
-    if (!mode2P) reset();
+    if (!mode2P) (g.resetStage ?? reset)();
   }
 
   function speedMult(b: Body): number {
@@ -1106,28 +1106,34 @@ class Tagger(Node):
         "Real robot chase / follow / evasion is the same recipe: each robot reads peers' poses from shared topics and decides its own cmd_vel. Used in RoboCup, drone formations, auto-park.",
       ),
       state: {
-        nodes: ["/runner", "/tagger1", "/tagger2"],
-        topics: [
-          {
-            name: "/runner/pose",
-            type: "geometry_msgs/msg/Pose",
-            pub: ["/runner"],
-            sub: ["/tagger1", "/tagger2"],
-          },
-          { name: "/runner/cmd_vel", type: "geometry_msgs/msg/Twist", pub: ["/runner"], sub: [] },
-          {
-            name: "/tagger1/pose",
-            type: "geometry_msgs/msg/Pose",
-            pub: ["/tagger1"],
-            sub: ["/runner"],
-          },
-          {
-            name: "/tagger2/pose",
-            type: "geometry_msgs/msg/Pose",
-            pub: ["/tagger2"],
-            sub: ["/runner"],
-          },
-        ],
+        get nodes() {
+          return [
+            "/runner",
+            ...(mode2P ? ["/p2"] : difficulty === "easy" ? ["/tagger1"] : ["/tagger1", "/tagger2"]),
+          ];
+        },
+        get topics() {
+          const chasers = mode2P
+            ? ["/p2"]
+            : difficulty === "easy"
+              ? ["/tagger1"]
+              : ["/tagger1", "/tagger2"];
+          return [
+            {
+              name: "/runner/pose",
+              type: "geometry_msgs/msg/Pose",
+              pub: ["/runner"],
+              sub: chasers,
+            },
+            { name: "/runner/cmd_vel", type: "geometry_msgs/msg/Twist", pub: ["/runner"], sub: [] },
+            ...chasers.map((name) => ({
+              name: `${name}/pose`,
+              type: "geometry_msgs/msg/Pose",
+              pub: [name],
+              sub: ["/runner"],
+            })),
+          ];
+        },
       },
     },
     init,

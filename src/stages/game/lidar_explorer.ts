@@ -231,6 +231,10 @@ export function makeLidarExplorer(): Stage {
     if (pubAcc > 1 / 20) {
       pubAcc = 0;
       g.publish("/cmd_vel", fmtTwist(cmd.lin / LIN_SPEED, cmd.ang));
+      g.publish(
+        "/odom",
+        `position_px: {x: ${robot.x.toFixed(1)}, y: ${robot.y.toFixed(1)}} yaw: ${robot.theta.toFixed(3)}`,
+      );
     }
 
     g.ghost.recordPose(elapsed, robot.x, robot.y, robot.theta);
@@ -246,7 +250,7 @@ export function makeLidarExplorer(): Stage {
         g.shake(0.3);
         g.publish(
           "/data_collected",
-          `robot_msgs/msg/DataPoint id:"${dp.id}" total:${collected.size}/3`,
+          `data: ${JSON.stringify(`id=${dp.id} collected=${collected.size}/3`)}`,
         );
         if (collected.size === 3) {
           g.setStatus(t("lidar_explorer.status.all_collected"), "var(--ok)");
@@ -457,7 +461,12 @@ export function makeLidarExplorer(): Stage {
         "/scanはsensor_msgs/msg/LaserScan型で、ranges[]に距離データが角度順に並びます。このステージでは96方向を測定しますが、実機の測定点数や角度範囲は機種や設定によって異なります。" +
         "subscribeしたスキャン結果をリアルタイムで処理することで、暗い環境でも障害物までの距離を把握できます。" +
         "LaserScanはSLAM・自己位置推定・障害物回避の基礎となるデータです。",
-      msgTypes: ["sensor_msgs/msg/LaserScan"],
+      msgTypes: [
+        "sensor_msgs/msg/LaserScan",
+        "geometry_msgs/msg/Twist",
+        "nav_msgs/msg/Odometry",
+        "std_msgs/msg/String",
+      ],
       cli: [
         "ros2 topic info /scan",
         "ros2 topic echo /scan --once",
@@ -490,6 +499,7 @@ class Explorer(Node):
       state: {
         nodes: ["/explorer", "/lidar"],
         topics: [
+          { name: "/data_collected", type: "std_msgs/msg/String", pub: ["/explorer"] },
           { name: "/scan", type: "sensor_msgs/msg/LaserScan", pub: ["/lidar"], sub: ["/explorer"] },
           { name: "/cmd_vel", type: "geometry_msgs/msg/Twist", pub: ["/explorer"], sub: [] },
           { name: "/odom", type: "nav_msgs/msg/Odometry", pub: ["/explorer"], sub: [] },

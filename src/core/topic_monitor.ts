@@ -14,19 +14,29 @@ export interface TopicEntry {
 }
 
 const MAX_ENTRIES = 14;
+const MAX_TOPIC_ENTRIES = 30;
 const log: TopicEntry[] = [];
+// Frequent telemetry must not evict a different topic's one-off result.
+// Topics are stage-defined; both histories are cleared on stage load/restart.
+const topicLogs = new Map<string, TopicEntry[]>();
 
 export function publish(topic: string, msg: string): void {
-  log.push({ ts: performance.now() / 1000, topic, msg });
+  const entry = { ts: performance.now() / 1000, topic, msg };
+  log.push(entry);
   if (log.length > MAX_ENTRIES) log.shift();
+  const entries = topicLogs.get(topic) ?? [];
+  entries.push(entry);
+  if (entries.length > MAX_TOPIC_ENTRIES) entries.shift();
+  topicLogs.set(topic, entries);
 }
 
 export function clearLog(): void {
   log.length = 0;
+  topicLogs.clear();
 }
 
 export function recentMessages(topic?: string, n = 10): TopicEntry[] {
-  const filtered = topic ? log.filter((e) => e.topic === topic) : log;
+  const filtered = topic ? (topicLogs.get(topic) ?? []) : log;
   return filtered.slice(-n);
 }
 

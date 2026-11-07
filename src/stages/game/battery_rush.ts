@@ -208,6 +208,10 @@ export function makeBatteryRush(): Stage {
     if (pubAcc > 1 / 20) {
       pubAcc = 0;
       g.publish(TOPIC_CMD, fmtTwist(cmd.lin / PX_PER_M, cmd.ang));
+      g.publish(
+        "/robot/odom",
+        `position_m: {x: ${(robot.x / PX_PER_M).toFixed(3)}, y: ${(robot.y / PX_PER_M).toFixed(3)}} yaw: ${robot.theta.toFixed(3)}`,
+      );
     }
     battAcc += dt;
     if (battAcc > 1 / 2) {
@@ -445,7 +449,11 @@ export function makeBatteryRush(): Stage {
         "実機のロボットは、sensor_msgs/BatteryStateを/battery_stateへpublishし続けます。" +
         "監視Nodeが残量低下を検知したら充電ドックへ向かわせます。これは掃除ロボットの自動帰還にも使われる考え方です。" +
         "このステージでは、移動や衝突によるバッテリー消費と、ドックでの充電を体験できます。",
-      msgTypes: ["sensor_msgs/msg/BatteryState", "geometry_msgs/msg/Twist"],
+      msgTypes: [
+        "sensor_msgs/msg/BatteryState",
+        "geometry_msgs/msg/Twist",
+        "nav_msgs/msg/Odometry",
+      ],
       cli: [
         "ros2 topic echo /robot/battery_state",
         "ros2 topic hz /robot/battery_state",

@@ -323,6 +323,10 @@ export function makeFeedforwardController(): Stage {
     if (pubAcc > 1 / 10) {
       pubAcc = 0;
       g.publish(TOPIC_CMD, fmtTwist(lv / PX_PER_M, av));
+      g.publish(
+        "/robot/odom",
+        `nav_msgs/msg/Odometry x:${(robot.x / PX_PER_M).toFixed(3)} y:${((H - robot.y) / PX_PER_M).toFixed(3)} yaw:${(-robot.theta).toFixed(3)}`,
+      );
     }
 
     if (blockT >= cur.duration) {
@@ -388,8 +392,7 @@ export function makeFeedforwardController(): Stage {
     id: "feedforward_controller",
     name: "Feedforward Controller",
     lesson: "Feedforward",
-    lessonCmd:
-      'ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.5}, angular: {z: 0.0}}"',
+    lessonCmd: "ros2 topic echo /cmd_vel",
     ros2: {
       title: tx(
         "Feedforward — 時間を基準に正三角形を描く",
@@ -399,11 +402,8 @@ export function makeFeedforwardController(): Stage {
         "1辺1.4mの正三角形を、現在位置を測らずに描きます。" +
         "直進距離はlinear×duration、回転角はangular×durationから計算し、" +
         "あらかじめ組み立てたgeometry_msgs/msg/Twistを順番に/cmd_velへpublishします。",
-      msgTypes: ["geometry_msgs/msg/Twist"],
-      cli: [
-        "ros2 topic echo /cmd_vel",
-        'ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.5}, angular: {z: 0.0}}"',
-      ],
+      msgTypes: ["geometry_msgs/msg/Twist", "nav_msgs/msg/Odometry"],
+      cli: ["ros2 topic echo /cmd_vel", "ros2 topic echo /robot/odom", "ros2 topic hz /cmd_vel"],
       python: `import math, rclpy, time
 from rclpy.node import Node
 from geometry_msgs.msg import Twist

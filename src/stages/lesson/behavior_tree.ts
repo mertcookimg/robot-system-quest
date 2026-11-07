@@ -21,7 +21,7 @@ import { canMoveTo as inWalls, type Aabb } from "../../lib/walls";
 import { Trail } from "../../lib/trail";
 import { Particles } from "../../lib/particles";
 import { defineRos2Concept, state, topic } from "../../lib/ros2_concept";
-import { t, tx } from "../../i18n";
+import { t, tx, onLangChange } from "../../i18n";
 import { defineStage } from "../../core/stage_def";
 import { registerOverlayPad, unregisterOverlayPad } from "../../lib/overlaypad";
 
@@ -127,6 +127,7 @@ export function makeBtEditor(): Stage {
 
   let panelEl: HTMLElement | null = null;
   let statusEl: HTMLSpanElement | null = null;
+  let offHintLanguage = () => {};
 
   // ============================================================
   // BT execution
@@ -243,6 +244,7 @@ export function makeBtEditor(): Stage {
   }
 
   function dispose() {
+    offHintLanguage();
     unregisterOverlayPad();
     if (panelEl?.parentNode) panelEl.parentNode.removeChild(panelEl);
     panelEl = null;
@@ -280,15 +282,12 @@ export function makeBtEditor(): Stage {
       "width:min(800px, 100%); margin:10px auto 0; padding:10px 14px;" +
       "background:rgba(var(--scrim-rgb), 0.92);" +
       "border:1px solid rgba(125,211,252,0.5); border-radius:8px;" +
-      "font-family:ui-monospace,monospace; font-size:11px; color:#eef2ff;" +
-      "display:grid; grid-template-columns: auto 1fr auto auto auto; gap:4px 10px; align-items:center;";
+      "font-family:ui-monospace,monospace; font-size:14px; color:#eef2ff;" +
+      "display:grid; grid-template-columns: auto minmax(0,1fr); gap:6px 10px; align-items:center;";
 
     // Header row
     panel.appendChild(headerCell("RULE"));
     panel.appendChild(headerCell("CONDITION → ACTION"));
-    panel.appendChild(headerCell(""));
-    panel.appendChild(headerCell(""));
-    panel.appendChild(headerCell(""));
 
     for (let i = 0; i < RULE_COUNT; i++) {
       const idx = i;
@@ -302,7 +301,9 @@ export function makeBtEditor(): Stage {
       ruleWrap.dataset.opadRow = "1";
       ruleWrap.style.cssText = "display:flex; gap:6px; align-items:center; padding:3px 4px;";
       const ifLabel = document.createElement("span");
-      ifLabel.textContent = "if";
+      ifLabel.className = "bt-condition-label";
+      ifLabel.id = `bt-condition-label-${i}`;
+      ifLabel.textContent = tx("条件", "If");
       ifLabel.style.color = "#9aa6c8";
       const condSel = makeSelect(
         [{ id: "", label: "—" }, ...CONDITIONS],
@@ -311,8 +312,15 @@ export function makeBtEditor(): Stage {
           rules[idx].cond = (v as Condition) || null;
         },
       );
+      condSel.dataset.rule = String(i + 1);
+      condSel.dataset.field = "condition";
+      condSel.setAttribute("aria-labelledby", `bt-rule-number-${i} ${ifLabel.id}`);
+      num.id = `bt-rule-number-${i}`;
+      num.setAttribute("aria-label", tx(`ルール ${i + 1}`, `Rule ${i + 1}`));
       const arrow = document.createElement("span");
-      arrow.textContent = "→";
+      arrow.className = "bt-action-label";
+      arrow.id = `bt-action-label-${i}`;
+      arrow.textContent = tx("動作", "Do");
       arrow.style.color = "#9aa6c8";
       const actSel = makeSelect(
         [{ id: "", label: "—" }, ...ACTIONS],
@@ -321,18 +329,14 @@ export function makeBtEditor(): Stage {
           rules[idx].action = (v as Action) || null;
         },
       );
+      actSel.dataset.rule = String(i + 1);
+      actSel.dataset.field = "action";
+      actSel.setAttribute("aria-labelledby", `bt-rule-number-${i} ${arrow.id}`);
       ruleWrap.appendChild(ifLabel);
       ruleWrap.appendChild(condSel);
       ruleWrap.appendChild(arrow);
       ruleWrap.appendChild(actSel);
       panel.appendChild(ruleWrap);
-
-      // Spacer columns
-      for (let column = 0; column < 3; column++) {
-        const spacer = document.createElement("span");
-        spacer.className = "bt-spacer";
-        panel.appendChild(spacer);
-      }
     }
 
     // Default row
@@ -346,43 +350,49 @@ export function makeBtEditor(): Stage {
     defWrap.dataset.opadRow = "1";
     defWrap.style.cssText = "display:flex; gap:6px; align-items:center; padding:3px 4px;";
     const defText = document.createElement("span");
-    defText.textContent = "default →";
+    defText.id = "bt-default-label";
+    defText.textContent = tx("該当なし", "Otherwise");
     defText.style.color = "#9aa6c8";
     const defSel = makeSelect(ACTIONS, defaultAction, (v) => {
       defaultAction = v as Action;
     });
+    defSel.setAttribute("aria-labelledby", defText.id);
     defWrap.appendChild(defText);
     defWrap.appendChild(defSel);
     panel.appendChild(defWrap);
 
     // Buttons (RUN / STOP / RESET)
+    const buttons = document.createElement("div");
+    buttons.className = "bt-actions";
+    buttons.dataset.opadRow = "1";
     const runBtn = document.createElement("button");
     runBtn.className = "bt-action";
     styleBtn(runBtn, "#5eead4");
     runBtn.textContent = "▶ RUN";
     runBtn.onclick = () => onRun();
-    panel.appendChild(runBtn);
+    buttons.appendChild(runBtn);
 
     const stopBtn = document.createElement("button");
     stopBtn.className = "bt-action";
     styleBtn(stopBtn, "#fbbf24");
     stopBtn.textContent = "STOP";
     stopBtn.onclick = () => onStop();
-    panel.appendChild(stopBtn);
+    buttons.appendChild(stopBtn);
 
     const resetBtn = document.createElement("button");
     resetBtn.className = "bt-action";
     styleBtn(resetBtn, "#9aa6c8");
     resetBtn.textContent = "RESET";
     resetBtn.onclick = () => reset();
-    panel.appendChild(resetBtn);
+    buttons.appendChild(resetBtn);
+    panel.appendChild(buttons);
 
     // Status row
     const statusBox = document.createElement("div");
     statusBox.className = "bt-status";
     statusBox.style.cssText =
       "grid-column: 1 / -1; padding-top:6px; border-top:1px solid rgba(125,211,252,0.2);" +
-      "font-size:10px; color:#9aa6c8;";
+      "font-size:14px; color:#9aa6c8;";
     const status = document.createElement("span");
     status.textContent = t("behavior_tree.status.idle");
     statusEl = status;
@@ -390,7 +400,27 @@ export function makeBtEditor(): Stage {
     const padHint = document.createElement("span");
     padHint.className = "bt-pad-hint";
     padHint.style.cssText = "float:right; color:#fbbf24;";
-    padHint.innerHTML = "🎮 ↑↓ 項目選択 · A 一覧を開く／ボタン実行 · B キャンセル";
+    const renderPadHint = () => {
+      padHint.textContent = tx(
+        "🎮 ↑↓ 項目選択 · A 一覧を開く／ボタン実行 · B キャンセル",
+        "🎮 ↑↓ Select · A Open list / Run button · B Cancel",
+      );
+      panel.querySelectorAll<HTMLElement>(".bt-condition-label").forEach((label) => {
+        label.textContent = tx("条件", "If");
+      });
+      panel.querySelectorAll<HTMLElement>(".bt-action-label").forEach((label) => {
+        label.textContent = tx("動作", "Do");
+      });
+      for (let i = 0; i < RULE_COUNT; i++) {
+        panel
+          .querySelector(`#bt-rule-number-${i}`)
+          ?.setAttribute("aria-label", tx(`ルール ${i + 1}`, `Rule ${i + 1}`));
+      }
+      defText.textContent = tx("該当なし", "Otherwise");
+    };
+    renderPadHint();
+    offHintLanguage();
+    offHintLanguage = onLangChange(renderPadHint);
     statusBox.appendChild(padHint);
     panel.appendChild(statusBox);
 
@@ -409,7 +439,7 @@ export function makeBtEditor(): Stage {
     const s = document.createElement("span");
     s.className = "bt-header-cell";
     s.textContent = text;
-    s.style.cssText = "color:#7dd3fc; font-size:9px; font-weight:700; letter-spacing:0.05em;";
+    s.style.cssText = "color:#7dd3fc; font-size:13px; font-weight:700; letter-spacing:0.05em;";
     return s;
   }
 
@@ -422,7 +452,7 @@ export function makeBtEditor(): Stage {
     sel.className = "bt-rule-select";
     sel.style.cssText =
       "padding:4px 6px; background:#0c1124; color:#eef2ff;" +
-      "border:1px solid #2c3554; border-radius:4px; font-family:inherit; font-size:11px;";
+      "border:1px solid #2c3554; border-radius:4px; font-family:inherit; font-size:16px; min-height:44px;";
     for (const o of options) {
       const opt = document.createElement("option");
       opt.value = o.id;
@@ -437,7 +467,7 @@ export function makeBtEditor(): Stage {
   function styleBtn(b: HTMLButtonElement, color: string) {
     b.style.cssText =
       `padding:4px 10px; background:${color}; color:#0c1124; border:none; border-radius:4px;` +
-      "font-family:inherit; font-size:11px; font-weight:700; cursor:pointer;";
+      "font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; min-height:44px;";
   }
 
   function refreshPanel() {
@@ -536,6 +566,10 @@ export function makeBtEditor(): Stage {
           : `default: ${defaultAction}`,
       );
       g.publish("/cmd_vel", `linear=${cmd.v.toFixed(0)} angular=${cmd.w.toFixed(2)}`);
+      g.publish(
+        "/scan",
+        `sensor_msgs/msg/LaserScan summary front_px:${sensors.front.toFixed(1)} left_px:${sensors.left.toFixed(1)} right_px:${sensors.right.toFixed(1)}`,
+      );
     }
 
     g.setHud([
@@ -801,15 +835,19 @@ export function makeBtEditor(): Stage {
     id: "behavior_tree",
     name: "Behavior Tree",
     lesson: "Behavior Tree",
-    lessonCmd: "ros2 node info /bt_navigator",
+    lessonCmd: "ros2 node info /bt_engine",
     ros2: defineRos2Concept({
       title: tx("Behavior Tree — Nav2方式の意思決定", "Behavior Tree — Nav2-style decision making"),
       summary:
         "Nav2ではBehaviorTree.CPPのControl / Action / Condition Nodeを組み合わせて、" +
         "ナビゲーションの判断を表現します。このレッスンでSelectorと呼ぶ優先分岐は、" +
         "BehaviorTree.CPPのFallbackに相当します。",
-      msgTypes: ["nav2_msgs/action/NavigateToPose"],
-      cli: ["ros2 node info /bt_navigator", "ros2 action info /navigate_to_pose"],
+      msgTypes: ["std_msgs/msg/String", "geometry_msgs/msg/Twist", "sensor_msgs/msg/LaserScan"],
+      cli: [
+        "ros2 node info /bt_engine",
+        "ros2 topic echo /bt/active_node",
+        "ros2 topic echo /scan",
+      ],
       python: `# behaviortree.cpp は C++ ですが Python wrapper の py_trees も同じ思想:
 import py_trees as pt
 

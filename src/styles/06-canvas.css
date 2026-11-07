@@ -50,3 +50,27 @@ canvas#game.touch-interactive {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+
+.canvas-readout {
+  display: none;
+}
+
+@media (max-width: 840px) {
+  .canvas-readout:not([hidden]) {
+    display: grid;
+    gap: 5px;
+    padding: 9px 12px;
+    border-top: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--fg-mid);
+    font: 14px/1.5 var(--sans);
+    overflow-wrap: anywhere;
+  }
+  .canvas-readout p {
+    margin: 0;
+  }
+  .canvas-readout-time {
+    color: var(--fg);
+    font-variant-numeric: tabular-nums;
+  }
+}

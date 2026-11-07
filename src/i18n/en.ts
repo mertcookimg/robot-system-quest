@@ -17,14 +17,26 @@ export const EN: Record<string, string> = {
   "ui.toast.newrecord": "NEW RECORD",
   "terminal.title": "ROS 2 CONCEPT TERMINAL · simulated",
   "terminal.stage": "stage: {name}",
-  "terminal.hint": "click to type · ↑/↓ history · help for commands",
+  "terminal.hint": "↑/↓ history · help for commands · Esc / B to return",
   "terminal.command": "COMMAND",
   "terminal.select": "Select a command…",
   "terminal.inspect": "INSPECT",
   "terminal.run": "▶ RUN",
+  "terminal.resume": "Back to stage",
   "terminal.input": "Enter a ROS 2 command (try help)",
   "terminal.welcome": "ROS 2 concepts (simulated) · Robot System Quest Terminal",
-  "terminal.guide": "Select a command below or type one. Use help to list commands.",
+  "terminal.guide":
+    'Select a command or type one. The stage pauses while using the terminal. Choose "Back to stage", press Esc, or press gamepad B to resume.',
+  "terminal.noMessages":
+    "No recorded messages on {topic} yet. Operate the lesson, then run this command again.",
+  "terminal.snapshot":
+    "# Saved-log snapshot: latest {count} messages at command time. Run again to refresh.",
+  "terminal.rateSnapshot":
+    "# Calculated from saved-log intervals. Action-triggered events do not have a fixed publishing period.",
+  "terminal.noParameters": "{node} does not expose simulated parameters in this lesson.",
+  "terminal.noLifecycle": "{node} does not expose a managed lifecycle state in this lesson.",
+  "terminal.doctor":
+    "Simulated graph: {nodes} nodes, {topics} topics. No real ROS 2 installation or hardware diagnostics are run.",
   "terminal.unsupported": "{command}: not available in this game. Choose an inspect command.",
 
   // ── pubsub / service / action ──
