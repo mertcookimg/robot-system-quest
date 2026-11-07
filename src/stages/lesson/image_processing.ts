@@ -1160,7 +1160,7 @@ export default defineStage({
   mode: "lesson",
   order: 13,
   diagram: `
-<svg class="imgproc-guide" viewBox="0 0 434 158" role="img" aria-label="Camera image becomes cleaner, edges are detected, then compared with a target">
+<svg class="imgproc-guide" viewBox="0 0 434 158" role="img" aria-label="Camera image becomes cleaner, edges are detected, then compared with a target; 78% is an example score">
   <defs>
     <linearGradient id="ig-floor" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#52616b"/>
@@ -1256,7 +1256,7 @@ export default defineStage({
       <text y="-1" text-anchor="middle" fill="#eafdfb" font-size="13" font-weight="800">78%</text>
       <text y="10" text-anchor="middle" fill="#8190aa" font-size="5.5">EDGE MATCH</text>
     </g>
-    <text x="48" y="103" text-anchor="middle" fill="#c4b5fd" font-size="7">CLOSER TO TARGET</text>
+    <text x="48" y="103" text-anchor="middle" fill="#c4b5fd" font-size="7">数値は例 / EXAMPLE</text>
   </g>
 
   <g stroke="#5eead4" stroke-width="1.5" marker-end="url(#ig-arrow)">
@@ -1284,8 +1284,8 @@ export default defineStage({
       en: "Camera images contain small amounts of noise from lighting and the sensor. If we search for edges immediately, that noise can also become unwanted lines. We therefore use gaussian_blur first to reduce fine noise, then canny to find places where brightness changes sharply. The order is simply “clean the image → find its edges.” Edge Match shows how closely your result resembles the target. It uses an F1 score internally, but for now you only need to know that closer to 100% is better.",
     },
     goal: {
-      ja: "「見つけた輪郭」を「お手本」に近づけ、輪郭の一致度を55%より高くすればクリアです。",
-      en: "Match EDGES FOUND to TARGET and raise Edge Match above 55%.",
+      ja: "「見つけた輪郭」を「お手本」に近づけ、輪郭の一致度を55%以上（F1が0.55以上）にすればクリアです。",
+      en: "Match EDGES FOUND to TARGET and raise Edge Match to at least 55% (F1 ≥ 0.55).",
     },
     first: {
       ja: "①「ノイズを減らすgaussian_blur」→「輪郭を探すcanny」の順番を確認します。② ▶ RUNを押します。③ 数値を変えながら「見つけた輪郭」と「お手本」を見比べます。",
@@ -1296,14 +1296,14 @@ export default defineStage({
     ja: {
       hint: "INPUT上をマウス / IJKL / 🎮右スティックで画素選択 / blur σ ↑ ノイズ減 / canny比 1:2〜1:3",
       palette_hint: "① gaussian_blurでノイズを減らす → ② cannyで輪郭を探す",
-      processing: "画像処理中 — 輪郭の一致度が55%を超えればクリア",
+      processing: "画像処理中 — F1が0.55以上（55%以上）でクリア",
       stop: "停止 — RUN で再評価",
       tip: "blur と canny の閾値を調整してエッジを正確に抽出しよう (live preview)",
     },
     en: {
       hint: "Inspect INPUT with mouse / IJKL / pad right stick / raise blur σ for noise / canny ratio 1:2–1:3",
-      palette_hint: "Stack blur → canny and tune thresholds (lesson 7 — image processing)",
-      processing: "Processing — clear when F1 exceeds 0.55",
+      palette_hint: "Stack blur → canny and tune thresholds",
+      processing: "Processing — clear when F1 ≥ 0.55 (at least 55%)",
       stop: "Stopped — press RUN to re-evaluate",
       tip: "Tune blur and canny thresholds to extract edges accurately (live preview)",
     },

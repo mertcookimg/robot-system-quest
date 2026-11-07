@@ -615,7 +615,7 @@ export default defineStage({
   mode: "lesson",
   order: 15,
   diagram: `
-<svg viewBox="0 0 420 120" role="img" aria-label="object detector outputs bounding boxes; confidence filter accepts those above threshold">
+<svg viewBox="0 0 420 120" role="img" aria-label="Example confidence scores and threshold; confidence filter accepts detections at or above the threshold">
   <!-- camera image -->
   <rect x="14" y="14" width="190" height="88" rx="4" fill="#0c1124" stroke="#7dd3fc" stroke-width="1.5"/>
   <text x="22" y="100" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9">/image_raw</text>
@@ -643,7 +643,8 @@ export default defineStage({
   <text x="316" y="48" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="9">thr=0.5</text>
   <text x="240" y="84" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">0.0</text>
   <text x="394" y="84" text-anchor="end" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">1.0</text>
-  <text x="316" y="94" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="9">conf &gt; thr → accept</text>
+  <text x="316" y="94" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="9">conf ≥ thr → accept</text>
+  <text x="210" y="113" text-anchor="middle" fill="#9aa6c8" font-family="system-ui, sans-serif" font-size="8">数値は例 / EXAMPLE VALUES</text>
 </svg>
 `,
   lessonModal: {
@@ -653,7 +654,7 @@ export default defineStage({
     },
     learn: {
       ja: "物体検出器（Object Detector）は、画像に写っている物体のクラス名と信頼度をBounding Boxとともに出力します。confidence_filterで閾値以上の検出だけを残し、model sizeとthresholdのトレードオフを学びます。",
-      en: "An object detector outputs each detected object's class label, confidence, and bounding box. confidence_filter keeps only detections above the threshold. Tune model size vs threshold to balance precision and recall.",
+      en: "An object detector outputs each detected object's class label, confidence, and bounding box. confidence_filter keeps only detections at or above the threshold. Tune model size vs threshold to balance precision and recall.",
     },
     goal: {
       ja: "modelとthresholdを調整してすべてのクラスを検出し、GOALに到達しましょう。",

@@ -148,6 +148,16 @@ after(async () => {
 test("Guide renders all 38 stages and preserves direct Lesson/Game links", () => {
   assert.equal(document.querySelectorAll("#lesson-grid .stage-card").length, 24);
   assert.equal(document.querySelectorAll("#game-grid .stage-card").length, 14);
+  for (const lang of ["ja", "en"] as const) {
+    setLang(lang);
+    const games = document.querySelectorAll("#game-grid .stage-card").length;
+    const lessons = document.querySelectorAll("#lesson-grid .stage-card").length;
+    assert.equal(element("stage-count").textContent, String(games + lessons));
+    for (const id of ["game-count", "nav-game-count"])
+      assert.equal(element(id).textContent, String(games));
+    for (const id of ["lesson-count", "nav-lesson-count"])
+      assert.equal(element(id).textContent, String(lessons));
+  }
   for (const link of document.querySelectorAll<HTMLAnchorElement>(".stage-open-button")) {
     assert.equal(new URL(link.href).searchParams.get("direct"), "stage");
     assert.equal(link.hash.slice(1), link.dataset.guidePlayStage);

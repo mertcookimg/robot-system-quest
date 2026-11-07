@@ -113,6 +113,7 @@ renderGrid(byId("lesson-grid"), lessons, "lesson");
 setupCardDemos();
 setupHeroShowcase();
 
+byId("stage-count").textContent = String(stages.length);
 for (const id of ["game-count", "nav-game-count"]) byId(id).textContent = String(games.length);
 for (const id of ["lesson-count", "nav-lesson-count"])
   byId(id).textContent = String(lessons.length);

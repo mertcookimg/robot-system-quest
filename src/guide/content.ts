@@ -28,7 +28,7 @@ const CARD_PREVIEW: Record<string, CardPreview> = {
   treasure_map: { icon: "◆", action: "地図を作りながら宝を集める" },
   tag_chase: { icon: "◉", action: "追跡ロボットから30秒逃げる" },
   sumo_battle: { icon: "土", action: "境界を守りながら相手を押し出す" },
-  battery_rush: { icon: "▰", action: "残量を管理して充電地点を巡る" },
+  battery_rush: { icon: "▰", action: "配達とドックでの充電を両立する" },
   robo_kitchen: { icon: "☷", action: "アームで食材を正しく積み上げる" },
   swarm_rescue: { icon: "⋈", action: "3台で役割分担して仲間を救う" },
   robo_baseball: { icon: "⚾", action: "投球を追跡し、照準とタイミングを合わせて打つ" },
@@ -71,60 +71,63 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
     goal: "Distinguish the roles of a Publisher and a Subscriber",
     observe: "Watch how linear.x and angular.z change the robot's motion",
     exercise:
-      "Halve the forward speed. Predict how handling and collision risk will change, then test your prediction.",
+      "Compare holding the forward control with using short presses near walls. Observe how stopping between moves changes completion time and collision risk.",
     insight:
       "A Topic decouples the controller from the robot, so keyboard, gamepad, and autonomous control can share the same interface.",
   },
   follower: {
-    action: "Follow a moving target while keeping a safe distance",
-    goal: "Relate Pose, Twist, and relative coordinates",
-    observe: "Watch how distance and heading error become velocity commands",
-    exercise: "Reduce the following distance and observe what happens while the target turns.",
+    action: "Drive behind the moving leader at a distance of 55–130 px for a total of 8 seconds",
+    goal: "Relate the target pose, following distance, and manual velocity commands",
+    observe: "Watch the distance and progress meter while your controls set the velocity command",
+    exercise:
+      "Follow near the inner edge, then the outer edge of the marked band. Compare how you steer through turns. Time outside the band pauses progress without erasing it.",
     insight:
-      "Target following is a compact model of navigation and person tracking: measurements must be transformed into the robot's frame.",
+      "You steer manually in this game. An autonomous follower could instead use the target pose and its own pose to calculate distance and heading errors, then generate velocity commands.",
   },
   lidar_explorer: {
     action: "Explore while avoiding obstacles with LiDAR",
     goal: "Read angles and ranges from a LaserScan",
     observe: "Compare the nearest ranges in front, left, and right",
-    exercise: "Increase the safety distance and compare exploration time with collision risk.",
+    exercise:
+      "Drive the route again while leaving more space around walls. Compare exploration time and collisions.",
     insight:
       "Reactive obstacle avoidance can reduce collision risk without requiring a map, but it does not guarantee safety.",
   },
   patrol: {
-    action: "Avoid the patrol robot and deactivate each system",
+    action: "Avoid the patrol robots, activate all three terminals, and reach the exit",
     goal: "Choose between Topic, Service, and lifecycle state transitions",
     observe: "Track continuous state updates and one-shot shutdown requests",
     exercise:
-      "Decide whether motors, cameras, or decision logic should be stopped first, and explain why.",
+      "Choose a different order for visiting the three terminals. Compare travel time and exposure to the patrols; each terminal slows the enemies, and the third stops them.",
     insight:
       "Real robots are collections of nodes. Managing components independently makes failures easier to isolate and recover from.",
   },
   racing: {
-    action: "Follow the path and set the fastest stable lap",
+    action: "Steer around the course and complete three laps",
     goal: "Connect path tracking, odometry, and velocity control",
-    observe: "Watch the trade-off between straight-line speed and cornering stability",
+    observe:
+      "Compare your manual steering and boost use with the opponents' automatic waypoint following",
     exercise:
-      "Compare a constant-speed lap with a lap that slows down according to path curvature.",
+      "Compare a run without boost with one that uses boost on straight sections. Pass all three checkpoints in order on every lap, and watch for time lost off the road.",
     insight:
       "The largest command is not always the fastest solution; sensing error and control rate determine the speed that remains stable.",
   },
   robo_soccer: {
     action: "Coordinate the team and score a goal",
     goal: "Share world state across multiple robot nodes",
-    observe: "Compare all-chase behavior with explicit attack and defense roles",
-    exercise: "Run both strategies and record which one creates more useful space around the ball.",
+    observe: "Watch the automatic teammates and opponents follow their attack and defense roles",
+    exercise: "Change the opponent difficulty and observe chasing, defending, and shooting.",
     insight:
       "In multi-robot systems, shared information and role design often matter more than each robot's locally optimal action.",
   },
   treasure_map: {
     action: "Build a map while collecting the treasure",
-    goal: "Understand how LaserScan and odometry form an OccupancyGrid",
+    goal: "Understand how scans and a known robot pose reveal a grid map",
     observe: "Watch unknown cells become free space or obstacles",
     exercise:
-      "Revisit the same corridor and observe how repeated measurements affect map confidence.",
+      "Compare revisiting a mapped corridor with exploring a new one. Watch the known-cell percentage: revisiting known cells does not increase their confidence in this simplified map.",
     insight:
-      "An occupancy map is not just an image; every cell represents the robot's belief about the environment.",
+      "This game stores cells as unknown, wall, or free and assumes the robot pose is known. Probabilistic mapping and simultaneous pose estimation are extensions used in full SLAM systems.",
   },
   tag_chase: {
     action: "Evade the chasing robots for 30 seconds",
@@ -137,42 +140,44 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
   },
   sumo_battle: {
     action: "Push the opponent out without crossing the boundary",
-    goal: "Organize reactive behavior as explicit states and priorities",
-    observe: "Watch the robot switch among search, attack, and boundary recovery",
-    exercise: "Compare a safety-first policy with an attack-first policy over several rounds.",
+    goal: "Relate distance from the ring center to the risk of being pushed out",
+    observe: "Watch the AI approach, wind up, charge, and recover while you steer manually",
+    exercise:
+      "At the same difficulty, compare staying near the center with attacking near the boundary. Record wins and losses over several rounds.",
     insight:
       "Even simple behavior becomes easier to test and tune when states and priorities are explicit.",
   },
   battery_rush: {
-    action: "Visit chargers while managing the remaining battery",
+    action: "Deliver parcels while returning to the charging dock before the battery runs out",
     goal: "Use BatteryState as a planning constraint",
     observe: "Compare estimated travel cost with remaining energy",
-    exercise: "Change the recharge threshold and compare efficiency with the risk of stopping.",
+    exercise:
+      "Choose to return to the dock earlier in one run and later in another. Compare deliveries and remaining battery.",
     insight:
       "Power, temperature, and communication quality are part of planning on a physical robot—not afterthoughts.",
   },
   robo_kitchen: {
     action: "Use the arm to stack ingredients in the correct order",
-    goal: "Connect perception, transforms, IK, and grasp execution",
-    observe: "Trace the object pose from the camera frame to the arm frame",
+    goal: "Connect the hand target, inverse kinematics, and grasp execution",
+    observe: "Watch the arm joints follow the hand target as ingredients move along the belt",
     exercise:
-      "Move an ingredient slightly and decide which stage of the pipeline should correct the error.",
+      "Try grasping an ingredient earlier and later along the belt. Adjust the hand target to meet it, then release it over the plate.",
     insight:
-      "Manipulation is a pipeline of perception, planning, and control rather than one isolated arm motion.",
+      "This game provides the ingredient position and computes joint angles from your hand target. A physical system would also need perception and frame transforms to obtain that target.",
   },
   swarm_rescue: {
     action: "Coordinate three robots to complete the rescue",
-    goal: "Design roles and shared state for a multi-robot system",
+    goal: "Understand the fixed Scout, Carrier, and Relay roles and their shared state",
     observe: "Track how Scout, Relay, and Carrier exchange information",
     exercise:
-      "Compare one robot doing every task with three specialized robots, including failure cases.",
+      "Switch between Scout, Carrier, and Relay and observe how the other two keep working automatically. As a thought experiment, discuss what would change if one robot had to perform all three roles.",
     insight:
       "Distributed design must specify what happens when information is delayed or unavailable, not only how work is divided.",
   },
   robo_baseball: {
     action: "Track the pitch and match both aim and swing timing",
     goal: "Use a predicted PointStamped crossing position for fast interception",
-    observe: "Compare the live ball path, predicted target, and racket contact timing",
+    observe: "Compare the live ball path, predicted target, and bat contact timing",
     exercise: "Aim at the same course with early, perfect, and late swings and compare the result.",
     insight:
       "Fast interception depends on predicting where an object will be, not chasing where it was measured.",
@@ -317,7 +322,7 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
     goal: "Explain why Gaussian blur is applied before Canny",
     observe: "Compare the detected edges with the target while tuning each value",
     exercise:
-      "Raise Edge Match above 55%. Treat the percentage as similarity first; F1 is the metric used underneath.",
+      "Raise Edge Match to at least 55% (F1 ≥ 0.55). Treat the percentage as similarity first; F1 is the metric used underneath.",
     insight:
       "Cleaning the image first makes the features needed by later perception stages easier to detect.",
   },
@@ -415,51 +420,51 @@ const COPY: Record<string, GuideCopy> = {
     ],
     steps: [
       "WASD入力を速度と角速度へ変換する",
-      "/cmd_velへTwistメッセージをpublishする",
+      "/robot/manual_control/cmd_velへTwistメッセージをpublishする",
       "ロボットが指令を受け取り、姿勢を更新する",
     ],
     exercise:
-      "前進速度を半分にした場合、操作感と壁への衝突しやすさがどう変わるか予想してから試してみましょう。",
+      "前進キーを押し続ける操作と、壁の近くで短く押して止まる操作を比べましょう。移動の間に停止すると、所要時間と衝突しやすさはどう変わりますか。",
     insight:
       "ROS 2では操作方法とロボット本体をTopicで分離できます。同じロボットでキーボード、ゲームパッド、自律走行を切り替えて使えるのはこのためです。",
   },
   follower: {
     overview:
-      "移動するターゲットを追いかけながら、位置・向き・座標変換の関係を体験します。追従ノードはターゲットとの相対位置から速度指令を計算し、距離を保つようにロボットを制御します。",
+      "自分でロボットを操縦し、動くリーダーを追いかけます。距離が55〜130pxの範囲にいた時間が合計8秒になるとクリアです。範囲を外れている間は進捗が止まりますが、それまでの時間は失われません。",
     goals: [
       "PoseとTwistの違いを説明する",
-      "相対座標から進行方向を求める",
-      "TFが複数座標系をつなぐ理由を理解する",
+      "リーダーとの距離を見て進行方向を決める",
+      "操作による速度指令と追従の進捗を対応させる",
     ],
     steps: [
-      "ターゲットのPoseを受信する",
-      "ロボット座標系から見た距離と角度を計算する",
-      "誤差に応じた/cmd_velを出力する",
+      "リーダーの位置と追従範囲を確認する",
+      "前進・後退・旋回で範囲内に入る",
+      "距離と進捗を見ながら追いかけ、合計8秒を達成する",
     ],
-    exercise: "追従距離を短くしたとき、旋回中にどのような振る舞いが起きるか観察してみましょう。",
+    exercise: "範囲の内側寄りと外側寄りを追走し、リーダーが曲がるときに必要な操作を比べましょう。",
     insight:
-      "追従はナビゲーションや人追跡の最小モデルです。観測した位置を、そのまま使わずロボット基準へ変換することが重要です。",
+      "このゲームの操縦は手動です。自律追従では、リーダーと自分のPoseから距離・向きの誤差を求め、それを速度指令へ変換する制御を追加できます。",
   },
   lidar_explorer: {
     overview:
       "LiDARの距離データを読み、見えない障害物を避けながら探索します。LaserScanは多数の距離値を角度順に並べたメッセージで、前方・左右の最短距離を比較するだけでも反応型の自律走行を作れます。",
     goals: [
       "LaserScanの角度と距離配列を読み取る",
-      "センサー値から障害物判定を作る",
-      "観測と速度指令の制御ループを理解する",
+      "現在のスキャンで見える壁と見えない領域を区別する",
+      "距離の観測を手動の進路選択に使う",
     ],
     steps: [
       "/scanから周囲の距離を受信する",
-      "危険な方向と安全な方向を判定する",
-      "旋回または前進のTwistをpublishする",
+      "壁との距離を見て進む方向を選ぶ",
+      "自分で前進・旋回し、3つのデータを集めてGOALへ向かう",
     ],
-    exercise: "安全距離を大きくすると探索時間と衝突リスクがどう変わるか比較しましょう。",
+    exercise: "同じ経路で壁から大きく距離を取って走り、探索時間と衝突回数を比べましょう。",
     insight:
       "高度な地図がなくても現在のセンサー値に応じて動くことで衝突リスクを減らせますが、安全を保証するものではありません。",
   },
   patrol: {
     overview:
-      "監視ロボットを避けながら複数の機能を停止するミッションです。Topicによる連続データ、Serviceによる単発の要求、Lifecycleによる状態管理を一つのシステムとして扱います。",
+      "監視ロボットを避けながら3つの端末を作動させ、出口へ向かうミッションです。端末を1つ作動させるごとに敵が減速し、3つ目で停止します。Topicによる観測、Serviceの要求・応答、Lifecycleの状態管理を対応させます。",
     goals: [
       "TopicとServiceの使い分けを理解する",
       "Lifecycleノードの状態遷移を説明する",
@@ -467,28 +472,29 @@ const COPY: Record<string, GuideCopy> = {
     ],
     steps: [
       "監視状態と位置情報をTopicで観測する",
-      "対象機能へService Requestを送る",
-      "Lifecycle状態が変わり機能が停止する",
+      "端末に近づき、Serviceの要求・応答ログと敵の減速を確認する",
+      "3つ目の端末で敵が停止したら出口へ向かう",
     ],
     exercise:
-      "モーター、カメラ、判断機能のうち、どの順番で止めると安全か理由とともに考えましょう。",
+      "3つの端末を巡る順番を変え、移動時間や監視にさらされる時間を比べましょう。各端末の効果は共通で、巡回経路の選び方が変わります。",
     insight:
       "実際のロボットは一枚岩ではありません。センサー、判断、アクチュエーターを個別ノードとして管理すると故障時の切り分けが容易になります。",
   },
   racing: {
     overview:
-      "経路に沿って高速走行し、ラップタイムを競います。位置推定、経路追従、速度制御が同時に働き、速さだけでなく安定して曲がるための制御設計が問われます。",
+      "自分で操縦とブーストを使い、コースを3周します。自動制御の対戦相手は経由点を追従します。手動の走行とAIの経路追従を見比べながら、速さとコースを外れずに曲がることの両立を体験します。",
     goals: [
       "PathとOdometryの関係を理解する",
       "速度と旋回安定性のトレードオフを知る",
-      "周期的な制御ループを体験する",
+      "手動操作とAIの経路追従を区別する",
     ],
     steps: [
-      "Odometryから現在位置を取得する",
-      "Path上の追従目標を選ぶ",
-      "操舵誤差から速度指令を更新する",
+      "前進と旋回でコースを走る",
+      "各周で3つのチェックポイントを順番に通過する",
+      "直線でブーストを使い、3周のタイムと順位を比較する",
     ],
-    exercise: "直線とカーブで同じ速度を使う場合と、曲率で減速する場合のタイムを比較しましょう。",
+    exercise:
+      "ブーストを使わない走行と、直線でブーストを使う走行のタイムを比べましょう。コース外での減速やチェックポイントの通過も確認します。",
     insight:
       "最速の指令が最速の走行になるとは限りません。観測誤差や制御周期を含めて安定する速度を選ぶ必要があります。",
   },
@@ -505,12 +511,12 @@ const COPY: Record<string, GuideCopy> = {
       "攻撃・守備の目標位置を決定する",
       "各ロボットへ個別の速度指令を送る",
     ],
-    exercise: "全員がボールへ向かう戦略と、役割分担する戦略の違いを観察しましょう。",
+    exercise: "相手の難易度を変え、追跡・守備・シュートの動きを観察しましょう。",
     insight: "協調では個々の最適行動より、チーム全体の情報共有と役割設計が重要になります。",
   },
   treasure_map: {
     overview:
-      "未知の迷路を走りながら地図を作り、宝物を回収します。LiDAR、Odometry、OccupancyGridを組み合わせることで、センサーの点群が探索に使える地図へ変わります。",
+      "未知の迷路を走りながら地図を作り、宝物を回収します。このゲームはロボットの姿勢が既知であると仮定し、LiDARで観測したセルを未知・壁・通路の地図へ反映します。",
     goals: [
       "OccupancyGridの意味を理解する",
       "観測と自己位置を組み合わせる",
@@ -521,8 +527,10 @@ const COPY: Record<string, GuideCopy> = {
       "自己位置を基準に観測を地図へ統合する",
       "未探索領域を選んで移動する",
     ],
-    exercise: "同じ場所を何度も通ることが、地図の精度にどのような影響を与えるか確認しましょう。",
-    insight: "地図は単なる画像ではなく、各セルが障害物である確率を持つロボットの記憶です。",
+    exercise:
+      "地図に載った通路を再訪する場合と、新しい通路を探索する場合で既知セルの割合を比べましょう。この簡略地図では、既知セルを再観測しても信頼度を更新しません。",
+    insight:
+      "このゲームはセルを未知・壁・通路として保存します。確率的な地図の更新や、地図と自己位置を同時に推定する処理は、実際のSLAMへ発展させるときの要素です。",
   },
   tag_chase: {
     overview:
@@ -544,21 +552,22 @@ const COPY: Record<string, GuideCopy> = {
     overview:
       "相手を土俵の外へ押し出しつつ、自分は境界を越えないように制御します。接触、境界検出、攻撃方向を同時に扱う反応型ロボットの課題です。",
     goals: [
-      "センサーイベントから状態を切り替える",
-      "攻撃と安全確保の優先順位を設計する",
-      "有限状態機械として行動を整理する",
+      "土俵の中心からの距離と場外の危険を対応させる",
+      "手動操作で攻撃と境界回避を両立する",
+      "AIの接近・予備動作・突進・回復を区別する",
     ],
     steps: [
       "相手と土俵境界を検出する",
-      "探索・接近・押し出し状態を選ぶ",
-      "状態に応じた速度指令をpublishする",
+      "相手の予備動作と突進を観察する",
+      "前進・旋回・ブーストで相手を押し出す",
     ],
-    exercise: "境界回避を最優先にした場合と、攻撃を優先した場合の勝率を比べてみましょう。",
+    exercise:
+      "同じ難易度で、中央を保つ操作と境界近くまで攻める操作を比べましょう。数回ずつ対戦し、勝敗を記録します。",
     insight: "単純な行動でも、状態と優先順位を明示すると予測可能で調整しやすいロボットになります。",
   },
   battery_rush: {
     overview:
-      "残量と移動コストを見ながら充電地点を巡るエネルギー管理ミッションです。行動を続けるだけでなく、将来必要になる資源を見積もる計画性を学びます。",
+      "荷物の配達と、1か所のドックでの充電を両立するミッションです。残量と移動距離を見て、いつ配達を続け、いつドックへ戻るかを自分で判断します。",
     goals: [
       "BatteryStateを行動判断へ利用する",
       "距離と消費量から余裕を見積もる",
@@ -566,27 +575,29 @@ const COPY: Record<string, GuideCopy> = {
     ],
     steps: [
       "現在のバッテリー残量を観測する",
-      "候補地点までの消費量を推定する",
-      "到達可能な充電地点を選択する",
+      "配達先と充電ドックまでの距離を見積もる",
+      "残量が尽きる前にドックへ戻る",
     ],
-    exercise: "充電を始める残量の閾値を変えて、移動効率と停止リスクを比較しましょう。",
+    exercise: "早めにドックへ戻る走行と、配達を続けてから戻る走行で、配達数と残量を比べましょう。",
     insight: "実機では電力、温度、通信品質などの制約も行動計画の一部です。",
   },
   robo_kitchen: {
     overview:
-      "注文に合わせてロボットアームで食材を選び、正しい順序に積み上げます。認識した位置をアームの座標へ変換し、関節を動かして把持する一連のManipulationを体験します。",
+      "注文の次に必要な食材がベルトに流れてきます。手先の目標位置を操作し、食材をつかんで皿へ運びます。逆運動学で手先の目標から関節角を求めるアーム操作を体験します。",
     goals: [
-      "認識・座標変換・把持の流れを理解する",
+      "手先目標・逆運動学・把持の流れを理解する",
       "JointStateと手先Poseを対応させる",
       "作業手順を失敗から回復できる形で設計する",
     ],
     steps: [
-      "注文と食材位置を受信する",
+      "注文とベルト上の食材位置を確認する",
       "手先の目標Poseと関節角を計算する",
       "把持・移動・配置を順番に実行する",
     ],
-    exercise: "食材の位置が少しずれた場合、どの工程で補正するべきか考えてみましょう。",
-    insight: "アーム作業は一つの動作ではなく、認識・計画・制御を連結したパイプラインです。",
+    exercise:
+      "ベルトの手前側と奥側で食材をつかみ、動く食材に合わせて手先目標を調整してみましょう。運んだ食材は皿の上で放します。",
+    insight:
+      "このゲームでは食材の位置が与えられ、操作した手先目標から関節角を求めます。実機では、この目標を得るための認識や座標変換も必要になります。",
   },
   swarm_rescue: {
     overview:
@@ -601,7 +612,8 @@ const COPY: Record<string, GuideCopy> = {
       "Relayが通信を維持して情報を中継する",
       "Carrierが位置情報を使って救助する",
     ],
-    exercise: "一台で全作業を行う場合と、三台で分担する場合の長所と弱点を整理しましょう。",
+    exercise:
+      "Scout・Carrier・Relayを切り替え、操作していない2台が自動で働く様子を見ましょう。発展として、1台がすべての役割を担うとどう変わるか、思考実験で長所と弱点を整理します。",
     insight:
       "分散システムでは、能力を分けるだけでなく、情報が届かない場合の振る舞いも設計対象になります。",
   },
