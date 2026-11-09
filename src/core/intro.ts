@@ -31,6 +31,7 @@ export function renderStageList(
   stageModes: ReadonlyMap<string, Mode>,
 ): void {
   const { gameCount, lessonCount } = splitByMode(stages, stageModes);
+  ui.introStageCount.textContent = String(stages.length);
   ui.introGameCount.textContent = String(gameCount);
   ui.introGameCountEn.textContent = String(gameCount);
   ui.introLessonCount.textContent = String(lessonCount);

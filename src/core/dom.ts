@@ -58,6 +58,7 @@ export const ui = {
 
   // Intro
   introScreen: $<HTMLElement>("intro-screen"),
+  introStageCount: $<HTMLElement>("intro-stage-count"),
   introGameCount: $<HTMLElement>("intro-game-count"),
   introGameCountEn: $<HTMLElement>("intro-game-count-en"),
   introLessonCount: $<HTMLElement>("intro-lesson-count"),
