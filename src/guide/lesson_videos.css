@@ -1,0 +1,376 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+.hero-video-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: 8px;
+  color: var(--purple);
+  font-size: 14px;
+  font-weight: 650;
+  text-decoration: none;
+}
+.hero-video-link > span:first-child {
+  font-size: 10px;
+}
+.hero-video-link:hover {
+  color: var(--fg);
+}
+
+.lesson-videos-section {
+  background:
+    radial-gradient(ellipse at 15% 30%, rgba(var(--purple-rgb), 0.065), transparent 45rem), #090b10;
+}
+.lesson-video-heading {
+  max-width: 800px;
+  margin-bottom: 30px;
+}
+.lesson-video-heading .section-kicker {
+  color: var(--purple);
+}
+.lesson-video-heading h2 {
+  margin: 12px 0 14px;
+  font-size: clamp(28px, 3.2vw, 42px);
+  line-height: 1.25;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.lesson-video-heading > p:last-child {
+  margin: 0;
+  color: #a9b5c6;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.lesson-video-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(24px, 3vw, 42px);
+}
+.lesson-video-player {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid #39405b;
+  border-radius: 12px;
+  background: #030507;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  scroll-margin-top: 100px;
+}
+.lesson-video-player iframe,
+.lesson-video-poster {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.lesson-video-poster {
+  padding: 0;
+  overflow: hidden;
+  color: #fff;
+  background: #080b12;
+  cursor: pointer;
+}
+.lesson-video-poster::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 30%, rgba(0, 0, 0, 0.8));
+}
+.lesson-video-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lesson-video-play-icon {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 64px;
+  height: 64px;
+  padding-left: 3px;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  color: #171120;
+  background: var(--purple);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
+  font-size: 23px;
+}
+.lesson-video-poster:hover .lesson-video-play-icon {
+  background: var(--cyan);
+}
+.lesson-video-poster-label {
+  position: absolute;
+  z-index: 1;
+  right: 20px;
+  bottom: 18px;
+  left: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: left;
+}
+.lesson-video-info {
+  min-width: 0;
+}
+.lesson-video-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.lesson-video-meta > * {
+  padding: 6px 9px;
+  border: 1px solid rgba(var(--purple-rgb), 0.25);
+  border-radius: 5px;
+  color: var(--purple);
+  background: rgba(var(--purple-rgb), 0.06);
+  font: 700 11px/1.2 var(--mono);
+}
+.lesson-video-info > p {
+  margin: 0 0 17px;
+  color: #b1bdcc;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.lesson-video-editions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0 13px;
+}
+.lesson-video-editions button {
+  min-height: 42px;
+  padding: 9px 17px;
+  border: 1px solid var(--line-bright);
+  border-radius: 6px;
+  color: #c3cddb;
+  background: var(--panel-2);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.lesson-video-editions button[aria-pressed="true"] {
+  border-color: var(--purple);
+  color: #171120;
+  background: var(--purple);
+}
+.lesson-video-editions button:hover {
+  border-color: var(--purple);
+}
+.lesson-video-info .lesson-video-format {
+  margin-bottom: 10px;
+  color: #a4b0c1;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.lesson-video-youtube {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  color: var(--cyan);
+  font-size: 14px;
+  font-weight: 650;
+  text-underline-offset: 4px;
+}
+.lesson-video-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+}
+.lesson-video-lesson {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--purple);
+  font-size: 14px;
+  font-weight: 650;
+  text-underline-offset: 4px;
+}
+.lesson-video-info .lesson-video-tip {
+  margin: 17px 0 0;
+  padding: 13px 15px;
+  border-left: 2px solid var(--purple);
+  border-radius: 0 6px 6px 0;
+  color: #c5cddd;
+  background: rgba(var(--purple-rgb), 0.055);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.lesson-video-tip strong {
+  color: var(--purple);
+}
+
+.lesson-video-chapters {
+  margin-top: 28px;
+  border: 1px solid var(--line-bright);
+  border-radius: 10px;
+  background: rgba(13, 16, 22, 0.65);
+}
+.lesson-video-chapters > summary {
+  padding: 18px 22px;
+  color: var(--fg);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.lesson-video-chapters > summary::marker {
+  color: var(--purple);
+}
+.lesson-video-chapters[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+.lesson-video-chapter-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 0;
+  padding: 14px;
+  list-style: none;
+}
+.lesson-video-chapter-list > li {
+  min-width: 0;
+}
+.lesson-video-chapter {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto 12px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  height: 100%;
+  padding: 11px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #c4cddb;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.lesson-video-chapter:hover,
+.lesson-video-chapter[aria-current="true"] {
+  border-color: rgba(var(--purple-rgb), 0.3);
+  color: var(--fg);
+  background: rgba(var(--purple-rgb), 0.08);
+}
+.video-chapter-number {
+  color: var(--purple);
+  font: 700 11px/1.4 var(--mono);
+}
+.video-chapter-name {
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.lesson-video-chapter time {
+  color: #a8b7c9;
+  font: 12px/1.4 var(--mono);
+  white-space: nowrap;
+}
+.video-chapter-play {
+  color: var(--purple);
+  font-size: 10px;
+}
+.stage-video-link,
+.dialog-video-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 40px;
+  color: var(--purple);
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 650;
+  text-decoration: none;
+}
+.stage-video-link {
+  margin-top: 5px;
+  padding: 6px 1px;
+}
+.dialog-video-link {
+  display: inline-flex;
+  flex-wrap: wrap;
+  margin: 12px 0 0;
+  padding: 8px 13px;
+  border: 1px solid rgba(var(--purple-rgb), 0.3);
+  border-radius: 6px;
+  background: rgba(var(--purple-rgb), 0.06);
+}
+.stage-video-link:hover,
+.dialog-video-link:hover,
+.lesson-video-youtube:hover {
+  color: var(--fg);
+}
+.lesson-video-lesson:hover {
+  color: var(--fg);
+}
+.hero-video-link:focus-visible,
+.lesson-video-poster:focus-visible,
+.lesson-video-editions button:focus-visible,
+.lesson-video-chapters > summary:focus-visible,
+.lesson-video-chapter:focus-visible,
+.lesson-video-youtube:focus-visible,
+.lesson-video-lesson:focus-visible,
+.stage-video-link:focus-visible,
+.dialog-video-link:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+.lesson-video-poster:focus-visible {
+  outline-offset: -4px;
+}
+
+@media (max-width: 1120px) {
+  .lesson-video-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .lesson-video-info {
+    max-width: 740px;
+  }
+}
+
+@media (max-width: 760px) {
+  .lesson-video-heading {
+    margin-bottom: 24px;
+  }
+  .lesson-video-chapter-list {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 9px;
+    gap: 3px;
+  }
+  .lesson-video-chapters > summary {
+    padding: 16px;
+    font-size: 14px;
+  }
+  .lesson-video-chapter {
+    gap: 8px;
+    padding: 10px 8px;
+  }
+  .lesson-video-play-icon {
+    width: 52px;
+    height: 52px;
+    font-size: 19px;
+  }
+  .lesson-video-poster-label {
+    right: 14px;
+    bottom: 12px;
+    left: 14px;
+    font-size: 13px;
+  }
+}

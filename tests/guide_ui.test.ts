@@ -318,3 +318,139 @@ test("menu links focus their section and resizing restores desktop navigation", 
   assert.equal(element("guide-sidebar").inert, true);
   assert.equal(document.activeElement, element("menu-toggle"));
 });
+
+test("all Lesson guides link to the supplied video chapter in the selected language", () => {
+  // Expected chapter times from the supplied walkthrough, independent of catalog order.
+  const chapters = [
+    ["pubsub_builder", "00:00", 0],
+    ["service_builder", "01:07", 67],
+    ["action_builder", "02:19", 139],
+    ["param_tuner", "03:26", 206],
+    ["feedforward_controller", "04:45", 285],
+    ["feedforward_mission", "05:56", 356],
+    ["feedback_controller", "07:06", 426],
+    ["feedback_mission", "08:11", 491],
+    ["lidar_avoidance", "09:12", 552],
+    ["tf_puzzle", "10:12", 612],
+    ["mapping_mission", "11:13", 673],
+    ["localization_mission", "12:15", 735],
+    ["navigation", "13:15", 795],
+    ["image_processing", "14:18", 858],
+    ["edge_detection", "15:21", 921],
+    ["object_detection", "16:31", 991],
+    ["behavior_tree", "17:44", 1064],
+    ["joint_teleop", "18:54", 1134],
+    ["ik_reach", "19:59", 1199],
+    ["pick_place", "21:02", 1262],
+    ["imitation_learning", "22:13", 1333],
+    ["reinforcement_learning", "23:53", 1433],
+    ["vla_lab", "24:55", 1495],
+    ["world_model", "25:55", 1555],
+  ] as const;
+  assert.equal(document.querySelectorAll("#lesson-grid .stage-video-link").length, 24);
+  assert.equal(document.querySelectorAll("#game-grid .stage-video-link").length, 0);
+  for (const [lang, videoId] of [
+    ["ja", "YJ34tb8ADns"],
+    ["en", "k5dfFVgThU8"],
+  ] as const) {
+    setLang(lang);
+    for (const [stageId, time, seconds] of chapters) {
+      openStage(stageId);
+      const link = content().querySelector<HTMLAnchorElement>(".dialog-video-link")!;
+      const url = new URL(link.href);
+      assert.equal(url.origin, "https://www.youtube.com");
+      assert.equal(url.searchParams.get("v"), videoId);
+      assert.equal(url.searchParams.get("t"), `${seconds}s`);
+      assert.equal(url.searchParams.has("lang"), false);
+      assert.equal(link.hasAttribute("data-lang-link"), false);
+      assert.equal(link.querySelector("time")!.textContent, time);
+      assert.equal(link.target, "_blank");
+      assert.ok(link.relList.contains("noopener"));
+      assert.ok(link.relList.contains("noreferrer"));
+    }
+    openStage("delivery");
+    assert.equal(content().querySelector(".dialog-video-link"), null);
+  }
+});
+
+test("walkthrough loads on request, seeks chapters and preserves the chapter when changing editions", () => {
+  const videos = element("lesson-video-content");
+  const player = () => videos.querySelector<HTMLIFrameElement>(".lesson-video-player iframe");
+  const edition = (lang: string) =>
+    videos.querySelector<HTMLButtonElement>(`[data-video-lang="${lang}"]`)!;
+  const details = () => videos.querySelector<HTMLDetailsElement>(".lesson-video-chapters")!;
+  assert.equal(details().open, false);
+  assert.equal(videos.querySelectorAll("[data-video-chapter]").length, 24);
+  assert.equal(player(), null);
+  assert.equal(edition("ja").getAttribute("aria-pressed"), "true");
+  assert.match(
+    videos.querySelector(".lesson-video-format")!.textContent!,
+    /英語の操作画面.*日本語の解説・字幕/,
+  );
+
+  edition("en").click();
+  assert.equal(player(), null);
+  assert.equal(edition("en").getAttribute("aria-pressed"), "true");
+  assert.equal(edition("ja").getAttribute("aria-pressed"), "false");
+  assert.equal(document.documentElement.lang, "ja");
+  videos.querySelector<HTMLButtonElement>("[data-video-play]")!.click();
+  let url = new URL(player()!.src);
+  assert.equal(url.origin, "https://www.youtube-nocookie.com");
+  assert.equal(url.pathname, "/embed/k5dfFVgThU8");
+  assert.equal(url.searchParams.get("start"), "0");
+  assert.equal(url.searchParams.get("autoplay"), "1");
+  assert.equal(document.activeElement, element("lesson-video-player"));
+
+  details().open = true;
+  videos.querySelector<HTMLButtonElement>('[data-video-chapter="world_model"]')!.click();
+  url = new URL(player()!.src);
+  assert.equal(url.searchParams.get("start"), "1555");
+  const tryLesson = videos.querySelector<HTMLAnchorElement>(".lesson-video-lesson")!;
+  const lessonUrl = new URL(tryLesson.href);
+  assert.equal(lessonUrl.hash, "#world_model");
+  assert.equal(lessonUrl.searchParams.get("direct"), "stage");
+  assert.equal(lessonUrl.searchParams.get("lang"), "ja");
+  assert.equal(tryLesson.dataset.guidePlayStage, "world_model");
+  assert.equal(videos.querySelectorAll('[data-video-chapter][aria-current="true"]').length, 1);
+  assert.equal(
+    videos
+      .querySelector('[data-video-chapter][aria-current="true"]')!
+      .getAttribute("data-video-chapter"),
+    "world_model",
+  );
+
+  edition("ja").click();
+  url = new URL(player()!.src);
+  assert.equal(url.pathname, "/embed/YJ34tb8ADns");
+  assert.equal(url.searchParams.get("start"), "1555");
+  assert.equal(url.searchParams.get("autoplay"), "0");
+  assert.equal(details().open, true);
+  const fallback = videos.querySelector<HTMLAnchorElement>(".lesson-video-youtube")!;
+  assert.equal(new URL(fallback.href).searchParams.get("v"), "YJ34tb8ADns");
+  assert.equal(new URL(fallback.href).searchParams.get("t"), "1555s");
+  assert.equal(fallback.target, "_blank");
+  assert.ok(fallback.relList.contains("noopener"));
+  assert.ok(fallback.relList.contains("noreferrer"));
+
+  setLang("en");
+  url = new URL(player()!.src);
+  assert.equal(url.pathname, "/embed/k5dfFVgThU8");
+  assert.equal(url.searchParams.get("start"), "1555");
+  assert.equal(details().open, true);
+  assert.match(element("lesson-videos-title").textContent!, /All 24 lessons/);
+  assert.equal(
+    new URL(videos.querySelector<HTMLAnchorElement>(".lesson-video-lesson")!.href).searchParams.get(
+      "lang",
+    ),
+    "en",
+  );
+  assert.match(
+    videos.querySelector(".lesson-video-format")!.textContent!,
+    /English interface, explanations and captions/,
+  );
+  edition("ja").click();
+  assert.match(
+    videos.querySelector(".lesson-video-format")!.textContent!,
+    /English interface with Japanese explanations and captions/,
+  );
+});

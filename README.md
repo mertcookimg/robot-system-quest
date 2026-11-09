@@ -37,6 +37,11 @@ The development server uses these URLs by default:
 - Home / Game / Lesson: <http://localhost:5173/>
 - Robotics Learning Guide: <http://localhost:5173/guide/>
 
+The Guide includes a Japanese/English video walkthrough of all 24 Lessons. Expand the chapter
+list to play a lesson's segment, then open that Lesson directly to try it. Lesson cards and
+detail pages also link to the corresponding YouTube timestamp. The player loads on request;
+both editions use background music and captions without spoken narration.
+
 `npm run dev` starts the development environment. To test the production build locally, run:
 
 ```bash

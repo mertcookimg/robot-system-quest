@@ -12,6 +12,7 @@ import { setupHeroShowcase } from "./hero_showcase";
 import { guideText as gt, localizeStaticGuide } from "./localization";
 import { stageDisplayLesson, stageDisplayName } from "../core/stage_labels";
 import { recommendedInspectionCommand } from "../lib/terminal_commands";
+import { lessonVideoFor, setupLessonVideos } from "./lesson_videos";
 import {
   setupAnalytics,
   trackGuideOpen,
@@ -55,6 +56,7 @@ function stageCard(stage: StageMeta, index: number, mode: "game" | "lesson"): st
   const copy = guideCopyFor(stage);
   const preview = cardPreviewFor(stage);
   const messageTypes = stage.ros2?.msgTypes.slice(0, 2) ?? [];
+  const video = mode === "lesson" ? lessonVideoFor(stage.id) : undefined;
   const number =
     mode === "lesson"
       ? `L${String(lessonNumbers.get(stage.id) ?? index + 1).padStart(2, "0")}`
@@ -98,6 +100,7 @@ function stageCard(stage: StageMeta, index: number, mode: "game" | "lesson"): st
           ${mode === "game" ? gt("Gameを開く", "Open Game") : gt("Lessonを開く", "Open Lesson")} <span>↗</span>
         </a>
       </div>
+      ${video ? `<a class="stage-video-link" href="${escapeHtml(video.href)}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">▶</span> ${gt("動画で見る", "Watch lesson")} <time>${video.time}</time><span aria-hidden="true">↗</span></a>` : ""}
     </article>
   `;
 }
@@ -112,6 +115,7 @@ function renderGrid(
 
 renderGrid(byId("game-grid"), games, "game");
 renderGrid(byId("lesson-grid"), lessons, "lesson");
+setupLessonVideos(lessons, lessonNumbers);
 setupCardDemos();
 setupHeroShowcase();
 
@@ -142,6 +146,7 @@ function openStage(stage: StageMeta, syncUrl = true): void {
   const diagram = getDiagram(stage.id);
   const displayName = stageDisplayName(stage);
   const displayLesson = stageDisplayLesson(stage);
+  const video = mode === "lesson" ? lessonVideoFor(stage.id) : undefined;
   const number =
     mode === "lesson"
       ? `LESSON ${lessonNumbers.get(stage.id) ?? ""}`
@@ -155,6 +160,7 @@ function openStage(stage: StageMeta, syncUrl = true): void {
           <div class="dialog-kicker">${number} / ${mode.toUpperCase()}</div>
           <h2 id="dialog-stage-title">${escapeHtml(displayName)}</h2>
           <p class="dialog-lead">${escapeHtml(getLang() === "ja" ? displayLesson : (ros?.title ?? stage.lesson ?? "Robot System"))}</p>
+          ${video ? `<a class="dialog-video-link" href="${escapeHtml(video.href)}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">▶</span> ${gt("このLessonを動画で見る", "Watch this lesson on YouTube")} <time>${video.time}</time><span aria-hidden="true">↗</span></a>` : ""}
         </div>
         <span class="lesson-page-id">${escapeHtml(stage.id)}</span>
       </header>

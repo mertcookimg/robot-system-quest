@@ -9,6 +9,7 @@ const STATIC_EN: Record<string, string> = {
   ガイド概要: "Overview",
   学べること: "What You Will Learn",
   学び方: "Learning Path",
+  レッスン解説動画: "Lesson Videos",
   実機で学ぶ: "Learn with a Real Robot",
   "Game / Lessonを開く": "Open Game / Lesson",
   "小林聖人 · 作品・講義・プロフィール": "Masato Kobayashi · Projects, Courses & Profile",
@@ -25,6 +26,7 @@ const STATIC_EN: Record<string, string> = {
     "This is a conceptual browser simulation of ROS 2 data flow; it does not run ROS 2 or DDS itself.",
   Gamesから見る: "Explore Games",
   Lessonsから見る: "Explore Lessons",
+  全24レッスンを動画で見る: "Watch all 24 lessons",
   ロボットシステムについて: "About a Robot System",
   "ロボットシステムは、機構・電源・通信・安全・学習など、多様な要素で成り立ちます。この教材では、その働きを理解するために、認識・判断／計画・制御という多様な視点から学びます。これらは固定された順序ではなく、互いに関わりながら実世界の変化に応答します。":
     "Robot systems consist of diverse elements, including mechanisms, power systems, communication, safety, and learning. To understand how they work, this course uses several perspectives: perception, decision-making and planning, and control. These are not fixed sequential stages; they interact as the robot responds to changes in the physical world.",
