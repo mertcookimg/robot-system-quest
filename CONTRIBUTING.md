@@ -203,8 +203,8 @@ npm run build
 entries in its reviewed allowlist. An entry is allowed only for build tooling, needs a reason
 and an expiry date, and fails again once it expires or reaches the production dependencies.
 
-CI installs dependencies with `npm ci` before these checks. The formatting check runs in the CI
-workflow only; the Pages deployment does not wait for it. `npm test` runs the TypeScript tests plus `check:stages`
+CI installs dependencies with `npm ci` before these checks. A push to `main` is published to
+GitHub Pages only after all of them pass, using the build that CI verified. `npm test` runs the TypeScript tests plus `check:stages`
 and `check:guide`; `npm run build` regenerates Guide metadata, type-checks, and builds both
 entry points while checking the Guide's dependency boundary.
 

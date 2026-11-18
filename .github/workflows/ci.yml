@@ -1,6 +1,10 @@
 # Copyright 2026 Masato Kobayashi
 # SPDX-License-Identifier: Apache-2.0
 
+# Checks every pull request and push. A push to main (or a manual run on main)
+# publishes to GitHub Pages only after every check in `verify` has passed,
+# using the exact build that was verified.
+
 name: CI
 
 on:
@@ -8,9 +12,14 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+env:
+  # Publish only from main, never from pull requests.
+  PUBLISH: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
 
 jobs:
   verify:
@@ -42,3 +51,39 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          # Analytics is compiled only into the build that will be published.
+          VITE_GA_ID: ${{ env.PUBLISH == 'true' && vars.GA_MEASUREMENT_ID || '' }}
+
+      - name: Upload Pages artifact
+        if: env.PUBLISH == 'true'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: ./dist
+
+  deploy:
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
