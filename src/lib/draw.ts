@@ -5,6 +5,7 @@
 import { W, H, type Particle } from "../types";
 import { theme, withA } from "../core/theme";
 import { reportCanvasHint, reportCanvasTimer } from "./canvas_readout";
+import { rosAngularFromCanvas } from "./control_math";
 
 const ACCENT = "#7dd3fc";
 const ACCENT_2 = "#c4b5fd";
@@ -317,10 +318,23 @@ export function spawnBurst(
   }
 }
 
+/**
+ * Twist message text. `ang` must already follow REP-103 (counter-clockwise
+ * positive); stages that integrate a canvas heading use fmtCanvasTwist.
+ */
 export function fmtTwist(lin: number, ang: number): string {
   const l = lin.toFixed(2).padStart(6, " ");
   const a = ang.toFixed(2).padStart(6, " ");
   return `geometry_msgs/msg/Twist linear.x:${l} angular.z:${a}`;
+}
+
+/**
+ * Twist message text for a robot driven in canvas coordinates. The canvas Y
+ * axis points down, so its clockwise-positive angular velocity is negated to
+ * publish the REP-103 angular.z (left turn = positive).
+ */
+export function fmtCanvasTwist(lin: number, canvasAng: number): string {
+  return fmtTwist(lin, rosAngularFromCanvas(canvasAng));
 }
 
 // Export the palette for factory use.

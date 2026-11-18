@@ -13,6 +13,7 @@ import { type Stage, type GameContext } from "../../types";
 
 import { defineStage } from "../../core/stage_def";
 import { drawHint, COLORS, clearBackground } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { setupBlockProgram, type BlockProgramHandle } from "../../lib/block_program";
 import {
   createCameraMission,
@@ -442,7 +443,7 @@ export function makeObjectDetection(): Stage {
       pubAcc = 0;
       g.publish(
         TOPIC_CMD,
-        `geometry_msgs/msg/Twist linear.x:${v.toFixed(2)} angular.z:${w.toFixed(2)}`,
+        `geometry_msgs/msg/Twist linear.x:${v.toFixed(2)} angular.z:${rosAngularFromCanvas(w).toFixed(2)}`,
       );
       g.publish(
         TOPIC_DETECTION_IMG,

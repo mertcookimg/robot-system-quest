@@ -329,6 +329,8 @@ export function makeRoboTennis(): Stage {
       `${t("robo_tennis.stats.score")} <b>${scorePlayer} - ${scoreAi}</b> ${mode2P ? "(P1 - P2)" : "(YOU - AI)"}<br>` +
         `${t("robo_tennis.stats.rally")} <b>${bestRally}</b><br>` +
         `${t("robo_tennis.stats.time")} <b>${elapsed.toFixed(1)} s</b>`,
+      undefined,
+      { record: !mode2P },
     );
   }
 

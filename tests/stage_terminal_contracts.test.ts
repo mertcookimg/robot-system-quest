@@ -571,6 +571,12 @@ test("TF slider edits change the actual transform echoed by the shell", () => {
     /tx=14px ty=8px yaw=-22°/,
     "The winning transform must be published before completion stops updates",
   );
+  // The published transform follows REP-103: the mount on the robot's right
+  // side is negative y, and the counter-clockwise rotation is positive yaw.
+  assert.match(
+    monitor.recentMessages("/tf_static", 1)[0].msg,
+    /translation:\(x=0\.14 y=-0\.08 z=0\.00\) rotation:\(z=0\.191 w=0\.982\) yaw=22°/,
+  );
   checkEmitted(stage);
 });
 
@@ -786,4 +792,21 @@ test("inspection controls revalidate a live graph change even without a stage re
   assert.equal(ui.terminalBody.children.length, count);
   assert.ok([...select.options].every((option) => option.value !== command));
   assert.doesNotMatch(document.getElementById("terminal-pad-palette")!.textContent!, /topic echo/);
+});
+
+test("/cmd_vel publishes REP-103 angular.z: a left turn is positive", () => {
+  for (const id of ["delivery", "patrol", "mapping_mission", "edge_detection"]) {
+    const stage = load(id);
+    const angularFor = (key: string): number => {
+      published.length = 0;
+      hold(stage, key, 0.5);
+      const twist = published.filter((event) => event.topic.endsWith("cmd_vel")).at(-1);
+      assert.ok(twist, `${id} publishes /cmd_vel while turning`);
+      const match = /angular\.z:\s*(-?[\d.]+)/.exec(twist.msg);
+      assert.ok(match, `${id} publishes angular.z`);
+      return Number(match[1]);
+    };
+    assert.ok(angularFor("a") > 0, `${id}: turning left publishes a positive angular.z`);
+    assert.ok(angularFor("d") < 0, `${id}: turning right publishes a negative angular.z`);
+  }
 });

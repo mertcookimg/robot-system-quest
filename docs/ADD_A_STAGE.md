@@ -204,22 +204,22 @@ topic history, and terminal state. The fallback supports standalone previews tha
 
 ### Main `GameContext` APIs
 
-| API                                        | Purpose                                                                             |
-| ------------------------------------------ | ----------------------------------------------------------------------------------- |
-| `g.canvas` / `g.ctx`                       | Canvas and 2D rendering context                                                     |
-| `g.keys`                                   | Read-only set of combined input keys; use lowercase names such as `w` and `arrowup` |
-| `g.overlay`                                | Stage-owned HTML controls and editor area                                           |
-| `g.setStatus(text, color?)`                | Updates the visible status message                                                  |
-| `g.setHud(lines)`                          | Updates the telemetry HUD                                                           |
-| `g.publish(topic, msg)`                    | Records simulated topic data for the monitor and learning terminal                  |
-| `g.awardStars(stars, statsHtml, delayMs?)` | Plays the clear sound and shows completion after a managed delay                    |
-| `g.showClear(stars, statsHtml)`            | Shows completion immediately                                                        |
-| `g.setTimeout(callback, delayMs)`          | Schedules a callback cancelled on reset or stage change                             |
-| `g.crash(reason?)`                         | Triggers failure feedback and the runtime restart sequence                          |
-| `g.resetStage?.()`                         | Restarts through the runtime, including telemetry and terminal cleanup              |
-| `g.shake()` / `g.sfx`                      | Shared visual and audio feedback                                                    |
-| `g.ghost`                                  | Records, reads, and draws replay poses                                              |
-| `g.getBestTime(stageId?)`                  | Returns the best saved time for the specified or current stage                      |
+| API                                                  | Purpose                                                                                     |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `g.canvas` / `g.ctx`                                 | Canvas and 2D rendering context                                                             |
+| `g.keys`                                             | Read-only set of combined input keys; use lowercase names such as `w` and `arrowup`         |
+| `g.overlay`                                          | Stage-owned HTML controls and editor area                                                   |
+| `g.setStatus(text, color?)`                          | Updates the visible status message                                                          |
+| `g.setHud(lines)`                                    | Updates the telemetry HUD                                                                   |
+| `g.publish(topic, msg)`                              | Records simulated topic data for the monitor and learning terminal                          |
+| `g.awardStars(stars, statsHtml, delayMs?, options?)` | Plays the clear sound and shows completion after a managed delay                            |
+| `g.showClear(stars, statsHtml, options?)`            | Shows completion immediately; pass `{ record: false }` to skip saving time, ghost and stars |
+| `g.setTimeout(callback, delayMs)`                    | Schedules a callback cancelled on reset or stage change                                     |
+| `g.crash(reason?)`                                   | Triggers failure feedback and the runtime restart sequence                                  |
+| `g.resetStage?.()`                                   | Restarts through the runtime, including telemetry and terminal cleanup                      |
+| `g.shake()` / `g.sfx`                                | Shared visual and audio feedback                                                            |
+| `g.ghost`                                            | Records, reads, and draws replay poses                                                      |
+| `g.getBestTime(stageId?)`                            | Returns the best saved time for the specified or current stage                              |
 
 ## 3. Register the manifest and translations
 
@@ -367,6 +367,10 @@ Use [`src/lib/two_player.ts`](../src/lib/two_player.ts) for separate player inpu
 Call `setActive(true)` when entering two-player mode and `setActive(false)` when leaving it
 or disposing the stage. Reset button-edge state on restart as in the reference games, and
 update the observable graph when a second player is added or removed.
+
+A two-player match is not a single-player run. Pass `{ record: false }` to `g.showClear()` or
+`g.awardStars()` for its result so the match time, ghost and stars are not saved as Player 1's
+record.
 
 ## Shared modules and reference stages
 

@@ -22,7 +22,7 @@ import { defineStage } from "../../core/stage_def";
 import {
   drawHint,
   drawTimer,
-  fmtTwist,
+  fmtCanvasTwist,
   drawRobotBody,
   drawRobotLabel,
   clearBackground,
@@ -592,7 +592,7 @@ export function makeLocalizationMission(): Stage {
     pubAcc += dt;
     if (pubAcc > 1 / 5) {
       pubAcc = 0;
-      g.publish("/cmd_vel", fmtTwist(cmd.v / PX_PER_M, cmd.w));
+      g.publish("/cmd_vel", fmtCanvasTwist(cmd.v / PX_PER_M, cmd.w));
       g.publish(
         "/amcl_pose",
         `geometry_msgs/msg/PoseWithCovarianceStamped ` +

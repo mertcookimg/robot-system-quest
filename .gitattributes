@@ -1,2 +1,8 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Normalize text files to LF in the repository and in every working tree,
+# including Windows checkouts with core.autocrlf=true. Generated files and
+# Prettier both expect LF.
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.gif binary

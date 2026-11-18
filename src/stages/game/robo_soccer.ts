@@ -10,7 +10,14 @@ import { W, H, type Stage, type GameContext } from "../../types";
 import { theme, withA } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
-import { drawHint, drawTimer, fmtTwist, drawRobotBody, clearBackground } from "../../lib/draw";
+import {
+  drawHint,
+  drawTimer,
+  fmtCanvasTwist,
+  drawRobotBody,
+  clearBackground,
+} from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Particles } from "../../lib/particles";
 import { formatPose, formatTwist } from "../../lib/hud";
 import { makeOverlayPanel, type OverlayPanelHandle } from "../../lib/overlay_panel";
@@ -497,10 +504,10 @@ export function makeRoboSoccer(): Stage {
     pubAcc += dt;
     if (pubAcc > 1 / 10) {
       pubAcc = 0;
-      g.publish("/cmd_vel", fmtTwist(human.v / BASE_LIN, human.w));
+      g.publish("/cmd_vel", fmtCanvasTwist(human.v / BASE_LIN, human.w));
       if (mode2P) {
         const h2 = bots[3];
-        g.publish("/p2/cmd_vel", fmtTwist(h2.v / BASE_LIN, h2.w));
+        g.publish("/p2/cmd_vel", fmtCanvasTwist(h2.v / BASE_LIN, h2.w));
       }
       g.publish(
         "/ball/pose",
@@ -524,7 +531,7 @@ export function makeRoboSoccer(): Stage {
       `mode:    ${mode2P ? "2-player vs (1 vs 1 + 2 AI each)" : "3 vs 3 soccer"}`,
       `score:   P-team ${scoreP} - ${scoreO} ${mode2P ? "P2-team" : "O-team"}   (first to ${TARGET_SCORE})`,
       `pose:${formatPose(human)}`,
-      `cmd_vel:${formatTwist({ v: human.v, w: human.w }, { pxPerM: BASE_LIN })}`,
+      `cmd_vel:${formatTwist({ v: human.v, w: rosAngularFromCanvas(human.w) }, { pxPerM: BASE_LIN })}`,
       `ball:    x=${ball.x.toFixed(0)}  y=${ball.y.toFixed(0)}  v=${Math.hypot(ball.vx, ball.vy).toFixed(0)} px/s`,
       `kick P1: ${kickStatus(kickCooldown, kickRequestT, "E / Space / pad A-X")}`,
     ];
@@ -790,7 +797,7 @@ export function makeRoboSoccer(): Stage {
         `Time     <b>${elapsed.toFixed(2)} s</b>`;
       g.setTimeout(() => {
         g.sfx.clear();
-        g.showClear(stars, stats);
+        g.showClear(stars, stats, { record: false });
       }, 700);
       return;
     }

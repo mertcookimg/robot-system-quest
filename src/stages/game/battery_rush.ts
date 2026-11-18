@@ -13,10 +13,11 @@ import {
   drawRobotBody,
   drawRobotLabel,
   drawHint,
-  fmtTwist,
+  fmtCanvasTwist,
   COLORS,
   clearBackground,
 } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Particles } from "../../lib/particles";
 import { teleop } from "../../lib/teleop";
 import { Trail } from "../../lib/trail";
@@ -207,7 +208,7 @@ export function makeBatteryRush(): Stage {
     pubAcc += dt;
     if (pubAcc > 1 / 20) {
       pubAcc = 0;
-      g.publish(TOPIC_CMD, fmtTwist(cmd.lin / PX_PER_M, cmd.ang));
+      g.publish(TOPIC_CMD, fmtCanvasTwist(cmd.lin / PX_PER_M, cmd.ang));
       g.publish(
         "/robot/odom",
         `position_m: {x: ${(robot.x / PX_PER_M).toFixed(3)}, y: ${(robot.y / PX_PER_M).toFixed(3)}} yaw: ${robot.theta.toFixed(3)}`,
@@ -233,7 +234,7 @@ export function makeBatteryRush(): Stage {
       `battery:   ${battery.toFixed(0)} %${charging ? "  (charging)" : battery < LOW_BATT ? "  !! LOW" : ""}`,
       `mission:   ${carrying ? "deliver" : "pickup"}`,
       `pose:      ${formatPose(robot, { pxPerM: PX_PER_M })}`,
-      `cmd_vel:   ${formatTwist({ v: cmd.lin, w: cmd.ang }, { pxPerM: PX_PER_M })}`,
+      `cmd_vel:   ${formatTwist({ v: cmd.lin, w: rosAngularFromCanvas(cmd.ang) }, { pxPerM: PX_PER_M })}`,
     ]);
   }
 

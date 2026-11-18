@@ -36,6 +36,7 @@ let actions = 0;
 let forwardFrames = 0;
 let nexts = 0;
 let restarts = 0;
+let allClears = 0;
 let canvasDowns = 0;
 let canvasUps = 0;
 let canvasLeaves = 0;
@@ -147,8 +148,9 @@ before(async () => {
     onNext() {
       nexts++;
     },
-    isAllCleared: () => false,
-    showAllClear() {},
+    showAllClear() {
+      allClears++;
+    },
   });
   const keyboard = await server.ssrLoadModule("/src/core/keyboard.ts");
   keyboard.setupKeyboard({
@@ -199,6 +201,7 @@ beforeEach(() => {
     forwardFrames =
     nexts =
     restarts =
+    allClears =
     canvasDowns =
     canvasUps =
     canvasLeaves =
@@ -309,6 +312,104 @@ test("Navigation completion owns Enter and Retry, while all-clear also retains R
   key("r");
   assert.equal(restarts, 2);
   assert.equal(ui.allclearScreen.classList.contains("show"), false);
+});
+
+test("an unrecorded 2P result keeps P1's best time and stars untouched", async () => {
+  const rankings = (await server.ssrLoadModule(
+    "/src/core/rankings.ts",
+  )) as typeof import("../src/core/rankings");
+  const progress = (await server.ssrLoadModule(
+    "/src/core/progress.ts",
+  )) as typeof import("../src/core/progress");
+  const deps = { current, stages: [current], onRenderSelector() {} };
+
+  clear.show(2, "Winner <b>P2</b><br>Time <b>2.10 s</b>", deps, { record: false });
+  assert.equal(clear.isOpen(), true, "The match result is still shown");
+  assert.deepEqual(rankings.getTopTimes(current.id, 5), []);
+  assert.equal(progress.loadProgress()[current.id], undefined);
+  assert.equal(ui.clearStats.querySelector(".rankings"), null);
+  clear.close();
+
+  clear.show(3, "Time <b>5.00 s</b>", deps);
+  assert.deepEqual(rankings.getTopTimes(current.id, 5), [5]);
+  assert.equal(progress.loadProgress()[current.id]?.stars, 3);
+  clear.close();
+
+  clear.show(1, "Winner <b>P2</b><br>Time <b>1.00 s</b>", deps, { record: false });
+  assert.deepEqual(rankings.getTopTimes(current.id, 5), [5], "A 2P time never becomes a record");
+  assert.equal(progress.loadProgress()[current.id]?.stars, 3);
+});
+
+test("only the clear that first completes every stage leads to the all-clear screen", async () => {
+  const progress = (await server.ssrLoadModule(
+    "/src/core/progress.ts",
+  )) as typeof import("../src/core/progress");
+  const other = { ...current, id: "other-stage" };
+  const deps = { current, stages: [current, other], onRenderSelector() {} };
+  progress.saveProgress(other.id, 3);
+
+  clear.show(1, "Time <b>4.00 s</b>", deps);
+  assert.match(ui.nextBtn.textContent ?? "", /View all clear/);
+  ui.nextBtn.click();
+  assert.equal(allClears, 1, "Completing the set shows the all-clear screen");
+  assert.equal(nexts, 0);
+
+  // Replaying any stage after 100% must continue to the next stage.
+  clear.show(3, "Time <b>3.00 s</b>", deps);
+  assert.doesNotMatch(ui.nextBtn.textContent ?? "", /View all clear/);
+  ui.nextBtn.click();
+  assert.equal(allClears, 1);
+  assert.equal(nexts, 1);
+});
+
+test("holding R resets once instead of on every auto-repeat", () => {
+  key("r");
+  for (let i = 0; i < 5; i++) {
+    ui.canvas.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "r", repeat: true, bubbles: true, cancelable: true }),
+    );
+  }
+  assert.equal(restarts, 1);
+  key("r", "keyup");
+  key("r");
+  assert.equal(restarts, 2, "A fresh press resets again");
+});
+
+test("Ctrl/Cmd/Alt shortcuts keep their native behavior and never hold a drive key", () => {
+  for (const modifier of ["ctrlKey", "metaKey", "altKey"] as const) {
+    const event = new KeyboardEvent("keydown", {
+      key: "d",
+      [modifier]: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    ui.canvas.dispatchEvent(event);
+    input.syncKeys();
+    assert.equal(event.defaultPrevented, false, `${modifier}+D must reach the browser`);
+    assert.equal(input.getKeys().has("d"), false);
+    assert.equal(twoPlayer.pollP1().right, false);
+  }
+  const reload = new KeyboardEvent("keydown", {
+    key: "r",
+    ctrlKey: true,
+    bubbles: true,
+    cancelable: true,
+  });
+  ui.canvas.dispatchEvent(reload);
+  assert.equal(reload.defaultPrevented, false, "Ctrl+R must still reload the page");
+  assert.equal(restarts, 0);
+});
+
+test("releasing Cmd drops drive keys whose keyup macOS never sends", () => {
+  key("d");
+  input.syncKeys();
+  assert.equal(input.getKeys().has("d"), true);
+  assert.equal(twoPlayer.pollP1().right, true);
+  key("Meta");
+  key("Meta", "keyup");
+  input.syncKeys();
+  assert.equal(input.getKeys().has("d"), false);
+  assert.equal(twoPlayer.pollP1().right, false);
 });
 
 test("focused stage buttons retain Space and Enter without triggering direct player actions", () => {

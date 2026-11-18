@@ -17,10 +17,11 @@ import {
   drawRobotLabel,
   drawTimer,
   drawHint,
-  fmtTwist,
+  fmtCanvasTwist,
   COLORS,
   clearBackground,
 } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Trail } from "../../lib/trail";
 import { Particles } from "../../lib/particles";
 import { setupBlockProgram, type BlockProgramHandle } from "../../lib/block_program";
@@ -368,7 +369,7 @@ export function makeLidarAvoidance(): Stage {
     pubAcc += dt;
     if (pubAcc > 1 / SCAN_HZ) {
       pubAcc = 0;
-      g.publish(TOPIC_CMD, fmtTwist(lastV / PX_PER_M, lastW));
+      g.publish(TOPIC_CMD, fmtCanvasTwist(lastV / PX_PER_M, lastW));
       g.publish(
         TOPIC_SCAN,
         `sensor_msgs/msg/LaserScan front:${sec.front.toFixed(2)}m right:${sec.right.toFixed(2)}m left:${sec.left.toFixed(2)}m`,
@@ -390,7 +391,7 @@ export function makeLidarAvoidance(): Stage {
       `front_min:   ${sec.front.toFixed(2)} m  ${sec.front > b.threshold ? "✓ clear" : "× blocked"}`,
       `right_min:   ${sec.right.toFixed(2)} m  ${sec.right < b.threshold ? "× obstacle" : "—"}`,
       `left_min:    ${sec.left.toFixed(2)} m  ${sec.left < b.threshold ? "× obstacle" : "—"}`,
-      `cmd_vel:     ${formatTwist({ v: lastV, w: lastW }, { pxPerM: PX_PER_M })}`,
+      `cmd_vel:     ${formatTwist({ v: lastV, w: rosAngularFromCanvas(lastW) }, { pxPerM: PX_PER_M })}`,
       `pose:        ${formatPose(robot, { pxPerM: PX_PER_M })}`,
     ]);
   }

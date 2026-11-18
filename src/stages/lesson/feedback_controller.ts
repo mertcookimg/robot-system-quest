@@ -32,6 +32,7 @@ import {
   finishTriangleLesson,
 } from "../../lib/triangle_course";
 import { t, tx } from "../../i18n";
+import { createHeadingTracker } from "../../lib/control_math";
 
 const PX_PER_M = 100;
 const ROBOT_R = 14;
@@ -73,15 +74,15 @@ function makeRuntime(b: Block): BlockRuntime {
       };
     }
     case "turn_left": {
-      let yaw0 = 0;
+      let turned = createHeadingTracker(0);
       return {
         block: b,
         start: (_rx, _ry, ryaw) => {
-          yaw0 = ryaw;
+          turned = createHeadingTracker(ryaw);
         },
         step: (_rx, _ry, ryaw) => {
-          // Normalize the angle delta via atan2 to handle wrap-around.
-          const d = Math.atan2(Math.sin(ryaw - yaw0), Math.cos(ryaw - yaw0));
+          // Accumulate the unwrapped turn so 180° and larger angles finish.
+          const d = turned(ryaw);
           const target = b.angle * (Math.PI / 180);
           if (Math.abs(d) < target) {
             return { v: 0, w: b.yawrate, done: false };
@@ -91,14 +92,14 @@ function makeRuntime(b: Block): BlockRuntime {
       };
     }
     case "turn_right": {
-      let yaw0 = 0;
+      let turned = createHeadingTracker(0);
       return {
         block: b,
         start: (_rx, _ry, ryaw) => {
-          yaw0 = ryaw;
+          turned = createHeadingTracker(ryaw);
         },
         step: (_rx, _ry, ryaw) => {
-          const d = Math.atan2(Math.sin(ryaw - yaw0), Math.cos(ryaw - yaw0));
+          const d = turned(ryaw);
           const target = b.angle * (Math.PI / 180);
           if (Math.abs(d) < target) {
             return { v: 0, w: -b.yawrate, done: false };
@@ -428,7 +429,7 @@ export function makeFeedbackController(): Stage {
         g.publish(TOPIC_CMD, fmtTwist(r.v / PX_PER_M, r.w));
         g.publish(
           TOPIC_ODOM,
-          `nav_msgs/msg/Odometry pose:(x=${(robot.x / PX_PER_M).toFixed(2)} y=${(robot.y / PX_PER_M).toFixed(2)} yaw=${(-robot.theta).toFixed(2)})`,
+          `nav_msgs/msg/Odometry pose:(x=${(robot.x / PX_PER_M).toFixed(2)} y=${((H - robot.y) / PX_PER_M).toFixed(2)} yaw=${(-robot.theta).toFixed(2)})`,
         );
       }
     }

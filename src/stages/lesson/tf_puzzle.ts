@@ -51,7 +51,31 @@ const walls = [
 
 // True physical mount of the LiDAR (relative to base_link).
 // The player has to recover these numbers.
-const TRUE_MOUNT = { tx: 14, ty: 8, yaw: -22 }; // px, px, degrees
+const TRUE_MOUNT = { tx: 14, ty: 8, yaw: -22 }; // px, px, degrees (canvas convention)
+/** Mount scale used when the transform is published in metres. */
+const PX_PER_M = 100;
+
+/**
+ * The sliders use the canvas frame (y down, clockwise-positive yaw). ROS
+ * frames follow REP-103 (x forward, y left, counter-clockwise-positive yaw),
+ * so the published transform negates y and yaw.
+ */
+function rosTransform(tf: TFParams): { x: number; y: number; yawDeg: number } {
+  return { x: tf.tx / PX_PER_M, y: -tf.ty / PX_PER_M, yawDeg: -tf.yaw };
+}
+
+/** /tf_static text: the REP-103 transform, plus the slider values it came from. */
+function formatTfStatic(tf: TFParams): string {
+  const ros = rosTransform(tf);
+  const half = (ros.yawDeg * Math.PI) / 360;
+  const fixed = (n: number, digits: number) => (n === 0 ? 0 : n).toFixed(digits);
+  return (
+    `tf2_msgs/msg/TFMessage transform: frame_id=base_link child_frame_id=laser ` +
+    `translation:(x=${fixed(ros.x, 2)} y=${fixed(ros.y, 2)} z=0.00) ` +
+    `rotation:(z=${fixed(Math.sin(half), 3)} w=${Math.cos(half).toFixed(3)}) yaw=${fixed(ros.yawDeg, 0)}° ` +
+    `[sliders tx=${tf.tx}px ty=${tf.ty}px yaw=${tf.yaw}°]`
+  );
+}
 
 const TARGET_MATCH = 0.95;
 const MATCH_TOL_PX = 5;
@@ -287,11 +311,7 @@ export function makeTfPuzzle(): Stage {
     pubAcc += dt;
     if (pubAcc >= 0.2 || score >= TARGET_MATCH) {
       pubAcc = 0;
-      g.publish(
-        "/tf_static",
-        `tf2_msgs/msg/TFMessage transform: frame_id=base_link child_frame_id=laser ` +
-          `tx=${playerTF.tx}px ty=${playerTF.ty}px yaw=${playerTF.yaw}°`,
-      );
+      g.publish("/tf_static", formatTfStatic(playerTF));
       g.publish(
         "/scan",
         `sensor_msgs/msg/LaserScan summary hits:${lastScan.length}/${N_RAYS} ranges_px:[${lastScan.map((ray) => Math.hypot(ray.lx, ray.ly).toFixed(1)).join(",")}]`,
@@ -575,17 +595,31 @@ export function makeTfPuzzle(): Stage {
         "tf2_msgs/msg/TFMessage",
       ],
       cli: ["ros2 topic echo /tf_static", "ros2 topic echo /scan", "ros2 node info /static_tf_pub"],
-      python: `# 静的 TF を 1 回だけ publish するノード
+      python: `import math
+from geometry_msgs.msg import TransformStamped
+from rclpy.node import Node
+from tf2_ros import StaticTransformBroadcaster
+from tf_transformations import quaternion_from_euler
+
+# 静的 TF を 1 回だけ publish するノード
+# ゲーム画面は y が下向き・yaw は時計回りが正。ROS (REP-103) は
+# x 前方・y 左・yaw 反時計回りが正なので、y と yaw の符号が逆になる:
+#   x = tx / 100,  y = -ty / 100,  yaw = -yaw
 class StaticTfPub(Node):
     def __init__(self):
         super().__init__("static_tf_pub")
         self.b = StaticTransformBroadcaster(self)
         t = TransformStamped()
+        t.header.stamp = self.get_clock().now().to_msg()
         t.header.frame_id = "base_link"
         t.child_frame_id = "laser"
-        t.transform.translation.x = 0.14   # m (本ゲームの tx に対応)
-        t.transform.translation.y = 0.08
-        t.transform.rotation = quat_from_euler(0, 0, math.radians(-22))
+        t.transform.translation.x = 0.14   # m  (tx = 14 px: 前方)
+        t.transform.translation.y = -0.08  # m  (ty = 8 px: ロボットの右側)
+        q = quaternion_from_euler(0.0, 0.0, math.radians(22))  # 左へ 22°
+        t.transform.rotation.x = q[0]
+        t.transform.rotation.y = q[1]
+        t.transform.rotation.z = q[2]
+        t.transform.rotation.w = q[3]
         self.b.sendTransform(t)`,
       realWorld: tx(
         '実機ロボットのセンサー取り付け位置は、URDFまたはstatic_transform_publisherを使ってTF Treeへ登録します。誤ったTransformは、SLAMやNav2の認識・走行にずれを生じさせます。このステージは平面上のtx / ty / yawに絞っていますが、URDFの<origin xyz="..." rpy="..."/>では3次元の位置と姿勢を設定します。',

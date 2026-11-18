@@ -15,11 +15,12 @@ import { defineStage } from "../../core/stage_def";
 import {
   drawHint,
   drawTimer,
-  fmtTwist,
+  fmtCanvasTwist,
   drawRobotBody,
   drawRobotLabel,
   clearBackground,
 } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Particles } from "../../lib/particles";
 import { teleop } from "../../lib/teleop";
 import { makeOverlayPanel } from "../../lib/overlay_panel";
@@ -351,7 +352,7 @@ export function makeMappingMission(): Stage {
     pubAcc += dt;
     if (pubAcc > 1 / 10) {
       pubAcc = 0;
-      g.publish("/cmd_vel", fmtTwist(cmd.v / PX_PER_M, cmd.w));
+      g.publish("/cmd_vel", fmtCanvasTwist(cmd.v / PX_PER_M, cmd.w));
     }
     g.ghost.recordPose(elapsed, robot.x, robot.y, robot.theta);
 
@@ -364,7 +365,7 @@ export function makeMappingMission(): Stage {
     return [
       `mode:    teleop SLAM`,
       `pose:    x=${(robot.x / PX_PER_M).toFixed(2)} m  y=${(robot.y / PX_PER_M).toFixed(2)} m  θ=${robot.theta.toFixed(2)}`,
-      `cmd_vel: lin=${(cmd.v / PX_PER_M).toFixed(2)} m/s  ang=${cmd.w.toFixed(2)} rad/s`,
+      `cmd_vel: lin=${(cmd.v / PX_PER_M).toFixed(2)} m/s  ang=${rosAngularFromCanvas(cmd.w).toFixed(2)} rad/s`,
       `map:     ${(cov * 100).toFixed(0)}% covered  (${seenExp} / ${explorableCount} cells, target 100%)`,
       `time:    ${elapsed.toFixed(1)}s / ${TIME_LIMIT}s`,
       `lidar:   range=${params.scan_range}px  rate=${SCAN_HZ}Hz`,

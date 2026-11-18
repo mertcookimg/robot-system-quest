@@ -13,10 +13,11 @@ import {
   drawRobotLabel,
   drawTimer,
   drawHint,
-  fmtTwist,
+  fmtCanvasTwist,
   clearBackground,
   COLORS,
 } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { teleop } from "../../lib/teleop";
 import { formatPose, formatTwist } from "../../lib/hud";
 import { t, tx } from "../../i18n";
@@ -230,7 +231,7 @@ export function makeLidarExplorer(): Stage {
     pubAcc += dt;
     if (pubAcc > 1 / 20) {
       pubAcc = 0;
-      g.publish("/cmd_vel", fmtTwist(cmd.lin / LIN_SPEED, cmd.ang));
+      g.publish("/cmd_vel", fmtCanvasTwist(cmd.lin / LIN_SPEED, cmd.ang));
       g.publish(
         "/odom",
         `position_px: {x: ${robot.x.toFixed(1)}, y: ${robot.y.toFixed(1)}} yaw: ${robot.theta.toFixed(3)}`,
@@ -296,7 +297,7 @@ export function makeLidarExplorer(): Stage {
 
     g.setHud([
       `pose:${formatPose(robot)}`,
-      `cmd_vel:${formatTwist({ v: cmd.lin, w: cmd.ang }, { pxPerM: LIN_SPEED })}`,
+      `cmd_vel:${formatTwist({ v: cmd.lin, w: rosAngularFromCanvas(cmd.ang) }, { pxPerM: LIN_SPEED })}`,
       `scan:        ${lastScan.length} rays / ${MAX_DIST}px @ ${SCAN_HZ}Hz`,
       `discovered:  ${discovered.size} walls`,
       `data:        ${collected.size} / 3 collected`,

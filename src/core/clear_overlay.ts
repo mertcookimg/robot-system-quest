@@ -14,7 +14,7 @@ import { saveCurrentAsBest, getCurrentRecordingLength } from "./ghost";
 import { toast } from "./toast";
 import { t } from "../i18n";
 import * as allclear from "./allclear";
-import type { Stage } from "../types";
+import type { ClearOptions, Stage } from "../types";
 import { cancelStageTimeout, setStageTimeout, type StageTimeout } from "./stage_timers";
 import { trackStageComplete } from "./analytics";
 import { getStageModes } from "./stage_def";
@@ -24,6 +24,8 @@ export type ClearOverlayCloseReason = "dismiss" | "restart" | "next" | "allclear
 let focus: Focus = "next";
 let allclearTimeout: StageTimeout | null = null;
 let focusBeforeOpen: HTMLElement | null = null;
+/** True when the open result just completed every stage for the first time. */
+let nextShowsAllClear = false;
 
 export function isOpen(): boolean {
   return ui.clearOverlay.classList.contains("show");
@@ -88,7 +90,13 @@ interface ShowDeps {
   onRenderSelector: () => void;
 }
 
-export function show(stars: number, statsHtml: string, deps: ShowDeps): void {
+export function show(
+  stars: number,
+  statsHtml: string,
+  deps: ShowDeps,
+  options: ClearOptions = {},
+): void {
+  const record = options.record ?? true;
   if (allclearTimeout !== null) {
     cancelStageTimeout(allclearTimeout);
     allclearTimeout = null;
@@ -115,14 +123,16 @@ export function show(stars: number, statsHtml: string, deps: ShowDeps): void {
     ui.stars.appendChild(span);
   }
 
-  // Persist time / best ghost
-  const { isBest } = time > 0 ? saveTime(deps.current.id, time) : { isBest: false };
+  // Persist time / best ghost. Unrecorded results (local 2P matches) must not
+  // overwrite the single-player best time or replace the best ghost.
+  const { isBest } = record && time > 0 ? saveTime(deps.current.id, time) : { isBest: false };
   if (isBest && getCurrentRecordingLength() > 0) {
     saveCurrentAsBest(deps.current.id);
   }
 
-  // Build the stats panel
-  const top = getTopTimes(deps.current.id, 5);
+  // Build the stats panel. The single-player leaderboard is unrelated to an
+  // unrecorded match, so it is only shown for recorded results.
+  const top = record ? getTopTimes(deps.current.id, 5) : [];
   let html = statsHtml;
   if (isBest) {
     html = `<div class="new-record">★ ${t("ui.toast.newrecord")} ★</div>` + html;
@@ -147,16 +157,23 @@ export function show(stars: number, statsHtml: string, deps: ShowDeps): void {
   ui.clearOverlay.classList.add("show");
 
   // Star progress
+  const isEveryStageCleared = () => {
+    const progress = loadProgress();
+    return deps.stages.every((stage) => (progress[stage.id]?.stars ?? 0) > 0);
+  };
+  const wasAllDone = isEveryStageCleared();
   const prevStars = loadProgress()[deps.current.id]?.stars ?? 0;
-  const isNewStarBest = stars > prevStars;
-  saveProgress(deps.current.id, stars);
-  const progress = loadProgress();
-  const allDone = deps.stages.every((stage) => (progress[stage.id]?.stars ?? 0) > 0);
+  const isNewStarBest = record && stars > prevStars;
+  if (record) saveProgress(deps.current.id, stars);
+  // Celebrate only the clear that completes the set for the first time.
+  // Replaying any stage after 100% must still lead to the next stage.
+  const completedAllNow = record && !wasAllDone && isEveryStageCleared();
+  nextShowsAllClear = completedAllNow;
   const modes = getStageModes();
   const mode = modes.get(deps.current.id);
   const modeStages = deps.stages.filter((stage) => modes.get(stage.id) === mode);
   const isModeEnd = mode !== undefined && modeStages.at(-1)?.id === deps.current.id;
-  const [nextJa, nextEn] = allDone
+  const [nextJa, nextEn] = completedAllNow
     ? ["全クリアを見る", "View all clear"]
     : isModeEnd
       ? mode === "lesson"
@@ -180,7 +197,7 @@ export function show(stars: number, statsHtml: string, deps: ShowDeps): void {
   }
 
   // If this clear completed every stage, transition to the all-clear screen.
-  if (allDone) {
+  if (completedAllNow) {
     allclearTimeout = setStageTimeout(() => {
       allclearTimeout = null;
       if (!isOpen()) return;
@@ -194,7 +211,6 @@ export function show(stars: number, statsHtml: string, deps: ShowDeps): void {
 interface WireDeps {
   onRestart: () => void;
   onNext: () => void;
-  isAllCleared: () => boolean;
   showAllClear: () => void;
 }
 
@@ -231,8 +247,9 @@ export function setupClearOverlay(deps: WireDeps): void {
   });
   ui.nextBtn.addEventListener("click", () => {
     sfx.click();
+    const showAllClear = nextShowsAllClear;
     close("next");
-    if (deps.isAllCleared()) {
+    if (showAllClear) {
       deps.showAllClear();
       ui.allclearRestart.focus({ preventScroll: true });
       return;

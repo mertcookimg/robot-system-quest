@@ -16,7 +16,14 @@
 // In ROS 2 learning terms, this is the smallest behaviortree.cpp unit. Order
 // matters because the Selector evaluates top-down and runs the first successful child.
 import { type Stage, type GameContext } from "../../types";
-import { drawHint, drawTimer, drawRobotBody, COLORS, clearBackground } from "../../lib/draw";
+import {
+  drawHint,
+  drawTimer,
+  drawRobotBody,
+  COLORS,
+  clearBackground,
+  fmtCanvasTwist,
+} from "../../lib/draw";
 import { canMoveTo as inWalls, type Aabb } from "../../lib/walls";
 import { Trail } from "../../lib/trail";
 import { Particles } from "../../lib/particles";
@@ -38,6 +45,8 @@ const TREE_H = 380;
 const ROBOT_R = 12;
 const SCAN_RANGE = 130;
 const FORWARD_SPEED = 90; // px/s
+/** Canvas scale used to publish /cmd_vel in metres per second. */
+const PX_PER_M = 100;
 const TURN_SPEED = 1.8; // rad/s
 
 // The HTML rule editor covers the lower half of the screen, so START and GOAL
@@ -565,7 +574,7 @@ export function makeBtEditor(): Stage {
           ? `Rule${activeRule + 1}: ${rules[activeRule].cond} → ${rules[activeRule].action}`
           : `default: ${defaultAction}`,
       );
-      g.publish("/cmd_vel", `linear=${cmd.v.toFixed(0)} angular=${cmd.w.toFixed(2)}`);
+      g.publish("/cmd_vel", fmtCanvasTwist(cmd.v / PX_PER_M, cmd.w));
       g.publish(
         "/scan",
         `sensor_msgs/msg/LaserScan summary front_px:${sensors.front.toFixed(1)} left_px:${sensors.left.toFixed(1)} right_px:${sensors.right.toFixed(1)}`,

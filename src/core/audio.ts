@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Web Audio API based sound effects. All tones are synthesized at runtime,
-// so the bundle ships with zero audio assets. The first user gesture creates
-// the AudioContext (browsers block AC instantiation otherwise).
+// so the bundle ships with zero audio assets. The AudioContext is created only
+// after a user gesture and resumed if the browser suspended it.
 
 import { StorageKeys, loadString, saveString } from "./storage";
 
@@ -22,15 +22,45 @@ export interface SfxBank {
   crash(): void;
 }
 
+// Browsers start an AudioContext created before any user gesture in the
+// "suspended" state and keep it silent until resume() is called after one.
+// Track activation ourselves so the startup stage load (which plays a click)
+// does not create a context that stays muted for the whole session.
+let userActivated = false;
+
+function hasUserActivation(): boolean {
+  if (userActivated) return true;
+  const activation = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } })
+    .userActivation;
+  return activation?.hasBeenActive === true;
+}
+
+function resumeIfSuspended(): void {
+  if (ac?.state === "suspended") void ac.resume().catch(() => {});
+}
+
+function onUserGesture(): void {
+  userActivated = true;
+  resumeIfSuspended();
+}
+
+if (typeof window !== "undefined") {
+  for (const type of ["pointerdown", "keydown", "touchend"]) {
+    window.addEventListener(type, onUserGesture, { capture: true, passive: true });
+  }
+}
+
 function ensureAudio(): AudioContext | null {
   if (!on) return null;
   if (!ac) {
+    if (!hasUserActivation()) return null;
     try {
       ac = new AudioContext();
     } catch {
       return null;
     }
   }
+  resumeIfSuspended();
   return ac;
 }
 

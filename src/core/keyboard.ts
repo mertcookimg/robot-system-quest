@@ -159,8 +159,15 @@ export function setupKeyboard(deps: Deps): void {
       // R / Escape fall through to the global handler below (R = restart, Esc = close).
     }
 
+    // Browser and OS shortcuts (Ctrl/Cmd/Alt + key, e.g. Ctrl+R, Cmd+D) are
+    // never stage input: keep their native behavior and do not register the
+    // letter as a held drive key. Shift stays allowed for boost and "?".
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
     if ((clearOverlay.isOpen() || allclear.isOpen()) && e.key.toLowerCase() === "r") {
       e.preventDefault();
+      // Holding R auto-repeats keydown; restart only once per press.
+      if (e.repeat) return;
       clearOverlay.close("restart");
       allclear.hide();
       crash.clearCrashOverlay();
@@ -203,6 +210,8 @@ export function setupKeyboard(deps: Deps): void {
     }
 
     if (k === "r") {
+      // Holding R auto-repeats keydown; reset only once per press.
+      if (e.repeat) return;
       clearOverlay.close();
       allclear.hide();
       crash.clearCrashOverlay();
@@ -214,6 +223,12 @@ export function setupKeyboard(deps: Deps): void {
 
   window.addEventListener("keyup", (e) => {
     onNavpadKeyUp(e.key);
+    // macOS does not send keyup for letter keys released while Cmd is held,
+    // so a drive key pressed before Cmd could stay "held". Drop them all.
+    if (e.key === "Meta") {
+      input.clearKb();
+      return;
+    }
     input.setKbKey(e.key.toLowerCase(), false);
   });
 }

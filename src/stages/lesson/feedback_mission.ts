@@ -23,7 +23,11 @@ import { Particles } from "../../lib/particles";
 import { setupBlockProgram, type BlockProgramHandle } from "../../lib/block_program";
 import { formatPose, formatTwist } from "../../lib/hud";
 import { t, tx } from "../../i18n";
-import { canvasAngularFromRos, normalizeAngle, rosYawFromCanvas } from "../../lib/control_math";
+import {
+  canvasAngularFromRos,
+  createHeadingTracker,
+  rosYawFromCanvas,
+} from "../../lib/control_math";
 
 const PX_PER_M = 100;
 const ROBOT_R = 14;
@@ -69,14 +73,16 @@ function makeRuntime(b: Block): BlockRuntime {
       };
     }
     case "turn_left": {
-      let yaw0 = 0;
+      let turned = createHeadingTracker(0);
       return {
         block: b,
         start: (_rx, _ry, ryaw) => {
-          yaw0 = ryaw;
+          turned = createHeadingTracker(ryaw);
         },
         step: (_rx, _ry, ryaw) => {
-          const d = normalizeAngle(yaw0 - ryaw);
+          // Unwrapped turn so 180° and larger angles finish. A left turn
+          // decreases the canvas heading.
+          const d = -turned(ryaw);
           const target = b.angle * (Math.PI / 180);
           if (d < target) return { v: 0, wRos: Math.abs(b.yawrate), done: false };
           return { v: 0, wRos: 0, done: true };
@@ -84,14 +90,14 @@ function makeRuntime(b: Block): BlockRuntime {
       };
     }
     case "turn_right": {
-      let yaw0 = 0;
+      let turned = createHeadingTracker(0);
       return {
         block: b,
         start: (_rx, _ry, ryaw) => {
-          yaw0 = ryaw;
+          turned = createHeadingTracker(ryaw);
         },
         step: (_rx, _ry, ryaw) => {
-          const d = normalizeAngle(ryaw - yaw0);
+          const d = turned(ryaw);
           const target = b.angle * (Math.PI / 180);
           if (d < target) return { v: 0, wRos: -Math.abs(b.yawrate), done: false };
           return { v: 0, wRos: 0, done: true };
@@ -376,7 +382,7 @@ export function makeFeedbackMission(): Stage {
         g.publish(TOPIC_CMD, fmtTwist(r.v / PX_PER_M, r.wRos));
         g.publish(
           TOPIC_ODOM,
-          `nav_msgs/msg/Odometry pose:(x=${(robot.x / PX_PER_M).toFixed(2)} y=${(robot.y / PX_PER_M).toFixed(2)} yaw=${rosYawFromCanvas(robot.theta).toFixed(2)})`,
+          `nav_msgs/msg/Odometry pose:(x=${(robot.x / PX_PER_M).toFixed(2)} y=${((H - robot.y) / PX_PER_M).toFixed(2)} yaw=${rosYawFromCanvas(robot.theta).toFixed(2)})`,
         );
       }
 

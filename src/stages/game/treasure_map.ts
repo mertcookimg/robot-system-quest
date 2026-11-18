@@ -15,9 +15,10 @@ import {
   drawRobotLabel,
   drawTimer,
   drawHint,
-  fmtTwist,
+  fmtCanvasTwist,
   clearBackground,
 } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Particles } from "../../lib/particles";
 import { teleop } from "../../lib/teleop";
 import { formatPose, formatTwist } from "../../lib/hud";
@@ -295,14 +296,14 @@ export function makeMazeMapper(): Stage {
     pubAcc += dt;
     if (pubAcc > 1 / 10) {
       pubAcc = 0;
-      g.publish("/cmd_vel", fmtTwist(cmd.lin / LIN_SPEED, cmd.ang));
+      g.publish("/cmd_vel", fmtCanvasTwist(cmd.lin / LIN_SPEED, cmd.ang));
     }
     g.ghost.recordPose(elapsed, robot.x, robot.y, robot.theta);
 
     g.setHud([
       `mode:    explore + map`,
       `pose:${formatPose(robot)}`,
-      `cmd_vel:${formatTwist({ v: cmd.lin, w: cmd.ang }, { pxPerM: LIN_SPEED })}`,
+      `cmd_vel:${formatTwist({ v: cmd.lin, w: rosAngularFromCanvas(cmd.ang) }, { pxPerM: LIN_SPEED })}`,
       `treasure: ${collectedCount} / 3`,
       `map:     ${((countSeen() / (COLS * ROWS)) * 100).toFixed(0)}% explored  (${countSeen()} / ${COLS * ROWS} cells)`,
       `exit:    ${collectedCount === 3 ? "OPEN ✓" : "locked (collect all 3)"}`,

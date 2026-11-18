@@ -10,10 +10,11 @@ import {
   drawRobotLabel,
   drawTimer,
   drawHint,
-  fmtTwist,
+  fmtCanvasTwist,
   COLORS,
   clearBackground,
 } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Particles } from "../../lib/particles";
 import { teleop } from "../../lib/teleop";
 import { Trail } from "../../lib/trail";
@@ -143,7 +144,7 @@ export function makeFollower(): Stage {
         TOPIC_TARGET,
         `x=${leader.x.toFixed(0)} y=${leader.y.toFixed(0)} d=${dist.toFixed(0)}`,
       );
-      g.publish(TOPIC_CMD, fmtTwist(cmd.lin / BASE_LIN, cmd.ang));
+      g.publish(TOPIC_CMD, fmtCanvasTwist(cmd.lin / BASE_LIN, cmd.ang));
     }
 
     // Win
@@ -175,7 +176,7 @@ export function makeFollower(): Stage {
 
     g.setHud([
       `pose:      ${formatPose(robot)}`,
-      `cmd_vel:   ${formatTwist({ v: cmd.lin, w: cmd.ang }, { pxPerM: BASE_LIN })}`,
+      `cmd_vel:   ${formatTwist({ v: cmd.lin, w: rosAngularFromCanvas(cmd.ang) }, { pxPerM: BASE_LIN })}`,
       `target:    x=${leader.x.toFixed(0)}  y=${leader.y.toFixed(0)}`,
       `dist:      ${dist.toFixed(0)} px  ${inZone ? "✓ in-zone" : "× out-of-zone"}`,
       `in_zone_t: ${inZoneTime.toFixed(2)} / ${REQUIRED_TIME} s`,

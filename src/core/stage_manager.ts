@@ -88,21 +88,31 @@ export function buildGameContext(
 
     setStatus,
     setHud,
-    showClear: (stars, statsHtml) =>
-      clearOverlay.show(stars, statsHtml, {
-        current,
-        stages,
-        onRenderSelector: modes.renderSelector,
-      }),
-    awardStars: (stars, statsHtml, delayMs = 700) => {
+    showClear: (stars, statsHtml, options) =>
+      clearOverlay.show(
+        stars,
+        statsHtml,
+        {
+          current,
+          stages,
+          onRenderSelector: modes.renderSelector,
+        },
+        options,
+      ),
+    awardStars: (stars, statsHtml, delayMs = 700, options) => {
       const completedStage = current;
       setStageTimeout(() => {
         sfx.clear();
-        clearOverlay.show(stars, statsHtml, {
-          current: completedStage,
-          stages,
-          onRenderSelector: modes.renderSelector,
-        });
+        clearOverlay.show(
+          stars,
+          statsHtml,
+          {
+            current: completedStage,
+            stages,
+            onRenderSelector: modes.renderSelector,
+          },
+          options,
+        );
       }, delayMs);
     },
     setTimeout: setStageTimeout,

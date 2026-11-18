@@ -12,10 +12,11 @@ import {
   drawRobotLabel,
   drawTimer,
   drawHint,
-  fmtTwist,
+  fmtCanvasTwist,
   COLORS,
   clearBackground,
 } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Particles } from "../../lib/particles";
 import { teleop } from "../../lib/teleop";
 import { formatPose, formatTwist } from "../../lib/hud";
@@ -337,7 +338,7 @@ export function makeSumoBattle(): Stage {
         `Pushes  <b>${pushes}</b>`;
       g.setTimeout(() => {
         g.sfx.clear();
-        g.showClear(3, stats);
+        g.showClear(3, stats, { record: false });
       }, 500);
       return;
     }
@@ -402,7 +403,7 @@ export function makeSumoBattle(): Stage {
         const stats = `Winner  <b>P2</b><br>` + `Time    <b>${elapsed.toFixed(2)} s</b>`;
         g.setTimeout(() => {
           g.sfx.clear();
-          g.showClear(2, stats);
+          g.showClear(2, stats, { record: false });
         }, 500);
       } else {
         g.crash(t("sumo_battle.crash.out"));
@@ -417,7 +418,7 @@ export function makeSumoBattle(): Stage {
     pubAcc += dt;
     if (pubAcc > 1 / 20) {
       pubAcc = 0;
-      g.publish(TOPIC_CMD, fmtTwist(cmd.lin / PX_PER_M, cmd.ang));
+      g.publish(TOPIC_CMD, fmtCanvasTwist(cmd.lin / PX_PER_M, cmd.ang));
     }
     odomAcc += dt;
     if (odomAcc > 1 / 10) {
@@ -435,7 +436,7 @@ export function makeSumoBattle(): Stage {
     g.setHud([
       `mode:      sumo battle ${mode2P ? "(P1 vs P2)" : `[${difficulty}]`}`,
       `pose:      ${formatPose(robot, { pxPerM: PX_PER_M })}`,
-      `cmd_vel:   ${formatTwist({ v: cmd.lin, w: cmd.ang }, { pxPerM: PX_PER_M })}`,
+      `cmd_vel:   ${formatTwist({ v: cmd.lin, w: rosAngularFromCanvas(cmd.ang) }, { pxPerM: PX_PER_M })}`,
       `edge:      ${edgeM.toFixed(2)} m ${edgeM < 0.5 ? "!! DANGER" : ""}`,
       `rival:     ${mode2P ? "P2 (human)" : ai.state}`,
       `boost:     [${gauge}]`,

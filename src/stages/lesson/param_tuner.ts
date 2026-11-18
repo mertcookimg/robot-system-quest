@@ -14,10 +14,11 @@ import {
   drawRobotLabel,
   drawTimer,
   drawHint,
-  fmtTwist,
+  fmtCanvasTwist,
   COLORS,
   clearBackground,
 } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Trail } from "../../lib/trail";
 import { Particles } from "../../lib/particles";
 import { setupBlockProgram, type BlockProgramHandle } from "../../lib/block_program";
@@ -284,7 +285,7 @@ export function makeParamTuner(): Stage {
       // Corner braking: slow down while the heading error is large.
       const slow = Math.max(0.25, Math.cos(Math.min(Math.abs(err), Math.PI / 2)));
       ctrlV = b.max_speed * PX_PER_M * slow;
-      g.publish(TOPIC_CMD, fmtTwist(ctrlV / PX_PER_M, ctrlW));
+      g.publish(TOPIC_CMD, fmtCanvasTwist(ctrlV / PX_PER_M, ctrlW));
     }
 
     // Acceleration-limited speed tracking (brakes act twice as hard).
@@ -339,7 +340,7 @@ export function makeParamTuner(): Stage {
       `mode:      waypoint_driver`,
       `target:    wp${wpIdx + 1}/${WAYPOINTS.length}`,
       `heading_e: ${((lastErr * 180) / Math.PI).toFixed(1)} deg`,
-      `cmd_vel:   ${formatTwist({ v, w: ctrlW }, { pxPerM: PX_PER_M })}`,
+      `cmd_vel:   ${formatTwist({ v, w: rosAngularFromCanvas(ctrlW) }, { pxPerM: PX_PER_M })}`,
       `max_speed: ${b.max_speed.toFixed(2)} m/s (live)`,
       `pose:      ${formatPose(robot, { pxPerM: PX_PER_M })}`,
     ]);

@@ -15,10 +15,11 @@ import {
   drawRobotLabel,
   drawTimer,
   drawHint,
-  fmtTwist,
+  fmtCanvasTwist,
   COLORS,
   clearBackground,
 } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Particles } from "../../lib/particles";
 import { formatPose, formatTwist } from "../../lib/hud";
 import { t, tx } from "../../i18n";
@@ -233,7 +234,7 @@ export function makeNav2Goal(): Stage {
       Math.abs(yawError(gp.theta, robot.theta)) < YAW_TOL
     ) {
       isFollowing = false;
-      g.publish(TOPIC_CMD, fmtTwist(0, 0));
+      g.publish(TOPIC_CMD, fmtCanvasTwist(0, 0));
       g.setStatus(t("navigation.status.already_reached"), "");
       return;
     }
@@ -502,7 +503,7 @@ export function makeNav2Goal(): Stage {
       particles.burst(robot.x, robot.y, COLORS.OK, 28);
       g.shake(0.3);
       g.sfx.deliver();
-      g.publish(TOPIC_CMD, fmtTwist(0, 0));
+      g.publish(TOPIC_CMD, fmtCanvasTwist(0, 0));
       if (goalsReached >= GOALS_FOR_CLEAR && !cleared) {
         cleared = true;
         g.setStatus(t("navigation.status.cleared"), "var(--ok)");
@@ -556,7 +557,7 @@ export function makeNav2Goal(): Stage {
     pubAcc += dt;
     if (pubAcc > 1 / 10) {
       pubAcc = 0;
-      g.publish(TOPIC_CMD, fmtTwist(r.v / PX_PER_M, r.w));
+      g.publish(TOPIC_CMD, fmtCanvasTwist(r.v / PX_PER_M, r.w));
     }
 
     g.ghost.recordPose(elapsed, robot.x, robot.y, robot.theta);
@@ -565,7 +566,7 @@ export function makeNav2Goal(): Stage {
       `mode:        navigating`,
       `goal:        x=${goal!.x.toFixed(0)}px y=${goal!.y.toFixed(0)}px yaw=${goal!.theta.toFixed(2)}`,
       `${lastPlanInfo}`,
-      `cmd_vel:     ${formatTwist({ v: r.v, w: r.w }, { pxPerM: PX_PER_M })}`,
+      `cmd_vel:     ${formatTwist({ v: r.v, w: rosAngularFromCanvas(r.w) }, { pxPerM: PX_PER_M })}`,
       `pose:        ${formatPose(robot, { pxPerM: PX_PER_M })}`,
     ]);
   }

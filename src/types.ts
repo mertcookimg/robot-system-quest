@@ -10,6 +10,15 @@ import type { SfxBank } from "./core/audio";
 export const W = 800;
 export const H = 500;
 
+export interface ClearOptions {
+  /**
+   * Save the result as single-player progress: best time, best ghost and
+   * stars. Defaults to true. Local 2P matches pass false so a match result
+   * (for example P2 winning) is never stored as P1's record.
+   */
+  record?: boolean;
+}
+
 export interface GhostPose {
   x: number;
   y: number;
@@ -42,7 +51,7 @@ export interface GameContext {
   setStatus(text: string, color?: string): void;
   setHud(lines: string[]): void;
   /** Show the stage clear overlay. statsHtml may include "Time <b>X.XX s</b>". */
-  showClear(stars: number, statsHtml: string): void;
+  showClear(stars: number, statsHtml: string, options?: ClearOptions): void;
   /**
    * Convenience wrapper around showClear: plays the clear sfx and fires
    * showClear after a short delay so the in-stage celebration animation
@@ -51,7 +60,7 @@ export interface GameContext {
    *
    *   g.awardStars(3, `Time <b>${t.toFixed(2)} s</b>`);
    */
-  awardStars(stars: number, statsHtml: string, delayMs?: number): void;
+  awardStars(stars: number, statsHtml: string, delayMs?: number, options?: ClearOptions): void;
   /** Schedule work that is automatically cancelled when the stage changes. */
   setTimeout(callback: () => void, delayMs: number): void;
   /** Trigger the canvas shake animation. intensity is currently unused. */

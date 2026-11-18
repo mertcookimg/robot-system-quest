@@ -134,23 +134,35 @@ export function dilate1(mask: Uint8Array, w: number, h: number): Uint8Array {
   return out;
 }
 
+/**
+ * Edge F1 score with a 1-pixel (4-neighbour) matching tolerance.
+ *
+ *   precision = |detected ∩ dilate(truth)| / |detected|
+ *   recall    = |truth ∩ dilate(detected)| / |truth|
+ *
+ * Every detected pixel counts toward precision and every truth pixel toward
+ * recall, so an edge found one pixel away from the target still matches.
+ */
 export function f1Score(detected: Uint8Array, truth: Uint8Array, w: number, h: number): number {
   if (detected.length === 0 || truth.length === 0) return 0;
   const dDil = dilate1(detected, w, h);
   const tDil = dilate1(truth, w, h);
-  let tp = 0,
-    fp = 0,
-    fn = 0;
+  let detectedCount = 0,
+    detectedMatched = 0,
+    truthCount = 0,
+    truthMatched = 0;
   for (let i = 0; i < detected.length; i++) {
-    const d = detected[i] > 0 ? 1 : 0;
-    const t = truth[i] > 0 ? 1 : 0;
-    const dInTruth = d && tDil[i] > 0;
-    const tInDetected = t && dDil[i] > 0;
-    if (d && tInDetected) tp++;
-    else if (d && !dInTruth) fp++;
-    if (t && !tInDetected) fn++;
+    if (detected[i] > 0) {
+      detectedCount++;
+      if (tDil[i] > 0) detectedMatched++;
+    }
+    if (truth[i] > 0) {
+      truthCount++;
+      if (dDil[i] > 0) truthMatched++;
+    }
   }
-  const precision = tp + fp > 0 ? tp / (tp + fp) : 0;
-  const recall = tp + fn > 0 ? tp / (tp + fn) : 0;
+  if (detectedCount === 0 || truthCount === 0) return 0;
+  const precision = detectedMatched / detectedCount;
+  const recall = truthMatched / truthCount;
   return precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0;
 }

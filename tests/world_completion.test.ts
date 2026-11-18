@@ -130,7 +130,6 @@ before(async () => {
       nexts++;
       manager.loadNextStage();
     },
-    isAllCleared: () => progress.isAllCleared(manager.getStages().map((s) => s.id)),
     showAllClear: () => allclear.show(manager.getStages()),
   });
   const keyboard = await server.ssrLoadModule("/src/core/keyboard.ts");

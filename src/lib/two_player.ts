@@ -41,6 +41,8 @@ export interface PlayerInput {
 
 function onKeyDown(e: KeyboardEvent): void {
   if (isStageInteractionBlocked() || ownsNativeKey(e)) return;
+  // Browser and OS shortcuts (Ctrl/Cmd/Alt + key) are never player input.
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (k === "shift") {
     if (e.location === 2) p2Keys.add("rshift");
@@ -68,6 +70,12 @@ function onKeyDown(e: KeyboardEvent): void {
 }
 
 function onKeyUp(e: KeyboardEvent): void {
+  // macOS drops keyup for letters released while Cmd is held; release all.
+  if (e.key === "Meta") {
+    p1Keys.clear();
+    p2Keys.clear();
+    return;
+  }
   const k = e.key.toLowerCase();
   if (k === "shift") {
     if (e.location === 2) p2Keys.delete("rshift");
@@ -257,7 +265,8 @@ let key2Pending = false;
 let toggleListenerInstalled = false;
 
 function key2Listener(e: KeyboardEvent): void {
-  if (e.repeat) return;
+  // Ctrl/Cmd/Alt+2 are browser tab shortcuts, not the 1P/2P toggle.
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.key === "2" && !isStageInteractionBlocked() && !isTypingTarget(e.target))
     key2Pending = true;
 }

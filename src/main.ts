@@ -52,7 +52,6 @@ import {
   getStages,
 } from "./core/stage_manager";
 import { startLoop } from "./core/loop";
-import { isAllCleared } from "./core/progress";
 import { sfx } from "./core/audio";
 import { getLang, onLangChange } from "./i18n";
 import { setupLanguageSwitchers } from "./i18n/language_switcher";
@@ -144,7 +143,6 @@ setupStageMenu({
 setupClearOverlay({
   onRestart: resetCurrent,
   onNext: loadNextStage,
-  isAllCleared: () => isAllCleared(getStages().map((s) => s.id)),
   showAllClear: () => showAllClear(getStages()),
 });
 

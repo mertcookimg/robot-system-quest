@@ -16,10 +16,11 @@ import {
   drawRobotLabel,
   drawTimer,
   drawHint,
-  fmtTwist,
+  fmtCanvasTwist,
   clearBackground,
   COLORS,
 } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Particles } from "../../lib/particles";
 import { teleop } from "../../lib/teleop";
 import { Trail } from "../../lib/trail";
@@ -143,8 +144,12 @@ export function makeWarden(): Stage {
     // === Enemies AI ===
     updateEnemies(dt);
 
-    // Direct contact: any single enemy touching = captured.
-    for (const e of enemies) {
+    // Once every terminal is hacked the wardens are shut down: they no longer
+    // draw a vision cone, so they must not capture or lock on either.
+    const wardensDisabled = enemySpeedMul <= 0;
+
+    // Direct contact: any single active enemy touching = captured.
+    for (const e of wardensDisabled ? [] : enemies) {
       const ex = e.x - robot.x,
         ey = e.y - robot.y;
       if (ex * ex + ey * ey < (ENEMY_SIZE + ROBOT_R) ** 2) {
@@ -155,7 +160,7 @@ export function makeWarden(): Stage {
     }
 
     // Lock-on accumulates while any enemy has the player in its vision cone.
-    const inCone = isInAnyEnemyVision();
+    const inCone = !wardensDisabled && isInAnyEnemyVision();
     if (inCone) {
       lockon += dt;
       if (lockon >= LOCKON_TIME) {
@@ -213,7 +218,7 @@ export function makeWarden(): Stage {
         const stats =
           `Time     <b>${elapsed.toFixed(2)} s</b><br>` +
           `Hacks    <b>${hacked.size} / 3</b><br>` +
-          `Lockon   <b>${(lockon * 100).toFixed(0)}%</b>`;
+          `Lockon   <b>${((lockon / LOCKON_TIME) * 100).toFixed(0)}%</b>`;
         g.setTimeout(() => {
           g.sfx.clear();
           g.showClear(stars, stats);
@@ -224,7 +229,7 @@ export function makeWarden(): Stage {
     pubAcc += dt;
     if (pubAcc > 1 / 20) {
       pubAcc = 0;
-      g.publish("/cmd_vel", fmtTwist(cmd.lin / BASE_LIN, cmd.ang));
+      g.publish("/cmd_vel", fmtCanvasTwist(cmd.lin / BASE_LIN, cmd.ang));
       g.publish(
         "/warden/pose",
         `frame: world leader_position_px: {x: ${enemies[0].x.toFixed(1)}, y: ${enemies[0].y.toFixed(1)}} yaw: ${enemies[0].theta.toFixed(3)}`,
@@ -239,7 +244,7 @@ export function makeWarden(): Stage {
 
     g.setHud([
       `pose:${formatPose(robot)}`,
-      `cmd_vel:${formatTwist({ v: cmd.lin, w: cmd.ang }, { pxPerM: BASE_LIN })}`,
+      `cmd_vel:${formatTwist({ v: cmd.lin, w: rosAngularFromCanvas(cmd.ang) }, { pxPerM: BASE_LIN })}`,
       `enemies:     ${enemies.length} units  speed×${enemySpeedMul.toFixed(2)}`,
       `lockon:      ${((lockon / LOCKON_TIME) * 100).toFixed(0)}%`,
       `hacks:       ${hacked.size} / 3`,

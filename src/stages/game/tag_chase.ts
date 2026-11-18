@@ -13,11 +13,12 @@ import { defineStage } from "../../core/stage_def";
 import {
   drawHint,
   drawTimer,
-  fmtTwist,
+  fmtCanvasTwist,
   drawRobotBody,
   COLORS,
   clearBackground,
 } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Particles } from "../../lib/particles";
 import { formatPose, formatTwist } from "../../lib/hud";
 import { canMoveTo, type Aabb } from "../../lib/walls";
@@ -635,7 +636,7 @@ export function makeTagChase(): Stage {
           `Survived  <b>${elapsed.toFixed(1)}</b> / ${ROUND_TIME_2P} s`;
         g.setTimeout(() => {
           g.sfx.clear();
-          g.showClear(2, stats);
+          g.showClear(2, stats, { record: false });
         }, 700);
       } else {
         // 1P: classic crash on tag.
@@ -657,7 +658,7 @@ export function makeTagChase(): Stage {
           `Winner    <b>P1 (runner)</b><br>` + `Survived  <b>${ROUND_TIME_2P.toFixed(0)} s</b>`;
         g.setTimeout(() => {
           g.sfx.clear();
-          g.showClear(3, stats);
+          g.showClear(3, stats, { record: false });
         }, 700);
       } else {
         const params = DIFFICULTY[difficulty];
@@ -693,7 +694,7 @@ export function makeTagChase(): Stage {
       `mode:    ${modeLine}`,
       `survive: ${timeLeft.toFixed(1)} / ${(mode2P ? ROUND_TIME_2P : ROUND_TIME_1P).toFixed(0)} s`,
       `pose:${formatPose(runner)}`,
-      `cmd_vel:${formatTwist({ v: runner.v, w: runner.w }, { pxPerM: RUNNER_LIN })}`,
+      `cmd_vel:${formatTwist({ v: runner.v, w: rosAngularFromCanvas(runner.w) }, { pxPerM: RUNNER_LIN })}`,
       `nearest_tagger: ${nearestTaggerDist().toFixed(0)} px`,
       `items: ${items.length} on field · mines: ${mines.length}`,
       `P1 buffs: ${buffP1}`,
@@ -720,7 +721,7 @@ export function makeTagChase(): Stage {
 
   function publishOnce() {
     g.publish("/runner/pose", `x=${runner.x.toFixed(1)} y=${runner.y.toFixed(1)}`);
-    g.publish("/runner/cmd_vel", fmtTwist(runner.v / RUNNER_LIN, runner.w));
+    g.publish("/runner/cmd_vel", fmtCanvasTwist(runner.v / RUNNER_LIN, runner.w));
     for (let i = 1; i < bots.length; i++) {
       const tb = bots[i];
       const topic = mode2P ? "/p2/pose" : `/tagger${i}/pose`;

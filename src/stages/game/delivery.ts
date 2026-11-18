@@ -10,9 +10,10 @@ import {
   drawRobotLabel,
   drawTimer,
   drawHint,
-  fmtTwist,
+  fmtCanvasTwist,
   clearBackground,
 } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Particles } from "../../lib/particles";
 import { teleop } from "../../lib/teleop";
 import { Trail } from "../../lib/trail";
@@ -100,7 +101,7 @@ export function makeDelivery(): Stage {
     pubAcc += dt;
     if (pubAcc > 1 / 20) {
       pubAcc = 0;
-      g.publish(TOPIC, fmtTwist(cmd.lin / BASE_LIN, cmd.ang));
+      g.publish(TOPIC, fmtCanvasTwist(cmd.lin / BASE_LIN, cmd.ang));
       g.publish(
         "/robot/odom",
         `pose_px: {x: ${robot.x.toFixed(1)}, y: ${robot.y.toFixed(1)}} yaw: ${robot.theta.toFixed(3)}`,
@@ -117,7 +118,7 @@ export function makeDelivery(): Stage {
     g.setHud([
       `mission:   ${mission}`,
       `pose:      ${formatPose(robot)}`,
-      `cmd_vel:   ${formatTwist({ v: cmd.lin, w: cmd.ang }, { pxPerM: BASE_LIN })}`,
+      `cmd_vel:   ${formatTwist({ v: cmd.lin, w: rosAngularFromCanvas(cmd.ang) }, { pxPerM: BASE_LIN })}`,
       `elapsed:   ${formatSeconds(elapsed, 1)}`,
     ]);
   }

@@ -9,7 +9,8 @@ import { W, H, type Stage, type GameContext } from "../../types";
 import { theme, withA } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
-import { drawTimer, drawHint, fmtTwist, COLORS } from "../../lib/draw";
+import { drawTimer, drawHint, fmtCanvasTwist, COLORS } from "../../lib/draw";
+import { rosAngularFromCanvas } from "../../lib/control_math";
 import { Particles } from "../../lib/particles";
 import { formatPose, formatTwist } from "../../lib/hud";
 import { makeOverlayPanel, type OverlayPanelHandle } from "../../lib/overlay_panel";
@@ -487,9 +488,11 @@ export function makeGrandPrix(): Stage {
       }
       g.shake(0.7);
       particles.burst(finisher.x, finisher.y, COLORS.OK, 50);
+      // A local 2P race is not P1's time trial: never save it as a record.
+      const record = !mode2P;
       g.setTimeout(() => {
         g.sfx.clear();
-        g.showClear(stars, stats);
+        g.showClear(stars, stats, { record });
       }, 700);
     }
 
@@ -499,9 +502,9 @@ export function makeGrandPrix(): Stage {
     pubAcc += dt;
     if (pubAcc > 1 / 12) {
       pubAcc = 0;
-      g.publish("/cmd_vel", fmtTwist(player.v / BASE_LIN, player.w));
+      g.publish("/cmd_vel", fmtCanvasTwist(player.v / BASE_LIN, player.w));
       if (mode2P) {
-        g.publish("/p2/cmd_vel", fmtTwist(opp1.v / BASE_LIN, opp1.w));
+        g.publish("/p2/cmd_vel", fmtCanvasTwist(opp1.v / BASE_LIN, opp1.w));
       }
       g.publish(
         "/opponent_red/odom",
@@ -531,7 +534,7 @@ export function makeGrandPrix(): Stage {
     );
     const hudLines = [
       `pose:${formatPose(player)}`,
-      `cmd_vel:${formatTwist({ v: player.v, w: player.w }, { pxPerM: BASE_LIN })}`,
+      `cmd_vel:${formatTwist({ v: player.v, w: rosAngularFromCanvas(player.w) }, { pxPerM: BASE_LIN })}`,
       `lap:      ${player.lap} / ${TOTAL_LAPS}`,
       `position: ${posLabel(pos)} / ${racers.length}`,
       `boost P1: ${"█".repeat(Math.round(player.boostMeter / 10)).padEnd(10, "·")}  ${player.boosting ? "ON" : "  "}`,
