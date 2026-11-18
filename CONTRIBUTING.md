@@ -189,16 +189,22 @@ npm run format:check
 you intend to review that full diff. Both formatting commands respect [.prettierignore](.prettierignore),
 which excludes `README.md` and `docs/`. Check edited documentation and its links explicitly.
 
-After refreshing generated source, run the same audit, tests, and build used by CI:
+After refreshing generated source, run the same audit, formatting check, tests, and build used
+by CI:
 
 ```bash
-npm audit --audit-level=high
+node scripts/audit-check.mjs
+npm run format:check
 npm test
 npm run build
 ```
 
-CI installs dependencies with `npm ci` before these checks. Formatting is an additional local
-check, not currently a workflow step. `npm test` runs the TypeScript tests plus `check:stages`
+`scripts/audit-check.mjs` runs `npm audit` and fails on any high or critical advisory, except
+entries in its reviewed allowlist. An entry is allowed only for build tooling, needs a reason
+and an expiry date, and fails again once it expires or reaches the production dependencies.
+
+CI installs dependencies with `npm ci` before these checks. The formatting check runs in the CI
+workflow only; the Pages deployment does not wait for it. `npm test` runs the TypeScript tests plus `check:stages`
 and `check:guide`; `npm run build` regenerates Guide metadata, type-checks, and builds both
 entry points while checking the Guide's dependency boundary.
 

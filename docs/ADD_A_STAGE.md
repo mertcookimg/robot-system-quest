@@ -431,8 +431,8 @@ When adding or reordering stages, update catalog-count and numbering expectation
 Also update descriptive counts outside the generated README tables. Commit the regenerated
 README tables and Guide JSON together with the stage changes.
 
-CI currently runs `npm ci`, `npm audit --audit-level=high`, `npm test`, and `npm run build`.
-Formatting is an additional local check. DOM tests do not validate rendered canvas pixels or
+CI currently runs `npm ci`, `node scripts/audit-check.mjs`, `npm run format:check`, `npm test`,
+and `npm run build`. DOM tests do not validate rendered canvas pixels or
 physical controller drivers, so start `npm run dev` and verify:
 
 - Home, the stage picker, and Guide links open the intended Game or Lesson; next-stage navigation stays in the same mode.

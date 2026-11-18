@@ -31,7 +31,11 @@ jobs:
         run: npm ci
 
       - name: Audit dependencies
-        run: npm audit --audit-level=high
+        # High/critical advisories fail unless reviewed in scripts/audit-check.mjs.
+        run: node scripts/audit-check.mjs
+
+      - name: Check formatting
+        run: npm run format:check
 
       - name: Test
         run: npm test
