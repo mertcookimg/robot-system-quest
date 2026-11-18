@@ -53,6 +53,27 @@ export function modeIds(m: Mode): readonly string[] {
   return m === "game" ? getGameIds() : getLessonIds();
 }
 
+function hasStars(stageId: string): boolean {
+  return (loadProgress()[stageId]?.stars ?? 0) > 0;
+}
+
+/** True once the player has cleared at least one stage of the mode. */
+export function hasClearedStageIn(m: Mode): boolean {
+  return modeIds(m).some(hasStars);
+}
+
+/**
+ * The stage Home resumes in a mode: the current stage while it is still
+ * uncleared, otherwise the first uncleared stage in order. With every stage
+ * cleared it keeps the current stage, or starts from the first one.
+ */
+export function resumeStageId(m: Mode, currentId: string): string {
+  const ids = modeIds(m);
+  const inMode = ids.includes(currentId);
+  if (inMode && !hasStars(currentId)) return currentId;
+  return ids.find((id) => !hasStars(id)) ?? (inMode ? currentId : ids[0]);
+}
+
 export function isGameStage(stageId: string): boolean {
   return getGameIds().includes(stageId);
 }

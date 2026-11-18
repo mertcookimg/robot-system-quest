@@ -251,3 +251,56 @@ test("all-clear restart from a lesson loads Delivery and restores the GAME tab a
   assert.equal(pills().length, 2);
   assert.match(ui.stageSelector.querySelector(".stage-pill.active")!.textContent!, /delivery/);
 });
+
+test("Home resumes a mode at the current or first uncleared stage", async () => {
+  const progress = (await server.ssrLoadModule(
+    "/src/core/progress.ts",
+  )) as typeof import("../src/core/progress");
+  const [first, second] = modes.modeIds("game");
+  const lessonId = modes.modeIds("lesson")[0];
+  localStorage.clear();
+  try {
+    assert.equal(modes.hasClearedStageIn("game"), false, "A newcomer starts the first stage");
+
+    progress.saveProgress(first, 2);
+    assert.equal(modes.hasClearedStageIn("game"), true);
+    assert.equal(modes.hasClearedStageIn("lesson"), false, "Progress is counted per mode");
+    assert.equal(modes.resumeStageId("game", first), second, "A cleared stage moves on");
+    assert.equal(modes.resumeStageId("game", second), second, "An unfinished stage is kept");
+    assert.equal(modes.resumeStageId("game", lessonId), second);
+
+    progress.saveProgress(second, 1);
+    assert.equal(modes.resumeStageId("game", second), second, "All cleared keeps the stage");
+    assert.equal(modes.resumeStageId("game", lessonId), first, "Or starts from the first");
+  } finally {
+    localStorage.clear();
+  }
+});
+
+test("the menu's close callback runs only when the same stage stays loaded", () => {
+  let closes = 0;
+  const onClose = () => closes++;
+
+  menu.openMenu("game", { onClose });
+  key("Escape");
+  assert.equal(closes, 1, "Closing the menu runs the callback");
+  menu.closeMenu();
+  assert.equal(closes, 1, "The callback runs only once");
+
+  menu.openMenu("game", { onClose });
+  pills()[0].focus();
+  key("Enter");
+  assert.equal(manager.getCurrentId(), "delivery");
+  assert.equal(closes, 2, "Confirming the loaded stage also runs it");
+
+  menu.openMenu("game", { onClose });
+  pills()[1].focus();
+  key("Enter");
+  assert.equal(manager.getCurrentId(), "follower");
+  assert.equal(closes, 2, "Loading another stage leaves first-visit handling to that load");
+
+  menu.openMenu("game", { onClose });
+  menu.openMenu("game");
+  menu.closeMenu();
+  assert.equal(closes, 2, "Reopening without a callback clears the previous one");
+});

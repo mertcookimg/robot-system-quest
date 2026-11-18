@@ -22,16 +22,31 @@ import { setupGhostToggle } from "./core/ghost";
 import { setupToast } from "./core/toast";
 import { setupAmbient } from "./core/ambient";
 import { setupCrash } from "./core/crash";
-import { setupIntro, show as showIntro, start as startIntro, renderStageList } from "./core/intro";
+import {
+  setupIntro,
+  show as showIntro,
+  start as startIntro,
+  renderStageList,
+  isShown as isIntroShown,
+} from "./core/intro";
 import { setupIntroRobot } from "./core/intro_robot";
-import { setupHelp } from "./core/help";
+import { setupHelp, isOpen as isHelpOpen } from "./core/help";
 import { setupLessonModal } from "./core/lesson_modal";
-import { setupAllClear, show as showAllClear } from "./core/allclear";
+import { setupAllClear, show as showAllClear, isOpen as isAllClearOpen } from "./core/allclear";
 import { setupClearOverlay } from "./core/clear_overlay";
-import { setupModes, isLessonStage, setMode, setModeView, isGameStage } from "./core/modes";
+import {
+  setupModes,
+  isLessonStage,
+  setMode,
+  setModeView,
+  isGameStage,
+  hasClearedStageIn,
+  resumeStageId,
+  type Mode,
+} from "./core/modes";
 import { stageDisplayName } from "./core/stage_labels";
 import * as lessonModal from "./core/lesson_modal";
-import { setupStageMenu } from "./core/stage_menu";
+import { setupStageMenu, openMenu } from "./core/stage_menu";
 import { setupTerminal } from "./core/terminal_ui";
 import { setupKeyboard } from "./core/keyboard";
 import { setupGamepad } from "./core/gamepad";
@@ -98,19 +113,49 @@ setupCrash({
 });
 
 // 4. Modal screens.
+
+/** Show the first-visit lesson popup for the current stage if not yet seen. */
+function openFirstVisitBriefing(): void {
+  const id = getCurrentId();
+  lessonModal.maybeAutoOpen(id, isGameStage(id), {
+    introOpen: isIntroShown(),
+    allclearOpen: isAllClearOpen(),
+    helpOpen: isHelpOpen(),
+  });
+}
+
+// Home → GAME / LESSON: a newcomer to the mode starts its first stage at once.
+// A returning player (at least one stage of the mode cleared) gets the stage
+// menu instead, focused on where to continue.
+let homeMenuMode: Mode | null = null;
+
 setupIntro({
-  onSelectMode: (mode) => setMode(mode),
+  onSelectMode: (mode) => {
+    if (!hasClearedStageIn(mode)) {
+      homeMenuMode = null;
+      setMode(mode);
+      return;
+    }
+    homeMenuMode = mode;
+    setModeView(mode);
+    const target = resumeStageId(mode, getCurrentId());
+    if (target !== getCurrentId()) loadStage(target);
+  },
   // After the intro fades out, kick the first-visit lesson popup for the
   // current stage (if not yet seen). Without this, the popup is suppressed
   // because intro was on screen when the stage initially loaded.
   onDismiss: () => {
     const id = getCurrentId();
     trackStageStart(id, isGameStage(id) ? "game" : "lesson");
-    lessonModal.maybeAutoOpen(id, isGameStage(id), {
-      introOpen: false,
-      allclearOpen: false,
-      helpOpen: false,
-    });
+    const menuMode = homeMenuMode;
+    homeMenuMode = null;
+    if (!menuMode) {
+      openFirstVisitBriefing();
+      return;
+    }
+    // Do not return focus to the hidden Home card when the menu closes.
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    openMenu(menuMode, { onClose: openFirstVisitBriefing });
   },
 });
 setupIntroRobot();

@@ -17,6 +17,8 @@ let level: "tab" | "stage" = "stage";
 let tabIdx = 0;
 let focusIdx = 0;
 let focusBeforeOpen: HTMLElement | null = null;
+/** Runs once when the menu closes without loading a different stage. */
+let onCloseOnce: (() => void) | null = null;
 
 const TAB_MODES: modes.Mode[] = ["game", "lesson"];
 
@@ -55,8 +57,18 @@ function refreshFocus(): void {
   }
 }
 
-export function openMenu(targetMode?: modes.Mode): void {
+interface OpenMenuOptions {
+  /**
+   * Called once after the menu closes while the same stage stays loaded
+   * (closed, or the current card confirmed). Choosing another stage loads it
+   * instead, and that load runs its own first-visit handling.
+   */
+  onClose?: () => void;
+}
+
+export function openMenu(targetMode?: modes.Mode, options: OpenMenuOptions = {}): void {
   if (!deps) return;
+  onCloseOnce = options.onClose ?? null;
   if (!open) {
     const active = document.activeElement;
     focusBeforeOpen = active instanceof HTMLElement && active !== document.body ? active : null;
@@ -141,6 +153,9 @@ export function closeMenu(): void {
   ) {
     restoreFocus.focus({ preventScroll: true });
   }
+  const afterClose = onCloseOnce;
+  onCloseOnce = null;
+  afterClose?.();
 }
 
 export function stepHorizontal(d: -1 | 1): void {
@@ -188,8 +203,13 @@ export function confirm(): void {
   } else {
     const ids = modes.modeIds(modes.getMode());
     const id = ids[focusIdx];
+    if (id && id !== deps.getCurrentStageId()) {
+      onCloseOnce = null; // the new stage load handles its own first visit
+      closeMenu();
+      deps.loadStage(id);
+      return;
+    }
     closeMenu();
-    if (id && id !== deps.getCurrentStageId()) deps.loadStage(id);
   }
 }
 
