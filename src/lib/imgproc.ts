@@ -5,6 +5,9 @@
 // edge_detection. OpenCV-style API: toGray / gaussianBlur / cannyEdges /
 // dilate1 / f1Score.
 
+/** Interactive lessons use small images; cap the kernel work per frame. */
+export const GAUSSIAN_SIGMA_MAX = 5;
+
 export function toGray(rgba: Uint8ClampedArray, _w: number, _h: number): Uint8ClampedArray {
   const g = new Uint8ClampedArray(rgba.length / 4);
   for (let i = 0, j = 0; i < rgba.length; i += 4, j++) {
@@ -33,6 +36,8 @@ export function gaussianBlur(
   h: number,
   sigma: number,
 ): Uint8ClampedArray {
+  if (!Number.isFinite(sigma)) throw new RangeError("Gaussian sigma must be finite");
+  sigma = Math.max(0, Math.min(GAUSSIAN_SIGMA_MAX, sigma));
   if (sigma <= 0.05) return new Uint8ClampedArray(src);
   const k = gaussianKernel1D(sigma);
   const r = (k.length - 1) >> 1;

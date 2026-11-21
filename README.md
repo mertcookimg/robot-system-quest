@@ -66,24 +66,28 @@ saved progress are not sent.
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Regenerate Guide metadata and start the Vite development server |
-| `npm run build` | Regenerate Guide metadata, type-check, and build both entry points in `dist/` |
+| `npm run dev` | Regenerate Guide metadata and runtime stage listings, then start the Vite development server |
+| `npm run build` | Regenerate both catalogs, type-check, and build both entry points in `dist/` |
 | `npm run preview` | Serve the production build locally |
-| `npm test` | Run model, control, terminal, and DOM interaction tests; check generated stage lists and Guide metadata |
+| `npm test` | Run model, control, terminal, and DOM interaction tests; check README stage tables and both generated catalogs |
 | `npm run format` | Format code and documentation with Prettier |
 | `npm run format:check` | Check for formatting differences |
 | `npm run gen:stages` | Update the README stage lists from the stage manifests |
 | `npm run check:stages` | Check that the README stage lists are up to date |
-| `npm run gen:guide` | Generate the bilingual Guide metadata from the stage manifests |
-| `npm run check:guide` | Check that generated Guide metadata matches the current stages |
+| `npm run gen:guide` | Generate bilingual Guide metadata and runtime stage listings from the stage manifests |
+| `npm run check:guide` | Check that both generated catalogs match the current stages |
 
-The Guide uses `src/guide/stages.generated.json` rather than importing playable stages.
-`npm run dev` and `npm run build` regenerate this catalog automatically; after editing
-a stage during development, run `npm run gen:guide` to refresh its Guide metadata.
-The catalog includes descriptions, diagrams and ROS interface examples, with no stage
-controllers or model weights. The production build checks this dependency boundary,
-and `npm test` checks that the catalog is current. Edit the stage manifests rather than
-the generated JSON.
+The Guide reads `src/guide/stages.generated.json`, which includes descriptions, diagrams and
+ROS interface examples. The playable app uses the smaller `src/core/stages.generated.json`
+for its stage lists: only IDs, modes, ordering, and bilingual names and lesson labels.
+`src/core/stage_catalog.ts` connects those listings to dynamic imports, so the runtime loads
+the selected stage's implementation when needed.
+
+`npm run dev` and `npm run build` regenerate both catalogs automatically; after editing
+stage metadata while the dev server is running, run `npm run gen:guide` again. `npm test`
+checks that both catalogs are current. The production build keeps playable stages and model
+weights out of the Guide's dependencies and the playable app's initial static dependencies.
+Edit the stage manifests rather than the generated JSON.
 
 ## Controls
 
@@ -149,8 +153,9 @@ connection to ROS 2 processes or hardware. Service and action events use separat
 topics; service endpoints and action results are not presented as ordinary topics.
 Parameter and lifecycle queries report only state explicitly modeled by the current stage.
 The terminal does not train models or change stage settings: unsupported publishing, service
-calls, action goals and parameter writes are reported as unavailable. See the
-[terminal review](docs/LEARNING_TERMINAL_REVIEW.md) for the checks performed.
+calls, action goals and parameter writes are reported as unavailable. The
+[terminal contract tests](tests/stage_terminal_contracts.test.ts) check each stage's graph,
+available commands, and published topics.
 
 ### Local two-player games
 
@@ -186,8 +191,10 @@ src/
   main.ts                     Game / Lesson entry point
   types.ts                    Shared types for stages, GameContext, and ROS 2 data
   core/                       Navigation, input, progress, modals, and stage registration
-    stage_collect.ts          Collects playable stages for the Game / Lesson runtime
-    stage_def.ts              defineStage() and the stage registry
+    stage_catalog.ts          Registers listings and loads the selected stage on demand
+    stages.generated.json     Lightweight bilingual stage listings for runtime menus
+    stage_collect.ts          Imports all stages for catalog generation and tests
+    stage_def.ts              defineStage(), stage loaders, and the stage registry
   guide/                      Guide UI, bilingual content, and card animations
     stages.ts                 Language-aware access to Guide metadata
     stages.generated.json     Generated descriptions, diagrams, and ROS interface examples
@@ -206,15 +213,17 @@ tests/
   guide_ui.test.ts             Guide content, navigation, and metadata isolation
 scripts/
   gen-stage-list.mjs           Generates the README stage lists
-  gen-guide-catalog.mjs        Generates bilingual Guide metadata from the same manifests
+  gen-guide-catalog.mjs        Generates Guide metadata and runtime stage listings
 docs/
   ADD_A_STAGE.md              Instructions for adding a new stage
 ```
 
 Vite builds `index.html` and `guide/index.html` as separate entry points. The Game / Lesson runtime
-registers stages automatically with `import.meta.glob`. The Guide reads generated metadata
-instead, sharing presentation helpers without loading executable stages or model weights.
-The build rejects imports that would bring those implementations back into the Guide.
+uses a lazy `import.meta.glob` to load the selected stage. Catalog generation and all-stage tests
+use `stage_collect.ts` to evaluate every manifest. The Guide reads generated metadata and shares
+presentation helpers. The build rejects executable stages or VLA/world-model weights anywhere
+in the Guide's dependency graph, including dynamic imports, and in the playable app's initial
+static dependency graph.
 
 ## Verification
 
@@ -229,8 +238,9 @@ npm run build
 
 Tests cover model behavior, simulated ROS messages, goal completion, failure recovery, input
 ownership, menu focus, terminal return controls, and DOM state during reset, language changes,
-and stage disposal. Guide checks verify the current catalog and its separation from playable
-stages. These tests do not validate rendered canvas pixels or physical controller drivers.
+and stage disposal. Catalog checks verify both generated catalogs, and loading tests exercise
+on-demand stage initialization. These tests do not validate rendered canvas pixels or physical
+controller drivers.
 
 For UI changes, also check the production preview in a browser at phone, tablet, and desktop
 widths (for example 375, 768, and 1280 px). Exercise stage selection, help, terminal return,
@@ -315,7 +325,7 @@ The basic workflow is:
 2. Implement a factory function that returns a `Stage`.
 3. Default-export `defineStage({ mode, order, ... })`.
 4. Extend `src/guide/` if the stage needs a custom explanation or animation.
-5. Run `npm run gen:stages` and `npm run gen:guide` to update both generated catalogs.
+5. Run `npm run gen:stages` and `npm run gen:guide` to update the README stage tables and both catalogs.
 6. Verify formatting, tests, the production build, and browser controls.
 
 ## Contributing

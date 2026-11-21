@@ -7,7 +7,7 @@ dist/
 # Test output
 coverage/
 
-# Generated source is versioned: src/guide/stages.generated.json,
+# Generated source is versioned: src/core/stages.generated.json, src/guide/stages.generated.json,
 # src/lib/vla_weights.ts, and src/lib/world_model_weights.ts.
 
 # Logs

@@ -50,8 +50,9 @@ Keep your local Node.js 24.x updated. CI and deployment builds use the latest
 The application is available at <http://localhost:5173/> and the Robotics Learning Guide at
 <http://localhost:5173/guide/>.
 
-`npm run dev` generates the bilingual Guide catalog before starting Vite. After changing stage
-metadata while the server is running, run `npm run gen:guide` again to refresh the Guide.
+`npm run dev` generates the bilingual Guide catalog and lightweight runtime stage listings
+before starting Vite. After changing stage metadata while the server is running, run
+`npm run gen:guide` again to refresh both catalogs.
 
 Use a short, descriptive branch prefix such as `feat/`, `fix/`, `docs/`, `test/`, or `refactor/`.
 
@@ -65,10 +66,13 @@ Use a short, descriptive branch prefix such as `feat/`, `fix/`, `docs/`, `test/`
 - Do not commit generated build output from `dist/`.
 - Never commit credentials, analytics IDs, or other secrets.
 
-The app and Guide are separate Vite entry points. The playable app loads stage implementations;
-the Guide reads [generated metadata](src/guide/stages.ts) and shares presentation helpers.
-Keep stage factories, runtime controllers, and model weights out of Guide imports. The production
-build checks that playable stages and VLA/world-model weights do not enter the Guide bundle.
+The app and Guide are separate Vite entry points. The playable app reads lightweight stage
+listings through [stage_catalog.ts](src/core/stage_catalog.ts) and dynamically imports the
+selected stage. The Guide reads [generated metadata](src/guide/stages.ts) and shares
+presentation helpers. Keep stage factories, runtime controllers, and model weights out of
+Guide imports, and keep playable implementations out of the app's initial static imports.
+The production build checks both boundaries: the Guide check follows static and dynamic
+dependencies, while the playable entry check follows static dependencies.
 
 ## Commit and push
 
@@ -165,12 +169,14 @@ npm run gen:guide
 
 `gen:stages` updates the README GAME and LESSON tables inside their respective marker pairs.
 `gen:guide` updates [src/guide/stages.generated.json](src/guide/stages.generated.json) with
-Japanese/English stage metadata and diagrams. Edit their source manifests rather than these
-generated sections, review the generated diff, and include both updated outputs in the commit.
+Japanese/English stage metadata and diagrams, and
+[src/core/stages.generated.json](src/core/stages.generated.json) with IDs, modes, ordering,
+and bilingual names and lesson labels for runtime menus. Edit the source manifests rather
+than the generated files, review the generated diff, and include all updated outputs in the commit.
 
-`npm test` checks that both outputs are current. `npm run dev` and `npm run build` regenerate
-the Guide catalog, but do not regenerate the README tables. A running dev server does not
-automatically rerun the catalog generator after metadata edits.
+`npm test` checks the README tables with `check:stages` and both catalogs with `check:guide`.
+`npm run dev` and `npm run build` regenerate both catalogs, but do not regenerate the README
+tables. A running dev server does not automatically rerun the catalog generator after metadata edits.
 
 The VLA and world-model weight modules in `src/lib/` are also versioned source artifacts.
 When changing those models, use the corresponding training scripts in `scripts/` as needed,
@@ -205,8 +211,8 @@ and an expiry date, and fails again once it expires or reaches the production de
 
 CI installs dependencies with `npm ci` before these checks. A push to `main` is published to
 GitHub Pages only after all of them pass, using the build that CI verified. `npm test` runs the TypeScript tests plus `check:stages`
-and `check:guide`; `npm run build` regenerates Guide metadata, type-checks, and builds both
-entry points while checking the Guide's dependency boundary.
+and `check:guide`; `npm run build` regenerates both catalogs, type-checks, and builds both
+entry points while checking the Guide's dependencies and the playable app's initial static dependencies.
 
 Tests cover model behavior, simulated messages, completion and failure recovery, input ownership,
 focus, and DOM state during reset, language changes, and disposal. They do not validate rendered
@@ -236,7 +242,7 @@ Use the [pull request template](.github/PULL_REQUEST_TEMPLATE.md). In the pull r
 - Explain what changed and why.
 - Link the related issue with `Closes #123` when applicable.
 - Describe how you tested the change.
-- Confirm both generated stage tables and Guide metadata are current when stage data changes.
+- Confirm the generated README stage tables, Guide metadata, and runtime stage listings are current when stage data changes.
 - Include screenshots or a short recording for visual or interactive changes.
 - Mention known limitations, follow-up work, and any effect on saved data.
 - Ensure all CI checks pass and respond to review feedback.

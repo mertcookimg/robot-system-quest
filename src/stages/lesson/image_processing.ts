@@ -12,7 +12,7 @@ import { theme } from "../../core/theme";
 import { drawHint, COLORS, clearBackground } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
 import { readStageGamepads } from "../../lib/stage_gamepads";
-import { toGray, gaussianBlur, cannyEdges, f1Score } from "../../lib/imgproc";
+import { toGray, gaussianBlur, cannyEdges, f1Score, GAUSSIAN_SIGMA_MAX } from "../../lib/imgproc";
 import { setupBlockProgram, type BlockProgramHandle } from "../../lib/block_program";
 import { t, tx } from "../../i18n";
 import { defineStage } from "../../core/stage_def";
@@ -488,7 +488,16 @@ export function makeImageProcessing(): Stage {
           defaults: () => defaultBlock("gaussian_blur"),
           params: (b) =>
             b.kind === "gaussian_blur"
-              ? [{ key: "sigma", value: b.sigma, step: 0.1, unit: "σ" }]
+              ? [
+                  {
+                    key: "sigma",
+                    value: b.sigma,
+                    step: 0.1,
+                    min: 0,
+                    max: GAUSSIAN_SIGMA_MAX,
+                    unit: "σ",
+                  },
+                ]
               : [],
         },
         {
@@ -606,7 +615,7 @@ export function makeImageProcessing(): Stage {
     let cannyApplied = false;
     for (const block of program) {
       if (block.kind === "gaussian_blur") {
-        gray = gaussianBlur(gray, IMG_W, IMG_H, Math.max(0, block.sigma));
+        gray = gaussianBlur(gray, IMG_W, IMG_H, block.sigma);
         blurredApplied = true;
       } else if (block.kind === "canny") {
         const low = Math.max(0, Math.min(block.low, block.high));

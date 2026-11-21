@@ -42,6 +42,8 @@ export interface BlockParamSpec {
   key: string;
   value: number;
   step?: number; // default 0.1
+  min?: number;
+  max?: number;
   unit?: string; // default ""
 }
 
@@ -133,8 +135,12 @@ export function setupBlockProgram<B extends { kind: string }>(
 
         const inp = document.createElement("input");
         inp.type = "number";
+        inp.id = `be-param-${i}-${p.key}`;
+        field.htmlFor = inp.id;
         inp.inputMode = "decimal";
         inp.step = String(p.step ?? 0.1);
+        if (p.min !== undefined) inp.min = String(p.min);
+        if (p.max !== undefined) inp.max = String(p.max);
         inp.value = String(p.value);
         inp.setAttribute("aria-label", p.key);
         inp.title = p.key;
@@ -146,7 +152,9 @@ export function setupBlockProgram<B extends { kind: string }>(
         const commit = () => {
           const v = parseFloat(inp.value);
           if (Number.isFinite(v)) {
-            (b as Record<string, unknown>)[p.key] = v;
+            const bounded = Math.max(p.min ?? -Infinity, Math.min(p.max ?? Infinity, v));
+            if (bounded !== v) inp.value = String(bounded);
+            (b as Record<string, unknown>)[p.key] = bounded;
             changed();
           }
         };

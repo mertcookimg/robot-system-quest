@@ -33,7 +33,7 @@ export function isStageInteractionBlocked(): boolean {
     isTerminalFocused() ||
     !!document.querySelector(
       "#intro-screen.show, #lesson-modal.show, #help-modal.show, #clear-overlay.show, " +
-        "#allclear-screen.show, body.stage-menu-open, #terminal-pad-palette",
+        "#allclear-screen.show, body.stage-menu-open, body.stage-loading, #terminal-pad-palette",
     )
   );
 }

@@ -11,6 +11,7 @@ import { format, resolveConfig } from "prettier";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const destination = new URL("../src/guide/stages.generated.json", import.meta.url);
+const runtimeDestination = new URL("../src/core/stages.generated.json", import.meta.url);
 
 async function readCatalog(lang) {
   const browser = new Window({ url: "http://localhost/" });
@@ -96,20 +97,32 @@ const catalog = ja.map(({ meta, ...entry }, index) => {
   if (en[index]?.id !== entry.id) throw new Error("Guide catalog order differs by language");
   return { ...entry, ja: meta, en: en[index].meta };
 });
-const output = await format(JSON.stringify(catalog), {
-  ...(await resolveConfig(fileURLToPath(destination))),
-  parser: "json",
-});
-const previous = await readFile(destination, "utf8").catch((error) => {
-  if (error.code !== "ENOENT") throw error;
-  return "";
-});
-if (process.argv.includes("--check")) {
-  if (previous !== output) {
-    console.error("Guide catalog is out of date. Run: npm run gen:guide");
-    process.exitCode = 1;
-  } else console.log(`Guide catalog is up to date (${catalog.length} stages, JA/EN).`);
-} else if (previous !== output) {
-  await writeFile(destination, output);
-  console.log(`Generated Guide catalog (${catalog.length} stages, JA/EN).`);
-} else console.log("Guide catalog already up to date.");
+const listings = catalog.map((entry, index) => ({
+  id: entry.id,
+  mode: entry.mode,
+  order: index + 1,
+  ja: { name: entry.ja.name, lesson: entry.ja.lesson },
+  en: { name: entry.en.name, lesson: entry.en.lesson },
+}));
+for (const [name, path, data] of [
+  ["Guide catalog", destination, catalog],
+  ["Stage listings", runtimeDestination, listings],
+]) {
+  const output = await format(JSON.stringify(data), {
+    ...(await resolveConfig(fileURLToPath(path))),
+    parser: "json",
+  });
+  const previous = await readFile(path, "utf8").catch((error) => {
+    if (error.code !== "ENOENT") throw error;
+    return "";
+  });
+  if (process.argv.includes("--check")) {
+    if (previous !== output) {
+      console.error(`${name} is out of date. Run: npm run gen:guide`);
+      process.exitCode = 1;
+    } else console.log(`${name} is up to date (${data.length} stages, JA/EN).`);
+  } else if (previous !== output) {
+    await writeFile(path, output);
+    console.log(`Generated ${name} (${data.length} stages, JA/EN).`);
+  } else console.log(`${name} already up to date.`);
+}

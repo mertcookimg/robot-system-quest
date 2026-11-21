@@ -15,6 +15,8 @@ let makeStage: () => Stage;
 let stage: Stage;
 let manager: typeof import("../src/core/stage_manager");
 let clear: typeof import("../src/core/clear_overlay");
+let gamepad: typeof import("../src/core/gamepad");
+let pads: Gamepad[] = [];
 let allclear: typeof import("../src/core/allclear");
 let timers: typeof import("../src/core/stage_timers");
 let progress: typeof import("../src/core/progress");
@@ -65,6 +67,7 @@ before(async () => {
             : Reflect.get(browser, key),
     });
   }
+  Object.defineProperty(navigator, "getGamepads", { configurable: true, value: () => pads });
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   document.body.innerHTML = html
     .match(/<body[^>]*>([\s\S]*?)<\/body>/i)![1]
@@ -105,6 +108,8 @@ before(async () => {
   definitions.defineStage({ mode: "lesson", order: 25, build: () => nextStage });
   manager = (await server.ssrLoadModule("/src/core/stage_manager.ts")) as typeof manager;
   clear = (await server.ssrLoadModule("/src/core/clear_overlay.ts")) as typeof clear;
+  gamepad = (await server.ssrLoadModule("/src/core/gamepad.ts")) as typeof gamepad;
+  gamepad.setupGamepad({ startGame() {}, resetCurrentStage: manager.resetCurrent });
   allclear = (await server.ssrLoadModule("/src/core/allclear.ts")) as typeof allclear;
   timers = (await server.ssrLoadModule("/src/core/stage_timers.ts")) as typeof timers;
   progress = (await server.ssrLoadModule("/src/core/progress.ts")) as typeof progress;
@@ -148,6 +153,8 @@ before(async () => {
 });
 
 beforeEach(() => {
+  pads = [];
+  window.dispatchEvent(new Event("gamepaddisconnected"));
   localStorage.clear();
   localStorage.setItem("robot_audio", "off");
   clear.close();
@@ -168,7 +175,11 @@ beforeEach(() => {
     awards++;
     award(...args);
   };
-  stage.init(context);
+  // Use the runtime initialization path so Retry resets an initialized stage.
+  // Briefing behavior is covered by main_boot; keep this fixture on the lab.
+  localStorage.setItem("robot_quest_lesson_seen_v1", JSON.stringify([stage.id]));
+  void manager.loadStage(stage.id);
+  assert.equal(manager.isStageReady(), true);
 });
 
 afterEach(() => {
@@ -224,6 +235,13 @@ function key(value: string, shiftKey = false): void {
 function assertSameNodes(actual: ChildNode[], expected: ChildNode[]): void {
   assert.equal(actual.length, expected.length);
   actual.forEach((node, i) => assert.ok(node === expected[i], `DOM node ${i} was not restored`));
+}
+
+function useStageList(stages: Stage[]): void {
+  stage.dispose();
+  manager.setStages(stages);
+  void manager.loadStage(stage.id);
+  assert.equal(manager.isStageReady(), true);
 }
 
 test("completion uses the shared card outside the animated canvas and focuses its action", (t) => {
@@ -283,7 +301,7 @@ test("Next loads the following stage and restores the original shared DOM", (t) 
 });
 
 test("closing completion cancels its scheduled all-clear transition", (t) => {
-  manager.setStages([stage]);
+  useStageList([stage]);
   complete(t);
   key("Escape");
   assert.equal(clear.isOpen(), false);
@@ -331,12 +349,50 @@ test("Tab keeps completion focus inside and Enter follows native button focus", 
   assert.equal(primary().dataset.intent, "plan");
 });
 
+test("gamepad B restores completed review controls and consumes the held dismissal button", (t) => {
+  complete(t);
+  const press = (held: boolean) => {
+    pads = [
+      {
+        axes: [0, 0],
+        buttons: Array.from({ length: 17 }, (_, index) => ({
+          pressed: held && index === 1,
+          touched: held && index === 1,
+          value: held && index === 1 ? 1 : 0,
+        })),
+      } as Gamepad,
+    ];
+    gamepad.poll();
+  };
+  press(false);
+  press(true);
+  assert.equal(clear.isOpen(), false);
+  assert.equal(panel().inert, false);
+  assert.equal(primary().dataset.intent, "reset");
+  assert.equal(primary().disabled, false);
+  assert.ok(document.activeElement === primary(), "B must restore focus to completed results");
+  action("details").click();
+  assert.equal(panel().querySelector<HTMLElement>('[data-world="details"]')!.hidden, false);
+  assert.equal(panel().querySelectorAll('[data-world="records"] [data-experiment]').length, 3);
+  assert.equal(awards, 1);
+  assert.equal(restarts, 0);
+  assert.equal(nexts, 0);
+
+  clear.show(3, "Completed results", {
+    current: stage,
+    stages: [stage, nextStage],
+    onRenderSelector() {},
+  });
+  press(true);
+  assert.equal(clear.isOpen(), true, "A held B must not dismiss a newly opened dialog");
+  press(false);
+  press(true);
+  assert.equal(clear.isOpen(), false, "A fresh B press must still dismiss completion");
+});
+
 test("the final lesson opens Lesson list and can return to its completed results", (t) => {
   // Keep an unfinished earlier lesson so this is mode completion, not all-clear.
-  stage.dispose();
-  manager.setStages([nextStage, stage]);
-  localStorage.setItem("robot_quest_lesson_seen_v1", JSON.stringify([stage.id]));
-  manager.loadStage(stage.id);
+  useStageList([nextStage, stage]);
   complete(t);
   assert.match(ui.nextBtn.textContent ?? "", /Lesson list/);
   ui.nextBtn.click();
@@ -356,7 +412,7 @@ test("the final lesson opens Lesson list and can return to its completed results
 });
 
 test("an undismissed final completion still transitions to the real all-clear screen", (t) => {
-  manager.setStages([stage]);
+  useStageList([stage]);
   complete(t);
   assert.match(ui.nextBtn.textContent ?? "", /View all clear/);
   t.mock.timers.tick(2400);
@@ -369,7 +425,7 @@ test("an undismissed final completion still transitions to the real all-clear sc
 });
 
 test("View all clear opens and focuses the final screen immediately", (t) => {
-  manager.setStages([stage]);
+  useStageList([stage]);
   complete(t);
   ui.nextBtn.click();
   assert.equal(clear.isOpen(), false);
@@ -388,7 +444,7 @@ test("all-clear keeps 38 results in a bounded scroll area with a focused restart
     name: `Completed stage ${i + 1}`,
   }));
   completedStages.forEach((completed) => progress.saveProgress(completed.id, 3));
-  manager.setStages([stage, ...completedStages]);
+  useStageList([stage, ...completedStages]);
   complete(t);
   ui.nextBtn.click();
   assert.equal(allclear.isOpen(), true);

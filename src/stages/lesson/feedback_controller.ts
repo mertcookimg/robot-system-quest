@@ -310,6 +310,7 @@ export function makeFeedbackController(): Stage {
     particles.reset();
     trail.reset();
     elapsed = 0;
+    g.ghost.startRecording();
     bumpFlash = 0;
     cleared = false;
     triangle.reset(robot.x, robot.y);

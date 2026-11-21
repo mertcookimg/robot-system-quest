@@ -13,7 +13,7 @@ import { type Stage, type GameContext } from "../../types";
 import { defineStage } from "../../core/stage_def";
 import { drawHint, COLORS, clearBackground } from "../../lib/draw";
 import { rosAngularFromCanvas } from "../../lib/control_math";
-import { toGray, gaussianBlur, cannyEdges } from "../../lib/imgproc";
+import { toGray, gaussianBlur, cannyEdges, GAUSSIAN_SIGMA_MAX } from "../../lib/imgproc";
 import { setupBlockProgram, type BlockProgramHandle } from "../../lib/block_program";
 import {
   createCameraMission,
@@ -130,7 +130,16 @@ export function makeCameraMission(): Stage {
           defaults: () => defaultBlock("gaussian_blur"),
           params: (b) =>
             b.kind === "gaussian_blur"
-              ? [{ key: "sigma", value: b.sigma, step: 0.1, unit: "σ" }]
+              ? [
+                  {
+                    key: "sigma",
+                    value: b.sigma,
+                    step: 0.1,
+                    min: 0,
+                    max: GAUSSIAN_SIGMA_MAX,
+                    unit: "σ",
+                  },
+                ]
               : [],
         },
         {
@@ -207,7 +216,7 @@ export function makeCameraMission(): Stage {
     detected.fill(0);
     for (const block of program) {
       if (block.kind === "gaussian_blur") {
-        gray = gaussianBlur(gray, IMG_W, IMG_H, Math.max(0, block.sigma));
+        gray = gaussianBlur(gray, IMG_W, IMG_H, block.sigma);
       } else if (block.kind === "canny") {
         const low = Math.max(0, Math.min(block.low, block.high));
         const high = Math.max(low, block.high);

@@ -20,7 +20,8 @@ import * as intro from "./intro";
 import * as help from "./help";
 import * as allclear from "./allclear";
 import { getBestTime as rankingBestTime } from "./rankings";
-import { getLessonNumbers, getStageModes } from "./stage_def";
+import { getLessonNumbers, getStageModes, prepareStage } from "./stage_def";
+import { tx } from "../i18n";
 import { setStatus, setHud } from "./status";
 import { clearBlockpadHighlights } from "../lib/blockpad";
 import { activateNavpad, deactivateNavpad } from "../lib/navpad";
@@ -34,6 +35,34 @@ import { releaseStageInputs } from "./input_reset";
 
 let stages: Stage[] = [];
 let current: Stage;
+let currentReady = false;
+let loadVersion = 0;
+let pendingLoad: Promise<void> = Promise.resolve();
+let notifyLoadChanged: () => void = () => {};
+let loadChanged = new Promise<void>((resolve) => {
+  notifyLoadChanged = resolve;
+});
+
+function setPendingLoad(pending: Promise<void>): void {
+  pendingLoad = pending;
+  notifyLoadChanged();
+  loadChanged = new Promise<void>((resolve) => {
+    notifyLoadChanged = resolve;
+  });
+}
+
+export function isStageReady(): boolean {
+  return currentReady;
+}
+
+/** Home actions wait for the latest selection, including a newer request. */
+export async function whenStageReady(): Promise<void> {
+  let pending: Promise<void>;
+  do {
+    pending = pendingLoad;
+    await Promise.race([pending, loadChanged]);
+  } while (pending !== pendingLoad);
+}
 const MOBILE_LIVE_EDITOR_STAGES = new Set([
   "feedforward_controller",
   "feedforward_mission",
@@ -61,6 +90,7 @@ export function getCurrentId(): string {
 export function setStages(list: Stage[]): void {
   stages = list;
   current = stages[0];
+  currentReady = false;
 }
 
 const ghostApi = {
@@ -129,26 +159,77 @@ export function buildGameContext(
   return gameContext;
 }
 
-export function loadStage(id: string): void {
+export function loadStage(id: string): Promise<void> {
+  const version = ++loadVersion;
   releaseStageInputs();
   clearCanvasReadout();
   clearStageTimeouts();
   crash.clearCrashOverlay();
-  if (current) current.dispose();
+  if (currentReady) current.dispose();
+  currentReady = false;
   topicMonitor.clearLog();
   ui.stageOverlay.innerHTML = "";
-  ui.stageOverlay.style.display = "";
+  ui.stageOverlay.style.cssText = "";
   clearOverlay.close();
   clearBlockpadHighlights();
   deactivateNavpad();
 
-  ghost.loadGhostFor(id);
-  ghost.startRecording();
-
   const next = stages.find((s) => s.id === id) ?? stages[0];
   current = next;
+  const preparation = prepareStage(next);
+  if (!preparation) {
+    setPendingLoad(Promise.resolve());
+    finishStageLoad();
+    return pendingLoad;
+  }
+
+  document.body.classList.add("stage-loading");
+  ui.canvasWrap.setAttribute("aria-busy", "true");
+  // A stage's canvas cannot be drawn before its implementation is initialized.
+  gameContext.ctx.clearRect(0, 0, ui.canvas.width, ui.canvas.height);
+  const loading = document.createElement("p");
+  loading.className = "stage-loading-message";
+  loading.textContent = tx("ステージを読み込んでいます…", "Loading stage…");
+  ui.stageOverlay.replaceChildren(loading);
+  setStatus(loading.textContent);
+  setPendingLoad(
+    preparation
+      .then(() => {
+        if (version !== loadVersion) return;
+        ui.stageOverlay.replaceChildren();
+        finishStageLoad();
+      })
+      .catch((error: unknown) => {
+        if (version !== loadVersion) return;
+        document.body.classList.add("stage-loading");
+        console.error("[stage] load failed:", error);
+        loading.textContent = tx(
+          "ステージを読み込めませんでした。再試行するか、別のステージを選んでください。",
+          "Could not load this stage. Retry or choose another stage.",
+        );
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.textContent = tx("再試行", "Retry");
+        retry.addEventListener("click", () => {
+          void loadStage(next.id);
+        });
+        loading.append(document.createElement("br"), retry);
+        ui.stageOverlay.replaceChildren(loading);
+        ui.canvasWrap.setAttribute("aria-busy", "false");
+        setStatus(tx("読み込みに失敗しました", "Stage loading failed"), "var(--warn)");
+      }),
+  );
+  return pendingLoad;
+}
+
+function finishStageLoad(): void {
+  document.body.classList.remove("stage-loading");
+  ui.canvasWrap.setAttribute("aria-busy", "false");
+  ghost.loadGhostFor(current.id);
+  ghost.startRecording();
   document.body.classList.toggle("mobile-live-editor", MOBILE_LIVE_EDITOR_STAGES.has(current.id));
   current.init(gameContext);
+  currentReady = true;
   releaseStageInputs();
   setTouchpadStage(current.id);
   if (!intro.isShown()) {
@@ -173,7 +254,7 @@ export function loadStage(id: string): void {
   else modes.renderSelector();
   sfx.click();
 
-  lessonModal.maybeAutoOpen(id, modes.isGameStage(id), {
+  lessonModal.maybeAutoOpen(current.id, modes.isGameStage(current.id), {
     introOpen: intro.isShown(),
     allclearOpen: allclear.isOpen(),
     helpOpen: help.isOpen(),
@@ -200,6 +281,10 @@ export function loadNextStage(): void {
 }
 
 export function resetCurrent(): void {
+  if (!currentReady) {
+    void loadStage(current.id);
+    return;
+  }
   releaseStageInputs();
   clearCanvasReadout();
   trackStageReset(current.id, modes.isGameStage(current.id) ? "game" : "lesson");

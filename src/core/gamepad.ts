@@ -178,7 +178,9 @@ export function poll(): void {
     return;
   }
   if (clearOverlay.isOpen()) {
-    pollClearOverlayPad(pad, aEdge, startEdge);
+    const bEdge = (pad.buttons[1]?.pressed ?? false) && !(prevButtons[1] ?? false);
+    if (bEdge) clearOverlay.close();
+    else pollClearOverlayPad(pad, aEdge, startEdge);
     prevButtons = pad.buttons.map((b) => b.pressed);
     return;
   }

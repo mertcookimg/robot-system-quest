@@ -12,6 +12,7 @@ import { Particles } from "../../lib/particles";
 import { defineRos2Concept, state, topic } from "../../lib/ros2_concept";
 import { makeOverlayPanel, type OverlayPanelHandle } from "../../lib/overlay_panel";
 import * as twoPlayer from "../../lib/two_player";
+import { isStageInteractionBlocked } from "../../lib/input_guard";
 import {
   advanceTennisScore,
   isInsideDiagonalServiceBox,
@@ -145,6 +146,14 @@ export function makeRoboTennis(): Stage {
   let onPointerMove: ((event: PointerEvent) => void) | null = null;
   let onPointerDown: ((event: PointerEvent) => void) | null = null;
 
+  function clearPendingPointerAction(): void {
+    pointerActionPending = false;
+  }
+
+  function onVisibilityChange(): void {
+    if (document.hidden) clearPendingPointerAction();
+  }
+
   function reset(): void {
     player.x = 132;
     player.y = 247;
@@ -235,15 +244,19 @@ export function makeRoboTennis(): Stage {
       player.y = Math.max(COURT.y + 24, Math.min(COURT.y + COURT.h - 24, y));
     };
     onPointerMove = (event) => {
+      if (isStageInteractionBlocked()) return;
       if (event.pointerType === "mouse") movePlayerToPointer(event);
     };
     onPointerDown = (event) => {
+      if (isStageInteractionBlocked()) return;
       event.preventDefault();
       movePlayerToPointer(event);
       pointerActionPending = true;
     };
     g.canvas.addEventListener("pointermove", onPointerMove);
     g.canvas.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("blur", clearPendingPointerAction);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     reset();
   }
 
@@ -942,6 +955,9 @@ export function makeRoboTennis(): Stage {
   }
 
   function draw(): void {
+    // The shell keeps drawing while dialogs pause update(). Do not replay a
+    // click queued just before the interruption when play resumes.
+    if (isStageInteractionBlocked()) clearPendingPointerAction();
     const c = g.ctx;
     drawCourt(c);
     drawRobotWithRacket(c, player, "player");
@@ -961,6 +977,9 @@ export function makeRoboTennis(): Stage {
     twoPlayer.uninstallToggleListener();
     if (onPointerMove) g.canvas.removeEventListener("pointermove", onPointerMove);
     if (onPointerDown) g.canvas.removeEventListener("pointerdown", onPointerDown);
+    window.removeEventListener("blur", clearPendingPointerAction);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    clearPendingPointerAction();
     onPointerMove = null;
     onPointerDown = null;
   }

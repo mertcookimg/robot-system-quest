@@ -27,6 +27,7 @@ let ui: (typeof import("../src/core/dom"))["ui"];
 let current: Stage;
 let actualStage: Stage | undefined;
 let makeBaseball: (typeof import("../src/stages/game/robo_baseball"))["makeRoboBaseball"];
+let makeTennis: (typeof import("../src/stages/game/robo_tennis"))["makeRoboTennis"];
 let makePubsub: (typeof import("../src/stages/lesson/pubsub_builder"))["makePubsub"];
 let pageHidden = false;
 let pads: Array<Gamepad | null> = [];
@@ -111,6 +112,7 @@ before(async () => {
   timers = (await server.ssrLoadModule("/src/core/stage_timers.ts")) as typeof timers;
   loop = (await server.ssrLoadModule("/src/core/loop.ts")) as typeof loop;
   makeBaseball = (await server.ssrLoadModule("/src/stages/game/robo_baseball.ts")).makeRoboBaseball;
+  makeTennis = (await server.ssrLoadModule("/src/stages/game/robo_tennis.ts")).makeRoboTennis;
   makePubsub = (await server.ssrLoadModule("/src/stages/lesson/pubsub_builder.ts")).makePubsub;
   current = {
     id: "navigation",
@@ -139,6 +141,7 @@ before(async () => {
     },
   };
   manager.setStages([current]);
+  manager.buildGameContext(ui.canvas, {} as CanvasRenderingContext2D);
   menu.setupStageMenu({ getCurrentStageId: () => current.id, loadStage() {} });
   terminal.setupTerminal({ getConcept: () => current.ros2, getStageName: () => current.name });
   clear.setupClearOverlay({
@@ -195,6 +198,7 @@ beforeEach(() => {
   ui.canvas.focus();
   input.clearAll();
   input.syncKeys();
+  void manager.loadStage(current.id);
   updates =
     draws =
     actions =
@@ -264,12 +268,16 @@ function pad(buttons: number[] = [], axes = [0, 0, 0, 0]): Gamepad {
   return controller;
 }
 
-function loadActualStage(stage: Stage): string[] {
+function loadActualStage(
+  stage: Stage,
+  contextOverrides: Partial<CanvasRenderingContext2D> = {},
+): string[] {
   const drawing = {
     canvas: ui.canvas,
     measureText: (value: string) => ({ width: value.length * 7 }),
     createLinearGradient: () => ({ addColorStop() {} }),
     createRadialGradient: () => ({ addColorStop() {} }),
+    ...contextOverrides,
   };
   const context = new Proxy(drawing, {
     get: (target, key) => Reflect.get(target, key) ?? (() => {}),
@@ -638,6 +646,122 @@ test("UI dismissal and stage reinitialization consume controller actions before 
   arm.poll();
   assert.equal(actions, beforeActions + 1);
   assert.equal(arm.buttonEdge(0), true, "Fresh arm commands remain usable after reinitialization");
+});
+
+test("Tennis pointer movement respects terminal, modal and inactive-page pauses", () => {
+  const tennis = makeTennis();
+  const positions: number[][] = [];
+  loadActualStage(tennis, { translate: (x, y) => positions.push([x, y]) });
+  const pointer = (type: string, x: number, y: number) =>
+    ui.canvas.dispatchEvent(
+      new browser.PointerEvent(type, { pointerType: "mouse", clientX: x, clientY: y }),
+    );
+  const playerPosition = () => {
+    positions.length = 0;
+    tennis.draw();
+    return positions[0];
+  };
+  tennis.update(1);
+  pointer("pointerdown", 112, 317);
+  tennis.update(0); // Serve so pointer movement is no longer locked to the baseline.
+  pointer("pointermove", 160, 220);
+  assert.deepEqual(playerPosition(), [160, 220]);
+
+  const interruptions = [
+    { open: () => help.open(), close: () => help.close() },
+    { open: () => menu.openMenu(), close: () => menu.closeMenu() },
+    { open: () => ui.terminalInput.focus(), close: () => ui.canvas.focus() },
+    {
+      open: () => window.dispatchEvent(new Event("blur")),
+      close: () => window.dispatchEvent(new Event("focus")),
+    },
+    {
+      open: () => {
+        pageHidden = true;
+        document.dispatchEvent(new Event("visibilitychange"));
+      },
+      close: () => {
+        pageHidden = false;
+        document.dispatchEvent(new Event("visibilitychange"));
+      },
+    },
+  ];
+  for (const interruption of interruptions) {
+    interruption.open();
+    pointer("pointermove", 300, 350);
+    pointer("pointerdown", 300, 350);
+    assert.deepEqual(playerPosition(), [160, 220], "Paused pointer input must not move the robot");
+    interruption.close();
+    ui.canvas.focus();
+    frame();
+    assert.deepEqual(playerPosition(), [160, 220], "Resuming must retain the paused position");
+  }
+  pointer("pointermove", 260, 180);
+  assert.deepEqual(playerPosition(), [260, 180], "Fresh pointer movement must work after resuming");
+});
+
+test("Tennis discards paused pointer actions and clicks queued before a pause", () => {
+  const tennis = makeTennis();
+  loadActualStage(tennis);
+  const click = () =>
+    ui.canvas.dispatchEvent(new browser.PointerEvent("pointerdown", { pointerType: "touch" }));
+  const interruptions = [
+    {
+      name: "terminal",
+      open: () => ui.terminalInput.focus(),
+      close: () => ui.canvas.focus(),
+      drawWhilePaused: true,
+    },
+    {
+      name: "help",
+      open: () => help.open(),
+      close: () => help.close(),
+      drawWhilePaused: true,
+    },
+    {
+      name: "blur",
+      open: () => window.dispatchEvent(new Event("blur")),
+      close: () => window.dispatchEvent(new Event("focus")),
+      drawWhilePaused: false,
+    },
+    {
+      name: "hidden",
+      open: () => {
+        pageHidden = true;
+        document.dispatchEvent(new Event("visibilitychange"));
+      },
+      close: () => {
+        pageHidden = false;
+        document.dispatchEvent(new Event("visibilitychange"));
+      },
+      drawWhilePaused: false,
+    },
+  ];
+  for (const interruption of interruptions) {
+    for (const clickBeforePause of [false, true]) {
+      tennis.reset();
+      tennis.update(1); // Human serve is ready and waits for a new action.
+      if (clickBeforePause) click();
+      interruption.open();
+      if (!clickBeforePause) click();
+      if (interruption.drawWhilePaused) frame();
+      interruption.close();
+      ui.canvas.focus();
+      frame();
+      assert.match(
+        ui.info.textContent ?? "",
+        /RALLY\s+0/,
+        `${interruption.name} must discard clicks`,
+      );
+      click();
+      frame();
+      assert.match(
+        ui.info.textContent ?? "",
+        /RALLY\s+1/,
+        "A fresh click must serve after resuming",
+      );
+    }
+  }
 });
 
 test("Baseball does not swing for briefing A, terminal typing or native button activation", () => {

@@ -75,14 +75,15 @@ export function setupPalette(blocks: PaletteBlock[], hint: string): HTMLButtonEl
       btn.dataset.add = b.id;
       const n = document.createElement("span");
       n.className = "bp-name";
-      n.textContent = b.name;
       const a = document.createElement("span");
       a.className = "bp-args";
-      a.textContent = b.args;
       btn.appendChild(n);
       btn.appendChild(a);
       refs.paletteEl.insertBefore(btn, refs.paletteHintEl);
     }
+    // Stages and languages can share block IDs but use different labels.
+    btn.querySelector<HTMLElement>(".bp-name")!.textContent = b.name;
+    btn.querySelector<HTMLElement>(".bp-args")!.textContent = b.args;
     btn.style.display = "";
     // Replace listeners by cloning, so re-entering the stage doesn't stack handlers.
     const fresh = btn.cloneNode(true) as HTMLButtonElement;

@@ -54,12 +54,12 @@ export function startLoop(): void {
       const stage = stageManager.getCurrent();
       // Menus, help, completion and terminal interaction pause timers/physics
       // as well as raw per-stage gamepad readers. Drawing remains available.
-      if (!gated && !crash.consumeHitStop(dt)) {
+      if (stageManager.isStageReady() && !gated && !crash.consumeHitStop(dt)) {
         stage.update(dt);
       }
       beginCanvasReadoutFrame();
       try {
-        stage.draw();
+        if (stageManager.isStageReady()) stage.draw();
       } finally {
         endCanvasReadoutFrame();
       }

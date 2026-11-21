@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "tsx --test tests/*.test.ts && npm run check:stages && npm run check:guide",
+    "test": "tsx --test --test-concurrency=4 tests/*.test.ts && npm run check:stages && npm run check:guide",
     "gen:guide": "node scripts/gen-guide-catalog.mjs",
     "check:guide": "node scripts/gen-guide-catalog.mjs --check",
     "gen:stages": "node scripts/gen-stage-list.mjs",

@@ -1,0 +1,292 @@
+[
+  {
+    "id": "delivery",
+    "mode": "game",
+    "order": 1,
+    "ja": { "name": "Delivery", "lesson": "" },
+    "en": { "name": "Delivery", "lesson": "" }
+  },
+  {
+    "id": "follower",
+    "mode": "game",
+    "order": 2,
+    "ja": { "name": "Follower", "lesson": "" },
+    "en": { "name": "Follower", "lesson": "" }
+  },
+  {
+    "id": "lidar_explorer",
+    "mode": "game",
+    "order": 3,
+    "ja": { "name": "LiDAR Explorer", "lesson": "" },
+    "en": { "name": "LiDAR Explorer", "lesson": "" }
+  },
+  {
+    "id": "patrol",
+    "mode": "game",
+    "order": 4,
+    "ja": { "name": "Patrol", "lesson": "" },
+    "en": { "name": "Patrol", "lesson": "" }
+  },
+  {
+    "id": "racing",
+    "mode": "game",
+    "order": 5,
+    "ja": { "name": "Racing", "lesson": "" },
+    "en": { "name": "Racing", "lesson": "" }
+  },
+  {
+    "id": "robo_soccer",
+    "mode": "game",
+    "order": 6,
+    "ja": { "name": "Robo Soccer", "lesson": "" },
+    "en": { "name": "Robo Soccer", "lesson": "" }
+  },
+  {
+    "id": "treasure_map",
+    "mode": "game",
+    "order": 7,
+    "ja": { "name": "Treasure Map", "lesson": "" },
+    "en": { "name": "Treasure Map", "lesson": "" }
+  },
+  {
+    "id": "tag_chase",
+    "mode": "game",
+    "order": 8,
+    "ja": { "name": "Tag", "lesson": "" },
+    "en": { "name": "Tag", "lesson": "" }
+  },
+  {
+    "id": "sumo_battle",
+    "mode": "game",
+    "order": 9,
+    "ja": { "name": "Sumo Battle", "lesson": "" },
+    "en": { "name": "Sumo Battle", "lesson": "" }
+  },
+  {
+    "id": "battery_rush",
+    "mode": "game",
+    "order": 10,
+    "ja": { "name": "Battery Rush", "lesson": "" },
+    "en": { "name": "Battery Rush", "lesson": "" }
+  },
+  {
+    "id": "robo_kitchen",
+    "mode": "game",
+    "order": 11,
+    "ja": { "name": "Robo Kitchen", "lesson": "Arm Cooking Challenge" },
+    "en": { "name": "Robo Kitchen", "lesson": "Arm Cooking Challenge" }
+  },
+  {
+    "id": "swarm_rescue",
+    "mode": "game",
+    "order": 12,
+    "ja": { "name": "Swarm Helpers", "lesson": "Multi-Robot Teamwork" },
+    "en": { "name": "Swarm Helpers", "lesson": "Multi-Robot Teamwork" }
+  },
+  {
+    "id": "robo_baseball",
+    "mode": "game",
+    "order": 13,
+    "ja": {
+      "name": "Robo Baseball",
+      "lesson": "Vision tracking — predict the pitch crossing point"
+    },
+    "en": {
+      "name": "Robo Baseball",
+      "lesson": "Vision tracking — predict the pitch crossing point"
+    }
+  },
+  {
+    "id": "robo_tennis",
+    "mode": "game",
+    "order": 14,
+    "ja": {
+      "name": "Robo Tennis",
+      "lesson": "3D ball tracking — position, height and bounce prediction"
+    },
+    "en": {
+      "name": "Robo Tennis",
+      "lesson": "3D ball tracking — position, height and bounce prediction"
+    }
+  },
+  {
+    "id": "pubsub_builder",
+    "mode": "lesson",
+    "order": 15,
+    "ja": { "name": "Pub/Sub Builder", "lesson": "Pub/Sub Basics" },
+    "en": { "name": "Pub/Sub Builder", "lesson": "Pub/Sub Basics" }
+  },
+  {
+    "id": "service_builder",
+    "mode": "lesson",
+    "order": 16,
+    "ja": { "name": "Service Builder", "lesson": "Service Call" },
+    "en": { "name": "Service Builder", "lesson": "Service Call" }
+  },
+  {
+    "id": "action_builder",
+    "mode": "lesson",
+    "order": 17,
+    "ja": { "name": "Action Builder", "lesson": "Action Goal" },
+    "en": { "name": "Action Builder", "lesson": "Action Goal" }
+  },
+  {
+    "id": "param_tuner",
+    "mode": "lesson",
+    "order": 18,
+    "ja": { "name": "Param Tuner", "lesson": "Parameters" },
+    "en": { "name": "Param Tuner", "lesson": "Parameters" }
+  },
+  {
+    "id": "feedforward_controller",
+    "mode": "lesson",
+    "order": 19,
+    "ja": { "name": "Feedforward Controller", "lesson": "Feedforward" },
+    "en": { "name": "Feedforward Controller", "lesson": "Feedforward" }
+  },
+  {
+    "id": "feedforward_mission",
+    "mode": "lesson",
+    "order": 20,
+    "ja": { "name": "Feedforward Mission", "lesson": "Feedforward Mission" },
+    "en": { "name": "Feedforward Mission", "lesson": "Feedforward Mission" }
+  },
+  {
+    "id": "feedback_controller",
+    "mode": "lesson",
+    "order": 21,
+    "ja": { "name": "Feedback Controller", "lesson": "Feedback (odom)" },
+    "en": { "name": "Feedback Controller", "lesson": "Feedback (odom)" }
+  },
+  {
+    "id": "feedback_mission",
+    "mode": "lesson",
+    "order": 22,
+    "ja": { "name": "Feedback Mission", "lesson": "Feedback Mission" },
+    "en": { "name": "Feedback Mission", "lesson": "Feedback Mission" }
+  },
+  {
+    "id": "lidar_avoidance",
+    "mode": "lesson",
+    "order": 23,
+    "ja": { "name": "LiDAR Avoidance", "lesson": "LiDAR Reactive" },
+    "en": { "name": "LiDAR Avoidance", "lesson": "LiDAR Reactive" }
+  },
+  {
+    "id": "tf_puzzle",
+    "mode": "lesson",
+    "order": 24,
+    "ja": { "name": "TF Puzzle", "lesson": "TF Frames" },
+    "en": { "name": "TF Puzzle", "lesson": "TF Frames" }
+  },
+  {
+    "id": "mapping_mission",
+    "mode": "lesson",
+    "order": 25,
+    "ja": { "name": "Mapping Mission", "lesson": "SLAM Teleop" },
+    "en": { "name": "Mapping Mission", "lesson": "SLAM Teleop" }
+  },
+  {
+    "id": "localization_mission",
+    "mode": "lesson",
+    "order": 26,
+    "ja": { "name": "Localization", "lesson": "AMCL / Particle Filter" },
+    "en": { "name": "Localization", "lesson": "AMCL / Particle Filter" }
+  },
+  {
+    "id": "navigation",
+    "mode": "lesson",
+    "order": 27,
+    "ja": { "name": "Navigation", "lesson": "Nav2" },
+    "en": { "name": "Navigation", "lesson": "Nav2" }
+  },
+  {
+    "id": "image_processing",
+    "mode": "lesson",
+    "order": 28,
+    "ja": { "name": "Image Processing", "lesson": "Image Processing" },
+    "en": { "name": "Image Processing", "lesson": "Image Processing" }
+  },
+  {
+    "id": "edge_detection",
+    "mode": "lesson",
+    "order": 29,
+    "ja": { "name": "Edge Detection", "lesson": "Image Processing Mission" },
+    "en": { "name": "Edge Detection", "lesson": "Image Processing Mission" }
+  },
+  {
+    "id": "object_detection",
+    "mode": "lesson",
+    "order": 30,
+    "ja": { "name": "Object Detection", "lesson": "Object Detection" },
+    "en": { "name": "Object Detection", "lesson": "Object Detection" }
+  },
+  {
+    "id": "behavior_tree",
+    "mode": "lesson",
+    "order": 31,
+    "ja": { "name": "Behavior Tree", "lesson": "Behavior Tree" },
+    "en": { "name": "Behavior Tree", "lesson": "Behavior Tree" }
+  },
+  {
+    "id": "joint_teleop",
+    "mode": "lesson",
+    "order": 32,
+    "ja": { "name": "Joint Teleop", "lesson": "JointState (FK)" },
+    "en": { "name": "Joint Teleop", "lesson": "JointState (FK)" }
+  },
+  {
+    "id": "ik_reach",
+    "mode": "lesson",
+    "order": 33,
+    "ja": { "name": "IK Reach", "lesson": "Inverse Kinematics" },
+    "en": { "name": "IK Reach", "lesson": "Inverse Kinematics" }
+  },
+  {
+    "id": "pick_place",
+    "mode": "lesson",
+    "order": 34,
+    "ja": { "name": "Pick & Place", "lesson": "Grasping & Manipulation" },
+    "en": { "name": "Pick & Place", "lesson": "Grasping & Manipulation" }
+  },
+  {
+    "id": "imitation_learning",
+    "mode": "lesson",
+    "order": 35,
+    "ja": {
+      "name": "Imitation Learning Mini Lab",
+      "lesson": "Behavior cloning: imitate demonstrated actions, then evaluate driving"
+    },
+    "en": {
+      "name": "Imitation Learning Mini Lab",
+      "lesson": "Behavior cloning: imitate demonstrated actions, then evaluate driving"
+    }
+  },
+  {
+    "id": "reinforcement_learning",
+    "mode": "lesson",
+    "order": 36,
+    "ja": {
+      "name": "Reinforcement Learning Mini Lab",
+      "lesson": "Q-learning: learn from rewards, then evaluate goal reaching"
+    },
+    "en": {
+      "name": "Reinforcement Learning Mini Lab",
+      "lesson": "Q-learning: learn from rewards, then evaluate goal reaching"
+    }
+  },
+  {
+    "id": "vla_lab",
+    "mode": "lesson",
+    "order": 37,
+    "ja": { "name": "VLA Mini Lab", "lesson": "Vision + Language → Action" },
+    "en": { "name": "VLA Mini Lab", "lesson": "Vision + Language → Action" }
+  },
+  {
+    "id": "world_model",
+    "mode": "lesson",
+    "order": 38,
+    "ja": { "name": "World Model Mini Lab", "lesson": "Use learned predictions to plan an action" },
+    "en": { "name": "World Model Mini Lab", "lesson": "Use learned predictions to plan an action" }
+  }
+]

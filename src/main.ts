@@ -4,15 +4,12 @@
 // Robot System Quest — entry point.
 //
 // Responsibilities here are intentionally narrow: collect every stage via
-// import.meta.glob (each stage file calls defineStage() at module load),
+// generated menu metadata and lazy stage imports,
 // initialize the core modules in the right order, wire the cross-module
 // callbacks, and start the loop. All real logic lives in src/core.
 
-// Auto-discovers stage files. Each `defineStage()` call inside a stage
-// module registers itself with the runtime registry (see core/stage_def.ts),
-// so adding a new file under src/stages/{game,lesson}/ is enough — no edits
-// to this file, modes.ts, or i18n dictionaries needed.
-import "./core/stage_collect";
+// Menu metadata is available immediately; playable modules load on selection.
+import "./core/stage_catalog";
 import { getStages as getRegisteredStages, getStageModes } from "./core/stage_def";
 
 import { ui } from "./core/dom";
@@ -65,6 +62,8 @@ import {
   resetCurrent,
   getCurrentId,
   getStages,
+  isStageReady,
+  whenStageReady,
 } from "./core/stage_manager";
 import { startLoop } from "./core/loop";
 import { sfx } from "./core/audio";
@@ -116,6 +115,7 @@ setupCrash({
 
 /** Show the first-visit lesson popup for the current stage if not yet seen. */
 function openFirstVisitBriefing(): void {
+  if (!isStageReady()) return;
   const id = getCurrentId();
   lessonModal.maybeAutoOpen(id, isGameStage(id), {
     introOpen: isIntroShown(),
@@ -145,17 +145,21 @@ setupIntro({
   // current stage (if not yet seen). Without this, the popup is suppressed
   // because intro was on screen when the stage initially loaded.
   onDismiss: () => {
-    const id = getCurrentId();
-    trackStageStart(id, isGameStage(id) ? "game" : "lesson");
+    const wasReady = isStageReady();
     const menuMode = homeMenuMode;
     homeMenuMode = null;
-    if (!menuMode) {
-      openFirstVisitBriefing();
-      return;
-    }
-    // Do not return focus to the hidden Home card when the menu closes.
-    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-    openMenu(menuMode, { onClose: openFirstVisitBriefing });
+    void whenStageReady().then(() => {
+      if (!isStageReady() || isIntroShown()) return;
+      const id = getCurrentId();
+      if (wasReady) trackStageStart(id, isGameStage(id) ? "game" : "lesson");
+      if (!menuMode) {
+        if (wasReady) openFirstVisitBriefing();
+        return;
+      }
+      // Do not return focus to the hidden Home card when the menu closes.
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      openMenu(menuMode, { onClose: openFirstVisitBriefing });
+    });
   },
 });
 setupIntroRobot();
@@ -163,7 +167,7 @@ setupHelp();
 setupLessonModal(getCurrentId, resetCurrent);
 setupAllClear(() => loadStage("delivery"));
 
-// 5. Stage list — auto-collected from defineStage() manifests.
+// 5. Stage list — generated metadata with lazily loaded implementations.
 const stages: Stage[] = getRegisteredStages();
 setStages(stages);
 renderStageList(stages, getStageModes());
@@ -238,7 +242,7 @@ if (explicitHash) setModeView(isLessonStage(initial) ? "lesson" : "game");
 // Normal visits still open Home. Guide links carry `?direct=stage`, which
 // intentionally skips Home and opens the selected Game/Lesson immediately.
 if (!directStageOpen) showIntro();
-loadStage(initial);
+const initialLoad = loadStage(initial);
 
 // Consume the one-shot direct-open flag. A later reload of the same stage
 // returns to the normal Home-first behavior.
@@ -253,7 +257,11 @@ if (directStageOpen) {
 // did NOT specify a stage in the URL, restore "/" so the intro screen looks
 // like a clean landing page (no surprise hash change).
 if (!explicitHash) {
-  history.replaceState(null, "", location.pathname + location.search);
+  void initialLoad.then(() => {
+    if (getCurrentId() === initial) {
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+  });
 }
 
 // 13. Off we go.

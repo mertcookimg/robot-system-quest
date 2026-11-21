@@ -6,12 +6,12 @@
 // the SVG diagram are declared in the manifest, while the stage's runtime
 // methods come from the existing `make*()` factory passed as `build`.
 //
-// The runtime auto-collects every defineStage() call (see stage_collect.ts)
-// so adding a new stage means creating one file — no edits to main.ts /
-// modes.ts / ja.ts / en.ts.
+// stage_catalog.ts registers lightweight menu handles; each selected module
+// fills its handle when defineStage() runs. stage_collect.ts evaluates all
+// manifests for catalog generation and standalone tests.
 
 import type { Stage } from "../types";
-import { registerLang } from "../i18n";
+import { getLang, registerLang } from "../i18n";
 
 export type Mode = "game" | "lesson";
 
@@ -59,8 +59,10 @@ export interface StageDefinition {
 }
 
 interface StageRecord {
-  def: StageDefinition;
+  def: Pick<StageDefinition, "mode" | "order">;
   stage: Stage;
+  setImplementation?: (stage: Stage) => void;
+  prepare?: () => Promise<void> | undefined;
 }
 
 const records: StageRecord[] = [];
@@ -93,13 +95,89 @@ export function defineStage(def: StageDefinition): StageDefinition {
 
   if (def.diagram) diagrams.set(id, def.diagram);
 
-  records.push({ def, stage });
+  const existing = records.find((record) => record.stage.id === id);
+  if (existing?.setImplementation) {
+    // Keep the generated ordering stable as individual modules arrive.
+    existing.setImplementation(stage);
+  } else {
+    records.push({ def, stage });
+  }
   return def;
+}
+
+/** Lightweight menu data; executable manifests remain the source of truth. */
+export interface StageListing {
+  id: string;
+  mode: Mode;
+  order: number;
+  ja: { name: string; lesson: string };
+  en: { name: string; lesson: string };
+}
+
+/** Register a stable stage handle without evaluating its implementation. */
+export function registerStageLoader(listing: StageListing, load: () => Promise<unknown>): void {
+  let implementation: Stage | undefined;
+  let pending: Promise<void> | undefined;
+  const stage: Stage = {
+    id: listing.id,
+    get name() {
+      return implementation?.name ?? listing[getLang()].name;
+    },
+    get lesson() {
+      return implementation?.lesson ?? listing[getLang()].lesson;
+    },
+    get lessonCmd() {
+      return implementation?.lessonCmd ?? "";
+    },
+    get ros2() {
+      return implementation?.ros2;
+    },
+    init(context) {
+      if (!implementation) throw new Error(`Stage ${listing.id} has not loaded`);
+      implementation.init(context);
+    },
+    update(dt) {
+      implementation?.update(dt);
+    },
+    draw() {
+      implementation?.draw();
+    },
+    reset() {
+      implementation?.reset();
+    },
+    dispose() {
+      implementation?.dispose();
+    },
+  };
+  records.push({
+    def: listing,
+    stage,
+    setImplementation(value) {
+      implementation = value;
+    },
+    prepare() {
+      if (implementation) return;
+      pending ??= load()
+        .then(() => {
+          if (!implementation) throw new Error(`Stage ${listing.id} did not register`);
+        })
+        .catch((error: unknown) => {
+          pending = undefined;
+          throw error;
+        });
+      return pending;
+    },
+  });
+}
+
+/** Already loaded stages and standalone test stages need no asynchronous work. */
+export function prepareStage(stage: Stage): Promise<void> | undefined {
+  return records.find((record) => record.stage === stage)?.prepare?.();
 }
 
 /**
  * All registered stage instances, sorted by mode (game before lesson) then
- * by `order`. Called from main.ts once after stage_collect runs.
+ * by `order`. Both eager registration and lazy catalog handles use this order.
  */
 export function getStages(): Stage[] {
   const modeRank = (m: Mode): number => (m === "game" ? 0 : 1);

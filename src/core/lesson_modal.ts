@@ -151,7 +151,12 @@ export function maybeAutoOpen(
   // timer starts at 0 the moment the player presses START).
   autoOpenedFor = stageId;
   // Slight delay so it does not collide with stage transition animation.
-  setStageTimeout(() => open(stageId), 220);
+  setStageTimeout(() => {
+    // A lazy stage can finish while Home is opening the returning-player menu.
+    // Its onClose callback will offer the briefing after that menu is dismissed.
+    if (document.body.classList.contains("stage-menu-open")) return;
+    open(stageId);
+  }, 220);
 }
 
 export function setupLessonModal(

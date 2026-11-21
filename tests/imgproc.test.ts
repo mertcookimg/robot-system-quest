@@ -3,7 +3,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { f1Score } from "../src/lib/imgproc.ts";
+import { f1Score, gaussianBlur, GAUSSIAN_SIGMA_MAX } from "../src/lib/imgproc.ts";
 
 const W = 10;
 const H = 10;
@@ -51,4 +51,20 @@ test("empty detection or empty target scores zero", () => {
   const empty = new Uint8Array(W * H);
   assert.equal(f1Score(empty, verticalLine(4), W, H), 0);
   assert.equal(f1Score(verticalLine(4), empty, W, H), 0);
+});
+
+test("Gaussian blur bounds extreme sigma before allocating a kernel", () => {
+  const source = new Uint8ClampedArray(W * H);
+  source[55] = 255;
+  const bounded = gaussianBlur(source, W, H, GAUSSIAN_SIGMA_MAX);
+  assert.deepEqual(gaussianBlur(source, W, H, 1000), bounded);
+  assert.deepEqual(gaussianBlur(source, W, H, Number.MAX_VALUE), bounded);
+  assert.deepEqual(gaussianBlur(source, W, H, -1), source);
+  assert.notEqual(gaussianBlur(source, W, H, 0), source);
+});
+
+test("Gaussian blur rejects non-finite sigma before constructing a kernel", () => {
+  for (const sigma of [NaN, Infinity, -Infinity]) {
+    assert.throws(() => gaussianBlur(new Uint8ClampedArray(W * H), W, H, sigma), RangeError);
+  }
 });

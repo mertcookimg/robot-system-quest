@@ -264,6 +264,7 @@ export function makeFeedbackMission(): Stage {
     particles.reset();
     trail.reset();
     elapsed = 0;
+    g.ghost.startRecording();
     bumpFlash = 0;
     cleared = false;
     runtime = program.map(makeRuntime);

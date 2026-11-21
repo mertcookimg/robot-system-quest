@@ -1,12 +1,30 @@
 /* Copyright 2026 Masato Kobayashi */
 /* SPDX-License-Identifier: Apache-2.0 */
 
+.stage-loading-message {
+  position: absolute;
+  inset: 35% 10% auto;
+  color: var(--fg);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.stage-loading-message button {
+  margin-top: 1rem;
+  padding: 0.6rem 1.4rem;
+}
+
 /* === Stage-specific overlay === */
 .stage-overlay {
   position: absolute;
   top: 14px;
   right: 14px;
   display: none;
+}
+
+body.stage-loading .stage-overlay {
+  display: block;
+  inset: 0;
 }
 
 /* While the clear or crash overlay is up, hide the stage-specific panel

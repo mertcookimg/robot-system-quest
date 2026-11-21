@@ -3,9 +3,11 @@
 Each stage has a TypeScript entry point in `src/stages/game/` or `src/stages/lesson/`.
 Keep reusable controls, simulation logic, and learning models in `src/lib/`.
 
-The playable app collects stages with Vite's `import.meta.glob`. Each file's `defineStage()`
-manifest registers its mode, display order, translations, lesson modal, and diagram. The Guide
-uses a separately generated metadata catalog so it does not load playable stages or model weights.
+The playable app reads generated stage listings and uses Vite's lazy `import.meta.glob` to
+load the selected stage. Each file's `defineStage()` manifest registers its mode, display order,
+translations, lesson modal, and diagram when that module loads. Catalog generation and all-stage
+tests use `stage_collect.ts` to import every stage. The Guide reads a separate metadata catalog
+containing descriptions and diagrams without loading playable stages or model weights.
 
 ## Workflow
 
@@ -14,7 +16,7 @@ uses a separately generated metadata catalog so it does not load playable stages
 3. Add Japanese display labels in `src/core/stage_labels.ts`.
 4. Describe the stage's actual simulated ROS graph and publish observable events.
 5. Add Guide explanations, diagrams, and animations appropriate to the stage.
-6. Run `npm run gen:stages` and `npm run gen:guide`, and update affected test expectations.
+6. Run `npm run gen:stages` and `npm run gen:guide` to refresh the README tables and both catalogs, and update affected test expectations.
 7. Verify formatting, tests, the build, and browser controls.
 
 You do not need to add the stage ID to `main.ts`, `core/modes.ts`, or the shared i18n
@@ -292,14 +294,17 @@ systems or hardware.
 ## 5. Integrate the Guide
 
 Run `npm run gen:guide` after editing stage metadata. It evaluates the manifests in Japanese
-and English and writes [`src/guide/stages.generated.json`](../src/guide/stages.generated.json).
-The catalog includes `StageMeta`, mode, derived lesson number, and diagram. `lessonModal`
-belongs to the in-game briefing and is not copied into the Guide catalog.
+and English and writes two catalogs:
+
+- [`src/guide/stages.generated.json`](../src/guide/stages.generated.json) contains `StageMeta`, mode, derived lesson number, and diagram. `lessonModal` belongs to the in-game briefing and is not copied into this catalog.
+- [`src/core/stages.generated.json`](../src/core/stages.generated.json) contains only IDs, modes, ordering, and bilingual names and lesson labels. Runtime menus use it before stage implementations load.
 
 [`src/guide/stages.ts`](../src/guide/stages.ts) exposes the catalog to the Guide. Do not import
 playable stage factories, `stage_collect`, or model weights into Guide code. The Vite build
-checks this dependency boundary. Shared drawing helpers and metadata-only types are suitable
-for Guide animations.
+checks the Guide's entire dependency graph, including dynamic imports. It also checks that
+the playable app's initial static dependencies exclude stage implementations and model weights;
+load stages through `stage_catalog.ts` and the stage manager. Shared drawing helpers and
+metadata-only types are suitable for Guide animations.
 
 | File                                                    | What to add or update                                                                                                    |
 | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
@@ -313,9 +318,10 @@ explain the new activity; an unrelated driving animation is not sufficient for a
 lab. Verify both languages and the direct links: `/?direct=stage#<id>` opens the playable
 stage, and `/guide/?stage=<id>` opens its Guide detail (relative to the app's deployment base).
 
-`npm run dev` regenerates the catalog through `predev`, and `npm run build` regenerates it
+`npm run dev` regenerates both catalogs through `predev`, and `npm run build` regenerates them
 before type-checking and bundling. If the dev server is already running, run `npm run gen:guide`
-again after metadata changes. Do not hand-edit the generated JSON.
+again after metadata changes. `npm run check:guide` verifies both files. Do not hand-edit the
+generated JSON.
 
 ## Input support and responsive controls
 
@@ -406,7 +412,7 @@ Reuse existing modules where they provide the required behavior:
 ## Completion checklist
 
 Use the Node.js version declared in `package.json` and install dependencies with `npm ci`.
-After changing manifests, regenerate both catalogs before running tests:
+After changing manifests, regenerate the README tables and both catalogs before running tests:
 
 ```bash
 npm run gen:stages
@@ -429,7 +435,7 @@ When adding or reordering stages, update catalog-count and numbering expectation
 [`tests/stage_terminal_contracts.test.ts`](../tests/stage_terminal_contracts.test.ts), and
 [`tests/world_completion.test.ts`](../tests/world_completion.test.ts) as appropriate.
 Also update descriptive counts outside the generated README tables. Commit the regenerated
-README tables and Guide JSON together with the stage changes.
+README tables, Guide JSON, and runtime stage-list JSON together with the stage changes.
 
 CI currently runs `npm ci`, `node scripts/audit-check.mjs`, `npm run format:check`, `npm test`,
 and `npm run build`. DOM tests do not validate rendered canvas pixels or
@@ -447,13 +453,17 @@ physical controller drivers, so start `npm run dev` and verify:
 
 | File                                                                | Responsibility                                                     |
 | ------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| [`src/core/stage_collect.ts`](../src/core/stage_collect.ts)         | Eagerly imports playable `src/stages/**/*.ts` modules              |
-| [`src/core/stage_def.ts`](../src/core/stage_def.ts)                 | Registers manifests, translations, diagrams, modes, and ordering   |
+| [`src/core/stage_catalog.ts`](../src/core/stage_catalog.ts)         | Registers lightweight listings and dynamic imports for runtime stage loading |
+| [`src/core/stages.generated.json`](../src/core/stages.generated.json) | Supplies IDs, modes, ordering, and bilingual names and lesson labels for menus |
+| [`src/core/stage_collect.ts`](../src/core/stage_collect.ts)         | Eagerly imports all playable modules for catalog generation and tests |
+| [`src/core/stage_def.ts`](../src/core/stage_def.ts)                 | Registers stage loaders and loaded manifests, translations, and diagrams |
 | [`src/core/modes.ts`](../src/core/modes.ts)                         | Builds the runtime Game / Lesson lists                             |
 | [`scripts/gen-stage-list.mjs`](../scripts/gen-stage-list.mjs)       | Validates IDs/orders and generates the README stage tables         |
-| [`scripts/gen-guide-catalog.mjs`](../scripts/gen-guide-catalog.mjs) | Evaluates manifests in both languages and generates Guide metadata |
+| [`scripts/gen-guide-catalog.mjs`](../scripts/gen-guide-catalog.mjs) | Evaluates manifests in both languages and generates both JSON catalogs |
 | [`src/guide/stages.ts`](../src/guide/stages.ts)                     | Reads the generated catalog without loading playable stages        |
 
 If a stage is missing from the playable app, check its `defineStage()` export, `mode`,
-`order`, and filename/ID match. If it is missing or stale only in the Guide, regenerate
-the Guide catalog and verify the entry in `stages.generated.json`.
+`order`, and filename/ID match. Run `npm run gen:guide` and verify its listing in
+`src/core/stages.generated.json`. For missing or stale Guide content, verify the corresponding
+entry in `src/guide/stages.generated.json`. Neither runtime entry point should import
+`stage_collect.ts`; keep its eager imports in catalog generation and tests.
