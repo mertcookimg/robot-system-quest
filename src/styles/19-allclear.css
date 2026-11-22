@@ -13,11 +13,13 @@
   background: rgba(var(--backdrop-rgb), 0.28);
   backdrop-filter: blur(12px);
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   transition: opacity 0.5s;
 }
 .allclear-screen.show {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
 }
 

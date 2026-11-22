@@ -562,9 +562,10 @@ export function makeBtEditor(): Stage {
       const stats =
         `Time      <b>${elapsed.toFixed(2)} s</b><br>` +
         `Rules     <b>${rules.filter((r) => r.cond && r.action).length} / ${RULE_COUNT}</b>`;
+      const timeSeconds = elapsed;
       g.setTimeout(() => {
         g.sfx.clear();
-        g.showClear(stars, stats);
+        g.showClear(stars, stats, { timeSeconds });
       }, 700);
       return;
     }
@@ -945,8 +946,8 @@ export default defineStage({
       en: "Nav2 combines BehaviorTree.CPP Control, Action, and Condition nodes to express decisions. This stage labels a priority branch as Selector—the equivalent of a BehaviorTree.CPP Fallback—and evaluates four condition→action rules plus a default from top to bottom.",
     },
     goal: {
-      ja: "ルールを並べ、ロボットがスタートからゴールまで衝突せずに到達できるPolicyを組み立てましょう。`at_goal → stop`を入れておくと到達後に停止するため、Selectorの優先順位の意味も体感できます。",
-      en: "Build a rule list that drives the robot from start to goal without crashing. Adding `at_goal → stop` is a good way to feel the Selector priority — the robot halts right when it arrives instead of orbiting the goal.",
+      ja: "ルールを並べ、スタートからゴールまで衝突せずに進めるPolicyを組み立てましょう。障害物回避とゴール方向のルールの順序を変え、同時に条件を満たすときにどちらが選ばれるか比べてください。ゴール到達時はルールに関係なく自動でクリアして停止します。",
+      en: "Build a rule list that reaches the goal without crashing. Swap obstacle-avoidance and goal-direction rules to see which wins when both conditions match. Reaching the goal automatically clears and stops the stage, regardless of the rules.",
     },
     first: {
       ja: "RULE 1を`at_goal → stop`、RULE 2を`obstacle_close → turn_right`、defaultを`forward`に設定してみましょう。RUNを押すとBehavior Treeが動き始めます。",
@@ -957,20 +958,20 @@ export default defineStage({
     ja: {
       "status.idle": "ルールを組んでRUN — 上から評価し、最初に当てはまるルールを実行",
       "status.running": "Behavior Tree実行中 — 黄色のハイライトが現在のルール",
-      "status.stopped": "停止 — RUNで再開、RESETで位置をリセット",
+      "status.stopped": "停止 — RUNでスタート位置から再実行",
       "status.crash": "衝突 — ルールを修正して再度RUN",
       "status.success": "GOAL到達 — Behavior TreeによるPolicyが完成",
       "status.no_rules": "× ルールが空です — cond/actionを少なくとも1つ設定してください",
-      hint: "RULEは上から優先的に評価されます。`at_goal → stop`を入れると到達時に停止します",
+      hint: "RULEは上から評価し、最初に当てはまる行動を実行。GOAL到達で自動クリア",
     },
     en: {
       "status.idle": "Build rules then press RUN — evaluated top-down, first match wins",
       "status.running": "BT running — the yellow highlight shows the active rule",
-      "status.stopped": "Stopped — press RUN to resume, RESET to start over",
+      "status.stopped": "Stopped — RUN starts a new attempt from the starting position",
       "status.crash": "Crashed — fix the rules and run again",
       "status.success": "Reached GOAL — BT policy works!",
       "status.no_rules": "× rules are empty — set at least one cond/action pair",
-      hint: "Rules are evaluated top-down. Add `at_goal → stop` to halt right at the goal",
+      hint: "Rules run top-down; the first match selects the action. Reaching GOAL clears automatically",
     },
   },
   build: makeBtEditor,

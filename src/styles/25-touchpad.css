@@ -283,3 +283,93 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* A short display cannot stack the scene and a three-row pad. Keep both in
+   one following row, with the parameter panels and text reader below it. */
+.touch-play-row {
+  position: sticky;
+  top: var(--scene-sticky-top);
+  z-index: 30;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: center;
+  gap: 10px;
+  width: min(800px, 100%);
+  min-width: 0;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+.touch-play-row > .canvas-wrap {
+  position: relative;
+  top: auto;
+  z-index: auto;
+}
+.touch-play-row > .touchpad {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+}
+.touch-play-row .touchpad-toolbar {
+  justify-content: center;
+  padding: 0 0 6px;
+}
+.touch-play-row .touchpad-title {
+  display: none;
+}
+.touch-play-row .touchpad-switcher {
+  padding: 2px;
+}
+.touch-play-row .touchpad-switcher button {
+  min-height: 44px;
+}
+.touch-play-row .touchpad-controls {
+  min-height: 140px;
+  gap: 8px;
+  padding: 0;
+}
+.touch-play-row .touch-move-zone {
+  width: 140px;
+  height: 140px;
+  flex-basis: 140px;
+}
+.touch-play-row .touch-dpad {
+  grid-template: repeat(3, 44px) / repeat(3, 44px);
+}
+.touch-play-row .touch-joystick {
+  width: 136px;
+  height: 136px;
+  margin: 2px;
+}
+.touch-play-row .touch-joystick-knob {
+  width: 56px;
+  height: 56px;
+  margin: -28px;
+}
+.touch-play-row .touch-actions {
+  grid-template: repeat(2, 52px) / repeat(2, 52px);
+  gap: 6px;
+}
+.touch-play-row .touchpad[data-stage="joint_teleop"] .touchpad-toolbar {
+  display: none;
+}
+.touch-play-row .touch-joint-zone {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.touch-play-row .touch-joint-group {
+  gap: 6px;
+  padding: 6px;
+  grid-template-columns: repeat(2, minmax(44px, 1fr));
+}
+.touch-play-row .touch-joint-button {
+  min-height: 52px;
+}
+.touch-play-row .touch-joint-utility {
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.touch-play-row .touch-joint-precision,
+.touch-play-row .touch-joint-reset {
+  min-height: 44px;
+}

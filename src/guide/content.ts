@@ -34,20 +34,20 @@ const CARD_PREVIEW: Record<string, CardPreview> = {
   robo_baseball: { icon: "⚾", action: "投球を追跡し、照準とタイミングを合わせて打つ" },
   robo_tennis: { icon: "🎾", action: "ボールの高さと着地点を読み、ラリーを続ける" },
   pubsub_builder: { icon: "⇄", action: "PublisherとSubscriberを接続する" },
-  service_builder: { icon: "↔", action: "接続してServiceを1回呼び出す" },
+  service_builder: { icon: "↔", action: "接続してCALLを繰り返し、GOALまで進める" },
   tf_puzzle: { icon: "⌗", action: "センサーの位置と向きを調整し、壁に点群を合わせる" },
   feedforward_controller: { icon: "△", action: "速度と時間を計算して正三角形を描く" },
-  feedforward_mission: { icon: "┄", action: "計算した指令だけで目標位置に止める" },
+  feedforward_mission: { icon: "┄", action: "速度と時間を組み合わせ、壁を避けてGOALへ進む" },
   feedback_controller: { icon: "△", action: "距離と角度を測って同じ正三角形を描く" },
   feedback_mission: { icon: "⌖", action: "Odometryで距離と角度を測って目標へ進む" },
-  lidar_avoidance: { icon: "⌁", action: "距離データから障害物の少ない方向を選ぶ" },
+  lidar_avoidance: { icon: "⌁", action: "前方・右・左の距離から前進・旋回・停止を選ぶ" },
   param_tuner: { icon: "☷", action: "Parameterを変えて動きを調整する" },
   mapping_mission: { icon: "▦", action: "走行しながら部屋の地図を完成させる" },
   localization_mission: { icon: "⁙", action: "粒子を収束させて現在位置を見つける" },
   navigation: { icon: "⚑", action: "Goalを指定して経路を計画・走行する" },
   image_processing: { icon: "▧", action: "ノイズを減らして、必要な輪郭を見つける" },
-  edge_detection: { icon: "◫", action: "画像から物体の輪郭を取り出す" },
-  object_detection: { icon: "▣", action: "画像に映った物体を検出する" },
+  edge_detection: { icon: "◫", action: "走行しながら輪郭を調整し、5色の対象を捕捉する" },
+  object_detection: { icon: "▣", action: "模擬検出器の信頼度を調整し、対象を捕捉する" },
   joint_teleop: { icon: "⌇", action: "関節角を操作してアームを動かす" },
   ik_reach: { icon: "✣", action: "手先目標から必要な関節角を求める" },
   pick_place: { icon: "♢", action: "物体をつかんで指定場所へ運ぶ" },
@@ -103,7 +103,7 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
       "Real robots are collections of nodes. Managing components independently makes failures easier to isolate and recover from.",
   },
   racing: {
-    action: "Steer around the course and complete three laps",
+    action: "Pass CP1→CP2→CP3 on every lap and finish three laps; in 1P, rank determines the stars",
     goal: "Connect path tracking, odometry, and velocity control",
     observe:
       "Compare your manual steering and boost use with the opponents' automatic waypoint following",
@@ -134,7 +134,7 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
     goal: "Use live Pose updates from multiple robots",
     observe: "Watch how prediction changes the chosen escape direction",
     exercise:
-      "Compare reacting to current position only with reacting to both position and velocity.",
+      "Change direction around obstacles to make the chasers detour and preserve your distance. Compare watching their current position with also anticipating their movement.",
     insight:
       "For moving targets, predicting the near future is often more useful than responding only to the latest measurement.",
   },
@@ -148,7 +148,8 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
       "Even simple behavior becomes easier to test and tune when states and priorities are explicit.",
   },
   battery_rush: {
-    action: "Deliver parcels while returning to the charging dock before the battery runs out",
+    action:
+      "Deliver parcels and manually drive back to the charging dock before the battery runs out",
     goal: "Use BatteryState as a planning constraint",
     observe: "Compare estimated travel cost with remaining energy",
     exercise:
@@ -205,17 +206,22 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
     steps: [
       "Find the /cmd_vel output and input ports",
       "Connect the ports with the same Topic name and message type",
-      "Watch the robot move and inspect the /cmd_vel log",
+      "Watch automatic motion begin after connecting and inspect the /cmd_vel log",
     ],
     insight:
       "Pub/Sub is loosely coupled, so logging, visualization, and control nodes can be added without changing the Publisher.",
   },
   service_builder: {
-    action: "Connect a Service Client and Server, then make one explicit call",
+    action: "Connect a Service Client and Server, then repeat CALL to reach GOAL",
     goal: "Distinguish Service Client and Server responsibilities",
     observe: "Follow one request from the Client through processing to its response",
     exercise:
       "Choose whether motor stop, temperature readings, and camera frames belong on a Service or Topic, and explain each choice.",
+    steps: [
+      "Connect the Client and Server ports with a matching service name and srv type",
+      "Press CALL to send one request, receive its response, and advance one step",
+      "Repeat CALL until the robot reaches GOAL; eight calls complete this lesson",
+    ],
     insight:
       "Use Topics for streams, Services for short request/response operations, and Actions for long-running goals.",
   },
@@ -246,16 +252,22 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
       "Open-loop motion is simple, but every side depends on the accuracy of the speed-and-time model.",
   },
   feedforward_mission: {
-    action: "Stop at the target using only precomputed commands",
-    goal: "Use the relationship among distance, speed, and time",
-    observe: "Compare commanded motion with the final measured distance",
-    exercise: "Reach the same distance at several speeds and record how stopping error changes.",
+    action: "Plan timed forward moves and turns to avoid walls and reach GOAL",
+    goal: "Use speed and duration to plan straight segments and turns",
+    observe: "Watch each timed command advance the robot along the planned route",
+    exercise:
+      "Change the speed of one straight segment and recalculate its duration to keep the same distance. Compare the route and whether the robot still avoids the walls.",
+    steps: [
+      "Plan straight segments and turns around the walls",
+      "Set linear, angular, and duration in each cmd_vel block, then RUN",
+      "Adjust the sequence until the robot enters the GOAL area without a collision",
+    ],
     insight:
-      "Experimental results can improve the model; model identification is part of better control.",
+      "This lesson uses ideal motion without added disturbances. A physical robot may deviate because of model error or disturbances; a timed open-loop sequence does not correct those errors from measured pose.",
   },
   feedback_controller: {
     action: "Draw the same triangle from measured distance and angle",
-    goal: "Stop each 1.4 m side and 120° turn using /odom",
+    goal: "Stop each 1.4 m side and 120° turn using /robot/odometry/odometry",
     observe: "Watch measurement, rather than elapsed time, advance each block",
     exercise:
       "Change velocity without changing distance and confirm that the triangle still closes.",
@@ -271,18 +283,28 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
       "This lesson adds no disturbance. It demonstrates simple position feedback by using motion estimated from odometry to decide when each command ends.",
   },
   lidar_avoidance: {
-    action: "Choose a direction with more clearance from LiDAR ranges",
-    goal: "Turn LaserScan sectors into a reactive obstacle-avoidance decision",
-    observe: "Watch the command switch between forward motion and turning",
+    action: "Use front, right, and left LiDAR ranges to choose forward, turn, or stop",
+    goal: "Turn LaserScan sectors from /robot/lidar/scan into a reactive obstacle-avoidance decision",
+    observe: "Watch the command follow the front → right → left checks, or stop",
     exercise: "Find a distance threshold that can pass narrow gaps while reducing collision risk.",
+    steps: [
+      "Drive forward when front > threshold",
+      "Otherwise turn left if right < threshold, or turn right if left < threshold; the left turn has priority when both sides are close",
+      "Stop if none of these conditions applies; front exactly at the threshold proceeds to the side checks",
+    ],
     insight:
       "A distance threshold changes both collision risk and reachable space. Increasing it with speed can reduce risk, but does not by itself guarantee safety.",
   },
   param_tuner: {
-    action: "Tune robot behavior by changing Parameters",
+    action: "Tune robot behavior by editing the drive_params block",
     goal: "Explain how Parameters differ from Topics",
-    observe: "Watch a runtime parameter event change the controller immediately",
+    observe: "Watch block edits change the running controller and appear on /parameter_events",
     exercise: "Change one value at a time and record each result before choosing the best setting.",
+    steps: [
+      "RUN the drive_params block with its default values",
+      "Edit one value in the block while the robot is driving",
+      "Observe the motion and /parameter_events; the conceptual terminal is read-only",
+    ],
     insight:
       "Good tuning is an experiment. If several values change at once, you lose the evidence needed to explain the result.",
   },
@@ -310,12 +332,12 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
     exercise:
       "Reset before each run and send the same goal position with a different heading. Observe the same planned path followed by a different final rotation.",
     steps: [
-      "Click and drag to publish a position and heading on /goal_pose",
+      "Set position with the mouse, arrows, or left stick/D-pad; drag, hold Enter/Space + arrows, or hold A + stick/D-pad to choose heading, then release to send /goal_pose (Esc/B cancels the cursor drag)",
       "Inspect the A* path on /plan and the driving commands on /cmd_vel",
       "Reach five goals requiring movement or rotation; an already-satisfied goal does not count again",
     ],
     insight:
-      "This lesson plans a path when you send a goal, then updates the velocity command while following it. The goal heading controls the final in-place rotation. Full navigation systems can also replan as obstacles or pose estimates change.",
+      "This lesson plans with A* and follows a lookahead point using heading-error control. The goal heading controls the final in-place rotation. Full navigation systems can also replan as obstacles or pose estimates change.",
   },
   image_processing: {
     action: "Reduce camera noise, then find useful edges",
@@ -327,19 +349,41 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
       "Cleaning the image first makes the features needed by later perception stages easier to detect.",
   },
   edge_detection: {
-    action: "Extract object contours from the image",
-    goal: "Understand an edge as a sharp change between neighboring pixels",
-    observe: "Watch low and high thresholds trade missed edges for false edges",
+    action: "Tune blur and Canny while driving, capture all five targets and reach GOAL",
+    goal: "Relate camera viewpoint and processing parameters to successful edge capture",
+    observe: "Watch sigma and the low/high thresholds change the live edge image",
+    goals: [
+      "Understand an edge as a sharp change between neighboring pixels",
+      "Compare Gaussian blur and Canny settings while changing viewpoint",
+      "Capture all five coloured targets before reaching GOAL",
+    ],
+    steps: [
+      "Drive with WASD / arrows and frame a target in the camera",
+      "Edit blur sigma and canny low / high in the block fields; gamepad Y switches DRIVE / TUNE",
+      "Check each target's capture indicator, then drive to GOAL after collecting all five",
+    ],
     exercise:
-      "Adjust both thresholds and find a balance that preserves objects without preserving noise.",
-    insight: "Well-designed preprocessing makes downstream perception simpler and more stable.",
+      "Hold the viewpoint steady and adjust sigma, then low / high. Find settings that preserve the target's contour without filling its interior with noise. Then change distance and angle and compare capture results.",
+    insight:
+      "This lesson edits processing blocks rather than wiring ROS nodes. On a real robot, camera and preprocessing nodes can exchange images through Topics. Useful preprocessing preserves features needed by later perception stages.",
   },
   object_detection: {
-    action: "Detect and label objects in the camera image",
-    goal: "Trace the path from image input to a labeled bounding box",
-    observe: "Watch confidence filtering remove uncertain detections",
+    action: "Tune a simulated detector, capture every target and reach GOAL",
+    goal: "Interpret bounding boxes, classes and confidence scores as detector outputs",
+    observe:
+      "Watch synthetic detections change with model size, viewpoint and confidence filtering; this lesson does not run image inference",
+    goals: [
+      "Read the class, bounding box and confidence of a simulated detection",
+      "Compare confidence filtering, missed targets and false positives",
+      "Capture all targets and inspect /obj_detection/objects",
+    ],
+    steps: [
+      "Set the detect model and confidence_filter threshold, then press RUN",
+      "Drive to frame each target and inspect the generated detections",
+      "Capture every target and drive to GOAL; removing every false positive is not required to clear",
+    ],
     exercise:
-      "Change the confidence threshold and record how false positives and missed objects change.",
+      "Keep the viewpoint fixed and change the confidence threshold. Compare retained detections and missed targets. The class, box, confidence, false positives and latency are simulated from known object positions and model settings, rather than inferred from image pixels.",
     insight:
       "A detector output is an estimate, not guaranteed ground truth. Its confidence score is not necessarily a calibrated probability, so behavior logic must account for false positives and missed detections.",
   },
@@ -357,17 +401,29 @@ const ENGLISH_GUIDE: Record<string, EnglishGuideSeed> = {
     goal: "Explain the difference between forward and inverse kinematics",
     observe: "Watch multiple elbow configurations reach the same target",
     exercise:
-      "Compare elbow-up and elbow-down solutions, including clearance from nearby obstacles.",
+      "Switch between elbow-up and elbow-down at the same target. Move the cursor beyond the workspace and near full extension, then compare the tip position, joint limits and manip indicator. If you have a Joint Teleop record, compare completion times in the results.",
     insight:
-      "A mathematically reachable pose can still violate joint limits or collide with the environment.",
+      "This lesson models workspace and joint limits; it has no obstacles or collision task. The manip indicator is |sin(q2)| and approaches zero near a straight arm. A real robot also needs collision checking when selecting an IK solution.",
   },
   pick_place: {
-    action: "Grasp an object and move it to the target zone",
-    goal: "Break Pick & Place into safe, testable stages",
-    observe: "Trace object pose, pre-grasp pose, grasp, lift, and placement",
-    exercise: "Compare side and top approaches and record which is more reliable for each object.",
+    action: "Grasp six conveyor parcels and release each at its matching dock",
+    goal: "Coordinate tip position, grasp timing and release in this 2D sorting task",
+    observe:
+      "Watch the parcel letter and colour, gripper state and two-second penalties for escaped parcels or wrong drops",
+    goals: [
+      "Break sorting into approaching, grasping, carrying and releasing",
+      "Match each parcel's letter and colour to dock A, B or C",
+      "Adjust timing to avoid escaped parcels and wrong drops",
+    ],
+    steps: [
+      "Move the tip onto a parcel with the mouse or arrows",
+      "Click, press Enter or use gamepad A to grasp; move to the matching dock",
+      "Press again to release inside the dock and repeat until six parcels are sorted",
+    ],
+    exercise:
+      "Compare grabbing early on the conveyor with grabbing later. Inspect where the tip is when you release and how escaped parcels or wrong drops affect the final time (+2 seconds each).",
     insight:
-      "Pre-grasp and retreat poses make manipulation safer and more repeatable than moving directly to the grasp point.",
+      "This lesson uses known parcel locations and distance-based grasp/release in 2D. Real robots additionally need perception, TF transforms, approach/lift/retreat poses and collision-aware planning; those are extensions, not controls or success tests in this task.",
   },
   action_builder: {
     action: "Connect an Action and trace its Goal, Feedback and Result",
@@ -482,7 +538,7 @@ const COPY: Record<string, GuideCopy> = {
   },
   racing: {
     overview:
-      "自分で操縦とブーストを使い、コースを3周します。自動制御の対戦相手は経由点を追従します。手動の走行とAIの経路追従を見比べながら、速さとコースを外れずに曲がることの両立を体験します。",
+      "自分で操縦とブーストを使い、各周でCP1→CP2→CP3を順に通過して3周します。1Pは完走でクリアし、1位で★3、2位で★2、3位で★1です。自動制御の対戦相手は経由点を追従します。手動の走行とAIの経路追従を見比べましょう。",
     goals: [
       "PathとOdometryの関係を理解する",
       "速度と旋回安定性のトレードオフを知る",
@@ -545,7 +601,8 @@ const COPY: Record<string, GuideCopy> = {
       "接近方向と逃げられる空間を評価する",
       "次の安全位置へ速度指令を出す",
     ],
-    exercise: "現在位置だけを見る方法と、相手の速度も考慮する方法で生存時間を比較しましょう。",
+    exercise:
+      "障害物の周りで進行方向を変え、追跡者を迂回させて距離を確保しましょう。現在位置だけを見る方法と、相手の動きも予測する方法で生存時間を比較しましょう。",
     insight: "動く対象への対応では、現在の観測だけでなく少し先の状態を予測することが有効です。",
   },
   sumo_battle: {
@@ -567,7 +624,7 @@ const COPY: Record<string, GuideCopy> = {
   },
   battery_rush: {
     overview:
-      "荷物の配達と、1か所のドックでの充電を両立するミッションです。残量と移動距離を見て、いつ配達を続け、いつドックへ戻るかを自分で判断します。",
+      "荷物の配達と、1か所のドックでの充電を両立するミッションです。/robot/battery_stateとHUDで残量を確認し、いつ配達を続け、いつドックへ戻るかを自分で判断・操縦します。25%未満で警告が出ますが、自動帰還はしません。",
     goals: [
       "BatteryStateを行動判断へ利用する",
       "距離と消費量から余裕を見積もる",
@@ -628,7 +685,7 @@ const COPY: Record<string, GuideCopy> = {
     steps: [
       "/cmd_velの出力ポートと入力ポートを見つける",
       "Topic名とMessage型が同じポート同士を接続する",
-      "ロボットの動きと/cmd_velのログを確認する",
+      "接続後の自動走行と/cmd_velのログを確認する",
     ],
     exercise:
       "Publisherの出力をSubscriberの入力へ接続し、/cmd_velのログを見ましょう。接続する前にロボットが動かなかった理由を説明してみましょう。",
@@ -636,16 +693,16 @@ const COPY: Record<string, GuideCopy> = {
   },
   service_builder: {
     overview:
-      "Requestを送りResponseを受け取るService通信を組み立てます。連続的に流れるTopicと異なり、短時間で完了する単発の問い合わせや操作に適しています。接続しただけでは実行されず、CALLを押すたびに一組のRequest/Responseが発生します。",
+      "Requestを送りResponseを受け取るService通信を組み立てます。接続しただけでは実行されず、CALLを押すたびに一組のRequest/Responseが発生してロボットが1段階進みます。CALLを繰り返してGOALに到達するとクリアです。",
     goals: [
       "Service ClientとServerの役割を区別する",
       "Request/Response型を理解する",
       "TopicとServiceの選択基準を説明する",
     ],
     steps: [
-      "Clientが型に沿ったRequestを作る",
-      "Serverが要求を処理する",
-      "CALLを実行し、対応するResponseを1回受け取る",
+      "Service名とsrv型が一致するClientとServerのポートを接続する",
+      "CALLでRequestを送り、Responseと1段階の前進を確認する",
+      "GOALまでCALLを繰り返す（このLessonでは8回で到達）",
     ],
     exercise:
       "モーター停止、現在温度、カメラ画像のうちServiceに適するものを理由とともに選びましょう。",
@@ -687,23 +744,25 @@ const COPY: Record<string, GuideCopy> = {
   },
   feedforward_mission: {
     overview:
-      "フィードフォワード制御だけで指定距離への停止に挑戦します。速度と時間の積で距離を作り、観測による修正がない制御の強みと限界を体験します。",
+      "速度と時間を決めた直進・旋回のブロックを並べ、壁を避けてGOAL領域を目指します。各ブロックは指定時間で終了し、測定した位置に応じて指令を修正することはありません。",
     goals: [
-      "距離・速度・時間の関係を使う",
-      "指令値と実際の移動量を比較する",
-      "再現性と外乱の影響を評価する",
+      "速度と時間から直進距離・旋回角度を計算する",
+      "壁を避ける動作の順序を組み立てる",
+      "時間で動作を終える開ループ制御を理解する",
     ],
     steps: [
-      "目標距離から走行時間を計算する",
-      "一定速度を指定時間だけ出力する",
-      "停止後の誤差を測定する",
+      "壁を避ける直進区間と旋回を考える",
+      "cmd_velブロックのlinear・angular・durationを設定してRUNする",
+      "衝突せずGOAL領域へ入るように順序と数値を調整する",
     ],
-    exercise: "異なる速度で同じ距離を狙い、停止誤差が速度にどう依存するか記録しましょう。",
-    insight: "実験結果を使ってモデルを補正することも、制御系を改善する重要な方法です。",
+    exercise:
+      "一つの直進区間の速度を変え、同じ距離を進むようにdurationを計算し直しましょう。経路と壁を避けられるかどうかを比較します。",
+    insight:
+      "このLessonは外乱のない理想的な動きを使います。実機ではモデルの誤差や外乱でずれることがあり、時間だけで動く開ループ制御は測定結果からそのずれを修正しません。",
   },
   feedback_controller: {
     overview:
-      "Feedforward Controllerと同じ正三角形を、今度はOdometryが推定した移動距離と回転角を使って描きます。時間ではなく、各目標へ到達したと推定されたかどうかで停止する閉ループ制御です。",
+      "Feedforward Controllerと同じ正三角形を、今度はOdometry（/robot/odometry/odometry）から推定した移動距離と回転角を使って描きます。時間ではなく、各目標へ到達したと推定されたかどうかで停止する閉ループ制御です。",
     goals: [
       "Odometryから推定移動量を読む",
       "1.4mと120°を停止条件にする",
@@ -738,16 +797,16 @@ const COPY: Record<string, GuideCopy> = {
   },
   lidar_avoidance: {
     overview:
-      "LaserScanを購読し、前方の障害物を検知して進行方向を変えます。センサー入力から判断、速度出力までを短い周期で繰り返すリアクティブ制御です。",
+      "/robot/lidar/scanのLaserScanを購読し、前方の障害物を検知して進行方向を変えます。センサー入力から判断、速度出力までを短い周期で繰り返すリアクティブ制御です。",
     goals: [
       "LaserScanから必要な角度範囲を抽出する",
       "閾値を使った障害物回避判定を設計する",
       "Callbackと制御周期の関係を理解する",
     ],
     steps: [
-      "前方と左右の距離を集約する",
-      "距離閾値を下回った方向を判定する",
-      "空いている方向へ旋回指令を出す",
+      "前方の最小距離がthresholdより大きければ前進する",
+      "それ以外は、右がthreshold未満なら左旋回、次に左がthreshold未満なら右旋回する（左右とも近ければ左旋回を優先）",
+      "どれにも当てはまらなければ停止する。前方が閾値と同じ場合も左右の条件へ進む",
     ],
     exercise: "狭い通路を通れる距離閾値と、衝突リスクを抑える距離閾値の違いを探しましょう。",
     insight:
@@ -755,16 +814,16 @@ const COPY: Record<string, GuideCopy> = {
   },
   param_tuner: {
     overview:
-      "実行中のノードのParameterを変更し、ロボットの振る舞いを調整します。コードを書き換えずに速度、ゲイン、閾値を変更できるため、実験と調整を素早く繰り返せます。",
+      "drive_paramsブロックの値を編集し、走行中の速度・旋回ゲイン・加速度を調整します。実機のros2 param setによる実行時変更を模した操作で、変更内容は/parameter_eventsに記録されます。概念端末は観察用で、値の変更はブロックから行います。",
     goals: [
       "ParameterとTopicの違いを説明する",
       "実行時変更が制御へ反映される流れを知る",
       "複数の値を比較して調整する",
     ],
     steps: [
-      "現在のParameter値を取得する",
-      "新しい値をset_parametersへ送る",
-      "Parameter Eventと挙動の変化を確認する",
+      "drive_paramsブロックの初期値でRUNする",
+      "走行中にブロックの値を一つ変更する",
+      "動きと/parameter_eventsの変化を確認する",
     ],
     exercise: "一度に一つの値だけを変更し、結果を表に記録して最適値を探しましょう。",
     insight:
@@ -805,14 +864,14 @@ const COPY: Record<string, GuideCopy> = {
   },
   navigation: {
     overview:
-      "地図上で指定したGoal Poseまで、自動で経路を計画して走行します。Nav2のGlobal Planner、Local Controller、速度指令という基本パイプラインを小さく再現しています。",
+      "地図上で指定したGoal Poseまで、自動で経路を計画して走行します。A*による経路計画と、先読み点への向きの誤差を使う簡易経路追従で、Nav2のGlobal Planner・Local Controller・速度指令の役割を体験します。",
     goals: [
       "Goal PoseとPathの違いを理解する",
       "Global PlanとLocal Controlを区別する",
       "Actionが長時間処理に適する理由を知る",
     ],
     steps: [
-      "クリックとドラッグで位置・向きを/goal_poseへ送る",
+      "マウスでドラッグ、矢印で位置を決めてEnter／Spaceを押しながら矢印、または左スティック／十字で位置を決めてAを押しながら向きを指定し、離して/goal_poseへ送る（カーソルでの向き指定中はEsc／Bで取消）",
       "A*の経路/planと、走行中の速度指令/cmd_velを観察する",
       "移動か回転が必要なゴールを5回達成する（すでに満たしているゴールは加算なし）",
     ],
@@ -841,34 +900,37 @@ const COPY: Record<string, GuideCopy> = {
   },
   edge_detection: {
     overview:
-      "画像の明るさが急に変化する場所を取り出し、物体の輪郭を検出します。処理前後の画像をTopicでつなぎ、画像処理パイプラインを構築します。",
+      "遠隔操作で走行しながら、疑似カメラ画像にgaussian_blurとcannyを適用します。ブロックの数値を調整して5色のターゲットの輪郭を捕捉し、すべて集めてGOALへ向かいます。このLessonで編集するのは処理ブロックと数値で、Topicの配線ではありません。",
     goals: [
       "エッジが画素の変化量であることを理解する",
-      "Cannyの閾値と検出結果を対応させる",
-      "画像処理を複数ノードへ分割する",
+      "ぼかし・Cannyの閾値・カメラの視点と検出結果を対応させる",
+      "5色のターゲットを捕捉してGOALへ到達する",
     ],
     steps: [
-      "カラー画像をグレースケールへ変換する",
-      "近傍画素の勾配を計算する",
-      "閾値を超えた輪郭をImageとして出力する",
+      "WASD / 矢印キーで走行し、カメラにターゲットを収める",
+      "ブロックの数値欄でblurのsigmaとcannyのlow / highを調整する（ゲームパッドはYでDRIVE / TUNE切り替え）",
+      "捕捉の表示を確認し、5色すべてを集めてGOALへ進む",
     ],
-    exercise: "低い閾値と高い閾値を調整し、ノイズと必要な輪郭のバランスを探しましょう。",
-    insight: "認識前の前処理を適切に設計すると、後段アルゴリズムを単純かつ安定にできます。",
+    exercise:
+      "視点を固定してsigma、次にlow / highを変え、対象の輪郭を残しながら内部のノイズを減らしましょう。その後、距離や角度を変えて捕捉のしやすさを比べてください。",
+    insight:
+      "このLessonでは処理ブロックを編集します。実機ではカメラや前処理を別ノードに分け、画像をTopicで受け渡す構成にもできます。後段が必要とする特徴を残す前処理が大切です。",
   },
   object_detection: {
     overview:
-      "カメラ画像から物体の種類と位置を検出し、検出結果をロボットが利用できる情報に変換します。画像、推論結果、可視化画像を別Topicとして扱う構成を学びます。",
+      "検出器の出力を模したシミュレーションで、Bounding Box・クラス・信頼度の読み方を学びます。実際の画像推論は行わず、既知の物体位置から検出結果と誤検出を生成し、処理時間も模擬します。modelとthresholdを調整して全ターゲットを捕捉し、GOALへ到達しましょう。",
     goals: [
-      "画像入力からBounding Boxまでの流れを理解する",
-      "信頼度による検出選別を行う",
-      "認識結果を行動ノードへ渡す方法を知る",
+      "模擬検出結果のクラス・Bounding Box・信頼度を読む",
+      "信頼度による選別と、見逃し・誤検出の関係を比べる",
+      "全ターゲットを捕捉し、/obj_detection/objectsを観察する",
     ],
     steps: [
-      "カメラ画像を推論モデルへ入力する",
-      "クラス・信頼度・矩形を取得する",
-      "検出結果と描画画像をpublishする",
+      "detectのmodelとconfidence_filterのthresholdを設定し、RUNを押す",
+      "走行して各ターゲットを画面に収め、生成された検出結果を見る",
+      "全ターゲットを捕捉してGOALへ進む（誤検出の除去自体はクリア条件ではない）",
     ],
-    exercise: "信頼度閾値を変え、見逃しと誤検出がどう変化するか記録しましょう。",
+    exercise:
+      "視点を固定して信頼度閾値を変え、残る検出と見逃しを比べましょう。クラス・矩形・信頼度・誤検出・処理時間は、画像画素からの推論ではなく、物体位置やmodel設定から模擬生成しています。",
     insight:
       "物体検出器の出力は推定であり、正解を保証しません。信頼度スコアも正しく校正された確率とは限らないため、行動側では誤検出と見逃しを考慮する必要があります。",
   },
@@ -902,25 +964,28 @@ const COPY: Record<string, GuideCopy> = {
       "リンク長と幾何関係から関節角を求める",
       "Joint Controllerへ目標角を送る",
     ],
-    exercise: "同じ目標に肘を上げる解と下げる解があるか試し、周囲との衝突を比較しましょう。",
-    insight: "数学的に到達できても、関節制限や障害物によって実行できない場合があります。",
+    exercise:
+      "同じ目標で肘の向きを切り替えましょう。カーソルを作業領域の外や腕が伸び切る付近へ動かし、手先の位置・関節制限・manipの値を比べてください。Joint Teleopの記録があれば結果画面で所要時間も比較できます。",
+    insight:
+      "このLessonは作業領域と関節制限を扱い、障害物との衝突課題はありません。manipは|sin(q2)|で、腕が伸び切ると0へ近づきます。実機でIKの解を選ぶ際には、周囲との衝突も確認する必要があります。",
   },
   pick_place: {
     overview:
-      "物体を認識し、アームでつかみ、指定場所へ置くPick & Placeを完成させます。認識、TF、IK、Gripper、Actionを順番につなぐ総合的なManipulation課題です。",
+      "2Dのアームでコンベア上の荷物をつかみ、同じ文字と色のドックへ運んで放します。手先の位置と把持・解放のタイミングを合わせ、6個の荷物を仕分けましょう。取り逃しや誤った場所での解放には、1回につき2秒のペナルティーが付きます。",
     goals: [
-      "Pick & Placeの処理を段階へ分解する",
-      "物体Poseをアーム座標へ変換する",
-      "失敗を検知して安全に回復する",
+      "接近・把持・搬送・解放の順序を理解する",
+      "荷物の文字と色をA・B・Cのドックに対応させる",
+      "取り逃しや誤配を減らすタイミングを探す",
     ],
     steps: [
-      "物体Poseから把持前Poseを計画する",
-      "接近してGripperを閉じる",
-      "持ち上げて配置Poseへ移動する",
+      "マウス / 矢印キーで手先を荷物に合わせる",
+      "クリック・Enter・ゲームパッドAでつかみ、同じ文字と色のドックへ運ぶ",
+      "ドック内でもう一度押して放し、6個の仕分けを完了する",
     ],
-    exercise: "物体へ真横から近づく場合と真上から近づく場合の成功率を比較しましょう。",
+    exercise:
+      "コンベアの早い位置でつかむ場合と、遅い位置でつかむ場合を比べましょう。解放時の手先の位置を確認し、取り逃しや誤配による+2秒が結果にどう影響するか観察してください。",
     insight:
-      "直接把持点へ移動せず、把持前・把持・退避の中間Poseを設けると安全で再現性が高まります。",
+      "このLessonは既知の荷物位置と手先との距離で把持・解放を判定します。実機では認識、TFによる座標変換、接近・持ち上げ・退避の姿勢、衝突を避ける経路計画も必要ですが、それらはこの課題の操作や成功判定には含まれない発展内容です。",
   },
   action_builder: {
     overview:

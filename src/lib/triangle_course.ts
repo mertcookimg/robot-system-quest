@@ -87,6 +87,7 @@ export interface TriangleResult {
   cornerErrorPx: number;
   pathErrorPx: number;
   closureErrorPx: number;
+  missingVertices: string[];
 }
 
 export class TriangleTracker {
@@ -138,6 +139,7 @@ export class TriangleTracker {
   result(x: number, y: number): TriangleResult {
     const [a] = TRIANGLE_VERTICES;
     const closureErrorPx = Math.hypot(x - a.x, y - a.y);
+    const missingVertices = [...(this.minB <= 20 ? [] : ["B"]), ...(this.minC <= 20 ? [] : ["C"])];
     const cornerErrorPx = Math.max(this.minB, this.minC, this.minClosure);
     const pathErrorPx =
       this.pathSamples > 0 ? this.pathErrorTotal / this.pathSamples : Number.POSITIVE_INFINITY;
@@ -150,7 +152,7 @@ export class TriangleTracker {
           ? 2
           : 1;
 
-    return { success, stars, cornerErrorPx, pathErrorPx, closureErrorPx };
+    return { success, stars, cornerErrorPx, pathErrorPx, closureErrorPx, missingVertices };
   }
 }
 
@@ -161,13 +163,40 @@ export function finishTriangleLesson(
   blockCount: number,
 ): boolean {
   if (!result.success) {
-    g.setStatus(
-      tx(
-        `三角形がまだ閉じていません — 始点のずれ ${(result.closureErrorPx / 100).toFixed(2)} m`,
-        `The triangle is not closed yet — start-point error ${(result.closureErrorPx / 100).toFixed(2)} m`,
-      ),
-      "var(--warn)",
-    );
+    let message: string;
+    if (result.missingVertices.length > 0) {
+      const vertices = result.missingVertices.join("・");
+      message = tx(
+        `未通過の頂点: ${vertices} — ガイドに沿って各頂点の0.20 m以内を通りましょう`,
+        `Missed vertices: ${result.missingVertices.join(", ")} — follow the guide within 0.20 m of each vertex`,
+      );
+    } else if (!Number.isFinite(result.pathErrorPx) || result.pathErrorPx > 14) {
+      message = Number.isFinite(result.pathErrorPx)
+        ? tx(
+            `経路の平均ずれ ${(result.pathErrorPx / 100).toFixed(2)} m — 三角形の辺に沿って、0.14 m以内を目指しましょう`,
+            `Average path error ${(result.pathErrorPx / 100).toFixed(2)} m — follow the triangle edges; aim for 0.14 m or less`,
+          )
+        : tx(
+            "経路を確認できません — ガイドの3辺に沿って走行しましょう",
+            "No path to evaluate — drive along all three guide edges",
+          );
+    } else if (!Number.isFinite(result.closureErrorPx) || result.closureErrorPx > 20) {
+      message = Number.isFinite(result.closureErrorPx)
+        ? tx(
+            `始点からのずれ ${(result.closureErrorPx / 100).toFixed(2)} m — STARTの0.20 m以内で停止しましょう`,
+            `Start-point error ${(result.closureErrorPx / 100).toFixed(2)} m — finish within 0.20 m of START`,
+          )
+        : tx(
+            "帰還位置を確認できません — 再実行してください",
+            "Cannot evaluate the finish position — run again",
+          );
+    } else {
+      message = tx(
+        "三角形の周回が未完了です — 3辺をたどり、最後にSTARTへ戻りましょう",
+        "Triangle lap incomplete — follow all three edges and return to START at the end",
+      );
+    }
+    g.setStatus(message, "var(--warn)");
     return false;
   }
 
@@ -177,6 +206,8 @@ export function finishTriangleLesson(
       `Closure     <b>${(result.closureErrorPx / 100).toFixed(2)} m</b><br>` +
       `Blocks      <b>${blockCount}</b><br>` +
       `Time        <b>${elapsed.toFixed(2)} s</b>`,
+    undefined,
+    { timeSeconds: elapsed },
   );
   return true;
 }

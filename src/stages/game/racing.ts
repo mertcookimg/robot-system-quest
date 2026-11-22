@@ -477,24 +477,25 @@ export function makeGrandPrix(): Stage {
         const margin = Math.abs(player.progress - opp1.progress);
         stars = margin > 0.4 ? 3 : margin > 0.15 ? 2 : 1;
         stats =
-          `Winner    <b>${winner}</b><br>` +
-          `Time      <b>${elapsed.toFixed(2)} s</b><br>` +
-          `Lap times <b>${finisher.lap}</b> / ${TOTAL_LAPS}`;
+          `${t("racing.result.winner")} <b>${winner}</b><br>` +
+          `${t("racing.result.time")} <b>${elapsed.toFixed(2)} s</b><br>` +
+          `${t("racing.result.laps")} <b>${finisher.lap}</b> / ${TOTAL_LAPS}`;
       } else {
         const pos = ranked.findIndex((r) => r.isPlayer) + 1;
         stars = pos === 1 ? 3 : pos === 2 ? 2 : 1;
         stats =
-          `Time      <b>${elapsed.toFixed(2)} s</b><br>` +
-          `Position  <b>${posLabel(pos)}</b> / ${racers.length}<br>` +
-          `Lap times <b>${player.lap}</b> / ${TOTAL_LAPS}`;
+          `${t("racing.result.time")} <b>${elapsed.toFixed(2)} s</b><br>` +
+          `${t("racing.result.position")} <b>${posLabel(pos)}</b> / ${racers.length}<br>` +
+          `${t("racing.result.laps")} <b>${player.lap}</b> / ${TOTAL_LAPS}`;
       }
       g.shake(0.7);
       particles.burst(finisher.x, finisher.y, COLORS.OK, 50);
       // A local 2P race is not P1's time trial: never save it as a record.
       const record = !mode2P;
+      const timeSeconds = elapsed;
       g.setTimeout(() => {
         g.sfx.clear();
-        g.showClear(stars, stats, { record });
+        g.showClear(stars, stats, { record, timeSeconds });
       }, 700);
     }
 
@@ -880,7 +881,11 @@ export function makeGrandPrix(): Stage {
       ctx.fillText("LAP NOT COUNTED — missed a checkpoint", W / 2, H / 2 + 60);
       ctx.fillStyle = themeColor(theme.danger, stageColor(`rgba(190, 41, 73, ${0.5 * a})`));
       ctx.font = "10px ui-monospace, monospace";
-      ctx.fillText("CP1→CP2→CP3 を順番に通過する必要があります", W / 2, H / 2 + 78);
+      ctx.fillText(
+        tx("CP1→CP2→CP3 を順番に通過してください", "Pass CP1 → CP2 → CP3 in order"),
+        W / 2,
+        H / 2 + 78,
+      );
       ctx.restore();
     }
 
@@ -1161,34 +1166,44 @@ export default defineStage({
       en: "Nav2's FollowPath is implemented as an Action: send a Goal, receive progress Feedback while it runs, then get a final Result. Racing means tracking a fixed path as fast as possible.",
     },
     goal: {
-      ja: "WASDで操縦し、ShiftまたはXでブーストします。\n3周を走り切り、AIの対戦相手より先にフィニッシュすれば1位でクリアです。",
-      en: "WASD to steer, Shift or X to boost!\nFinish 3 laps before the AI opponents to take 1st place.",
+      ja: "WASDで操縦し、左ShiftまたはXでブーストします。各周でCP1→CP2→CP3を順に通過し、3周を完走しましょう。\n1Pは完走でクリアし、1位で★3、2位で★2、3位で★1です。2Pは先に3周を終えたプレイヤーの勝ちです。",
+      en: "Drive with WASD and boost with left Shift or X. Pass CP1→CP2→CP3 in order on each lap and complete 3 laps.\nIn 1P, finishing clears the stage: 1st earns ★3, 2nd ★2, and 3rd ★1. In 2P, the first human player to finish 3 laps wins.",
     },
     first: {
-      ja: "1PはWASDで発進し、X（Shift）でBOOSTします。ゲームパッド対戦は2台のゲームパッドを接続してYを押すと開始できます。P1・P2とも左スティックで走行し、LB/RBでBOOSTします。",
-      en: "In 1P, drive with WASD and boost with X (Shift). For a pad battle, connect two pads and press Y. Both players drive with the left stick and boost with LB/RB.",
+      ja: "2キー、P1のゲームパッドのY、または対戦モードボタンで1P/2Pを切り替えます。キーボードはP1がWASD＋左Shift/X、P2が矢印＋右Shiftです。ゲームパッドは各プレイヤーが左スティックで走行し、LB/RBでブーストします。",
+      en: "Switch 1P/2P with the 2 key, Y on pad 1, or the match-mode buttons. On keyboard, P1 uses WASD + left Shift/X; P2 uses arrows + right Shift. With gamepads, each player drives with the left stick and boosts with LB/RB.",
     },
   },
   strings: {
     ja: {
-      hint: "1P · WASD/左スティック 走行 · X/LB/RB BOOST · Y → 2P PAD（接続 {pads}/2）",
-      hint2p: "🎮 2P PAD（接続 {pads}/2）· P1/P2 左スティック 走行 · LB/RB BOOST · Y → 1P",
+      hint: "1P · WASD/左スティック 走行 · 左Shift/X/PAD LB・RB BOOST · 2/PAD Y → 2P",
+      hint2p:
+        "2P · P1: WASD＋左Shift/X · P2: 矢印＋右Shift · PAD: 左スティック＋LB/RB · 2/PAD Y → 1P",
       "status.countdown": "3...2...1... GO!",
       "status.lap": "LAP {cur} / {total}  ·  P{pos}",
       "status.race": "RACE!",
       "overlay.players": "LOCAL PLAY",
       "overlay.1p": "1P vs AI",
-      "overlay.2p": "🎮 2P PAD対戦",
+      "overlay.2p": "2P 対戦",
+      "result.winner": "勝者",
+      "result.time": "タイム",
+      "result.position": "順位",
+      "result.laps": "周回数",
     },
     en: {
-      hint: "1P · WASD/LEFT STICK drive · X/LB/RB BOOST · Y → 2P PAD ({pads}/2)",
-      hint2p: "🎮 2P PAD ({pads}/2) · P1/P2 LEFT STICK drive · LB/RB BOOST · Y → 1P",
+      hint: "1P · WASD/LEFT STICK drive · left Shift/X/PAD LB・RB boost · 2/PAD Y → 2P",
+      hint2p:
+        "2P · P1: WASD + left Shift/X · P2: arrows + right Shift · PAD: stick + LB/RB · 2/PAD Y → 1P",
       "status.countdown": "3...2...1... GO!",
       "status.lap": "LAP {cur} / {total}  ·  P{pos}",
       "status.race": "RACE!",
       "overlay.players": "LOCAL PLAY",
       "overlay.1p": "1P vs AI",
-      "overlay.2p": "🎮 2P PAD BATTLE",
+      "overlay.2p": "2P versus",
+      "result.winner": "Winner",
+      "result.time": "Time",
+      "result.position": "Position",
+      "result.laps": "Laps",
     },
   },
   build: makeGrandPrix,

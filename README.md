@@ -15,7 +15,7 @@ It visualizes concepts such as publishers, subscribers, services, actions, feedf
 - **ROBOTICS LEARNING GUIDE** — Bilingual explanations of what to try and observe in each game and lesson
 - **Keyboard / Gamepad / Touch** — Keyboard and gamepad support across all stages, plus controls designed for touch devices
 - **Japanese / English** — Switch the interface language at any time
-- **Light / Dark** — Choose either theme on Home, in the app, or in the Guide. The saved choice follows you between pages without restarting a stage.
+- **Light / Dark** — Starts in Dark unless a theme choice is saved. Choose either theme on Home, in the app, or in the Guide. The saved choice follows you between pages without restarting a stage.
 - **Client-side only** — Runs without a backend
 
 > This project is a simplified simulation for learning ROS 2 concepts. It does not communicate with physical ROS 2 nodes or sensors.
@@ -92,24 +92,40 @@ Edit the stage manifests rather than the generated JSON.
 
 ## Controls
 
-Most stages share the controls below. In block editors and puzzles, follow the on-screen instructions when they differ. Select `?` in the upper-right corner to open the control guide.
+Controls depend on the stage. Open **Help** for common controls and **Stage guide** for the current stage's controls and completion conditions. **Learning guide** opens the separate guide with concepts and experiments.
 
 | Action | Keyboard | Gamepad |
 |---|---|---|
 | Move / turn | `WASD` / arrow keys | Left stick / D-pad |
-| Boost | `Shift` / `X` | `LB` / `RB` / `LT` / `RT` |
-| Emergency stop | `Space` | `A` during normal driving |
-| Reset | `R` | `Start` |
-| Help | `?` / `/` | `R3` |
-| Select a stage | On-screen GAME / LESSON controls | `Select` |
+| Boost in supported driving stages | `Shift` / `X`, depending on the stage; Joint Teleop uses `Shift` for precision | `LB` / `RB` / `LT` / `RT`, depending on the stage |
+| Release manual movement input | `Space` during ordinary driving | `A` during ordinary driving |
+| Reset | `R` outside text entry | `Start`, except in block editors where it clears the entire program |
+| Open Help | `?` / `/`; `Esc` closes it | `R3` toggles Help; `B` closes it |
+| Select a stage | Click/tap GAME / LESSON, or focus with `Tab` and press `Enter` | `Select` / `Back` |
 | Simulated ROS 2 commands | Terminal at the bottom of the screen | Press `L3` to open the command palette |
 | Confirm / close | `Enter` / `Space` / `Esc` | `A` / `B` |
 | Release terminal input focus | `Esc` | `B`; `L3` also closes the command palette |
 
 Gamepad API button numbers and names may differ by browser, operating system, and controller.
 
+Manual movement release does not stop an automatic program or pause the simulation. In other
+stages, `Space` / gamepad `A` performs the indicated action, such as confirming, grabbing or
+opening settings. Release the movement keys or stick to stay still.
+
+In the block editor, click/tap blocks and values to edit, then use **RUN** or **STOP**.
+Standard gamepad directions select, `A` adds/edits/confirms, and `B` leaves editing. `X` runs,
+`Y` stops, and `LB` / `RB` reorder blocks. In Edge Detection and Object Detection, `Y` switches
+DRIVE / TUNE instead. **Gamepad `Start` clears the entire program (CLEAR).**
+`LT` / `RT` toggle the start-position and practice controls when those buttons are present.
+
+On touch devices, use the displayed D-PAD / JOY or dedicated arm controls. The generic
+BOOST / OK / ✕ / R buttons send `Shift` / `Space` / `Esc` / `R`, so their roles depend on the
+stage. Tap puzzle ports, blocks and parameter controls directly to edit them.
+
 Menus, help and completion dialogs pause the simulation. Terminal controls and the command
 palette keep the simulation, timers and topic messages running while capturing player input.
+While a terminal control has focus, keyboard/gamepad input is used by the terminal rather
+than manual robot controls; an already running automatic program continues.
 Leaving the window pauses the simulation and releases held inputs. Shared instructions appear
 as readable, wrapping text below the scene at every screen size. On small screens, timing
 also moves below the scene.
@@ -167,7 +183,7 @@ available commands, and published topics.
 
 ### Local two-player games
 
-The following games support competitive play with two gamepads:
+The following games support local competitive play with a shared keyboard or two gamepads:
 
 - Racing
 - Robo Soccer
@@ -175,7 +191,11 @@ The following games support competitive play with two gamepads:
 - Sumo Battle
 - Robo Tennis
 
-On a keyboard, Player 1 uses `WASD` and Player 2 uses the arrow keys. Player 1's action key is `E`, and Player 2's is `Enter`. Player 1 boosts with left `Shift`, and Player 2 boosts with right `Shift`.
+Press `2` on the keyboard or gamepad `Y` to switch between one-player and two-player modes.
+On a keyboard, Player 1 uses `WASD` and Player 2 uses the arrow keys. Where the game provides an
+action, Player 1 uses `E` and Player 2 uses `Enter`. In games with boost, Player 1 uses left
+`Shift` and Player 2 uses right `Shift`. Tennis uses those Shift keys to swing instead.
+Consult Stage guide for game-specific actions.
 
 ## Technology
 
@@ -270,8 +290,8 @@ gamepads. Check both Japanese and English.
 | G6 | `robo_soccer` | Robo Soccer — multi-robot teleop |
 | G7 | `treasure_map` | Mapping (SLAM lite) — building /map from /scan |
 | G8 | `tag_chase` | Multi-robot pursuit — read peer poses from a shared topic |
-| G9 | `sumo_battle` | Odometry — knowing where you are via /odom |
-| G10 | `battery_rush` | BatteryState — monitor the pack and auto-dock |
+| G9 | `sumo_battle` | Odometry — knowing where you are via /robot/odom |
+| G10 | `battery_rush` | BatteryState — monitor charge and drive back to the dock |
 | G11 | `robo_kitchen` | Robo Kitchen — manipulation sequences |
 | G12 | `swarm_rescue` | Swarm Helpers — multi-robot teamwork |
 | G13 | `robo_baseball` | Vision Tracking — predict where the pitch will cross |
@@ -289,9 +309,9 @@ gamepads. Check both Japanese and English.
 | L4 | `param_tuner` | Parameters — live tuning with ros2 param set |
 | L5 | `feedforward_controller` | Feedforward — draw an equilateral triangle by time |
 | L6 | `feedforward_mission` | Feed-forward — publish a planned sequence of cmd_vel |
-| L7 | `feedback_controller` | Feedback — draw an equilateral triangle with /odom |
+| L7 | `feedback_controller` | Feedback — draw an equilateral triangle with Odometry |
 | L8 | `feedback_mission` | Feedback Mission — dodge walls and reach GOAL via odom feedback |
-| L9 | `lidar_avoidance` | Reactive Control — drive forward when /scan says the front is clear |
+| L9 | `lidar_avoidance` | Reactive Control — drive forward when LiDAR shows the front is clear |
 | L10 | `tf_puzzle` | TF — describe a sensor mount with a transform |
 | L11 | `mapping_mission` | Teleop SLAM — drive and fill /map yourself |
 | L12 | `localization_mission` | AMCL — estimate your pose inside a known map |

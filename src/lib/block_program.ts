@@ -75,6 +75,8 @@ export interface BlockProgramOpts<B> {
    * program live instead of executing it one step at a time.
    */
   activeWhenRunning?: boolean;
+  /** Allow live pipeline changes; otherwise structural edits stop the current run first. */
+  liveStructureEditing?: boolean;
   /** Maximum number of program blocks. Further additions are ignored and call onLimit. */
   maxBlocks?: number;
   /** Called on an attempted addition after maxBlocks is reached, typically to show a warning. */
@@ -96,13 +98,38 @@ export function setupBlockProgram<B extends { kind: string }>(
   }
 
   const programHintEl = document.getElementById("be-program-hint");
+  const emptyProgramEl = document.getElementById("be-program-empty") ?? document.createElement("p");
+  emptyProgramEl.id = "be-program-empty";
+  emptyProgramEl.className = "be-program-empty";
+  programListEl.after(emptyProgramEl);
   const isRunning = opts.isRunning ?? (() => false);
   const runIdx = opts.runIdx ?? (() => -1);
   const changed = () => opts.onChange?.();
 
+  function prepareStructureEdit(): boolean {
+    if (!isRunning() || opts.liveStructureEditing) return true;
+    opts.onStop?.();
+    return !isRunning();
+  }
+
+  function restoreActionFocus(rowIndex: number, selector: string): void {
+    const row = programListEl?.children[rowIndex];
+    const preferred = row?.querySelector<HTMLButtonElement>(selector);
+    const target =
+      preferred && !preferred.disabled
+        ? preferred
+        : row?.querySelector<HTMLButtonElement>(".be-block-actions button:not(:disabled)");
+    const paletteButton = Array.from(
+      document.querySelectorAll<HTMLButtonElement>("#block-editor .be-palette-block"),
+    ).find((button) => !button.disabled && !button.hidden && button.style.display !== "none");
+    (target ?? paletteButton)?.focus({ preventScroll: true });
+  }
+
   function refresh(): void {
     if (!programListEl) return;
     programListEl.innerHTML = "";
+    emptyProgramEl.hidden = opts.program.length > 0;
+    emptyProgramEl.textContent = t("block.program.empty_help");
     opts.program.forEach((b, i) => {
       const li = document.createElement("li");
       li.className = "be-block";
@@ -208,11 +235,15 @@ export function setupBlockProgram<B extends { kind: string }>(
       up.className = "be-up";
       up.textContent = "↑";
       up.title = t("block.btn.up");
+      up.disabled = i === 0;
       up.onclick = () => {
         if (i > 0) {
+          const restoreFocus = programListEl.contains(document.activeElement);
+          if (!prepareStructureEdit()) return;
           [opts.program[i - 1], opts.program[i]] = [opts.program[i], opts.program[i - 1]];
           refresh();
           changed();
+          if (restoreFocus) restoreActionFocus(i - 1, ".be-up");
         }
       };
       actions.appendChild(up);
@@ -220,11 +251,15 @@ export function setupBlockProgram<B extends { kind: string }>(
       down.className = "be-down";
       down.textContent = "↓";
       down.title = t("block.btn.down");
+      down.disabled = i === opts.program.length - 1;
       down.onclick = () => {
         if (i < opts.program.length - 1) {
+          const restoreFocus = programListEl.contains(document.activeElement);
+          if (!prepareStructureEdit()) return;
           [opts.program[i], opts.program[i + 1]] = [opts.program[i + 1], opts.program[i]];
           refresh();
           changed();
+          if (restoreFocus) restoreActionFocus(i + 1, ".be-down");
         }
       };
       actions.appendChild(down);
@@ -233,9 +268,12 @@ export function setupBlockProgram<B extends { kind: string }>(
       rm.textContent = "×";
       rm.title = t("block.btn.remove");
       rm.onclick = () => {
+        const restoreFocus = programListEl.contains(document.activeElement);
+        if (!prepareStructureEdit()) return;
         opts.program.splice(i, 1);
         refresh();
         changed();
+        if (restoreFocus) restoreActionFocus(Math.min(i, opts.program.length - 1), ".be-remove");
       };
       actions.appendChild(rm);
       li.appendChild(actions);
@@ -260,6 +298,7 @@ export function setupBlockProgram<B extends { kind: string }>(
         opts.onLimit?.();
         return;
       }
+      if (!prepareStructureEdit()) return;
       opts.program.push(k.defaults());
       refresh();
       changed();
@@ -272,6 +311,7 @@ export function setupBlockProgram<B extends { kind: string }>(
     onRun: () => opts.onRun?.(),
     onStop: () => opts.onStop?.(),
     onClear: () => {
+      if (!prepareStructureEdit()) return;
       if (opts.onClear) opts.onClear();
       else opts.program.length = 0;
       refresh();
@@ -285,6 +325,7 @@ export function setupBlockProgram<B extends { kind: string }>(
     refresh,
     dispose() {
       if (programListEl) programListEl.innerHTML = "";
+      emptyProgramEl.remove();
     },
   };
 }

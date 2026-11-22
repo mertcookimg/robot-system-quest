@@ -18,11 +18,13 @@ import type { ClearOptions, Stage } from "../types";
 import { cancelStageTimeout, setStageTimeout, type StageTimeout } from "./stage_timers";
 import { trackStageComplete } from "./analytics";
 import { getStageModes } from "./stage_def";
+import { setDialogVisible } from "./modal_visibility";
 
 type Focus = "restart" | "next";
 export type ClearOverlayCloseReason = "dismiss" | "restart" | "next" | "allclear";
 let focus: Focus = "next";
 let allclearTimeout: StageTimeout | null = null;
+let pendingShowTimeout: StageTimeout | null = null;
 let focusBeforeOpen: HTMLElement | null = null;
 let completionSlot: Comment | null = null;
 /** True when the open result just completed every stage for the first time. */
@@ -59,6 +61,10 @@ export function clearOverlayFocus(): void {
 }
 
 export function close(reason: ClearOverlayCloseReason = "dismiss"): void {
+  if (pendingShowTimeout !== null) {
+    cancelStageTimeout(pendingShowTimeout);
+    pendingShowTimeout = null;
+  }
   const wasOpen = isOpen();
   const restoreFocus = focusBeforeOpen;
   focusBeforeOpen = null;
@@ -67,8 +73,7 @@ export function close(reason: ClearOverlayCloseReason = "dismiss"): void {
     allclearTimeout = null;
   }
   ui.clearOverlay.classList.remove("show");
-  ui.clearOverlay.inert = true;
-  ui.clearOverlay.setAttribute("aria-hidden", "true");
+  setDialogVisible(ui.clearOverlay, false);
   completionSlot?.replaceWith(ui.clearOverlay);
   completionSlot = null;
   clearOverlayFocus();
@@ -99,6 +104,26 @@ export function show(
   deps: ShowDeps,
   options: ClearOptions = {},
 ): void {
+  if (pendingShowTimeout !== null) {
+    cancelStageTimeout(pendingShowTimeout);
+    pendingShowTimeout = null;
+  }
+  // A delayed result must not take input away from a higher, still-visible
+  // dialog. Keep its completed score until that UI closes, without saving it
+  // repeatedly. Stage changes, resets and close() cancel this pending result.
+  if (
+    document.querySelector(
+      "#intro-screen.show, #lesson-modal.show, #help-modal.show, " +
+        "#allclear-screen.show, body.stage-menu-open",
+    )
+  ) {
+    const resultOptions = { ...options };
+    pendingShowTimeout = setStageTimeout(() => {
+      pendingShowTimeout = null;
+      show(stars, statsHtml, deps, resultOptions);
+    }, 100);
+    return;
+  }
   const record = options.record ?? true;
   if (allclearTimeout !== null) {
     cancelStageTimeout(allclearTimeout);
@@ -110,11 +135,9 @@ export function show(
   }
   trackStageComplete(deps.current.id, stars);
 
-  // Pull elapsed time out of the stats HTML — stages embed it as
-  // "Time <b>X.XX s</b>" so we can save it to the rankings without changing
-  // every stage's signature.
-  const m = statsHtml.match(/Time\s*<b>([\d.]+)\s*s<\/b>/);
-  const time = m ? parseFloat(m[1]) : 0;
+  // A result's display wording, language and formatting must not change its record.
+  const time = options.timeSeconds ?? 0;
+  const hasTime = Number.isFinite(time) && time > 0;
 
   // Render stars
   ui.stars.innerHTML = "";
@@ -128,7 +151,7 @@ export function show(
 
   // Persist time / best ghost. Unrecorded results (local 2P matches) must not
   // overwrite the single-player best time or replace the best ghost.
-  const { isBest } = record && time > 0 ? saveTime(deps.current.id, time) : { isBest: false };
+  const { isBest } = record && hasTime ? saveTime(deps.current.id, time) : { isBest: false };
   if (isBest && getCurrentRecordingLength() > 0) {
     saveCurrentAsBest(deps.current.id);
   }
@@ -164,8 +187,7 @@ export function show(
     ui.clearOverlay.before(completionSlot);
     document.body.append(ui.clearOverlay);
   }
-  ui.clearOverlay.inert = false;
-  ui.clearOverlay.setAttribute("aria-hidden", "false");
+  setDialogVisible(ui.clearOverlay, true);
   ui.clearOverlay.classList.add("show");
 
   // Star progress
@@ -234,8 +256,7 @@ export function setupClearOverlay(deps: WireDeps): void {
     if (!title.id) title.id = "clear-overlay-title";
     ui.clearOverlay.setAttribute("aria-labelledby", title.id);
   }
-  ui.clearOverlay.inert = !isOpen();
-  ui.clearOverlay.setAttribute("aria-hidden", String(!isOpen()));
+  setDialogVisible(ui.clearOverlay, isOpen());
   for (const [target, button] of [
     ["restart", ui.restartBtn],
     ["next", ui.nextBtn],

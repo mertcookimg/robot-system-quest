@@ -88,7 +88,7 @@ const darkTheme: Theme = {
 };
 
 function savedTheme(): ThemeName {
-  return loadString(StorageKeys.theme) === "dark" ? "dark" : "light";
+  return loadString(StorageKeys.theme) === "light" ? "light" : "dark";
 }
 
 let currentTheme: ThemeName = savedTheme();

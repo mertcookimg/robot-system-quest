@@ -31,6 +31,19 @@
     0 0 0 1px var(--line),
     0 20px 60px -20px rgba(var(--shadow-rgb), 0.23);
 }
+
+/* The short-screen row includes the pad; reserve at least its 214px height
+   when keyboard navigation brings a control below the following scene. */
+html:has(body.short-touch-layout) {
+  scroll-padding-top: calc(
+    var(--scene-sticky-top) +
+      max(
+        214px,
+        min(500px, var(--scene-height-limit), (100vw - 314px) * 5 / 8) + var(--scene-readout-limit)
+      ) +
+      12px
+  );
+}
 .canvas-wrap.shake {
   animation: shake 0.22s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
@@ -90,6 +103,45 @@ canvas#game.touch-interactive {
 }
 .canvas-readout-time {
   color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scene labels stay readable even when a short window scales the canvas down.
+   This disclosure is outside the sticky wrapper and uses normal page scrolling. */
+.canvas-text-readout {
+  position: relative;
+  z-index: 1;
+  width: min(800px, 100%);
+  min-width: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--fg);
+  font: 1rem/1.6 var(--sans);
+  overflow-wrap: anywhere;
+}
+.canvas-text-readout[hidden] {
+  display: none;
+}
+.canvas-text-readout summary {
+  min-height: 44px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.canvas-text-readout ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0 14px 14px;
+  list-style: none;
+}
+.canvas-text-readout li {
+  min-width: 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--line);
+  background: var(--panel-2);
+  white-space: pre-wrap;
   font-variant-numeric: tabular-nums;
 }
 

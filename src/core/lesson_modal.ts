@@ -13,6 +13,7 @@ import { isGameStage, getGameIds, getLessonIds } from "./modes";
 import { getDiagram, getStages } from "./stage_def";
 import { startDemo, stopDemo } from "./lesson_demo";
 import { setStageTimeout } from "./stage_timers";
+import { setDialogVisible, restoreDialogFocus } from "./modal_visibility";
 
 function loadSeen(): Set<string> {
   return new Set(
@@ -103,25 +104,34 @@ export function open(stageId: string): void {
   ui.lessonGoal.textContent = t(`${stageId}.lesson.goal`);
   ui.lessonFirst.textContent = t(`${stageId}.lesson.first`);
   ui.lessonDiagram.innerHTML = getDiagram(stageId);
-  if (!isOpen()) focusBeforeOpen = document.activeElement as HTMLElement | null;
+  const opening = !isOpen();
+  if (opening) focusBeforeOpen = document.activeElement as HTMLElement | null;
+  const card = ui.lessonModal.querySelector<HTMLElement>(".lesson-card");
+  if (opening && card) card.scrollTop = 0;
   ui.lessonModal.classList.add("show");
-  ui.lessonModal.setAttribute("aria-hidden", "false");
-  requestAnimationFrame(() => ui.lessonClose.focus());
+  setDialogVisible(ui.lessonModal, true);
+  requestAnimationFrame(() => {
+    if (!isOpen()) return;
+    ui.lessonClose.focus({ preventScroll: true });
+    // Start long guides at the heading, including after a previously scrolled visit.
+    if (opening && card) card.scrollTop = 0;
+  });
   if (game) startDemo(stageId);
   else stopDemo();
 }
 
 export function close(): void {
   ui.lessonModal.classList.remove("show");
-  ui.lessonModal.setAttribute("aria-hidden", "true");
+  setDialogVisible(ui.lessonModal, false);
   stopDemo();
   const restore = focusBeforeOpen;
   focusBeforeOpen = null;
-  restore?.focus();
+  restoreDialogFocus(restore);
 }
 
 /** Close + mark seen + click sound. Use when the user dismisses the modal. */
 export function dismiss(stageId: string): void {
+  if (!isOpen()) return;
   const wasAuto = autoOpenedFor === stageId;
   autoOpenedFor = null;
   close();
@@ -152,9 +162,15 @@ export function maybeAutoOpen(
   autoOpenedFor = stageId;
   // Slight delay so it does not collide with stage transition animation.
   setStageTimeout(() => {
-    // A lazy stage can finish while Home is opening the returning-player menu.
-    // Its onClose callback will offer the briefing after that menu is dismissed.
-    if (document.body.classList.contains("stage-menu-open")) return;
+    // Home or another dialog may have opened during the delay. Keep that UI
+    // in charge; Home/menu dismissal can offer the unseen briefing again.
+    if (
+      document.querySelector(
+        "#intro-screen.show, #help-modal.show, #allclear-screen.show, " +
+          "#clear-overlay.show, body.stage-menu-open",
+      )
+    )
+      return;
     open(stageId);
   }, 220);
 }
@@ -164,6 +180,7 @@ export function setupLessonModal(
   onAutoDismissCb?: () => void,
 ): void {
   onAutoDismiss = onAutoDismissCb ?? null;
+  setDialogVisible(ui.lessonModal, isOpen());
   ui.lessonToggle.addEventListener("click", () => {
     autoOpenedFor = null; // manual open, no reset on dismiss
     open(getCurrentStageId());
@@ -179,6 +196,7 @@ export function setupLessonModal(
     if (e.target === ui.lessonModal) dismiss(getCurrentStageId());
   });
   ui.lessonModal.addEventListener("keydown", (e) => {
+    if (!isOpen()) return;
     if (e.key === "Escape") {
       e.preventDefault();
       dismiss(getCurrentStageId());

@@ -56,6 +56,7 @@ test("light map colors do not alter the camera input used by detection lessons",
   });
   Math.random = () => 0.5;
   try {
+    setTheme("light");
     const mission = createCameraMission({
       targets: [{ x: 100, y: 100, r: 12, color: "#5eead4", label: "TARGET" }],
     });

@@ -809,12 +809,13 @@ export function makeRoboSoccer(): Stage {
       const stars = margin >= 3 ? 3 : margin === 2 ? 2 : 1;
       const stats =
         `Score    <b>${scoreP} - ${scoreO}</b><br>` + `Time     <b>${elapsed.toFixed(2)} s</b>`;
+      const timeSeconds = elapsed;
       g.setTimeout(() => {
         g.sfx.clear();
-        g.showClear(stars, stats);
+        g.showClear(stars, stats, { timeSeconds });
       }, 700);
     } else {
-      g.crash(t("robo_soccer.crash.lost"));
+      g.crash(t("robo_soccer.crash.lost", { target: TARGET_SCORE }));
     }
   }
 
@@ -1276,15 +1277,15 @@ export default defineStage({
       en: "Drive with WASD and kick with E, Space, or pad A/X. Use the glowing shot range to aim at the right goal.\nFirst to 3 wins! Your two teammates help automatically.",
     },
     first: {
-      ja: "1PはWASDで移動し、E・Space・ゲームパッドのA/Xでキックします。ゲームパッド対戦は2台のゲームパッドを接続してYを押すと開始できます。キック操作は少し早めに入力しても受け付けられ、ゴール方向へ自然に補正されます。",
-      en: "In 1P, move with WASD and kick with E, Space, or pad A/X. Connect two pads and press Y for versus mode. Kicks are buffered and gently assisted toward goal.",
+      ja: "2キー、P1のゲームパッドのY、または対戦モードボタンで1P/2Pを切り替えます。キーボードはP1がWASDで移動・E/Spaceでキック、P2が矢印で移動・Enterでキックします。ゲームパッドは各プレイヤーが左スティックで移動・A/Xでキックします。キックは少し早めの入力も受け付け、ゴール方向へ補正されます。",
+      en: "Switch 1P/2P with 2, Y on pad 1, or the match-mode buttons. On keyboard, P1 moves with WASD and kicks with E/Space; P2 moves with arrows and kicks with Enter. Each gamepad uses the left stick and A/X. Kicks are buffered and gently assisted toward goal.",
     },
   },
   strings: {
     ja: {
-      "crash.lost": "AI に先に取られて負け — リトライ",
-      hint: "1P · WASD/左スティック 移動 · E/Space/PAD A-X キック · SHOT RANGEで照準 · Y → 2P",
-      hint2p: "🎮 2P PAD（接続 {pads}/2）· P1/P2 左スティック · A/X キック · Y → 1P",
+      "crash.lost": "AIチームが先に{target}点に到達 — リトライ",
+      hint: "1P · WASD/左スティック 移動 · E/Space/PAD A-X キック · SHOT RANGEで照準 · 2/PAD Y → 2P",
+      hint2p: "2P · P1: WASD＋E/Space · P2: 矢印＋Enter · PAD: 左スティック＋A/X · 2/PAD Y → 1P",
       "status.kickoff":
         "ボールを相手ゴールに押し込め — E でキック / 3 vs 3 で先に {target} 点で勝ち",
       "status.match": "YOU-team {p} - {o} AI-team  ·  先に {target} 点取った方の勝ち",
@@ -1298,12 +1299,12 @@ export default defineStage({
       "overlay.hard": "強め",
       "overlay.players": "LOCAL PLAY",
       "overlay.1p": "1P vs AI",
-      "overlay.2p": "🎮 2P PAD対戦",
+      "overlay.2p": "2P 対戦",
     },
     en: {
-      "crash.lost": "The AI scored first — retry",
-      hint: "1P · WASD/LEFT STICK · E/Space/PAD A-X kick · aim in SHOT RANGE · Y → 2P",
-      hint2p: "🎮 2P PAD ({pads}/2) · P1/P2 LEFT STICK · A/X kick · Y → 1P",
+      "crash.lost": "The AI team reached {target} goals first — retry",
+      hint: "1P · WASD/LEFT STICK · E/Space/PAD A-X kick · aim in SHOT RANGE · 2/PAD Y → 2P",
+      hint2p: "2P · P1: WASD + E/Space · P2: arrows + Enter · PAD: stick + A/X · 2/PAD Y → 1P",
       "status.kickoff":
         "Push the ball into the opponent goal — E to kick / 3 vs 3, first to {target} wins",
       "status.match": "YOU-team {p} - {o} AI-team  ·  first to {target} wins",
@@ -1317,7 +1318,7 @@ export default defineStage({
       "overlay.hard": "Hard",
       "overlay.players": "LOCAL PLAY",
       "overlay.1p": "1P vs AI",
-      "overlay.2p": "🎮 2P PAD BATTLE",
+      "overlay.2p": "2P versus",
     },
   },
   build: makeRoboSoccer,

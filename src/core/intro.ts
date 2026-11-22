@@ -6,6 +6,7 @@
 import { sfx, startAudio } from "./audio";
 import { ui } from "./dom";
 import type { Stage } from "../types";
+import { setDialogVisible, restoreDialogFocus } from "./modal_visibility";
 
 type Mode = "game" | "lesson";
 
@@ -13,6 +14,7 @@ const MODE_ORDER: Mode[] = ["game", "lesson"];
 let focusIdx = 0; // 0 = game, 1 = lesson
 let onSelect: ((mode: Mode) => void) | null = null;
 let onDismissCb: (() => void) | null = null;
+let previousFocus: HTMLElement | null = null;
 
 function splitByMode(
   stages: readonly Stage[],
@@ -48,16 +50,22 @@ function applyFocus(): void {
 }
 
 export function show(): void {
+  if (!isShown()) previousFocus = document.activeElement as HTMLElement | null;
   document.body.classList.add("intro-open");
   ui.introScreen.classList.add("show");
+  setDialogVisible(ui.introScreen, true);
   focusIdx = 0;
   applyFocus();
+  ui.introScreen.querySelector<HTMLElement>(".intro-mode")?.focus({ preventScroll: true });
 }
 
 export function start(): void {
   if (!isShown()) return;
   document.body.classList.remove("intro-open");
   ui.introScreen.classList.remove("show");
+  setDialogVisible(ui.introScreen, false);
+  restoreDialogFocus(previousFocus);
+  previousFocus = null;
   ui.introScreen
     .querySelectorAll(".intro-mode.gp-focus")
     .forEach((c) => c.classList.remove("gp-focus"));
@@ -112,9 +120,14 @@ interface SetupIntroOptions {
 export function setupIntro(options: SetupIntroOptions): void {
   onSelect = options.onSelectMode;
   onDismissCb = options.onDismiss ?? null;
+  ui.introScreen.setAttribute("role", "dialog");
+  ui.introScreen.setAttribute("aria-modal", "true");
+  ui.introScreen.setAttribute("aria-labelledby", "intro-title");
+  setDialogVisible(ui.introScreen, isShown());
 
   // Mouse click on a card → confirm that mode immediately
   ui.introScreen.addEventListener("click", (e) => {
+    if (!isShown()) return;
     const target = (e.target as HTMLElement).closest<HTMLElement>("[data-mode]");
     if (!target) return;
     const mode = target.dataset.mode === "lesson" ? "lesson" : "game";

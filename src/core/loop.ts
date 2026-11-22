@@ -34,7 +34,7 @@ export function startLoop(): void {
     try {
       const wasGated = isStageInteractionBlocked();
       const wasPaused = isStageSimulationPaused();
-      gamepad.poll();
+      gamepad.poll(dt);
 
       // A press used to close a dialog is consumed for this whole frame.
       const gated = wasGated || isStageInteractionBlocked();
@@ -52,7 +52,7 @@ export function startLoop(): void {
             break;
           }
         }
-        pollNavpad(pad);
+        pollNavpad(pad, dt);
       }
 
       input.syncKeys();

@@ -5,19 +5,30 @@
 // every size. Compact layouts also move timing here. Capture only the live
 // stage canvas, never the Guide's preview canvases.
 import { tx } from "../i18n";
+import {
+  setupCanvasTextReadout,
+  beginCanvasTextReadoutFrame,
+  endCanvasTextReadoutFrame,
+  clearCanvasTextReadout,
+} from "./canvas_text_readout";
 
 let canvas: HTMLCanvasElement | null = null;
 let compact: MediaQueryList | null = null;
+let shortViewport: MediaQueryList | null = null;
 let panel: HTMLElement | null = null;
 let hintElement: HTMLElement | null = null;
 let timerElement: HTMLElement | null = null;
 let hint = "";
 let timer: { elapsed: number; best?: number } | null = null;
 
-export function setupCanvasReadout(target: HTMLCanvasElement): void {
+export function setupCanvasReadout(
+  target: HTMLCanvasElement,
+  context: CanvasRenderingContext2D,
+): void {
   panel?.remove();
   canvas = target;
   compact = target.ownerDocument.defaultView?.matchMedia("(max-width: 840px)") ?? null;
+  shortViewport = target.ownerDocument.defaultView?.matchMedia("(max-height: 640px)") ?? null;
   panel = target.ownerDocument.createElement("div");
   panel.className = "canvas-readout";
   panel.hidden = true;
@@ -27,12 +38,14 @@ export function setupCanvasReadout(target: HTMLCanvasElement): void {
   hintElement.className = "canvas-readout-hint";
   panel.append(timerElement, hintElement);
   target.after(panel);
+  setupCanvasTextReadout(target, context);
   clearCanvasReadout();
 }
 
 export function beginCanvasReadoutFrame(): void {
   hint = "";
   timer = null;
+  beginCanvasTextReadoutFrame();
 }
 
 /** True means wrapping HTML instructions replace this canvas text. */
@@ -50,7 +63,7 @@ export function reportCanvasTimer(
 ): boolean {
   if (!canvas || ctx.canvas !== canvas) return false;
   timer = { elapsed, best };
-  return compact?.matches ?? false;
+  return !!(compact?.matches || shortViewport?.matches);
 }
 
 function setText(element: HTMLElement, text: string): void {
@@ -59,10 +72,13 @@ function setText(element: HTMLElement, text: string): void {
 }
 
 export function endCanvasReadoutFrame(): void {
+  endCanvasTextReadoutFrame();
   if (!panel || !hintElement || !timerElement) return;
-  const showTimer = !!compact?.matches && timer !== null;
+  const showTimer = !!(compact?.matches || shortViewport?.matches) && timer !== null;
   if (!hint && !showTimer) {
-    clearCanvasReadout();
+    panel.hidden = true;
+    setText(hintElement, "");
+    setText(timerElement, "");
     return;
   }
   // No live region: a running timer must not continuously interrupt speech.
@@ -77,6 +93,7 @@ export function endCanvasReadoutFrame(): void {
 
 export function clearCanvasReadout(): void {
   beginCanvasReadoutFrame();
+  clearCanvasTextReadout();
   if (panel) panel.hidden = true;
   if (hintElement) setText(hintElement, "");
   if (timerElement) setText(timerElement, "");

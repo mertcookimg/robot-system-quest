@@ -7,7 +7,7 @@ import { getTheme, theme, themeColor, withA } from "../../core/theme";
 // navigation: Nav2 Goal
 // Reproduces RViz2's "2D Nav Goal".
 // Click+drag the map to publish goal_pose → A* computes /plan → robot
-// tracks it with pure pursuit.
+// tracks it with a simplified lookahead heading-error controller.
 // The most basic use of Nav2's NavigateToPose action.
 import { W, H, type Stage, type GameContext } from "../../types";
 import { defineStage } from "../../core/stage_def";
@@ -83,7 +83,7 @@ export function makeNav2Goal(): Stage {
 
   let goal: GoalPose | null = null;
   let plan: Pt[] = [];
-  let pathIndex = 0; // pure-pursuit progress (prevents backtracking)
+  let pathIndex = 0; // path-following progress (prevents backtracking)
   let isFollowing = false;
   let elapsed = 0;
   let pubAcc = 0;
@@ -381,7 +381,7 @@ export function makeNav2Goal(): Stage {
     return L;
   }
 
-  // ── pure pursuit
+  // ── lookahead heading-error controller
   function yawError(target: number, current: number): number {
     return Math.atan2(Math.sin(target - current), Math.cos(target - current));
   }
@@ -513,9 +513,10 @@ export function makeNav2Goal(): Stage {
         const stats =
           `Time      <b>${elapsed.toFixed(2)} s</b><br>` +
           `Goals     <b>${goalsReached} / ${GOALS_FOR_CLEAR}</b>`;
+        const timeSeconds = elapsed;
         g.setTimeout(() => {
           g.sfx.clear();
-          g.showClear(3, stats);
+          g.showClear(3, stats, { timeSeconds });
         }, 700);
       } else {
         g.setStatus(
@@ -717,7 +718,7 @@ export function makeNav2Goal(): Stage {
       summary:
         "RViz2の2D Nav Goalと同様に、地図上でGoalを指定します。" +
         "PoseStampedを/goal_poseへpublishすると、Global Plannerが/plan（nav_msgs/msg/Path）を計算し、" +
-        "Local Controller（ここではPure Pursuit）が/cmd_velを出力してロボットを経路に追従させます。" +
+        "Local Controller（ここでは先読み点への向きの誤差を使う簡易経路追従）が/cmd_velを出力します。" +
         "このステージは、Nav2でGoalの指定から自動走行までが行われる仕組みを単純化したものです。",
       msgTypes: ["geometry_msgs/msg/PoseStamped", "nav_msgs/msg/Path", "geometry_msgs/msg/Twist"],
       cli: ["ros2 topic echo /goal_pose", "ros2 topic echo /plan", "ros2 topic echo /cmd_vel"],
@@ -830,46 +831,46 @@ export default defineStage({
       en: "Nav2 — autonomous navigation via /goal_pose",
     },
     learn: {
-      ja: "クリックしてドラッグすると/goal_poseが送信され、A*で/planを計算します。その後、Pure Pursuit Controllerが/cmd_velを出力し、ロボットが経路を追従します。",
-      en: "Click+drag publishes /goal_pose, A* computes a /plan, and a pure-pursuit controller emits /cmd_vel that the robot follows.",
+      ja: "Goalの位置と向きを指定すると/goal_poseが送信され、A*で/planを計算します。その後、経路上の先読み点への向きの誤差から/cmd_velを求める簡易Controllerが、ロボットを経路に沿って走らせます。",
+      en: "Set a goal position and heading to publish /goal_pose. A* computes /plan, then a simplified controller uses the heading error toward a lookahead point to produce /cmd_vel and follow the path.",
     },
     goal: {
       ja: "位置と向きを指定し、移動または回転が必要なゴールを5回達成しましょう。すでに満たしているゴールは数えません。",
       en: "Reach five goals that require movement or rotation. A goal already satisfied by the current pose does not count again.",
     },
     first: {
-      ja: "マップ上をクリックしたままドラッグして向きを決め、操作を終えると/goal_poseが送信されます。",
-      en: "Click on the map, drag to set heading, and release to publish /goal_pose.",
+      ja: "マウス：目標位置をクリックし、ドラッグで向きを決めて離すと送信します。\nキーボード：矢印で目標位置へ移動し、EnterまたはSpaceを押しながら矢印で向きを決め、Enter／Spaceを離すと送信します。\nゲームパッド：左スティック／十字で位置を決め、Aを押しながら向きを決めて離すと送信します。向きの指定中はEsc／Bで取り消せます。",
+      en: "Mouse: click the goal position, drag to choose its heading, then release to send.\nKeyboard: move the cursor with arrows, hold Enter or Space while using arrows to set the heading, then release Enter/Space to send.\nGamepad: position the cursor with the left stick/D-pad, hold A while setting the heading, then release A to send. Esc/B cancels while choosing the heading.",
     },
   },
   strings: {
     ja: {
-      hint: "Click + Drag = 2D Nav Goal / R = リセット",
-      "status.bad_goal": "× ゴールが障害物 / 範囲外です。別の場所をクリック",
+      hint: "Goal指定：ドラッグ / 矢印＋Enter長押し / 左スティック＋A長押し（離して送信）",
+      "status.bad_goal": "× ゴールが障害物 / 範囲外です。別の場所を指定",
       "status.collision": "衝突 — START へリセット",
       "status.navigating": "navigating — {info}",
       "status.plan_fail": "× plan 失敗 (障害物に囲まれている?)",
-      "status.reached": "Goal reached. 次のゴールをクリック",
+      "status.reached": "Goal reached. 次のゴールを指定",
       "status.already_reached":
         "この位置と向きには到達済みです。別の位置か向きを指定しましょう（加算なし）",
-      "status.reached_n": "Goal reached ({n}/{total}) — 次のゴールをクリック",
+      "status.reached_n": "Goal reached ({n}/{total}) — 次のゴールを指定",
       "status.cleared": "5 ゴール達成 — クリア",
-      "status.tip": "マップをクリック+ドラッグして 2D Nav Goal を送る (R でリセット)",
-      tip_hud: "クリック+ドラッグでゴール送信 — 5 ゴールでクリア",
+      "status.tip": "ドラッグ、矢印＋Enter、左スティック＋AでGoalの位置と向きを指定（Rでリセット）",
+      tip_hud: "位置・向きを指定してGoal送信 — 移動／回転が必要な5ゴールでクリア",
     },
     en: {
-      hint: "Click + Drag = 2D Nav Goal / R = reset",
-      "status.bad_goal": "× Goal is in an obstacle or out of bounds. Click elsewhere",
+      hint: "Goal: drag / arrows + hold Enter / left stick + hold A (release to send)",
+      "status.bad_goal": "× Goal is in an obstacle or out of bounds. Choose another position",
       "status.collision": "Collision — reset to START",
       "status.navigating": "navigating — {info}",
       "status.plan_fail": "× plan failed (surrounded by obstacles?)",
-      "status.reached": "Goal reached. Click the next goal",
+      "status.reached": "Goal reached. Set the next goal",
       "status.already_reached":
         "This position and heading are already reached. Choose a different position or heading (no added goal)",
-      "status.reached_n": "Goal reached ({n}/{total}) — click the next goal",
+      "status.reached_n": "Goal reached ({n}/{total}) — set the next goal",
       "status.cleared": "5 goals completed — stage clear",
-      "status.tip": "Click and drag on the map to send a 2D Nav Goal (R to reset)",
-      tip_hud: "click + drag to send a goal — clear after 5 goals",
+      "status.tip": "Set goal pose: drag, arrows + Enter, or left stick + A (R to reset)",
+      tip_hud: "Send a position and heading — clear after 5 goals requiring motion",
     },
   },
   build: makeNav2Goal,

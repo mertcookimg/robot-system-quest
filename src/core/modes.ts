@@ -16,7 +16,7 @@ import { getStageModes, getStages } from "./stage_def";
 import { stageDisplayLesson, stageDisplayName } from "./stage_labels";
 import * as stageMenu from "./stage_menu";
 import { setupCardDemos } from "../guide/card_demos";
-import { onLangChange } from "../i18n";
+import { onLangChange, tx } from "../i18n";
 import type { Stage } from "../types";
 
 export type Mode = "game" | "lesson";
@@ -90,7 +90,13 @@ interface Deps {
 
 let deps: Deps | null = null;
 let disposeStageDemos: () => void = () => {};
-const PAD_2P_GAMES = new Set(["racing", "robo_soccer", "tag_chase", "sumo_battle"]);
+const LOCAL_2P_GAMES = new Set([
+  "racing",
+  "robo_soccer",
+  "tag_chase",
+  "sumo_battle",
+  "robo_tennis",
+]);
 const STAGE_PREVIEW_ICONS: Readonly<Record<string, string>> = {
   delivery: "📦",
   follower: "◎",
@@ -192,11 +198,16 @@ export function renderSelector(): void {
       <span class="info">
         <span class="name">${displayName}</span>
         <span class="lesson">${displayLesson}</span>
-        ${PAD_2P_GAMES.has(s.id) ? '<span class="multiplayer-badge">🎮 2P PAD</span>' : ""}
+        ${LOCAL_2P_GAMES.has(s.id) ? `<span class="multiplayer-badge">${tx("2P 対戦", "LOCAL 2P")}</span>` : ""}
       </span>
     `;
-    if (PAD_2P_GAMES.has(s.id)) {
-      pill.setAttribute("aria-label", `${displayName} — 2-player gamepad battle`);
+    if (LOCAL_2P_GAMES.has(s.id)) {
+      const controls = tx(
+        "キーボードまたはゲームパッドで2人対戦",
+        "Local 2-player battle with keyboard or gamepads",
+      );
+      pill.querySelector<HTMLElement>(".multiplayer-badge")!.title = controls;
+      pill.setAttribute("aria-label", `${displayName} — ${controls}`);
     }
     pill.addEventListener("click", () => {
       stageMenu.closeMenu();

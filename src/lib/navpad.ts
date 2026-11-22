@@ -9,8 +9,8 @@
 import { isStageInteractionBlocked } from "./input_guard";
 
 const STICK_DEAD = 0.15;
-const DPAD_STEP = 5.5; // px/frame (digital)
-const STICK_MAX_STEP = 9; // px/frame (analog full deflection)
+const DPAD_SPEED = 330; // canvas px/second (digital), matching 5.5 px at 60 Hz
+const STICK_MAX_SPEED = 540; // canvas px/second (analog full deflection)
 
 let canvasEl: HTMLCanvasElement | null = null;
 let cursorEl: HTMLElement | null = null;
@@ -122,7 +122,7 @@ function updateCursorDOM() {
   cursorEl.style.top = rect.top + window.scrollY + cursorY * scaleY + "px";
 }
 
-export function pollNavpad(pad: Gamepad | null): void {
+export function pollNavpad(pad: Gamepad | null, dt: number): void {
   if (!active || !canvasEl) return;
   if (isStageInteractionBlocked()) {
     cancelNavpadInput();
@@ -141,21 +141,24 @@ export function pollNavpad(pad: Gamepad | null): void {
     const mag = Math.hypot(ax, ay);
     if (mag > STICK_DEAD) {
       const t = (mag - STICK_DEAD) / (1 - STICK_DEAD);
-      const speed = t * t * STICK_MAX_STEP;
+      const speed = t * t * STICK_MAX_SPEED;
       dx += (ax / mag) * speed;
       dy += (ay / mag) * speed;
     }
-    if (pad.buttons[14]?.pressed) dx -= DPAD_STEP;
-    if (pad.buttons[15]?.pressed) dx += DPAD_STEP;
-    if (pad.buttons[12]?.pressed) dy -= DPAD_STEP;
-    if (pad.buttons[13]?.pressed) dy += DPAD_STEP;
+    if (pad.buttons[14]?.pressed) dx -= DPAD_SPEED;
+    if (pad.buttons[15]?.pressed) dx += DPAD_SPEED;
+    if (pad.buttons[12]?.pressed) dy -= DPAD_SPEED;
+    if (pad.buttons[13]?.pressed) dy += DPAD_SPEED;
   }
 
   // Keyboard arrow keys (added to the pad input).
-  if (heldKbArrows.has("ArrowLeft")) dx -= DPAD_STEP;
-  if (heldKbArrows.has("ArrowRight")) dx += DPAD_STEP;
-  if (heldKbArrows.has("ArrowUp")) dy -= DPAD_STEP;
-  if (heldKbArrows.has("ArrowDown")) dy += DPAD_STEP;
+  if (heldKbArrows.has("ArrowLeft")) dx -= DPAD_SPEED;
+  if (heldKbArrows.has("ArrowRight")) dx += DPAD_SPEED;
+  if (heldKbArrows.has("ArrowUp")) dy -= DPAD_SPEED;
+  if (heldKbArrows.has("ArrowDown")) dy += DPAD_SPEED;
+
+  dx *= dt;
+  dy *= dt;
 
   cursorX = Math.max(0, Math.min(canvasEl.width, cursorX + dx));
   cursorY = Math.max(0, Math.min(canvasEl.height, cursorY + dy));

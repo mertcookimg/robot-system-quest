@@ -152,9 +152,10 @@ export function makeDelivery(): Stage {
         const stars = elapsed < 25 ? 3 : elapsed < 45 ? 2 : 1;
         const stats =
           `Time      <b>${elapsed.toFixed(2)} s</b><br>` + `Distance  <b>${trail.length}</b> nodes`;
+        const timeSeconds = elapsed;
         g.setTimeout(() => {
           g.sfx.clear();
-          g.showClear(stars, stats);
+          g.showClear(stars, stats, { timeSeconds });
         }, 800);
       }
     }
@@ -311,7 +312,7 @@ export default defineStage({
   mode: "game",
   order: 1,
   diagram: `
-<svg viewBox="0 0 420 120" role="img" aria-label="WASD publisher to robot subscriber via /cmd_vel">
+<svg viewBox="0 0 420 120" role="img" aria-label="WASD publisher to robot subscriber via /robot/manual_control/cmd_vel">
   <defs>
     <marker id="ld-delivery-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
       <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
@@ -327,18 +328,18 @@ export default defineStage({
   <circle r="3.5" fill="light-dark(#925b00, #fbbf24)">
     <animateMotion dur="1.6s" repeatCount="indefinite" path="M 158 60 L 258 60"/>
   </circle>
-  <text x="210" y="46" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/cmd_vel</text>
+  <text x="210" y="16" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">/robot/manual_control/cmd_vel</text>
   <text x="210" y="80" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="9">geometry_msgs/msg/Twist</text>
 </svg>
 `,
   lessonModal: {
     title: {
-      ja: "Publisher入門 — /cmd_velへ速度指令を配信する",
-      en: "Publisher basics — publishing /cmd_vel",
+      ja: "Publisher入門 — 速度指令をTopicへ配信する",
+      en: "Publisher basics — publishing velocity commands",
     },
     learn: {
-      ja: "キー入力をTopic /cmd_velへpublishすると、そのTopicを購読しているロボットが動きます。これがROS 2におけるPublisherの役割です。",
-      en: "Your key presses are published to the topic /cmd_vel; a subscribing robot reads them and moves. This is exactly what a ROS2 Publisher does.",
+      ja: "キー入力を速度指令に変換し、/robot/manual_control/cmd_velへpublishします。このTopicを購読しているロボットが指令を受け取って動きます。これがROS 2におけるPublisherとSubscriberの役割です。",
+      en: "Your key presses are converted into velocity commands and published on /robot/manual_control/cmd_vel. The subscribing robot receives the commands and moves, illustrating the roles of a ROS 2 Publisher and Subscriber.",
     },
     goal: {
       ja: "WASDでロボットを動かしましょう。まず緑の円で荷物を拾い、青の円まで運べばクリアです。\n壁に当たるとやり直しになります。",

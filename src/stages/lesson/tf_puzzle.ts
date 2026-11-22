@@ -333,9 +333,10 @@ export function makeTfPuzzle(): Stage {
         `ty       <b>${playerTF.ty}</b> px (truth: ${TRUE_MOUNT.ty})<br>` +
         `yaw      <b>${playerTF.yaw}°</b> (truth: ${TRUE_MOUNT.yaw}°)<br>` +
         `Time     <b>${elapsed.toFixed(2)} s</b>`;
+      const timeSeconds = elapsed;
       g.setTimeout(() => {
         g.sfx.clear();
-        g.showClear(stars, stats);
+        g.showClear(stars, stats, { timeSeconds });
       }, 700);
       return;
     }
@@ -344,7 +345,7 @@ export function makeTfPuzzle(): Stage {
       `mode:    TF puzzle (base_link → laser)`,
       `tf:      tx=${playerTF.tx}  ty=${playerTF.ty}  yaw=${playerTF.yaw}°`,
       `match:   ${(score * 100).toFixed(0)}% / ${(TARGET_MATCH * 100).toFixed(0)}%  (${matchedCount}/${lastScan.length} rays)`,
-      `hint:    ロボに描かれた青い LiDAR の位置と向きを当てる`,
+      `hint:    ${tx("ロボに描かれた青いLiDARの位置と向きを合わせる", "Match the position and orientation of the blue LiDAR on the robot")}`,
     ]);
   }
 
@@ -738,7 +739,7 @@ export default defineStage({
     },
     learn: {
       ja: "ROS 2では、ロボットの各部品（base_link / laser / camera）の相対的な位置と向きをTF Treeで表します。LiDARがどこにどの向きで取り付けられているかをbase_link → laserのTransformで定義する仕組みです。これが間違っていると、SLAMやNav2も正しく動作しません。",
-      en: "In ROS2, each robot part (base_link / laser / camera) has a fixed relative pose, expressed in a TF tree. Where and how a LiDAR is mounted is declared as the base_link → laser transform — get it wrong and SLAM and Nav2 silently break.",
+      en: "ROS 2 represents the positions and orientations of robot frames in a TF tree. In this lesson, the LiDAR is rigidly mounted, so base_link → laser is a fixed transform. An incorrect mount transform misplaces scan data and affects SLAM and navigation; TF can also represent moving joints and other time-varying transforms.",
     },
     goal: {
       ja: "ロボットに描かれた青いLiDAR（正解）の位置と向きを観察し、tx / ty / yawのスライダーでbase_link → laserのTFを再現しましょう。LiDARのスキャン点が壁と95%以上一致すればクリアです。",

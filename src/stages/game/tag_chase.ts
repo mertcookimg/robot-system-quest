@@ -111,7 +111,7 @@ const BOUNDS: Aabb[] = [
   { x: 0, y: ARENA.y + ARENA.h, w: W, h: H - (ARENA.y + ARENA.h) }, // bottom strip
 ];
 
-// Interior obstacles — make line-of-sight breakable so the runner can juke.
+// Interior obstacles force detours, giving the runner room to change direction.
 const OBSTACLES: Aabb[] = [
   { x: 150, y: 130, w: 60, h: 80 },
   { x: 350, y: 90, w: 90, h: 50 },
@@ -1200,14 +1200,14 @@ export default defineStage({
       en: "1P: Survive 30s without being tagged by AI taggers. Pick a difficulty (Easy=1 AI / Normal=2 AI / Hard=2 fast item-seeking AI).\n2P: P1 runs, P2 chases. Tagger wins by tagging within 30s; runner wins by surviving.\n\nItems: ⚡ DASH = +60% speed (2.5s) / ✦ PULSE = runner drops a stun mine (1.2s tagger stun); tagger gets +40% tag reach (3s).",
     },
     first: {
-      ja: "障害物を盾にして鬼の視線を遮ることが重要です。ゲームパッド対戦は2台のゲームパッドを接続してYを押すと開始できます。P1が逃げ手、P2が鬼になり、どちらも左スティックで移動します。",
-      en: "Use obstacles to break line of sight. For a pad battle, connect two pads and press Y. P1 is the runner, P2 is the tagger, and both move with the left stick.",
+      ja: "障害物の周りで進行方向を変え、鬼を迂回させて距離を確保しましょう。2キー、P1のゲームパッドのY、または対戦モードボタンで1P/2Pを切り替えます。P1は逃げ手でWASD、P2は鬼で矢印キーを使います。ゲームパッドでは各プレイヤーが左スティックで移動します。",
+      en: "Change direction around obstacles so the chasers must detour, giving you room to escape. Switch 1P/2P with 2, Y on pad 1, or the match-mode buttons. P1 runs with WASD; P2 chases with the arrow keys. With gamepads, each player uses the left stick.",
     },
   },
   strings: {
     ja: {
-      hint: "1P · WASD/左スティック 移動 · Y → 2P PAD（接続 {pads}/2）",
-      hint2p: "🎮 2P PAD（接続 {pads}/2）· P1=逃げ手 / P2=鬼 · 左スティック 移動 · Y → 1P",
+      hint: "1P · WASD/左スティック 移動 · 2/PAD Y → 2P",
+      hint2p: "2P · P1逃げ手: WASD · P2鬼: 矢印 · PAD: 左スティック · 2/PAD Y → 1P",
       "status.countdown": "READY... 鬼が来るぞ!",
       "status.run": "逃げろ! あと {left} 秒",
       "status.run2p": "P1=逃 / P2=鬼  ·  あと {left} 秒",
@@ -1217,15 +1217,15 @@ export default defineStage({
       "label.survive": "SURVIVE",
       "overlay.players": "LOCAL PLAY",
       "overlay.1p": "1P vs AI",
-      "overlay.2p": "🎮 2P PAD対戦",
+      "overlay.2p": "2P 対戦",
       "overlay.difficulty": "難易度",
       "overlay.easy": "弱め",
       "overlay.normal": "ふつう",
       "overlay.hard": "強め",
     },
     en: {
-      hint: "1P · WASD/LEFT STICK move · Y → 2P PAD ({pads}/2)",
-      hint2p: "🎮 2P PAD ({pads}/2) · P1=RUNNER / P2=TAGGER · LEFT STICK move · Y → 1P",
+      hint: "1P · WASD/LEFT STICK move · 2/PAD Y → 2P",
+      hint2p: "2P · P1 runner: WASD · P2 tagger: arrows · PAD: left stick · 2/PAD Y → 1P",
       "status.countdown": "READY... taggers incoming!",
       "status.run": "Run! {left}s left",
       "status.run2p": "P1=runner / P2=tagger  ·  {left}s left",
@@ -1235,7 +1235,7 @@ export default defineStage({
       "label.survive": "SURVIVE",
       "overlay.players": "LOCAL PLAY",
       "overlay.1p": "1P vs AI",
-      "overlay.2p": "🎮 2P PAD BATTLE",
+      "overlay.2p": "2P versus",
       "overlay.difficulty": "Difficulty",
       "overlay.easy": "Easy",
       "overlay.normal": "Normal",

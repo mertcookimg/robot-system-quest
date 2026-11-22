@@ -527,6 +527,7 @@ export function makeImageProcessing(): Stage {
       ],
       isRunning: () => isRunning,
       activeWhenRunning: true,
+      liveStructureEditing: true,
       onChange: () => {
         needsRecompute = true;
       },

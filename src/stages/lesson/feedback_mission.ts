@@ -300,12 +300,13 @@ export function makeFeedbackMission(): Stage {
       setStatusBadge("success", "success");
       g.shake(0.5);
       particles.burst(robot.x, robot.y, COLORS.OK, 36);
-      const blockCount = program.length;
+      const blockCount = runtime.length;
       const stars = blockCount <= 4 ? 3 : blockCount <= 6 ? 2 : 1;
       const stats = `Blocks <b>${blockCount}</b><br>` + `Time   <b>${elapsed.toFixed(2)} s</b>`;
+      const timeSeconds = elapsed;
       g.setTimeout(() => {
         g.sfx.clear();
-        g.showClear(stars, stats);
+        g.showClear(stars, stats, { timeSeconds });
       }, 500);
     } else {
       setStatusBadge(err ?? "error", "error");

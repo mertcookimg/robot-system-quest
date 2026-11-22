@@ -28,7 +28,7 @@ import { activateNavpad, deactivateNavpad } from "../lib/navpad";
 import { drawGhost } from "../lib/draw";
 import { clearStageTimeouts, setStageTimeout } from "./stage_timers";
 import { trackStageReset, trackStageStart } from "./analytics";
-import { setTouchpadStage } from "../lib/touchpad";
+import { resetTouchpadLayout, setTouchpadStage } from "../lib/touchpad";
 import { stageDisplayName } from "./stage_labels";
 import { clearCanvasReadout } from "../lib/canvas_readout";
 import { releaseStageInputs } from "./input_reset";
@@ -153,7 +153,9 @@ export function loadStage(id: string): Promise<void> {
   releaseStageInputs();
   clearCanvasReadout();
   clearStageTimeouts();
+  lessonModal.close();
   crash.clearCrashOverlay();
+  resetTouchpadLayout();
   if (currentReady) current.dispose();
   currentReady = false;
   topicMonitor.clearLog();
@@ -227,6 +229,9 @@ function finishStageLoad(): void {
   // `stage.lesson` holds only the concept text; the L-number comes from the
   // registry order so labels can never duplicate or fall out of sequence.
   const lessonNo = getLessonNumbers().get(current.id);
+  const mode = getStageModes().get(current.id);
+  const footerMode = document.getElementById("stage-mode-label");
+  if (footerMode) footerMode.textContent = mode === "game" ? "Game" : "Lesson";
   ui.lessonLabel.textContent =
     current.lesson && lessonNo !== undefined ? `L${lessonNo} ${current.lesson}` : current.lesson;
   // Only advertise commands that have a truthful result inside this browser
@@ -237,7 +242,6 @@ function finishStageLoad(): void {
   lessonModal.renderBrief(current.id);
   terminalUi.resetForStage();
   history.replaceState(null, "", `#${current.id}`);
-  const mode = getStageModes().get(current.id);
   if (mode && mode !== modes.getMode()) modes.setModeView(mode);
   else modes.renderSelector();
   sfx.click();
@@ -276,6 +280,7 @@ export function resetCurrent(): void {
   releaseStageInputs();
   clearCanvasReadout();
   trackStageReset(current.id, modes.isGameStage(current.id) ? "game" : "lesson");
+  clearOverlay.close("restart");
   clearStageTimeouts();
   crash.clearCrashOverlay();
   topicMonitor.clearLog();

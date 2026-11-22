@@ -218,9 +218,10 @@ export function makeParamTuner(): Stage {
     const stats =
       `Time      <b>${elapsed.toFixed(2)} s</b><br>` +
       `max_speed <b>${b.max_speed.toFixed(2)} m/s</b> · turn_gain <b>${b.turn_gain.toFixed(2)}</b>`;
+    const timeSeconds = elapsed;
     g.setTimeout(() => {
       g.sfx.clear();
-      g.showClear(stars, stats);
+      g.showClear(stars, stats, { timeSeconds });
     }, 500);
     refreshProgramUI();
   }
@@ -274,6 +275,11 @@ export function makeParamTuner(): Stage {
     }
 
     const b = program[0];
+
+    if (!b) {
+      onStop();
+      return;
+    }
 
     // Controller runs at CONTROL_HZ, like a create_timer(0.1) node.
     // Params are read fresh each tick → live tuning takes effect instantly.
@@ -546,7 +552,7 @@ export default defineStage({
   mode: "lesson",
   order: 4,
   diagram: `
-<svg viewBox="0 0 420 120" role="img" aria-label="ros2 param set reconfigures the waypoint_driver node at runtime">
+<svg viewBox="0 0 420 120" role="img" aria-label="editing the drive_params block simulates runtime parameter changes">
   <defs>
     <marker id="ld-param-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
       <polygon points="0 0, 10 4, 0 8" fill="light-dark(#925b00, #fbbf24)"/>
@@ -556,7 +562,7 @@ export default defineStage({
     </marker>
   </defs>
   <rect x="8" y="16" width="150" height="88" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
-  <text x="83" y="38" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">$ ros2 param set</text>
+  <text x="83" y="38" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">drive_params (UI)</text>
   <text x="83" y="56" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">/waypoint_driver</text>
   <text x="83" y="74" text-anchor="middle" fill="light-dark(#172b4d, #edf3ff)" font-family="ui-monospace, monospace" font-size="9">max_speed 0.6</text>
   <rect x="240" y="16" width="172" height="88" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
@@ -575,27 +581,27 @@ export default defineStage({
 `,
   lessonModal: {
     title: {
-      ja: "Parameter — ros2 param setで実行中のNodeを調整",
-      en: "Parameters — tuning a live node with ros2 param set",
+      ja: "Parameter — ブロックの値で実行中の動きを調整",
+      en: "Parameters — tune live motion with the block's values",
     },
     learn: {
-      ja: "Parameterを使うと、コードを書き換えずに実行中のNodeの設定値を外部から変更できます。ブロックのmax_speed / turn_gain / accelはros2 param setに対応し、変更内容は/parameter_eventsへ流れます。",
-      en: "Parameters let you reconfigure a running node without touching its code. The block's max_speed / turn_gain / accel map directly to ros2 param set, and every change flows through /parameter_events.",
+      ja: "Parameterを使うと、コードを書き換えずに実行中のNodeの設定値を変更できます。このLessonではdrive_paramsブロックのmax_speed / turn_gain / accelを編集し、変更内容を/parameter_eventsで観察します。実機のros2 param setによる調整を模した操作です。概念端末は観察用で、値の変更はブロックから行います。",
+      en: "Parameters let you reconfigure a running node without changing its code. Here, edit max_speed / turn_gain / accel in the drive_params block and observe changes on /parameter_events. This simulates live tuning with ros2 param set on a real robot. The conceptual terminal is read-only; change values in the block.",
     },
     goal: {
       ja: "コーンに当たらずスラロームを走破し、GOALを目指しましょう。速いほど獲得する星が増えます（24秒未満で★3）。速すぎるとカーブで外側へ膨らみ、コーンに衝突します。",
       en: "Complete the slalom to GOAL without hitting a cone. Faster runs earn more stars (under 24 s = ★3) — but too fast and the robot drifts wide into a cone!",
     },
     first: {
-      ja: "まずは初期値（max_speed 0.4）のまま▶ RUNを押し、完走できることを確認します。次に走らせたままmax_speedを上げ、Parameterが実行中に反映される様子を観察しましょう。",
-      en: "First press ▶ RUN with the defaults (max_speed 0.4) and watch it finish. Then raise max_speed while it is still driving — live reconfiguration is the whole point of Parameters.",
+      ja: "まずは初期値（max_speed 0.4）のまま▶ RUNで完走を確認します。次のRUNでは走行中にブロックのmax_speedを少し上げ、動きと/parameter_eventsの変化を観察しましょう。",
+      en: "First RUN with the defaults (max_speed 0.4) and watch it finish. On the next RUN, slightly increase max_speed in the block while driving and observe the motion and /parameter_events.",
     },
   },
   strings: {
     ja: {
       collision: "コーンに衝突 — max_speed を下げるか turn_gain を上げて再 RUN",
-      hint: "実行中でもパラメータ変更OK = ros2 param set / STOP で停止",
-      palette_hint: "ros2 param set のように走行中でも値を変えられる",
+      hint: "実行中もブロックの値を変更できます / STOPで停止",
+      palette_hint: "走行中もブロックの値を編集できます（端末は観察用）",
       running: "waypoint_driver 実行中 — パラメータは今すぐ変更できます",
       single_block: "drive_params は 1 つだけ — 値は既存ブロックで調整して",
       stop: "停止 — パラメータを調整して再 RUN",
@@ -603,8 +609,8 @@ export default defineStage({
     },
     en: {
       collision: "Hit a cone — lower max_speed or raise turn_gain, then RUN again",
-      hint: "Edit params even while running = ros2 param set / STOP to halt",
-      palette_hint: "Change values mid-run, just like ros2 param set",
+      hint: "Edit the block's values while running / STOP to halt",
+      palette_hint: "Edit block values mid-run (the terminal is read-only)",
       running: "waypoint_driver running — parameters can be changed right now",
       single_block: "Only one drive_params block — tune the existing one instead",
       stop: "Stopped — adjust parameters and RUN again",

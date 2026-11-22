@@ -287,9 +287,10 @@ export function makeMazeMapper(): Stage {
           `Time     <b>${elapsed.toFixed(2)} s</b><br>` +
           `Map      <b>${(cov * 100).toFixed(0)}%</b> covered<br>` +
           `Treasure <b>${collectedCount} / 3</b>`;
+        const timeSeconds = elapsed;
         g.setTimeout(() => {
           g.sfx.clear();
-          g.showClear(stars, stats);
+          g.showClear(stars, stats, { timeSeconds });
         }, 700);
         return;
       }
@@ -823,7 +824,7 @@ export default defineStage({
     },
     learn: {
       ja: "このステージではロボットの姿勢が既知であると仮定し、LiDARの/scanからnav_msgs/msg/OccupancyGrid（/map）を更新する流れを体験します。「現在見えている領域」と「これまでに観測した領域」を分けて表示し、地図が更新される仕組みを学びます。実際のSLAMでは姿勢も同時に推定します。",
-      en: 'This stage assumes the robot pose is known and focuses on updating a nav_msgs/msg/OccupancyGrid (/map) from LiDAR /scan. It separates \\"currently visible\\" from \\"already observed\\" so you can see the map grow. Real SLAM estimates the robot pose and map together.',
+      en: 'This stage assumes the robot pose is known and focuses on updating a nav_msgs/msg/OccupancyGrid (/map) from LiDAR /scan. It separates "currently visible" from "already observed" so you can see the map grow. Real SLAM estimates the robot pose and map together.',
     },
     goal: {
       ja: "WASDで暗い迷路を進みましょう。ロボットのLiDARが捉えた範囲は明るく表示されます。\n3つの宝箱（α / β / γ）を集めて出口へ到達すればクリアです。\n壁に当たるとやり直しになります。",

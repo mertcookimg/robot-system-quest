@@ -14,12 +14,14 @@
     radial-gradient(ellipse 50% 40% at 50% 90%, rgba(var(--accent-2-rgb), 0.08), transparent 70%),
     linear-gradient(180deg, var(--surface-top), var(--bg-2));
   opacity: 0;
+  visibility: hidden;
   overflow: hidden;
   pointer-events: none;
   transition: opacity 0.4s ease;
 }
 .intro-screen.show {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
 }
 

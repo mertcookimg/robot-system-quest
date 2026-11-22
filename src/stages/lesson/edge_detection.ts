@@ -162,6 +162,7 @@ export function makeCameraMission(): Stage {
       ],
       isRunning: () => isRunning,
       activeWhenRunning: true,
+      liveStructureEditing: true,
       onRun: () => onRun(),
       onStop: () => onStop(),
       onClear: () => {
@@ -371,9 +372,10 @@ export function makeCameraMission(): Stage {
           `Time   <b>${elapsed.toFixed(2)} s</b><br>` +
           `targets <b>${mission.capturedCount()} / ${TARGETS.length}</b><br>` +
           `pipeline <b>${lastPipelineMs.toFixed(1)} ms / frame</b>`;
+        const timeSeconds = elapsed;
         g.setTimeout(() => {
           g.sfx.clear();
-          g.showClear(stars, stats);
+          g.showClear(stars, stats, { timeSeconds });
         }, 350);
       } else {
         // At least one target still uncaptured.
@@ -541,11 +543,11 @@ export function makeCameraMission(): Stage {
         "Camera + Teleop — observe Image Processing while driving",
       ),
       summary:
-        "lesson7（Canny）の実機運用を体感するステージです。WASD・矢印キー・ゲームパッドで遠隔操作しながら、" +
+        "Image Processingで学んだGaussianBlurとCannyを、走行中の疑似カメラ画像に適用するステージです。WASD・矢印キー・ゲームパッドで遠隔操作しながら、" +
         "/image_raw相当の疑似カメラ画像にGaussianBlurとCannyを適用し続けます。" +
         "床のライン・色付きターゲット・壁を見る視点、距離、角度を変えることで、" +
         "エッジ画像がどう変化するかを直感的に理解できます。" +
-        "ゴールへの到達条件はパラメータに左右されず、画像処理の結果は常に表示されます。",
+        "ぼかしと閾値を調整して5色すべての輪郭を十分に検出し、GOALへ到達するとクリアです。",
       msgTypes: ["sensor_msgs/msg/Image", "geometry_msgs/msg/Twist", "std_msgs/msg/String"],
       cli: ["ros2 topic hz /image_raw", "ros2 topic echo /cmd_vel", "ros2 topic info /image_raw"],
       state: {
@@ -635,8 +637,8 @@ export default defineStage({
       en: "Capture all 5 color targets with canny edges and reach GOAL.",
     },
     first: {
-      ja: "WASDで走行し、YキーでTUNEモードに切り替えてblur / cannyの閾値を調整しましょう。",
-      en: "Drive with WASD; press Y to switch to TUNE mode and adjust the blur / canny thresholds.",
+      ja: "WASD / 矢印キーで走行し、ブロックの数値欄でblurのsigmaとcannyのlow / highを調整しましょう。ゲームパッドではYでDRIVE / TUNEを切り替えます。",
+      en: "Drive with WASD / arrows and edit blur sigma and canny low / high in the block fields. On a gamepad, Y switches between DRIVE and TUNE.",
     },
   },
   strings: {

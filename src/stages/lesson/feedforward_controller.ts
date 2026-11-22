@@ -155,10 +155,16 @@ export function makeFeedforwardController(): Stage {
     });
 
     practice = setupModeToggle("be-practice", {
-      onLabel: "🔄 練習モード (RT)",
-      offLabel: "△ 三角形チャレンジ (RT)",
-      onTitle: "軌跡を確認しながら、速度と時間を何度でも調整できます",
-      offTitle: "1辺1.4mの正三角形を描き、始点へ戻るとクリアです",
+      onLabel: tx("🔄 練習モード (RT)", "🔄 Practice (RT)"),
+      offLabel: tx("△ 三角形チャレンジ (RT)", "△ Triangle challenge (RT)"),
+      onTitle: tx(
+        "軌跡を確認しながら、速度と時間を何度でも調整できます",
+        "Inspect the path and adjust velocity and duration as often as you like",
+      ),
+      offTitle: tx(
+        "1辺1.4mの正三角形を描き、始点へ戻るとクリアです",
+        "Draw an equilateral triangle with 1.4 m sides and return to start to clear",
+      ),
       onChange: (active) => {
         g.setStatus(
           active
@@ -261,7 +267,7 @@ export function makeFeedforwardController(): Stage {
       return;
     }
 
-    // Mission mode: check whether forward, left-turn, and right-turn patterns were all used.
+    // Challenge mode: check the triangle's corners, path and return to start.
     const result = triangle.result(robot.x, robot.y);
     cleared = finishTriangleLesson(g, result, elapsed, program.length);
     setStatusBadge(
@@ -285,7 +291,7 @@ export function makeFeedforwardController(): Stage {
         ? "moving START (WASD / pad)"
         : practice?.isActive()
           ? "practice (free play)"
-          : "mission (use fwd/left/right)";
+          : tx("三角形チャレンジ", "triangle challenge");
       g.setHud([
         `mode:    ${mode}`,
         `pose:    ${formatPose({ ...robot, theta: -robot.theta })}`,

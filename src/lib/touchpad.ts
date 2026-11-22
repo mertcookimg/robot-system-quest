@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { getLang, onLangChange } from "../i18n";
+import { cancelNavpadInput } from "./navpad";
 
 // Virtual controls for keyboard-less devices. Inputs are translated into the
 // same KeyboardEvents used by the physical keyboard path, so every stage keeps
@@ -12,6 +13,12 @@ type TouchLayout = "dpad" | "joystick";
 
 const STORE_KEY = "robot_quest_touch_layout_v1";
 const MOVE_KEYS: MoveKey[] = ["w", "a", "s", "d"];
+const NAV_MOVE_KEYS: Record<string, string> = {
+  w: "ArrowUp",
+  a: "ArrowLeft",
+  s: "ArrowDown",
+  d: "ArrowRight",
+};
 const JOINT_KEYS = ["i", "k"] as const;
 const TOUCH_KEYS = [...MOVE_KEYS, ...JOINT_KEYS, "Shift", " ", "Escape", "r"] as const;
 // These lessons supply task-specific controls instead of the general driving pad.
@@ -29,9 +36,59 @@ const BLOCK_EDITOR_DRIVE_STAGES = new Set(["edge_detection", "object_detection"]
 let touchpadRoot: HTMLElement | null = null;
 let touchpadLayoutAnchor: HTMLElement | null = null;
 let releaseActiveMovement: () => void = () => {};
+let shortLayout: MediaQueryList | null = null;
+let sceneRow: HTMLElement | null = null;
+let layoutSlots: Array<{ node: HTMLElement; marker: Comment }> = [];
+
+function restoreLayoutFocus(previous: HTMLElement | null): void {
+  if (
+    previous?.isConnected &&
+    document.activeElement !== previous &&
+    !previous.closest("[inert], [hidden]")
+  ) {
+    previous.focus({ preventScroll: true });
+  }
+}
+
+/** Restore each stage's layout before it disposes its own camera/workbench UI. */
+export function resetTouchpadLayout(): void {
+  if (!sceneRow) return;
+  const focused = document.activeElement as HTMLElement | null;
+  releaseActiveMovement();
+  for (const { node, marker } of layoutSlots) marker.replaceWith(node);
+  layoutSlots = [];
+  sceneRow.remove();
+  sceneRow = null;
+  document.body.classList.remove("short-touch-layout");
+  restoreLayoutFocus(focused);
+}
+
+function syncShortLayout(): void {
+  const scene = document.getElementById("canvas-wrap");
+  const sideBySide = shortLayout?.matches && touchpadRoot?.style.display !== "none";
+  if (!sideBySide || !scene || !touchpadRoot) {
+    resetTouchpadLayout();
+    return;
+  }
+  if (sceneRow) return;
+  const focused = document.activeElement as HTMLElement | null;
+  releaseActiveMovement();
+  layoutSlots = [scene, touchpadRoot].map((node) => {
+    const marker = document.createComment("touch-play-layout-slot");
+    node.before(marker);
+    return { node, marker };
+  });
+  sceneRow = document.createElement("div");
+  sceneRow.className = "touch-play-row";
+  layoutSlots[0].marker.after(sceneRow);
+  sceneRow.append(scene, touchpadRoot);
+  document.body.classList.add("short-touch-layout");
+  restoreLayoutFocus(focused);
+}
 
 function syncTouchpadForStage(): void {
   if (!touchpadRoot) return;
+  resetTouchpadLayout();
 
   const stageId = touchpadRoot.dataset.stage ?? "";
   const blockEditor = document.getElementById("block-editor");
@@ -40,15 +97,15 @@ function syncTouchpadForStage(): void {
   const hidden = NO_TOUCHPAD_STAGES.has(stageId) || (blockEditing && !drivesWithEditor);
   touchpadRoot.style.display = hidden ? "none" : "";
 
-  if (!blockEditing || !blockEditor || !touchpadLayoutAnchor) return;
-  if (drivesWithEditor) {
+  if (blockEditing && blockEditor && touchpadLayoutAnchor && drivesWithEditor) {
     // Camera missions need the joystick while their processing pipeline
     // editor remains open. Keep both directly below the game canvas.
     touchpadLayoutAnchor.insertAdjacentElement("afterend", touchpadRoot);
     touchpadRoot.insertAdjacentElement("afterend", blockEditor);
-  } else {
+  } else if (blockEditing && blockEditor && touchpadLayoutAnchor) {
     touchpadLayoutAnchor.insertAdjacentElement("afterend", blockEditor);
   }
+  syncShortLayout();
 }
 
 export function setTouchpadStage(stageId: string): void {
@@ -59,7 +116,13 @@ export function setTouchpadStage(stageId: string): void {
 }
 
 function sendKey(key: string, down: boolean): void {
-  window.dispatchEvent(new KeyboardEvent(down ? "keydown" : "keyup", { key, bubbles: true }));
+  // Navigation moves a goal cursor through the arrow-key route. All other
+  // stages keep their driving/joint keys, for both D-PAD and joystick layouts.
+  const routedKey =
+    touchpadRoot?.dataset.stage === "navigation" ? (NAV_MOVE_KEYS[key] ?? key) : key;
+  window.dispatchEvent(
+    new KeyboardEvent(down ? "keydown" : "keyup", { key: routedKey, bubbles: true }),
+  );
 }
 
 function holdButton(label: string, key: string, className: string): HTMLButtonElement {
@@ -347,10 +410,17 @@ export function setupTouchpad(): void {
   syncTouchpadForStage();
 
   const releaseMovement = () => {
+    cancelNavpadInput();
     joystick.release();
+    root.querySelectorAll(".touch-button.pressed").forEach((button) => {
+      button.dispatchEvent(new window.Event("pointercancel"));
+    });
     TOUCH_KEYS.forEach((key) => sendKey(key, false));
   };
   releaseActiveMovement = releaseMovement;
+  shortLayout = window.matchMedia("(min-width: 560px) and (max-height: 520px)");
+  shortLayout.addEventListener("change", syncShortLayout);
+  syncShortLayout();
   window.addEventListener("blur", releaseMovement);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) releaseMovement();

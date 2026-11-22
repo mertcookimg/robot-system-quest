@@ -6,6 +6,8 @@
 import { sfx } from "./audio";
 import { ui } from "./dom";
 import { releaseStageInputs } from "./input_reset";
+import { onLangChange, t } from "../i18n";
+import { setDialogVisible } from "./modal_visibility";
 
 let previousFocus: HTMLElement | null = null;
 
@@ -16,17 +18,15 @@ export function isOpen(): boolean {
 export function open(): void {
   if (!isOpen()) previousFocus = document.activeElement as HTMLElement | null;
   releaseStageInputs();
-  ui.helpModal.inert = false;
-  ui.helpModal.setAttribute("aria-hidden", "false");
   ui.helpModal.classList.add("show");
+  setDialogVisible(ui.helpModal, true);
   ui.helpClose.focus({ preventScroll: true });
 }
 
 export function close(): void {
   const wasOpen = isOpen();
   ui.helpModal.classList.remove("show");
-  ui.helpModal.inert = true;
-  ui.helpModal.setAttribute("aria-hidden", "true");
+  setDialogVisible(ui.helpModal, false);
   if (wasOpen) {
     const target =
       previousFocus?.isConnected &&
@@ -47,9 +47,15 @@ export function setupHelp(): void {
     title.id = "help-title";
     ui.helpModal.setAttribute("aria-labelledby", title.id);
   }
-  ui.helpModal.inert = !isOpen();
-  ui.helpModal.setAttribute("aria-hidden", String(!isOpen()));
+  const renderLanguage = (): void => {
+    if (title) title.textContent = t("ui.help.title");
+    ui.helpClose.textContent = t("ui.help.close");
+  };
+  renderLanguage();
+  onLangChange(renderLanguage);
+  setDialogVisible(ui.helpModal, isOpen());
   ui.helpModal.addEventListener("keydown", (event) => {
+    if (!isOpen()) return;
     if (event.key === "Tab") {
       event.preventDefault();
       event.stopPropagation();

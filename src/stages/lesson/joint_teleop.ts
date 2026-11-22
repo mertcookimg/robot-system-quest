@@ -181,6 +181,8 @@ export function makeJointTeleop(): Stage {
       `Time      <b>${elapsed.toFixed(2)} s</b><br>` +
         `Targets   <b>${COURSE_TARGETS.length} / ${COURSE_TARGETS.length}</b><br>` +
         `Control   <b>joint space</b>`,
+      undefined,
+      { timeSeconds: elapsed },
     );
   }
 

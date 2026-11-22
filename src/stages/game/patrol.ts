@@ -221,9 +221,10 @@ export function makeWarden(): Stage {
           `Time     <b>${elapsed.toFixed(2)} s</b><br>` +
           `Hacks    <b>${hacked.size} / 3</b><br>` +
           `Lockon   <b>${((lockon / LOCKON_TIME) * 100).toFixed(0)}%</b>`;
+        const timeSeconds = elapsed;
         g.setTimeout(() => {
           g.sfx.clear();
-          g.showClear(stars, stats);
+          g.showClear(stars, stats, { timeSeconds });
         }, 700);
       }
     }
@@ -659,7 +660,7 @@ export function makeWarden(): Stage {
       ),
       summary:
         "3つの端末ではstd_srvs/srv/Triggerを呼び出し、/wardenの機能を1段階ずつ停止します。" +
-        "最後の脱出ではLifecycle Nodeへshutdown遷移を要求し、Finalized状態へ移します。" +
+        "3つ目の端末でLifecycle Nodeへshutdown遷移を要求し、Finalized状態へ移して出口を開きます。" +
         "これはノードの運用状態を管理する仕組みを教材向けに表現したもので、緊急停止装置そのものではありません。" +
         "継続的にデータを配信するPub/Subとは異なり、Serviceでは1つのRequestに1つのResponseが対応します。",
       msgTypes: [
@@ -754,11 +755,11 @@ export default defineStage({
   <text x="82" y="56" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">player</text>
   <text x="82" y="78" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">Client</text>
   <rect x="264" y="26" width="148" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
-  <text x="338" y="56" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">module</text>
+  <text x="338" y="56" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">/warden</text>
   <text x="338" y="78" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">Server</text>
   <line x1="156" y1="50" x2="262" y2="50" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-warden-arrow-req)"/>
   <line x1="262" y1="74" x2="156" y2="74" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2" marker-end="url(#ld-warden-arrow-res)"/>
-  <text x="210" y="44" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/hack (Trigger)</text>
+  <text x="210" y="16" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">/warden/disable_camera (Trigger)</text>
   <text x="210" y="68" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="9">request →</text>
   <text x="210" y="92" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="9">← response</text>
 </svg>
@@ -773,8 +774,8 @@ export default defineStage({
       en: "A Service is a request/response interface: one request produces one response. In this Game, touching a terminal makes one service call.",
     },
     goal: {
-      ja: "WASDで見つからないように移動します。5体の見張り（WARDEN）を避けて3つの端末を順番にハッキングし、ESCAPE GATEから脱出しましょう。\n敵に触れたり、視界に入って捕まったりするとやり直しになります。",
-      en: "Sneak around with WASD. Avoid the 5 WARDEN patrols, hack all 3 terminals in order, then reach the ESCAPE GATE!\nGetting touched or spotted = retry.",
+      ja: "WASDで5体の見張り（WARDEN）を避け、3つの端末を好きな順でハッキングしましょう。3つ目で敵が停止し、ESCAPE GATEが開きます。開いたゲートへ進めばクリアです。\n敵への接触は即失敗です。視界に入るとロックオンが蓄積し、満タンで失敗します。視界から外れると減少します。",
+      en: "Use WASD to evade the 5 WARDEN patrols and hack all 3 terminals in any order. The third stops the enemies and opens the ESCAPE GATE; reach it to clear.\nContact causes an immediate retry. Being seen fills the lock-on meter; a full meter means retry. Leave their view to reduce it.",
     },
     first: {
       ja: "WASDで端末（α / β / γ）に近づくとTriggerが呼び出され、自動的にハッキングが始まります。",

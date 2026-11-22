@@ -12,6 +12,13 @@ export const H = 500;
 
 export interface ClearOptions {
   /**
+   * Completed attempt's scoring time in seconds, captured before any result delay.
+   * Include penalties when they count toward the timed score. Only a finite,
+   * positive value is saved; omit this for results without a timed ranking.
+   * Display text and its language never determine the recorded time.
+   */
+  timeSeconds?: number;
+  /**
    * Save the result as single-player progress: best time, best ghost and
    * stars. Defaults to true. Local 2P matches pass false so a match result
    * (for example P2 winning) is never stored as P1's record.
@@ -50,7 +57,7 @@ export interface GameContext {
   // === UI feedback ===
   setStatus(text: string, color?: string): void;
   setHud(lines: string[]): void;
-  /** Show the stage clear overlay. statsHtml may include "Time <b>X.XX s</b>". */
+  /** Show result text; pass options.timeSeconds separately for timed rankings. */
   showClear(stars: number, statsHtml: string, options?: ClearOptions): void;
   /**
    * Convenience wrapper around showClear: plays the clear sfx and fires
@@ -58,7 +65,7 @@ export interface GameContext {
    * has time to play. Returns nothing — the stage should still set its
    * own `cleared` flag before calling this so update() short-circuits.
    *
-   *   g.awardStars(3, `Time <b>${t.toFixed(2)} s</b>`);
+   *   g.awardStars(3, `Time <b>${t.toFixed(2)} s</b>`, undefined, { timeSeconds: t });
    */
   awardStars(stars: number, statsHtml: string, delayMs?: number, options?: ClearOptions): void;
   /** Schedule work that is automatically cancelled when the stage changes. */

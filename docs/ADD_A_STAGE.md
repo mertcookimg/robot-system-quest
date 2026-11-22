@@ -118,7 +118,9 @@ export function makeTreasureRush(): Stage {
     const dy = robot.y - GOAL.y;
     if (dx * dx + dy * dy <= GOAL.r * GOAL.r) {
       cleared = true;
-      g.awardStars(3, `Time <b>${elapsed.toFixed(2)} s</b>`);
+      g.awardStars(3, `Time <b>${elapsed.toFixed(2)} s</b>`, undefined, {
+        timeSeconds: elapsed,
+      });
     }
   }
 
@@ -199,6 +201,12 @@ and while the page is inactive. Terminal controls and the command palette keep `
 running with stage inputs neutral. `draw()` can still run while paused, so keep simulation changes in `update()`.
 Use `g.setTimeout()` for delayed stage actions; the shell cancels these callbacks on reset or
 stage change. Set your own `cleared` flag before calling `g.awardStars()` to avoid repeated awards.
+
+For a timed ranking, pass `{ timeSeconds: completedTime }` as the result options. Capture that
+number when the attempt finishes, before any delayed callback, and include penalties if they
+count toward the score. Only finite positive times are saved. Omit `timeSeconds` for score-only
+results. `statsHtml` is presentation text and is never parsed to determine records, so labels
+can be translated freely.
 
 For a stage-owned Retry button or a player/difficulty change that restarts the run, call
 `(g.resetStage ?? reset)()`. The runtime path also clears held inputs, pending stage callbacks,

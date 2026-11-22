@@ -18,7 +18,7 @@ async function openPage(saved?: string, blocked = false) {
   browser = new Window({ url: "https://example.org/robot-system-quest/?lang=ja" });
   if (saved) browser.localStorage.setItem(StorageKeys.theme, saved);
   browser.document.head.innerHTML =
-    '<meta name="theme-color" content="#f3f6fb"><meta name="color-scheme" content="light">';
+    '<meta name="theme-color" content="#0f172a"><meta name="color-scheme" content="dark">';
   browser.document.body.innerHTML = ["home", "header"]
     .map(
       (id) => `<div id="${id}" data-theme-switcher role="group">
@@ -73,8 +73,8 @@ afterEach(async () => {
   descriptors.clear();
 });
 
-test("saved dark theme restores on either page, including native controls and browser color", async () => {
-  const api = await openPage("dark");
+test("first visit defaults to dark, including native controls and browser color", async () => {
+  const api = await openPage();
   assert.equal(api.getTheme(), "dark");
   assert.equal(document.documentElement.dataset.theme, "dark");
   assert.equal(document.documentElement.style.colorScheme, "dark");
@@ -89,7 +89,7 @@ test("saved dark theme restores on either page, including native controls and br
 });
 
 test("theme buttons synchronize, persist and preserve the shared palette object", async () => {
-  const api = await openPage();
+  const api = await openPage("light");
   const palette = api.theme;
   const draw = (await server.ssrLoadModule("/src/lib/draw.ts")) as typeof import("../src/lib/draw");
   const initialAccent = draw.COLORS.ACCENT;
@@ -118,12 +118,12 @@ test("theme buttons synchronize, persist and preserve the shared palette object"
   assert.equal(changes, 2);
 });
 
-test("unavailable storage still permits switching and an invalid saved choice uses light", async () => {
+test("unavailable storage defaults to dark and still permits switching", async () => {
   const api = await openPage("invalid", true);
-  assert.equal(api.getTheme(), "light");
-  assert.doesNotThrow(() => api.setTheme("dark"));
   assert.equal(api.getTheme(), "dark");
-  assert.equal(document.documentElement.dataset.theme, "dark");
+  assert.doesNotThrow(() => api.setTheme("light"));
+  assert.equal(api.getTheme(), "light");
+  assert.equal(document.documentElement.dataset.theme, "light");
 });
 
 test("theme labels localize without changing the selection", async () => {
@@ -140,7 +140,7 @@ test("theme labels localize without changing the selection", async () => {
 });
 
 test("another tab updates the theme and disposed switchers stop listening", async () => {
-  const api = await openPage();
+  const api = await openPage("light");
   localStorage.setItem(StorageKeys.theme, "dark");
   browser.dispatchEvent(
     new browser.StorageEvent("storage", { key: StorageKeys.theme, newValue: "dark" }),
@@ -215,12 +215,15 @@ for (const entry of ["../index.html", "../guide/index.html"]) {
     const page = new Window();
     page.document.head.innerHTML = '<meta name="color-scheme"><meta name="theme-color">';
     try {
-      runInNewContext(script[1], {
-        document: page.document,
-        localStorage: { getItem: () => "dark" },
-      });
-      assert.equal(page.document.documentElement.dataset.theme, "dark");
-      assert.equal(page.document.documentElement.style.colorScheme, "dark");
+      for (const saved of [null, "invalid", "dark", "light"]) {
+        runInNewContext(script[1], {
+          document: page.document,
+          localStorage: { getItem: () => saved },
+        });
+        const expected = saved === "light" ? "light" : "dark";
+        assert.equal(page.document.documentElement.dataset.theme, expected);
+        assert.equal(page.document.documentElement.style.colorScheme, expected);
+      }
       runInNewContext(script[1], {
         document: page.document,
         localStorage: {
@@ -229,7 +232,7 @@ for (const entry of ["../index.html", "../guide/index.html"]) {
           },
         },
       });
-      assert.equal(page.document.documentElement.dataset.theme, "light");
+      assert.equal(page.document.documentElement.dataset.theme, "dark");
     } finally {
       await page.happyDOM.close();
     }

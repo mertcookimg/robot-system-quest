@@ -212,13 +212,14 @@ export function makeFeedforwardMission(): Stage {
       setStatusBadge("success", "success");
       g.shake(0.5);
       particles.burst(robot.x, robot.y, COLORS.OK, 36);
-      const blockCount = program.length;
+      const blockCount = runtime.length;
       const stars = blockCount <= 5 ? 3 : blockCount <= 8 ? 2 : 1;
       const stats =
         `Blocks    <b>${blockCount}</b><br>` + `Time      <b>${elapsed.toFixed(2)} s</b>`;
+      const timeSeconds = elapsed;
       g.setTimeout(() => {
         g.sfx.clear();
-        g.showClear(stars, stats);
+        g.showClear(stars, stats, { timeSeconds });
       }, 500);
     } else {
       lastError = err ?? "error";
@@ -511,8 +512,8 @@ export default defineStage({
       en: "Feedforward mission — dodging walls by time",
     },
     learn: {
-      ja: "Feedforward制御では、あらかじめ計算した速度と時間だけを使って目的地を目指します。モデルや動作に誤差があると壁にぶつかるため、開ループ制御の限界を体感できます。",
-      en: "With perfect timing, feedforward reaches the goal in a straight shot — but any drift hits a wall. Feel the limits of open-loop control.",
+      ja: "速度と時間から直進・旋回の順序をあらかじめ計算し、壁を避けてGOALを目指します。このLessonは外乱のない理想的な動きを使い、測定した位置に応じて指令を修正することはありません。",
+      en: "Plan a sequence of forward moves and turns using velocity and duration to avoid the walls and reach GOAL. This lesson uses ideal motion without added disturbances; the controller does not correct its commands from measured pose.",
     },
     goal: {
       ja: "cmd_velブロックにdurationを設定して並べ、壁を避けながらGOALに到達しましょう。",

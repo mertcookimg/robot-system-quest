@@ -5,7 +5,7 @@ import { stageColor } from "../../lib/stage_colors";
 
 // lidar_avoidance: LiDAR Avoidance
 // Faithful re-implementation of robot_ros2_lecture / robot_lidar_control.py.
-// Subscribe to /scan, compute min distance in front/right/left sectors,
+// Subscribe to /robot/lidar/scan, compute min distance in front/right/left sectors,
 // and reactively switch between forward / turn-left / turn-right / stop
 // based on a distance threshold.
 import { W, H, type Stage, type GameContext } from "../../types";
@@ -159,6 +159,8 @@ export function makeLidarAvoidance(): Stage {
         onStop();
         program.length = 0;
       },
+      maxBlocks: 1,
+      onLimit: () => g.setStatus(t("lidar_avoidance.single_block"), "var(--warn)"),
     });
 
     reset();
@@ -214,9 +216,10 @@ export function makeLidarAvoidance(): Stage {
     const stats =
       `Time   <b>${elapsed.toFixed(2)} s</b><br>` +
       `threshold <b>${program[0].threshold.toFixed(2)} m</b>`;
+    const timeSeconds = elapsed;
     g.setTimeout(() => {
       g.sfx.clear();
-      g.showClear(3, stats);
+      g.showClear(3, stats, { timeSeconds });
     }, 500);
     refreshProgramUI();
   }
@@ -324,7 +327,12 @@ export function makeLidarAvoidance(): Stage {
 
     const b = program[0];
 
-    // /scan refreshes at SCAN_HZ for rendering; the control law runs
+    if (!b) {
+      onStop();
+      return;
+    }
+
+    // LaserScan refreshes at SCAN_HZ for rendering; the control law runs
     // every frame on the latest reading.
     scanAcc += dt;
     let sec = lastSector;
@@ -367,7 +375,7 @@ export function makeLidarAvoidance(): Stage {
 
     // Trail.
     trail.update(dt, robot.x, robot.y);
-    // Publish /scan and /cmd_vel.
+    // Publish LaserScan and Twist on the configured robot topics.
     pubAcc += dt;
     if (pubAcc > 1 / SCAN_HZ) {
       pubAcc = 0;
@@ -518,12 +526,12 @@ export function makeLidarAvoidance(): Stage {
     lessonCmd: "ros2 topic echo /robot/lidar/scan",
     ros2: {
       title: tx(
-        "Reactive Control — /scanで前方が空いていれば進む",
-        "Reactive Control — drive forward when /scan says the front is clear",
+        "Reactive Control — LiDARで前方が空いていれば進む",
+        "Reactive Control — drive forward when LiDAR shows the front is clear",
       ),
       summary:
         "講義用のLiDAR障害物回避を簡略化して再現します。" +
-        "/scanを購読して前方・右・左の各セクターの最小距離を計算し、" +
+        "/robot/lidar/scanを購読して前方・右・左の各セクターの最小距離を計算し、" +
         "閾値に応じて前進・左旋回・右旋回・停止を切り替えるリアクティブ制御です。" +
         "計画や目標を使わず、純粋にセンサー値から即座に判断する、最も基本的な自律行動です。" +
         "thresholdを変えると挙動が大きく変化します（小さいほど積極的、大きいほど慎重）。",
@@ -649,17 +657,17 @@ export default defineStage({
   <!-- annotations -->
   <text x="50" y="100" text-anchor="middle" fill="light-dark(#be2949, #fda4af)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">blocked</text>
   <text x="370" y="100" text-anchor="middle" fill="light-dark(#be2949, #fda4af)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">blocked</text>
-  <text x="210" y="103" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">if min &lt; thr → turn</text>
+  <text x="210" y="103" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">front → right → left → stop</text>
 </svg>
 `,
   lessonModal: {
     title: {
-      ja: "リアクティブ制御 — /scanで前進と旋回を切り替える",
-      en: "Reactive control — switching on /scan",
+      ja: "リアクティブ制御 — LiDARで前進と旋回を切り替える",
+      en: "Reactive control — switching from LiDAR data",
     },
     learn: {
-      ja: "/scanの各セクターで測った最小距離がthreshold未満なら旋回し、threshold以上なら前進します。条件分岐だけで動くシンプルなリアクティブ制御です。",
-      en: "If the sector min from /scan is closer than the threshold, turn; otherwise drive forward. A pure if/else reactive controller — no planning involved.",
+      ja: "/robot/lidar/scanの各セクターの最小距離を順番に判定します。①前方がthresholdより大きければ前進。②それ以外で右がthreshold未満なら左旋回。③さらに左がthreshold未満なら右旋回。④どれにも当てはまらなければ停止します。左右とも近い場合は左旋回を優先します。前方が閾値と同じ場合も②以降を判定します。",
+      en: "Check sector minima from /robot/lidar/scan in order: (1) drive forward if front > threshold; (2) otherwise turn left if right < threshold; (3) otherwise turn right if left < threshold; (4) otherwise stop. If both sides are close, the left turn takes priority. Front exactly at the threshold also proceeds to checks (2)–(4).",
     },
     goal: {
       ja: "threshold / fwd_speed / turn_speedを調整し、衝突せずにGOALへ到達しましょう。",
@@ -674,7 +682,8 @@ export default defineStage({
     ja: {
       collision: "衝突 — thresholdを上げるかfwd_speedを下げて再度RUN",
       hint: "thresholdを変えて反応性を調整 / STOPで停止",
-      palette_hint: "/scanの各セクターの最小距離を使ったリアクティブ制御",
+      palette_hint: "/robot/lidar/scanの各セクターの最小距離を使ったリアクティブ制御",
+      single_block: "lidar_avoid は1つだけ使います。既存ブロックの値を調整してください。",
       running: "LiDAR障害物回避を実行中 — STOPで停止",
       stop: "停止 — パラメータを調整して再度RUN",
       tip: "thresholdを調整してRUN — LiDARで障害物を避けながらGOALへ",
@@ -682,7 +691,8 @@ export default defineStage({
     en: {
       collision: "Collision — raise threshold or lower fwd_speed and RUN again",
       hint: "Adjust threshold for reactivity / STOP to halt",
-      palette_hint: "Reactive avoidance using /scan sector minima",
+      palette_hint: "Reactive avoidance using /robot/lidar/scan sector minima",
+      single_block: "Use one lidar_avoid block. Adjust the values in the existing block.",
       running: "LiDAR avoidance running — press STOP to halt",
       stop: "Stopped — adjust parameters and RUN again",
       tip: "Tune the threshold and RUN — avoid obstacles via LiDAR → GOAL",

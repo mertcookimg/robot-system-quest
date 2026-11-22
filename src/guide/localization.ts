@@ -38,7 +38,7 @@ const STATIC_EN: Record<string, string> = {
   "現在の状況と目標を基に、行動、経路、作業の進め方を決めます。":
     "Use the current situation and goal to decide actions, paths, and task execution.",
   "目標・経路・タスク": "Goals, paths, and tasks",
-  "狙った動きを実現する：適応的に制御する": "Produce the Intended Motion with Adaptive Control",
+  フィードバックで狙った動きを実現する: "Produce the Intended Motion with Feedback",
   "目標値と現在値を比較し、車輪や関節が安定して動くように指令を調整します。":
     "Compare target and measured states, then adjust commands so wheels and joints move reliably.",
   "速度・関節・フィードバック": "Velocity, joints, and feedback",

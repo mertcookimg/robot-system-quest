@@ -90,6 +90,7 @@ before(async () => {
   }
   Object.defineProperty(document, "hidden", { configurable: true, get: () => pageHidden });
   Object.defineProperty(navigator, "getGamepads", { configurable: true, value: () => pads });
+  Object.defineProperty(navigator, "maxTouchPoints", { configurable: true, value: 1 });
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   document.body.innerHTML = html
     .match(/<body[^>]*>([\s\S]*?)<\/body>/i)![1]
@@ -185,6 +186,10 @@ before(async () => {
   });
   const gamepad = await server.ssrLoadModule("/src/core/gamepad.ts");
   gamepad.setupGamepad({ startGame() {}, resetCurrentStage() {} });
+  const touchpad = await server.ssrLoadModule("/src/lib/touchpad.ts");
+  touchpad.setupTouchpad();
+  const canvasTouch = await server.ssrLoadModule("/src/lib/canvas_touch.ts");
+  canvasTouch.setupCanvasTouch(ui.canvas);
   nav.setNavpadCanvas(ui.canvas);
   ui.canvas.getBoundingClientRect = () => new DOMRect(0, 0, 800, 500);
   ui.canvas.tabIndex = 0;
@@ -254,6 +259,61 @@ after(async () => {
   }
 });
 
+test("gamepad directions scroll long guides and help without moving the stage", async () => {
+  const gamepad = await server.ssrLoadModule("/src/core/gamepad.ts");
+  const lesson = await server.ssrLoadModule("/src/core/lesson_modal.ts");
+  const { registerLang } = await server.ssrLoadModule("/src/i18n/index.ts");
+  registerLang({ en: { "navigation.lesson.title": "Navigation guide" } });
+  for (const modal of [
+    {
+      element: ui.helpModal,
+      selector: ".help-card",
+      open: help.open,
+      close: help.close,
+      closeButton: 1,
+    },
+    {
+      element: ui.lessonModal,
+      selector: ".lesson-card",
+      open: () => lesson.open(current.id),
+      close: lesson.close,
+      closeButton: 0,
+    },
+  ]) {
+    const card = modal.element.querySelector<HTMLElement>(modal.selector)!;
+    Object.defineProperty(card, "clientHeight", { configurable: true, value: 200 });
+    Object.defineProperty(card, "scrollHeight", { configurable: true, value: 1200 });
+    modal.open();
+    const before = updates;
+    card.scrollTop = 0;
+    pad([13]);
+    for (let i = 0; i < 60; i++) gamepad.poll(1 / 60);
+    assert.equal(card.scrollTop, 420);
+    pad([], [0, 1, 0, 0]);
+    for (let i = 0; i < 144; i++) gamepad.poll(1 / 144);
+    assert.ok(Math.abs(card.scrollTop - 840) < 0.01);
+    pad([12]);
+    for (let i = 0; i < 120; i++) gamepad.poll(1 / 60);
+    assert.equal(card.scrollTop, 0);
+    frame();
+    assert.equal(updates, before);
+    assert.equal(canvasDowns, 0);
+    pad();
+    gamepad.poll();
+    pad([modal.closeButton]);
+    frame();
+    assert.equal(modal.element.classList.contains("show"), false);
+    // The dismissal press must not become an action on the next stage frame.
+    frame();
+    assert.equal(actions, 0);
+    modal.close();
+    pad();
+    gamepad.poll();
+    Reflect.deleteProperty(card, "clientHeight");
+    Reflect.deleteProperty(card, "scrollHeight");
+  }
+});
+
 function frame(): void {
   const callbacks = [...raf.values()];
   raf.clear();
@@ -287,6 +347,19 @@ function pad(buttons: number[] = [], axes = [0, 0, 0, 0]): Gamepad {
   } as Gamepad;
   pads = [controller];
   return controller;
+}
+
+function touch(target: Element, type: string, x = 100, y = 100): void {
+  target.dispatchEvent(
+    new browser.PointerEvent(type, {
+      pointerType: "touch",
+      pointerId: 1,
+      clientX: x,
+      clientY: y,
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
 }
 
 function loadActualStage(
@@ -328,7 +401,7 @@ test("Navigation completion owns Enter and Retry, while all-clear also retains R
   });
   assert.ok(document.activeElement === ui.nextBtn);
   const event = key("Enter", "keydown", ui.nextBtn);
-  nav.pollNavpad(null);
+  nav.pollNavpad(null, 1 / 60);
   assert.equal(event.defaultPrevented, true);
   assert.equal(nexts, 1);
   assert.equal(clear.isOpen(), false);
@@ -356,19 +429,22 @@ test("an unrecorded 2P result keeps P1's best time and stars untouched", async (
   )) as typeof import("../src/core/progress");
   const deps = { current, stages: [current], onRenderSelector() {} };
 
-  clear.show(2, "Winner <b>P2</b><br>Time <b>2.10 s</b>", deps, { record: false });
+  clear.show(2, "Winner <b>P2</b><br>Time <b>2.10 s</b>", deps, {
+    record: false,
+    timeSeconds: 2.1,
+  });
   assert.equal(clear.isOpen(), true, "The match result is still shown");
   assert.deepEqual(rankings.getTopTimes(current.id, 5), []);
   assert.equal(progress.loadProgress()[current.id], undefined);
   assert.equal(ui.clearStats.querySelector(".rankings"), null);
   clear.close();
 
-  clear.show(3, "Time <b>5.00 s</b>", deps);
+  clear.show(3, "Time <b>5.00 s</b>", deps, { timeSeconds: 5 });
   assert.deepEqual(rankings.getTopTimes(current.id, 5), [5]);
   assert.equal(progress.loadProgress()[current.id]?.stars, 3);
   clear.close();
 
-  clear.show(1, "Winner <b>P2</b><br>Time <b>1.00 s</b>", deps, { record: false });
+  clear.show(1, "Winner <b>P2</b><br>Time <b>1.00 s</b>", deps, { record: false, timeSeconds: 1 });
   assert.deepEqual(rankings.getTopTimes(current.id, 5), [5], "A 2P time never becomes a record");
   assert.equal(progress.loadProgress()[current.id]?.stars, 3);
 });
@@ -552,7 +628,7 @@ test("help and stage menu pause updates while drawing continues", () => {
     arm.poll();
     assert.equal(arm.rightStickX(), 0);
     nav.activateNavpad();
-    nav.pollNavpad(controller);
+    nav.pollNavpad(controller, 1 / 60);
     assert.equal(canvasDowns, 0);
     nav.deactivateNavpad();
     pads = [];
@@ -602,13 +678,80 @@ test("terminal input, command controls and palette keep time running while captu
     assert.equal(arm.rightStickX(), 0);
     assert.equal(arm.buttonEdge(0), false);
     nav.activateNavpad();
-    nav.pollNavpad(controller);
+    nav.pollNavpad(controller, 1 / 60);
     assert.equal(canvasDowns, 0);
     nav.deactivateNavpad();
     for (const value of ["w", "a", "s", "d", "Enter"]) key(value, "keyup", target);
     pads = [];
     terminal.closePadPalette();
     ui.canvas.focus();
+  }
+});
+
+test("the first touch control press exits terminal capture and moves Navigation's cursor", (t) => {
+  let now = performance.now();
+  t.mock.method(performance, "now", () => now);
+  nav.pollNavpad(null, 0);
+  const cursorY = () => parseFloat(document.getElementById("pad-cursor")!.style.top);
+  const joystick = document.querySelector<HTMLElement>(".touch-joystick")!;
+  joystick.getBoundingClientRect = () => new DOMRect(0, 0, 100, 100);
+  for (const owner of [
+    "terminal-input",
+    "terminal-command-select",
+    "terminal-command-run",
+    "palette",
+  ]) {
+    for (const selector of [".touch-up", ".touch-joystick", ".touch-cancel"]) {
+      if (owner === "palette") terminal.openPadPalette();
+      else document.getElementById(owner)!.focus();
+      const button = document.querySelector<HTMLElement>(selector)!;
+      const before = updates;
+      const positionBefore = cursorY();
+      touch(button, "pointerdown", 50, 0);
+      assert.ok(document.activeElement === ui.canvas, `${owner}: ${selector} restores focus`);
+      assert.equal(terminal.isPadPaletteOpen(), false);
+      now += 1000 / 60;
+      frame();
+      assert.equal(updates, before + 1, "Returning to controls must not pause a simulation tick");
+      assert.equal(
+        cursorY() < positionBefore,
+        selector !== ".touch-cancel",
+        `${owner}: the same first gesture must move the goal cursor`,
+      );
+      const positionAfter = cursorY();
+      touch(button, "pointerup", 50, 0);
+      now += 1000 / 60;
+      frame();
+      assert.equal(cursorY(), positionAfter, "Releasing touch must stop the goal cursor");
+    }
+  }
+});
+
+test("hover, unrelated clicks and background gestures do not release terminal capture", () => {
+  ui.terminalInput.focus();
+  touch(ui.canvas, "pointermove");
+  touch(document.body, "pointerdown");
+  assert.ok(document.activeElement === ui.terminalInput);
+
+  const interruptions = [
+    { open: () => help.open(), close: () => help.close() },
+    {
+      open: () => window.dispatchEvent(new Event("blur")),
+      close: () => window.dispatchEvent(new Event("focus")),
+    },
+  ];
+  for (const interruption of interruptions) {
+    ui.terminalInput.focus();
+    interruption.open();
+    const focused = document.activeElement;
+    for (const target of [ui.canvas, document.querySelector(".touch-up")!]) {
+      touch(target, "pointerdown");
+      assert.ok(document.activeElement === focused, "A paused surface must keep its focus");
+      frame();
+      assert.equal(input.getKeys().has("w"), false);
+      touch(target, "pointerup");
+    }
+    interruption.close();
   }
 });
 
@@ -855,10 +998,16 @@ test("Tennis pointer movement respects terminal capture, modals and inactive pag
   pointer("pointermove", 160, 220);
   assert.deepEqual(playerPosition(), [160, 220]);
 
+  ui.terminalInput.focus();
+  pointer("pointermove", 300, 350);
+  assert.deepEqual(playerPosition(), [160, 220], "Hovering must not interrupt terminal typing");
+  assert.ok(document.activeElement === ui.terminalInput);
+  pointer("pointerdown", 160, 220);
+  assert.ok(document.activeElement === ui.canvas, "An explicit click returns control to the game");
+
   const interruptions = [
     { open: () => help.open(), close: () => help.close() },
     { open: () => menu.openMenu(), close: () => menu.closeMenu() },
-    { open: () => ui.terminalInput.focus(), close: () => ui.canvas.focus() },
     {
       open: () => window.dispatchEvent(new Event("blur")),
       close: () => window.dispatchEvent(new Event("focus")),
@@ -888,18 +1037,38 @@ test("Tennis pointer movement respects terminal capture, modals and inactive pag
   assert.deepEqual(playerPosition(), [260, 180], "Fresh pointer movement must work after resuming");
 });
 
-test("Tennis discards pointer actions during terminal capture and other interruptions", () => {
+test("Tennis accepts the first canvas tap after terminal inspection", () => {
   const tennis = makeTennis();
   loadActualStage(tennis);
-  const click = () =>
-    ui.canvas.dispatchEvent(new browser.PointerEvent("pointerdown", { pointerType: "touch" }));
+  for (const owner of [
+    "terminal-input",
+    "terminal-command-select",
+    "terminal-command-run",
+    "palette",
+  ]) {
+    tennis.reset();
+    tennis.update(1);
+    if (owner === "palette") terminal.openPadPalette();
+    else document.getElementById(owner)!.focus();
+    frame();
+    assert.match(ui.info.textContent ?? "", /RALLY\s+0/);
+    touch(ui.canvas, "pointerdown", 112, 317);
+    touch(ui.canvas, "pointerup", 112, 317);
+    assert.ok(document.activeElement === ui.canvas, `${owner}: a canvas tap restores focus`);
+    assert.equal(terminal.isPadPaletteOpen(), false);
+    frame();
+    assert.match(ui.info.textContent ?? "", /RALLY\s+1/, `${owner}: the first tap must serve`);
+  }
+});
+
+test("Tennis discards pointer actions during modal and page interruptions", () => {
+  const tennis = makeTennis();
+  loadActualStage(tennis);
+  const click = () => {
+    touch(ui.canvas, "pointerdown");
+    touch(ui.canvas, "pointerup");
+  };
   const interruptions = [
-    {
-      name: "terminal",
-      open: () => ui.terminalInput.focus(),
-      close: () => ui.canvas.focus(),
-      drawWhilePaused: true,
-    },
     {
       name: "help",
       open: () => help.open(),
@@ -952,19 +1121,15 @@ test("Tennis discards pointer actions during terminal capture and other interrup
   }
 });
 
-test("Baseball keeps pitching while terminal capture discards queued and new pointer swings", (t) => {
+test("Baseball keeps pitching during terminal inspection and accepts the first returning tap", (t) => {
   let now = performance.now();
   t.mock.method(performance, "now", () => now);
   const baseball = makeBaseball();
   const publications = loadActualStage(baseball);
-  const click = () =>
-    ui.canvas.dispatchEvent(
-      new browser.PointerEvent("pointerdown", {
-        pointerType: "touch",
-        clientX: 600,
-        clientY: 250,
-      }),
-    );
+  const click = () => {
+    touch(ui.canvas, "pointerdown", 600, 250);
+    touch(ui.canvas, "pointerup", 600, 250);
+  };
   const count = (topic: string) => publications.filter((value) => value === topic).length;
 
   for (const queuedBeforeFocus of [false, true]) {
@@ -975,7 +1140,6 @@ test("Baseball keeps pitching while terminal capture discards queued and new poi
     const pitchesBefore = count("/pitch/trajectory");
     if (queuedBeforeFocus) click();
     ui.terminalInput.focus();
-    if (!queuedBeforeFocus) click();
     key("e", "keydown", ui.terminalInput);
     key("e", "keyup", ui.terminalInput);
     for (let index = 0; index < 4; index++) {
@@ -993,8 +1157,8 @@ test("Baseball keeps pitching while terminal capture discards queued and new poi
         ? "A queued swing must be discarded on focus"
         : "Terminal input must not swing",
     );
-    ui.canvas.focus();
     click();
+    assert.ok(document.activeElement === ui.canvas);
     now += 50;
     frame();
     assert.equal(count("/bat/swing"), swingsBefore + 1, "A fresh canvas click must still swing");
@@ -1091,4 +1255,131 @@ test("Pub/Sub Builder ignores the briefing press and accepts a fresh two-port co
     true,
     "Fresh navigation and confirmation must complete a working ROS connection",
   );
+});
+
+test("Pub/Sub Builder accepts a complete touch drag immediately after terminal inspection", () => {
+  const builder = makePubsub();
+  const publications = loadActualStage(builder);
+  ui.terminalInput.focus();
+  frame();
+  touch(ui.canvas, "pointerdown", 330, 170);
+  assert.ok(document.activeElement === ui.canvas);
+  assert.equal(canvasDowns, 1, "The returning touch must reach the mouse-driven puzzle once");
+  touch(ui.canvas, "pointermove", 470, 170);
+  touch(ui.canvas, "pointerup", 470, 170);
+  builder.update(0.3);
+  assert.ok(publications.includes("/cmd_vel"), "The first drag must form a working connection");
+});
+
+test("short screens keep the scene and every touch control together, then restore portrait order", (t) => {
+  t.after(() => browser.happyDOM.setWindowSize({ width: 1024, height: 768 }));
+  const pad = document.getElementById("touchpad")!;
+  const originalSceneParent = ui.canvasWrap.parentElement;
+  const originalPadParent = pad.parentElement;
+  const originalPadPrevious = pad.previousElementSibling;
+  const buttons = [...pad.querySelectorAll("button")];
+  ui.canvas.focus();
+  for (const [width, height] of [
+    [568, 300],
+    [667, 375],
+    [844, 390],
+    [932, 430],
+    [1024, 430],
+  ]) {
+    browser.happyDOM.setWindowSize({ width, height });
+    const row = document.querySelector(".touch-play-row")!;
+    assert.ok(row, `${width} × ${height} uses the short layout`);
+    assert.equal(ui.canvasWrap.parentElement, row);
+    assert.equal(pad.parentElement, row);
+    assert.equal(
+      row.children.length,
+      2,
+      "Readouts and parameter panels must remain outside the following row",
+    );
+    assert.deepEqual(
+      [...pad.querySelectorAll("button")],
+      buttons,
+      "Resizing must preserve every control",
+    );
+    assert.equal(document.querySelectorAll(".touch-play-row").length, 1);
+    assert.ok(document.activeElement === ui.canvas, "Resizing must retain the focused control");
+  }
+  browser.happyDOM.setWindowSize({ width: 390, height: 844 });
+  assert.equal(document.querySelector(".touch-play-row"), null);
+  assert.equal(document.body.classList.contains("short-touch-layout"), false);
+  assert.equal(ui.canvasWrap.parentElement, originalSceneParent);
+  assert.equal(pad.parentElement, originalPadParent);
+  assert.equal(pad.previousElementSibling, originalPadPrevious);
+  assert.ok(document.activeElement === ui.canvas);
+});
+
+test("rotating a held touch control releases movement and cancels a Navigation goal drag", (t) => {
+  t.after(() => browser.happyDOM.setWindowSize({ width: 1024, height: 768 }));
+  browser.happyDOM.setWindowSize({ width: 844, height: 390 });
+  const up = document.querySelector(".touch-up")!;
+  const ok = document.querySelector(".touch-ok")!;
+  touch(up, "pointerdown");
+  touch(ok, "pointerdown");
+  nav.pollNavpad(null, 1 / 60);
+  assert.equal(canvasDowns, 1);
+  browser.happyDOM.setWindowSize({ width: 390, height: 844 });
+  assert.equal(document.querySelector(".touch-button.pressed"), null);
+  assert.equal(canvasLeaves, 1, "A drag interrupted by rotation must be cancelled");
+  nav.pollNavpad(null, 1 / 60);
+  const y = document.getElementById("pad-cursor")!.style.top;
+  nav.pollNavpad(null, 1 / 60);
+  assert.equal(document.getElementById("pad-cursor")!.style.top, y);
+  assert.equal(canvasUps, 0, "Rotation must not send an unintended goal");
+  touch(ok, "pointerdown");
+  nav.pollNavpad(null, 1 / 60);
+  touch(ok, "pointerup");
+  nav.pollNavpad(null, 1 / 60);
+  assert.equal(canvasDowns, 2);
+  assert.equal(canvasUps, 1, "A fresh goal still works after rotation");
+});
+
+test("short layout survives camera-stage reparenting and repeated stage navigation", async (t) => {
+  t.after(() => browser.happyDOM.setWindowSize({ width: 1024, height: 768 }));
+  t.mock.method(browser.HTMLCanvasElement.prototype, "getContext", function () {
+    const pixels = (width: number, height: number) => ({
+      width,
+      height,
+      data: new Uint8ClampedArray(width * height * 4),
+    });
+    return new Proxy(
+      { canvas: this },
+      {
+        get(target, key) {
+          if (key in target) return Reflect.get(target, key);
+          if (key === "getImageData")
+            return (_x: number, _y: number, w: number, h: number) => pixels(w, h);
+          if (key === "createImageData") return pixels;
+          if (key === "measureText") return (text: string) => ({ width: text.length * 7 });
+          if (String(key).endsWith("Gradient")) return () => ({ addColorStop() {} });
+          return () => {};
+        },
+      },
+    );
+  });
+  browser.happyDOM.setWindowSize({ width: 844, height: 390 });
+  const camera = (
+    await server.ssrLoadModule("/src/stages/lesson/object_detection.ts")
+  ).default.build();
+  loadActualStage(camera);
+  const view = document.querySelector(".object-detection-view")!;
+  const pad = document.getElementById("touchpad")!;
+  const row = document.querySelector(".touch-play-row")!;
+  assert.ok(view.contains(row));
+  assert.ok(row.contains(ui.canvasWrap));
+  assert.ok(row.contains(pad));
+  assert.ok(!row.contains(document.querySelector(".object-detection-readout")));
+  await manager.loadStage(current.id);
+  actualStage = undefined;
+  assert.equal(document.querySelector(".object-detection-view"), null);
+  assert.ok(ui.canvas.isConnected);
+  assert.ok(pad.isConnected, "Camera disposal must not remove the shared touchpad");
+  assert.equal(document.querySelectorAll(".touch-play-row").length, 1);
+  assert.equal(ui.canvasWrap.parentElement, pad.parentElement);
+  await manager.loadStage(current.id);
+  assert.equal(document.querySelectorAll(".touch-play-row").length, 1);
 });

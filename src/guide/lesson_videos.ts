@@ -147,7 +147,7 @@ export function setupLessonVideos(lessons: StageMeta[], numbers: Map<string, num
             <a class="lesson-video-youtube" target="_blank" rel="noopener noreferrer"></a>
             <a class="lesson-video-lesson" data-lang-link data-stage-mode="lesson"></a>
           </div>
-          <p class="lesson-video-tip">${gt("見たら、一時停止して実験。結果を予想 → 入力や設定を1つ変える → 動きを比べる。学習モデルは得点だけでなく、比較条件と結果にも注目。", "Pause and experiment: predict → change one input or setting → compare the motion. In learning labs, examine conditions and outcomes as well as scores.")}</p>
+          <p class="lesson-video-tip">${gt("動画を一時停止して実験。結果を予想 → 入力や設定を1つ変える → 動きを比べる。学習モデルは得点だけでなく、比較条件と結果にも注目。", "Pause the video and experiment: predict → change one input or setting → compare the motion. In learning labs, examine conditions and outcomes as well as scores.")}</p>
         </div>
       </div>
       <details class="lesson-video-chapters">

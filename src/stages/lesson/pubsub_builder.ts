@@ -389,9 +389,10 @@ export function makePubsub(): Stage {
           `Time   <b>${elapsed.toFixed(2)} s</b><br>` +
           `wires  <b>${wires.length}</b><br>` +
           `valid  <b>${wires.filter((w) => w.valid).length}</b>`;
+        const timeSeconds = elapsed;
         g.setTimeout(() => {
           g.sfx.clear();
-          g.showClear(stars, stats);
+          g.showClear(stars, stats, { timeSeconds });
         }, 350);
       }
     }
@@ -726,8 +727,8 @@ export default defineStage({
       en: "In ROS 2, nodes exchange messages over named channels called topics. A sending node is a Publisher and a receiving node is a Subscriber. A Subscription receives messages when it uses the same topic name and message type with compatible QoS. This lesson checks the topic name and type.",
     },
     goal: {
-      ja: "command_node（Publisher）とrobot_node（Subscriber）をTopic /cmd_velでつなぎ、Twistメッセージを流してロボットをGOALまで動かしましょう。",
-      en: "Wire command_node (Publisher) to robot_node (Subscriber) over the /cmd_vel topic so Twist messages flow and the robot reaches the GOAL.",
+      ja: "command_node（Publisher）とrobot_node（Subscriber）をTopic /cmd_velでつなぎましょう。正しく接続するとTwistメッセージが自動で配信され、ロボットがGOALまで進みます。",
+      en: "Wire command_node (Publisher) to robot_node (Subscriber) over /cmd_vel. A valid connection starts automatic Twist publishing and drives the robot to the GOAL.",
     },
     first: {
       ja: "左右どちらかのポートをタップしてから、もう一方をタップします。ポート間を直接ドラッグしても接続できます。Topic名とMessage型が一致すると有効な接続になります。",
@@ -737,7 +738,7 @@ export default defineStage({
   strings: {
     ja: {
       hint: "左右のポートを順不同でタップ / 反対側へ半分ほどドラッグしても自動接続",
-      "node.controller": "WASD操作で/cmd_velをpublish",
+      "node.controller": "接続後に/cmd_velを自動publish",
       "node.motor": "/cmd_velをsubscribe → モーターを駆動",
       sim_label: "ROBOT SIMULATION（Graphの完成後に自動で起動）",
       "status.incomplete": "配線が不完全 — 必要な接続を見直してください",
@@ -749,7 +750,7 @@ export default defineStage({
     },
     en: {
       hint: "Tap both ports in either order / drag about halfway to auto-connect",
-      "node.controller": "WASD input publishes /cmd_vel",
+      "node.controller": "Auto-publishes /cmd_vel once connected",
       "node.motor": "Subscribes /cmd_vel → drives the motors",
       sim_label: "ROBOT SIMULATION  (auto-starts when the graph is complete)",
       "status.incomplete": "Graph incomplete — review required connections",

@@ -179,6 +179,7 @@
   color: var(--fg-dim);
 }
 .be-palette-hint {
+  overflow-wrap: anywhere;
   margin: 8px 0 0;
   font-size: 14px;
   color: var(--fg-dim);
@@ -202,9 +203,8 @@
   gap: 5px;
   counter-reset: blockNo;
 }
-.be-program:empty::after {
-  content: "← 左の BLOCKS から追加して、▶ RUN で実行";
-  display: block;
+.be-program-empty {
+  margin: 0;
   font-family: var(--mono);
   font-size: 14px;
   color: var(--fg-dim);

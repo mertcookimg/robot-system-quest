@@ -629,7 +629,7 @@ export function makeLocalizationMission(): Stage {
       `Converged onto the true pose<br>` +
       `Final error <b>${(estErr / PX_PER_M).toFixed(2)} m</b><br>` +
       `Time <b>${elapsed.toFixed(2)} s</b>`;
-    g.awardStars(stars, stats);
+    g.awardStars(stars, stats, undefined, { timeSeconds: elapsed });
   }
 
   function convergencePct(): number {

@@ -4,17 +4,17 @@
 import { stageColor } from "../../lib/stage_colors";
 
 // ik_reach — "IK Reach". The second robot-ARM lesson and the pay-off to
-// joint_teleop (A1). Now you command the TIP directly (a cursor) and the arm
-// solves inverse kinematics to follow it. The exact course that felt fiddly in
-// joint space now feels trivial — that contrast is the whole point, and the
-// clear screen shows your A1 time next to this one.
+// joint_teleop. Now you command the TIP directly (a cursor) and the arm
+// solves inverse kinematics to follow it. The shared course lets players
+// compare joint-space and Cartesian control; when a Joint Teleop record
+// exists, the clear screen shows it next to this attempt's time.
 //
 // It also surfaces the three things that make IK more than "just point there":
 //   • two solutions   — elbow-up / elbow-down (E or pad RB flips)
 //   • workspace       — the annulus you can actually reach; outside it the
 //                        boundary flashes red and the tip clamps
 //   • singularity     — near full extension, small tip moves need big joint
-//                        moves; the |dq| meter spikes
+//                        moves; the manipulability indicator approaches zero
 import { W, H, type Stage, type GameContext } from "../../types";
 import { defineStage } from "../../core/stage_def";
 import { clearBackground, drawGrid, drawTimer, drawHint } from "../../lib/draw";
@@ -191,13 +191,15 @@ export function makeIkReach(): Stage {
     const jt = g.getBestTime("joint_teleop");
     const compare =
       jt != null
-        ? `<br>Joint (A1) <b>${jt.toFixed(2)} s</b> → IK <b>${elapsed.toFixed(2)} s</b>`
+        ? `<br>Joint Teleop <b>${jt.toFixed(2)} s</b> → IK Reach <b>${elapsed.toFixed(2)} s</b>`
         : "";
     g.awardStars(
       stars,
       `Time      <b>${elapsed.toFixed(2)} s</b><br>` +
         `Targets   <b>${COURSE_TARGETS.length} / ${COURSE_TARGETS.length}</b><br>` +
         `Control   <b>Cartesian (IK)</b>${compare}`,
+      undefined,
+      { timeSeconds: elapsed },
     );
   }
 
@@ -301,7 +303,7 @@ export function makeIkReach(): Stage {
       summary:
         "手先（tip）の目標位置を動かすと、アームが逆運動学（IK）で関節角を逆算して追従します。" +
         "IKにはelbow-up / elbow-downの2つの解があり、到達できるのはアームの作業領域内だけです。" +
-        "腕が伸び切る特異点付近では、わずかな手先の移動でも大きな関節角の変化が必要になります（|dq|メーターで確認できます）。",
+        "腕が伸び切る特異点付近では、わずかな手先の移動でも大きな関節角の変化が必要になります。HUDのmanip（|sin(q2)|）は、この姿勢に近づくと0へ近づきます。",
       msgTypes: ["geometry_msgs/msg/PoseStamped", "sensor_msgs/msg/JointState"],
       cli: [
         "ros2 topic echo /tip_target",
@@ -392,8 +394,8 @@ export default defineStage({
       en: "IK Reach — command the tip directly",
     },
     learn: {
-      ja: "逆運動学（IK）は、手先の目標位置から関節角を逆算します。関節を1つずつ操作するjoint_teleopよりも、同じ課題へ簡単に取り組めます。IKには肘の向きによって2つの解（elbow-up / down）があり、手先が到達できるのは作業領域内だけです。腕が伸び切る特異点付近では、関節角が大きく変化しやすくなります。",
-      en: "Inverse kinematics (IK) turns a tip goal ('put the hand here') back into joint angles. The same course is far easier than joint_teleop. IK has two solutions (elbow-up/down), only points inside the workspace are reachable, and near full extension (a singularity) the joints get twitchy.",
+      ja: "逆運動学（IK）は、手先の目標位置から関節角を逆算します。Joint Teleopと同じ課題で、関節を直接動かす操作と手先を指定する操作を比べましょう。IKには肘の向きによって2つの解（elbow-up / down）があり、作業領域と関節制限によって届かない位置もあります。腕が伸び切る特異点付近では、関節角が大きく変化しやすくなります。",
+      en: "Inverse kinematics (IK) turns a tip goal into joint angles. Compare commanding the tip with moving individual joints on the same course as Joint Teleop. IK has two elbow configurations; workspace and joint limits restrict reachable positions. Near full extension, a singularity, small tip moves can require large joint-angle changes.",
     },
     goal: {
       ja: "カーソル（マウス / 矢印キー）で手先の目標位置を動かし、①から⑥まで順番に触れましょう。届かない位置では作業領域の境界が赤く光ります。Eで肘の向きを切り替えられます。",
@@ -408,13 +410,14 @@ export default defineStage({
     ja: {
       "status.start": "カーソルで手先目標を動かす。IK が関節角を解いて追従 (E で肘反転)",
       "status.next": "取得! 次はターゲット {n}/{total}",
-      "status.clear": "IK で全ターゲット制覇! 関節を直接触るより速かったはず",
+      "status.clear": "IKで全ターゲット達成! Joint Teleopの記録があれば結果で比較できます",
       hint: "マウス / 矢印で手先 ・ E or RB で肘反転 ・ 境界赤=到達不可 ・ R リセット",
     },
     en: {
       "status.start": "Move the tip target; IK solves the joints to follow (E flips elbow)",
       "status.next": "Got it! Next: target {n}/{total}",
-      "status.clear": "All targets via IK — faster than jogging joints by hand, right?",
+      "status.clear":
+        "All targets reached via IK! Compare with Joint Teleop in the results if you have a record",
       hint: "mouse / arrows = tip · E or RB flips elbow · red edge = unreachable · R reset",
     },
   },

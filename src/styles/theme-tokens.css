@@ -52,6 +52,7 @@
   --muted: var(--fg-dim);
 }
 
+:root:not([data-theme]),
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0f172a;

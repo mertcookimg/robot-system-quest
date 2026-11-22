@@ -293,6 +293,8 @@ export function makePickPlace(): Stage {
         `Penalty <b>+${penalty.toFixed(0)} s</b><br>` +
         `Mistakes <b>${mistakes}</b><br>` +
         `Best combo <b>x${bestCombo}</b>`,
+      undefined,
+      { timeSeconds: scoreTime },
     );
   }
 
@@ -427,8 +429,8 @@ export function makePickPlace(): Stage {
     ros2: {
       title: tx("Pick & Place — 把持と搬送の一連の動作", "Pick & Place — grasp and transport"),
       summary: tx(
-        "把持は、手先を物体へ動かすだけではありません。接近、Gripperを閉じる、持ち上げる、搬送する、解放するという動作を、安全な順序で実行するシーケンスです。",
-        "Manipulation is a sequence, not one pose: approach, close the gripper, lift, transport and release safely.",
+        "この2D課題では、コンベア上の荷物に手先を合わせて把持し、同じ文字と色のドックで解放します。6個の仕分けでクリアです。取り逃しや誤った場所での解放には2秒のペナルティーが付きます。実機では、この流れに持ち上げや衝突を避ける経路計画も必要です。",
+        "In this 2D task, align the tip with a conveyor parcel, grasp it and release it at the dock with the same letter and colour. Sort six parcels to clear. Escaped parcels and wrong drops add two seconds. Real hardware also needs lifting and collision-aware motion planning.",
       ),
       msgTypes: [
         "geometry_msgs/msg/PoseStamped",
@@ -440,7 +442,19 @@ export function makePickPlace(): Stage {
         "ros2 topic echo /target_pose",
         "ros2 topic echo /gripper/events",
       ],
-      python: `# A real task normally sends these poses through MoveIt 2\nsequence = [approach_pose, grasp_pose, lift_pose, place_pose]\nfor pose in sequence:\n    move_group.set_pose_target(pose)\n    move_group.go(wait=True)\ngripper.close()`,
+      python: `# Conceptual real-robot sequence, not an executable control in this lesson.
+# Each move and gripper operation must succeed before continuing.
+gripper.open()
+for pose in [approach_pose, grasp_pose]:
+    move_group.set_pose_target(pose)
+    move_group.go(wait=True)
+gripper.close()
+for pose in [lift_pose, place_pose]:
+    move_group.set_pose_target(pose)
+    move_group.go(wait=True)
+gripper.open()
+move_group.set_pose_target(retreat_pose)
+move_group.go(wait=True)`,
       realWorld: tx(
         "実機ではMoveIt 2の経路計画とGripperCommand Actionを組み合わせ、衝突を避けながら同じシーケンスを実行します。",
         "A real robot combines MoveIt 2 planning with the GripperCommand action to execute the same sequence collision-free.",

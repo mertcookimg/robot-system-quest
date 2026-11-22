@@ -354,7 +354,7 @@ export function makeSumoBattle(): Stage {
       `Time       <b>${elapsed.toFixed(2)} s</b><br>` +
       `Difficulty <b>${difficulty.toUpperCase()}</b><br>` +
       `Pushes     <b>${pushes}</b>`;
-    g.awardStars(stars, stats);
+    g.awardStars(stars, stats, undefined, { timeSeconds: elapsed });
   }
 
   function update(dt: number) {
@@ -655,12 +655,12 @@ export function makeSumoBattle(): Stage {
     lessonCmd: "ros2 topic echo /robot/odom",
     ros2: defineRos2Concept({
       title: tx(
-        "Odometry — /odomで自分の位置を把握する",
-        "Odometry — knowing where you are via /odom",
+        "Odometry — /robot/odomで自分の位置を把握する",
+        "Odometry — knowing where you are via /robot/odom",
       ),
       summary:
-        "ロボットは車輪の回転量から自己位置を推定し、nav_msgs/msg/Odometryとして/odomへpublishします。" +
-        "/odomを使って土俵の中心からの距離を監視すれば、境界までの残り距離を把握できます。" +
+        "このGameではシミュレーション内の自己位置をnav_msgs/msg/Odometryとして/robot/odomへpublishします。実機では車輪の回転などから自己位置を推定します。" +
+        "/robot/odomを使って土俵の中心からの距離を監視すれば、境界までの残り距離を把握できます。" +
         "自律ロボットの第一歩は『自分がどこにいるか』を知ることです。",
       msgTypes: ["nav_msgs/msg/Odometry", "geometry_msgs/msg/Twist"],
       cli: [
@@ -723,7 +723,7 @@ export default defineStage({
   mode: "game",
   order: 9,
   diagram: `
-<svg viewBox="0 0 420 120" role="img" aria-label="robot publishes /odom, sumo referee subscribes and judges ring out">
+<svg viewBox="0 0 420 120" role="img" aria-label="robot publishes /robot/odom, sumo referee subscribes and judges ring out">
   <defs>
     <marker id="ld-sumo-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
       <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
@@ -739,26 +739,26 @@ export default defineStage({
   <circle r="3.5" fill="light-dark(#925b00, #fbbf24)">
     <animateMotion dur="1.6s" repeatCount="indefinite" path="M 158 60 L 258 60"/>
   </circle>
-  <text x="210" y="46" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/odom</text>
+  <text x="210" y="46" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/robot/odom</text>
   <text x="210" y="80" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="9">nav_msgs/msg/Odometry</text>
 </svg>
 `,
   lessonModal: {
     title: {
-      ja: "Odometry入門 — /odomを使って場外を避ける",
-      en: "Odometry basics — staying in the ring with /odom",
+      ja: "Odometry入門 — /robot/odomを使って場外を避ける",
+      en: "Odometry basics — staying in the ring with /robot/odom",
     },
     learn: {
-      ja: "ロボットは車輪の回転から自己位置を推定し、/odomへpublishします。HUDの境界までの距離は/odomから計算されています。現在位置が分かるため、場外までの残り距離も把握できます。",
-      en: "A robot estimates its own pose from wheel rotation and publishes it on /odom. The HUD edge distance is computed from /odom — knowing your pose is what tells you how close you are to falling out.",
+      ja: "ロボットの自己位置を/robot/odomで配信し、HUDには同じ位置情報から求めた境界までの距離を表示します。実機では車輪の回転などからOdometryを推定します。このGameではシミュレーション内の位置を使います。",
+      en: "The robot publishes its pose on /robot/odom. The HUD uses the same pose to show the distance to the ring edge. Physical robots estimate odometry from wheel motion and other sensors; this Game uses its simulated pose.",
     },
     goal: {
       ja: "ライバルロボットを土俵の外へ押し出しましょう。自分が先に出ると負けです。\nLB/RB（Shift）のブーストで押し込み、相手の突進（!!）をかわして横から押しましょう。",
       en: "Shove the rival robot out of the ring — fall out first and you lose.\nUse LB/RB (Shift) boost to push hard, dodge its charge (!!) and hit it from the side.",
     },
     first: {
-      ja: "1PはWASDで移動します。ゲームパッド対戦は2台のゲームパッドを接続してYを押すと開始できます。P1・P2とも左スティックで移動し、LB/RBでブーストして押し合います。",
-      en: "In 1P, move with WASD. For a pad battle, connect two pads and press Y. Both players move with the left stick and boost with LB/RB.",
+      ja: "2キー、P1のゲームパッドのY、または対戦モードボタンで1P/2Pを切り替えます。1Pのキーボード操作はWASD＋Shiftです。2PではP1がWASD＋左Shift/X、P2が矢印＋右Shiftで移動・ブーストします。ゲームパッドは各プレイヤーが左スティック＋LB/RBを使います。",
+      en: "Switch 1P/2P with 2, Y on pad 1, or the match-mode buttons. In 1P, move and boost with WASD + Shift. In 2P, P1 uses WASD + left Shift/X; P2 uses arrows + right Shift. Each gamepad uses the left stick + LB/RB.",
     },
   },
   strings: {
@@ -768,12 +768,13 @@ export default defineStage({
       "status.win": "押し出し勝ち! RING OUT!",
       "status.p1win": "P1 の押し出し勝ち! RING OUT!",
       "status.p2win": "P2 の押し出し勝ち! P1 が場外!",
-      "crash.out": "場外負け — /odom の edge 距離に注意",
-      hint: "1P · WASD/左スティック 移動 · Shift/LB/RB BOOST · Y → 2P PAD（接続 {pads}/2）",
-      hint2p: "🎮 2P PAD（接続 {pads}/2）· P1/P2 左スティック 移動 · LB/RB BOOST · Y → 1P",
+      "crash.out": "場外負け — /robot/odom とHUDの境界までの距離に注意",
+      hint: "1P · WASD/左スティック 移動 · Shift/PAD LB・RB BOOST · 2/PAD Y → 2P",
+      hint2p:
+        "2P · P1: WASD＋左Shift/X · P2: 矢印＋右Shift · PAD: 左スティック＋LB/RB · 2/PAD Y → 1P",
       "overlay.players": "LOCAL PLAY",
       "overlay.1p": "1P vs AI",
-      "overlay.2p": "🎮 2P PAD対戦",
+      "overlay.2p": "2P 対戦",
       "overlay.difficulty": "AI 難易度",
       "overlay.easy": "EASY",
       "overlay.normal": "NORMAL",
@@ -785,12 +786,13 @@ export default defineStage({
       "status.win": "RING OUT! You win!",
       "status.p1win": "P1 wins by push-out! RING OUT!",
       "status.p2win": "P2 wins — P1 fell out of the ring!",
-      "crash.out": "Ring out — watch the edge distance on /odom",
-      hint: "1P · WASD/LEFT STICK move · Shift/LB/RB BOOST · Y → 2P PAD ({pads}/2)",
-      hint2p: "🎮 2P PAD ({pads}/2) · P1/P2 LEFT STICK move · LB/RB BOOST · Y → 1P",
+      "crash.out": "Ring out — watch /robot/odom and the HUD edge distance",
+      hint: "1P · WASD/LEFT STICK move · Shift/PAD LB・RB boost · 2/PAD Y → 2P",
+      hint2p:
+        "2P · P1: WASD + left Shift/X · P2: arrows + right Shift · PAD: stick + LB/RB · 2/PAD Y → 1P",
       "overlay.players": "LOCAL PLAY",
       "overlay.1p": "1P vs AI",
-      "overlay.2p": "🎮 2P PAD BATTLE",
+      "overlay.2p": "2P versus",
       "overlay.difficulty": "AI DIFFICULTY",
       "overlay.easy": "EASY",
       "overlay.normal": "NORMAL",

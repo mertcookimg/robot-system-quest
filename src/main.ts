@@ -191,7 +191,7 @@ renderStageList(stages, getStageModes());
 // 6. Build GameContext (must happen before loadStage).
 const ctx2d = ui.canvas.getContext("2d")!;
 buildGameContext(ui.canvas, ctx2d);
-setupCanvasReadout(ui.canvas);
+setupCanvasReadout(ui.canvas, ctx2d);
 
 // 7. Modes / stage selector / stage menu.
 setupModes({

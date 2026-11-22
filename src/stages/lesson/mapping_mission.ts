@@ -334,9 +334,10 @@ export function makeMappingMission(): Stage {
       const stats =
         `Coverage <b>100%</b> (${seenExp} / ${explorableCount} cells)<br>` +
         `Time     <b>${elapsed.toFixed(2)} s</b>`;
+      const timeSeconds = elapsed;
       g.setTimeout(() => {
         g.sfx.clear();
-        g.showClear(stars, stats);
+        g.showClear(stars, stats, { timeSeconds });
       }, 700);
       return;
     }
@@ -688,8 +689,8 @@ export default defineStage({
       en: "SLAM = Simultaneous Localization And Mapping. This stage focuses on the Mapping half: with the robot's position treated as known, it builds an occupancy grid (/map) from LiDAR /scan readings. Use the slider to tune scan_range (how far the LiDAR sees), then drive with WASD — every cell the LiDAR sweeps across becomes known.",
     },
     goal: {
-      ja: "scan_rangeをスライダーで調整し、WASDで探索可能なすべてのセル（到達可能な床と隣接する壁）を観測して、地図を100%完成させましょう。70秒以内で★★★、100秒以内で★★、制限時間は120秒です。",
-      en: "Adjust scan_range with the slider, then teleop with WASD to map 100% of the explorable cells (every reachable free tile + adjacent walls). ★★★ in ≤70s, ★★ in ≤100s, time limit 120s.",
+      ja: "scan_rangeをスライダーで調整し、WASDで探索可能なすべてのセル（到達可能な床と隣接する壁）を観測して、地図を100%完成させましょう。70秒未満で★★★、70秒以上100秒未満で★★、制限時間は120秒です。",
+      en: "Adjust scan_range with the slider, then teleop with WASD to map 100% of the explorable cells (every reachable free tile + adjacent walls). ★★★ under 70 s; ★★ from 70 s to under 100 s; time limit 120 s.",
     },
     first: {
       ja: "ステージを開始すると、すぐにタイマーが動きます。WASDでロボットを動かすとLiDARが壁を捉え、右側のOCCUPANCY GRIDへ地図が書き込まれていきます。",

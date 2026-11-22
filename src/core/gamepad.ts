@@ -121,7 +121,25 @@ function setKey(k: string, held: boolean): void {
   input.setPadKey(k, held);
 }
 
-export function poll(): void {
+/** Held directions scroll long dialog content at a refresh-rate independent speed. */
+function scrollDialog(pad: Gamepad, target: HTMLElement | null, dt: number): void {
+  if (!target) return;
+  const digital =
+    Number(pad.buttons[13]?.pressed ?? false) - Number(pad.buttons[12]?.pressed ?? false);
+  const axis = pad.axes[1] ?? 0;
+  const direction = digital || (Math.abs(axis) > STICK_DEAD ? Math.max(-1, Math.min(1, axis)) : 0);
+  if (!direction) return;
+  const seconds = Number.isFinite(dt) ? Math.max(0, Math.min(0.05, dt)) : 0;
+  target.scrollTop = Math.max(
+    0,
+    Math.min(
+      target.scrollHeight - target.clientHeight,
+      target.scrollTop + direction * 420 * seconds,
+    ),
+  );
+}
+
+export function poll(dt = 1 / 60): void {
   if (!deps) return;
   const pad = findPad();
   if (!pad) return;
@@ -145,6 +163,7 @@ export function poll(): void {
 
   // 1. Lesson modal: any of A / B / Start dismisses.
   if (lessonModal.isOpen()) {
+    scrollDialog(pad, ui.lessonModal.querySelector<HTMLElement>(".lesson-card"), dt);
     const aBtn = pad.buttons[0]?.pressed ?? false;
     const bBtn = pad.buttons[1]?.pressed ?? false;
     const startBtn = pad.buttons[9]?.pressed ?? false;
@@ -165,6 +184,7 @@ export function poll(): void {
 
   // Visible dialogs own input before navigation, terminal or stage controls.
   if (help.isOpen()) {
+    scrollDialog(pad, ui.helpModal.querySelector<HTMLElement>(".help-card"), dt);
     const closeEdge = [1, 11].some(
       (index) => (pad.buttons[index]?.pressed ?? false) && !(prevButtons[index] ?? false),
     );
@@ -173,11 +193,13 @@ export function poll(): void {
     return;
   }
   if (allclear.isOpen()) {
+    scrollDialog(pad, ui.allclearStars, dt);
     if (aEdge || startEdge) ui.allclearRestart.click();
     prevButtons = pad.buttons.map((b) => b.pressed);
     return;
   }
   if (clearOverlay.isOpen()) {
+    scrollDialog(pad, ui.clearStats, dt);
     const bEdge = (pad.buttons[1]?.pressed ?? false) && !(prevButtons[1] ?? false);
     if (bEdge) clearOverlay.close();
     else pollClearOverlayPad(pad, aEdge, startEdge);

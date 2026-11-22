@@ -56,6 +56,9 @@ export function setupAnalytics(): void {
   analyticsWindow.gtag("js", new Date());
   analyticsWindow.gtag("config", measurementId);
   analyticsEnabled = true;
+  for (const note of document.querySelectorAll<HTMLElement>("[data-analytics-note]")) {
+    note.hidden = false;
+  }
 
   const script = document.createElement("script");
   script.async = true;

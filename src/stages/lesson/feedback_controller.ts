@@ -3,7 +3,7 @@
 
 // feedback_controller: Feedback Controller
 // Faithful re-implementation of robot_ros2_lecture / robot_feedback_control.py.
-// Subscribes to /odom and keeps publishing cmd_vel until the traveled
+// Subscribes to /robot/odometry/odometry and keeps publishing velocity until the traveled
 // distance or yaw delta reaches the target.
 //   while sqrt((x-x0)**2 + (y-y0)**2) < distance:  publish(velocity)
 //   while abs(atan2(sin(yaw-yaw0), cos(yaw-yaw0))) < target_angle:  publish(yawrate)
@@ -188,8 +188,8 @@ export function makeFeedbackController(): Stage {
     bp = setupBlockProgram<Block>({
       program,
       paletteHint: tx(
-        "閉ループ：/odomを見て、目標距離・目標角度に達したら止めます",
-        "Closed loop: use /odom to stop at each target distance and angle",
+        "閉ループ：Odometryを見て、目標距離・目標角度に達したら止めます",
+        "Closed loop: use Odometry to stop at each target distance and angle",
       ),
       blockKinds: [
         {
@@ -243,10 +243,16 @@ export function makeFeedbackController(): Stage {
     });
 
     practice = setupModeToggle("be-practice", {
-      onLabel: "🔄 練習モード (RT)",
-      offLabel: "△ 三角形チャレンジ (RT)",
-      onTitle: "軌跡と/odomを確認しながら、距離と角度を調整できます",
-      offTitle: "1辺1.4mの正三角形を描き、始点へ戻るとクリアです",
+      onLabel: tx("🔄 練習モード (RT)", "🔄 Practice (RT)"),
+      offLabel: tx("△ 三角形チャレンジ (RT)", "△ Triangle challenge (RT)"),
+      onTitle: tx(
+        "軌跡と/robot/odometry/odometryを確認しながら、距離と角度を調整できます",
+        "Inspect the path and /robot/odometry/odometry while adjusting distance and angle",
+      ),
+      offTitle: tx(
+        "1辺1.4mの正三角形を描き、始点へ戻るとクリアです",
+        "Draw an equilateral triangle with 1.4 m sides and return to start to clear",
+      ),
       onChange: (active) => {
         g.setStatus(
           active
@@ -255,8 +261,8 @@ export function makeFeedbackController(): Stage {
                 "Practice mode: experiment without clear scoring",
               )
             : tx(
-                "三角形チャレンジ：/odomを見て始点へ戻ろう",
-                "Triangle challenge: use /odom and return to start",
+                "三角形チャレンジ：Odometryを見て始点へ戻ろう",
+                "Triangle challenge: use Odometry and return to start",
               ),
           active ? "var(--accent)" : "var(--ok)",
         );
@@ -346,8 +352,8 @@ export function makeFeedbackController(): Stage {
     if (practice?.isActive()) {
       g.setStatus(
         tx(
-          "実行完了。軌跡と/odomを見て距離・角度を調整しましょう",
-          "Run complete. Inspect the path and /odom, then adjust distance and angle",
+          "実行完了。軌跡とOdometryを見て距離・角度を調整しましょう",
+          "Run complete. Inspect the path and Odometry, then adjust distance and angle",
         ),
         "var(--ok)",
       );
@@ -423,7 +429,7 @@ export function makeFeedbackController(): Stage {
       triangle.observe(robot.x, robot.y);
 
       trail.update(dt, robot.x, robot.y);
-      // Publish /cmd_vel and /odom at 10 Hz.
+      // Publish velocity and Odometry at 10 Hz.
       pubAcc += dt;
       if (pubAcc > 1 / 10) {
         pubAcc = 0;
@@ -489,8 +495,8 @@ export function makeFeedbackController(): Stage {
       c,
       practice?.isActive()
         ? tx(
-            "自由練習｜distance・angle・velocityを変えて/odomを観察",
-            "Free practice — change distance, angle, and velocity while observing /odom",
+            "自由練習｜distance・angle・velocityを変えてOdometryを観察",
+            "Free practice — change distance, angle, and velocity while observing Odometry",
           )
         : tx(
             "1辺 1.4 m・左に120° × 3｜時間ではなく測定値で止める",
@@ -506,12 +512,12 @@ export function makeFeedbackController(): Stage {
     lessonCmd: "ros2 topic echo /robot/odometry/odometry",
     ros2: {
       title: tx(
-        "Feedback — /odomを使って正三角形を描く",
-        "Feedback — draw an equilateral triangle with /odom",
+        "Feedback — Odometryを使って正三角形を描く",
+        "Feedback — draw an equilateral triangle with Odometry",
       ),
       summary:
         "Feedforward Controllerと同じ1辺1.4mの正三角形を描きます。" +
-        "/odomをsubscribeし、推定移動距離が1.4m、推定回転角が120°に達するまでcmd_velを送り、" +
+        "/robot/odometry/odometryをsubscribeし、推定移動距離が1.4m、推定回転角が120°に達するまで/robot/manual_control/cmd_velを送り、" +
         "時間ではなくOdometryの推定結果を使って各辺と回転を終えます。",
       msgTypes: ["geometry_msgs/msg/Twist", "nav_msgs/msg/Odometry"],
       cli: [
@@ -607,7 +613,7 @@ export default defineStage({
   mode: "lesson",
   order: 7,
   diagram: `
-<svg viewBox="0 0 420 120" role="img" aria-label="feedback closed loop: cmd_vel forward, robot reports /odom back">
+<svg viewBox="0 0 420 156" role="img" aria-label="feedback closed loop: /robot/manual_control/cmd_vel forward, /robot/odometry/odometry back">
   <defs>
     <marker id="ld-feedback_controller-arrow-cmd" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
       <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
@@ -639,12 +645,14 @@ export default defineStage({
     <line x1="16" y1="22" x2="16" y2="28" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
   </g>
   <text x="338" y="98" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">moves + reports pose</text>
-  <!-- /cmd_vel forward -->
+  <!-- Twist forward -->
   <line x1="156" y1="46" x2="262" y2="46" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-feedback_controller-arrow-cmd)"/>
-  <text x="209" y="40" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/cmd_vel</text>
-  <!-- /odom back -->
+  <text x="209" y="40" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Twist</text>
+  <!-- Odometry back -->
   <line x1="262" y1="78" x2="156" y2="78" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2" marker-end="url(#ld-feedback_controller-arrow-odom)"/>
-  <text x="209" y="98" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/odom</text>
+  <text x="209" y="98" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Odometry</text>
+  <text x="210" y="128" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="10">Twist: /robot/manual_control/cmd_vel</text>
+  <text x="210" y="146" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="10">Odometry: /robot/odometry/odometry</text>
 </svg>
 `,
   lessonModal: {
@@ -653,8 +661,8 @@ export default defineStage({
       en: "Feedback Controller — draw a triangle from measured pose",
     },
     learn: {
-      ja: "/odomから推定移動距離と推定回転角を読み、目標値に達したと判断したら止めます。同じ正三角形でも、時間ではなくOdometryの推定結果を使って各辺の移動と旋回を制御します。",
-      en: "Read estimated distance and rotation from /odom and stop when each target is estimated to have been reached. The triangle is identical, but the odometry estimate—not elapsed time—decides every side and turn.",
+      ja: "/robot/odometry/odometryから推定移動距離と推定回転角を読み、目標値に達したと判断したら止めます。速度指令は/robot/manual_control/cmd_velへ送り、時間ではなくOdometryの推定結果を使って各辺の移動と旋回を制御します。",
+      en: "Read estimated distance and rotation from /robot/odometry/odometry and stop when each target is estimated to have been reached. Velocity commands go to /robot/manual_control/cmd_vel; the odometry estimate decides when each side and turn ends.",
     },
     goal: {
       ja: "go_straight（1.4m）とturn_left（120°）を3回ずつ組み合わせ、三角形のガイドに沿って始点へ戻りましょう。",

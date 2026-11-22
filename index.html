@@ -2,16 +2,16 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#f3f6fb" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0f172a" />
     <script>
       (() => {
-        let theme = "light";
+        let theme = "dark";
         try {
-          if (localStorage.getItem("robot_quest_theme_v1") === "dark") theme = "dark";
+          if (localStorage.getItem("robot_quest_theme_v1") === "light") theme = "light";
         } catch {}
         document.documentElement.dataset.theme = theme;
         document.documentElement.style.colorScheme = theme;
@@ -54,15 +54,15 @@
     <canvas id="ambient" class="ambient"></canvas>
 
     <!-- Intro -->
-    <div id="intro-screen" class="intro-screen">
+    <div id="intro-screen" class="intro-screen" inert aria-hidden="true">
       <div class="intro-bg"></div>
       <div class="intro-card">
         <div class="intro-language-row">
           <div class="theme-switcher" data-theme-switcher role="group" aria-label="表示テーマ">
-            <button type="button" data-theme-option="light" aria-pressed="true">
+            <button type="button" data-theme-option="light" aria-pressed="false">
               <span aria-hidden="true">☀</span><span data-theme-label>ライト</span>
             </button>
-            <button type="button" data-theme-option="dark" aria-pressed="false">
+            <button type="button" data-theme-option="dark" aria-pressed="true">
               <span aria-hidden="true">☾</span><span data-theme-label>ダーク</span>
             </button>
           </div>
@@ -90,7 +90,7 @@
           </div>
         </div>
         <div class="intro-mark">◆</div>
-        <h1 class="intro-title">
+        <h1 class="intro-title" id="intro-title">
           <span class="intro-title-main">Robot System Quest:</span>
           <span class="intro-title-accent">Games and Lessons</span>
         </h1>
@@ -191,10 +191,10 @@
     </div>
 
     <!-- All Clear -->
-    <div id="allclear-screen" class="allclear-screen">
+    <div id="allclear-screen" class="allclear-screen" inert aria-hidden="true">
       <div class="allclear-card">
         <div class="allclear-eyebrow">MISSION COMPLETE</div>
-        <div class="allclear-title">All Stages Cleared</div>
+        <div class="allclear-title" id="allclear-title">All Stages Cleared</div>
         <div id="allclear-stars" class="allclear-stars"></div>
         <div id="allclear-stats" class="stats"></div>
         <button id="allclear-restart" class="primary">Play Again</button>
@@ -221,10 +221,10 @@
         </div>
         <div class="header-preferences" role="group" aria-label="表示と言語">
           <div class="theme-switcher" data-theme-switcher role="group" aria-label="表示テーマ">
-            <button type="button" data-theme-option="light" aria-pressed="true">
+            <button type="button" data-theme-option="light" aria-pressed="false">
               <span aria-hidden="true">☀</span><span data-theme-label>ライト</span>
             </button>
-            <button type="button" data-theme-option="dark" aria-pressed="false">
+            <button type="button" data-theme-option="dark" aria-pressed="true">
               <span aria-hidden="true">☾</span><span data-theme-label>ダーク</span>
             </button>
           </div>
@@ -325,6 +325,11 @@
       <div class="help-card">
         <h2>How to Play</h2>
         <div class="i18n-ja">
+          <p class="help-note">
+            操作はステージによって変わります。現在の操作とクリア条件は「ステージガイド」と画面上のヒントで確認できます。
+            長い説明は、ゲームパッドの十字キー上下または左スティック上下でスクロールできます。
+          </p>
+          <h3>共通操作・手動走行</h3>
           <table>
             <tr>
               <td>
@@ -334,19 +339,23 @@
             </tr>
             <tr>
               <td><kbd>Shift</kbd> / <kbd>X</kbd> / 🎮 LB・RB・LT・RT</td>
-              <td>ブースト</td>
+              <td>対応する走行ステージでブースト。Joint TeleopのShiftは低速調整です。</td>
             </tr>
             <tr>
               <td><kbd>Space</kbd> / 🎮 A</td>
-              <td>停止 / 決定・アクション・SETTINGS（ステージ依存）</td>
+              <td>
+                通常走行では移動入力を解除。ほかのステージでは決定・アクションなど。自動実行のSTOPや一時停止とは別です。
+              </td>
             </tr>
             <tr>
               <td><kbd>R</kbd> / 🎮 Start</td>
-              <td>リスタート</td>
+              <td>リスタート。ただしブロック編集時の🎮 Startはプログラム全消去（CLEAR）です。</td>
             </tr>
             <tr>
               <td>🎮 Select / Back</td>
-              <td>ステージメニューの開閉（キーボードでは画面上部のステージ名をクリック）</td>
+              <td>
+                ステージメニューの開閉。画面のGAME / LESSONからも開けます（Tabで選択してEnter）。
+              </td>
             </tr>
             <tr>
               <td>🎮 L3（左スティック押し込み）</td>
@@ -354,19 +363,53 @@
             </tr>
             <tr>
               <td><kbd>?</kbd> / 🎮 R3（右スティック押し込み）</td>
-              <td>ヘルプ表示 / 閉じる</td>
+              <td><kbd>?</kbd>または<kbd>/</kbd>でヘルプを開く。🎮 R3は開閉切り替え。</td>
             </tr>
             <tr>
               <td><kbd>Esc</kbd> / 🎮 B</td>
               <td>閉じる</td>
             </tr>
           </table>
+          <h3>ブロック編集</h3>
+          <ul>
+            <li>
+              画面のブロックや数値をクリック・タップして編集し、RUNで実行、STOPでプログラムを停止します。
+              実行中も数値を調整できます。追加・削除・並べ替え・CLEARは実行を止めてから反映します（画像処理の3Lessonは構成変更もライブ反映）。
+            </li>
+            <li>🎮 方向入力で選択、Aで追加・編集・確定、Bで編集を終了。</li>
+            <li>
+              標準の🎮操作はX：RUN / Y：STOP / LB・RB：ブロックの順序を変更。Edge Detection・Object
+              DetectionのYはDRIVE / TUNE切り替えです。
+            </li>
+            <li>
+              🎮
+              Start：<b>プログラム全消去（CLEAR）</b>。LT・RTは、表示されている場合に開始位置・練習モードを切り替えます。
+            </li>
+          </ul>
+          <h3>タッチ操作</h3>
           <p class="help-note">
-            各ステージ固有の操作（ブロックエディター・配線パズル・Nav2など）は、そのステージのGUIDE（📖）
-            と画面上のヒントに表示されます。
+            画面に表示されるD-PAD /
+            JOYで移動します。BOOSTはShift、OKはSpace、✕はEsc、Rはリセットに相当します。
+            各ボタンの役割はステージによって変わります。アームは専用ボタン、ブロックや設定は直接タップして操作します。
+          </p>
+          <h3>概念端末・一時停止</h3>
+          <p class="help-note">
+            概念端末は観察用です。設定変更やロボットへの指令はステージの操作欄から行います。
+            端末を操作している間も、自動実行・時間・メッセージの更新は続きます。キーボードとゲームパッドの入力は端末に渡されるため、ロボットの手動操作には使われません。
+            Esc / 🎮
+            Bで端末への入力を終えます。ゲーム画面やタッチパッドを押しても、その操作から手動入力に戻れます。メニュー・ガイド・ヘルプ・クリア画面を開いた間や、別のウィンドウに移った間はシミュレーションが一時停止します。
+          </p>
+          <p class="help-note">
+            「ステージガイド」は現在の操作と目標、「学習ガイド」は各教材の概念・実験例を紹介します。
           </p>
         </div>
         <div class="i18n-en">
+          <p class="help-note">
+            Controls vary by stage. Check Stage guide and the on-screen hints for the current
+            controls and completion conditions. Scroll long explanations with the gamepad D-Pad or
+            left stick up/down.
+          </p>
+          <h3>Common controls / manual driving</h3>
           <table>
             <tr>
               <td>
@@ -376,19 +419,30 @@
             </tr>
             <tr>
               <td><kbd>Shift</kbd> / <kbd>X</kbd> / 🎮 LB·RB·LT·RT</td>
-              <td>Boost</td>
+              <td>
+                Boost in supported driving stages. Shift slows movement in Joint Teleop for
+                precision.
+              </td>
             </tr>
             <tr>
               <td><kbd>Space</kbd> / 🎮 A</td>
-              <td>Stop / confirm, action, or SETTINGS (stage-dependent)</td>
+              <td>
+                Release movement input in ordinary driving; confirm or act in other stages. This
+                does not stop an automatic program or pause the simulation.
+              </td>
             </tr>
             <tr>
               <td><kbd>R</kbd> / 🎮 Start</td>
-              <td>Restart</td>
+              <td>
+                Restart, except in the block editor: 🎮 Start clears the entire program (CLEAR).
+              </td>
             </tr>
             <tr>
               <td>🎮 Select / Back</td>
-              <td>Open / close Stage Menu (keyboard: click a stage pill)</td>
+              <td>
+                Open / close the stage menu. You can also use the on-screen GAME / LESSON buttons
+                (Tab, then Enter).
+              </td>
             </tr>
             <tr>
               <td>🎮 L3 (left-stick click)</td>
@@ -396,16 +450,49 @@
             </tr>
             <tr>
               <td><kbd>?</kbd> / 🎮 R3 (right-stick click)</td>
-              <td>Show / hide Help</td>
+              <td><kbd>?</kbd> or <kbd>/</kbd> opens Help. 🎮 R3 toggles Help.</td>
             </tr>
             <tr>
               <td><kbd>Esc</kbd> / 🎮 B</td>
               <td>Close</td>
             </tr>
           </table>
+          <h3>Block editing</h3>
+          <ul>
+            <li>
+              Click or tap blocks and values to edit. RUN starts the program; STOP stops its
+              execution. Values remain editable while running. Adding, removing, reordering or
+              clearing blocks stops the run first; the three image-processing lessons also apply
+              structure changes live.
+            </li>
+            <li>🎮 Directional input selects; A adds, edits or confirms; B leaves editing.</li>
+            <li>
+              Standard 🎮 controls: X: RUN / Y: STOP / LB and RB: reorder blocks. In Edge Detection
+              and Object Detection, Y switches DRIVE / TUNE.
+            </li>
+            <li>
+              🎮 Start: <b>clear the entire program (CLEAR)</b>. LT and RT toggle the start position
+              and practice mode when those controls are shown.
+            </li>
+          </ul>
+          <h3>Touch controls</h3>
           <p class="help-note">
-            Stage-specific controls (Block Editor, wire puzzles, Nav2, …) are shown in that stage's
-            GUIDE (📖) and as on-screen hints.
+            Use the on-screen D-PAD / JOY to move. BOOST sends Shift, OK sends Space, ✕ sends Esc,
+            and R resets. Their actions depend on the stage. Use the dedicated arm buttons, and tap
+            blocks or settings directly to edit them.
+          </p>
+          <h3>Concept terminal / pausing</h3>
+          <p class="help-note">
+            The concept terminal is for inspection. Change settings and command the robot through
+            the stage controls. Automatic execution, timers and messages continue while you use the
+            terminal. Keyboard and gamepad input goes to the terminal, so it does not control the
+            robot manually. Esc / 🎮 B releases terminal input. Pressing the game canvas or touchpad
+            also returns control with that first gesture. Menus, Stage guide, Help and completion
+            dialogs pause the simulation, as does switching to another window.
+          </p>
+          <p class="help-note">
+            Stage guide explains the current controls and goals. Learning guide introduces the
+            concepts and experiments for each stage.
           </p>
         </div>
         <button id="help-close" class="primary">Close</button>
@@ -421,6 +508,7 @@
       aria-modal="true"
       aria-labelledby="lesson-title"
       aria-hidden="true"
+      inert
     >
       <div class="lesson-card" tabindex="-1">
         <div class="lesson-stage-badge" id="lesson-stage-badge"></div>
@@ -677,7 +765,7 @@
     </section>
 
     <footer>
-      <span>Lesson</span>
+      <span id="stage-mode-label">--</span>
       <strong id="lesson-label">--</strong>
       <span>·</span>
       <code id="lesson-cmd">--</code>
@@ -699,7 +787,7 @@
         <span class="oss-star" aria-hidden="true">☆</span>
         <span aria-hidden="true">↗</span>
       </a>
-      <small class="analytics-note">
+      <small class="analytics-note" data-analytics-note hidden>
         <span class="i18n-ja">アクセス解析にGoogle Analyticsを利用しています。</span>
         <span class="i18n-en">This site uses Google Analytics for usage insights.</span>
       </small>

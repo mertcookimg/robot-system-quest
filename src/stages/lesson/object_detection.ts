@@ -360,6 +360,7 @@ export function makeObjectDetection(): Stage {
       ],
       isRunning: () => isRunning,
       activeWhenRunning: true,
+      liveStructureEditing: true,
       onRun: () => onRun(),
       onStop: () => onStop(),
       onClear: () => {
@@ -477,9 +478,10 @@ export function makeObjectDetection(): Stage {
           `objects <b>${mission.capturedCount()} / ${OBJECTS.length}</b><br>` +
           `model  <b>${MODELS[lastModel]}</b><br>` +
           `threshold <b>${lastThreshold.toFixed(2)}</b>`;
+        const timeSeconds = elapsed;
         g.setTimeout(() => {
           g.sfx.clear();
-          g.showClear(stars, stats);
+          g.showClear(stars, stats, { timeSeconds });
         }, 350);
       } else {
         const remaining = OBJECTS.length - mission.capturedCount();
@@ -572,7 +574,7 @@ export function makeObjectDetection(): Stage {
         "正解データからBounding Box・Class・Confidenceを生成します。" +
         "このシミュレーションでは、model sizeをnからxへ上げるほど基準ConfidenceとLatencyが増える設定です。" +
         "実機での精度・Confidence・処理速度は、モデル、学習データ、入力、Hardwareによって変わります。" +
-        "confidence_filterのthresholdを調整し、誤検出を除きながらすべてのClassを検出するとクリアです。" +
+        "confidence_filterのthresholdを調整して全ターゲットを検出・捕捉し、GOALへ到達するとクリアです。誤検出の除去自体はクリア条件ではありません。" +
         "検出結果は/obj_detection/objectsへJSON形式で擬似的にpublishします。",
       msgTypes: ["sensor_msgs/msg/Image", "std_msgs/msg/String", "geometry_msgs/msg/Twist"],
       state: {
@@ -593,7 +595,8 @@ export function makeObjectDetection(): Stage {
         "ros2 topic hz /obj_detection/image",
         "ros2 topic info /obj_detection/objects",
       ],
-      python: `from cv_bridge import CvBridge
+      python: `# Real-robot integration sketch; this lesson simulates detector outputs without running this model.
+from cv_bridge import CvBridge
 import json
 bridge = CvBridge()
 
@@ -632,7 +635,7 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="Example confidence scores and threshold; confidence filter accepts detections at or above the threshold">
   <!-- camera image -->
   <rect x="14" y="14" width="190" height="88" rx="4" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
-  <text x="22" y="100" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9">/image_raw</text>
+  <text x="22" y="100" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9">/obj_detection/image</text>
   <!-- mock objects in image -->
   <circle cx="58" cy="58" r="14" fill="light-dark(#925b00, #fbbf24)" opacity="0.85"/>
   <rect x="108" y="38" width="22" height="38" fill="light-dark(#087764, #5eead4)" opacity="0.85"/>
@@ -667,8 +670,8 @@ export default defineStage({
       en: "Object detection — detector + confidence filter",
     },
     learn: {
-      ja: "物体検出器（Object Detector）は、画像に写っている物体のクラス名と信頼度をBounding Boxとともに出力します。confidence_filterで閾値以上の検出だけを残し、model sizeとthresholdのトレードオフを学びます。",
-      en: "An object detector outputs each detected object's class label, confidence, and bounding box. confidence_filter keeps only detections at or above the threshold. Tune model size vs threshold to balance precision and recall.",
+      ja: "このLessonは検出器の出力を模したシミュレーションです。実際の画像推論は行わず、物体の位置からクラス・信頼度・Bounding Boxと誤検出を生成します。confidence_filterで閾値以上の検出だけを残し、model size・thresholdと検出結果の関係を調べます。",
+      en: "This lesson simulates detector outputs without running image inference. Known object positions generate classes, confidence scores and bounding boxes, with added false positives. Keep detections at or above the confidence_filter threshold and compare model size, threshold and results.",
     },
     goal: {
       ja: "modelとthresholdを調整してすべてのクラスを検出し、GOALに到達しましょう。",

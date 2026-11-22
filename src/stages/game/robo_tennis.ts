@@ -1083,8 +1083,8 @@ export default defineStage({
       en: "Against AI or a friend, win two games using 0, 15, 30, 40, deuce and advantage. A missed return, out, or net gives the opponent a point.",
     },
     first: {
-      ja: "P1はWASD・ゲームパッド・マウス／タッチ、P2は矢印キー・2台目のゲームパッドで移動します。E・Space・Enter・Shift・ゲームパッドのA/X・クリック／タップでサーブまたはスイングします。サーブだけは1バウンド後に返球し、その後はボレーもできます。",
-      en: "P1 uses WASD, pad, mouse, or touch; P2 uses arrows or pad 2. Serve and swing with E, Space, Enter, Shift, pad A/X, click, or tap. The serve must bounce before the return; volleys are allowed afterward.",
+      ja: "2キーまたはP1のゲームパッドのYで1P/2Pを切り替えます。P1はWASDで移動し、E/Space/X/左Shiftでサーブ・スイングします。P2は矢印で移動し、Enter/右Shiftで打ちます。各ゲームパッドは左スティックで移動・A/Xで打ちます。P1はマウス／タッチで移動し、クリック／タップで打つこともできます。サーブは1バウンド後に返球し、その後はボレーも可能です。",
+      en: "Switch 1P/2P with 2 or Y on pad 1. P1 moves with WASD and serves/swings with E/Space/X/left Shift. P2 moves with arrows and hits with Enter/right Shift. Each pad uses the left stick to move and A/X to hit. P1 can also move with mouse/touch and hit with a click/tap. Return the serve after one bounce; volleys are allowed afterward.",
     },
   },
   strings: {

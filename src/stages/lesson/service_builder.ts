@@ -282,9 +282,10 @@ export function makeService(): Stage {
       const stars = elapsed < 25 ? 3 : elapsed < 50 ? 2 : 1;
       const stats =
         `Time   <b>${elapsed.toFixed(2)} s</b><br>` + `service calls <b>${serviceCalls}</b>`;
+      const timeSeconds = elapsed;
       g.setTimeout(() => {
         g.sfx.clear();
-        g.showClear(stars, stats);
+        g.showClear(stars, stats, { timeSeconds });
       }, 350);
     }
   }
@@ -768,8 +769,8 @@ export default defineStage({
       en: "A Service is ROS 2 request/response communication. Normally one server owns a service name, while multiple clients may send requests. A server returns a response when it is available and completes the request, so clients must still handle unavailability and timeouts. Service name and srv type must match. Inside a node, consider the executor and callback arrangement and use an asynchronous call when appropriate.",
     },
     goal: {
-      ja: "Client NodeとServer Nodeを正しいService名とsrv型でつなぎ、CALLを押してRequestからResponseまでの流れを実行しましょう。",
-      en: "Wire the Client node to the Server node with a matching service name and srv type, then press CALL to perform one request → response exchange at a time.",
+      ja: "Client NodeとServer Nodeを正しいService名とsrv型でつなぎ、CALLを繰り返してロボットをGOALまで進めましょう。1回につき1組のRequest/Responseが発生し、8回のCALLで到達します。",
+      en: "Wire the Client and Server with a matching service name and srv type, then repeat CALL to move the robot to the GOAL. Each call performs one request/response exchange; eight calls reach the goal.",
     },
     first: {
       ja: "左右どちらかのポートをタップしてから、もう一方をタップします。接続後は画面下のCALLを押すたびに、1組のRequest/Responseが発生します。",
@@ -783,7 +784,7 @@ export default defineStage({
       "node.server": "/toggle_lampのService Server（応答側）",
       sim_label: "ROBOT SIMULATION（Service Callごとに1段階進む）",
       "status.incomplete": "配線が不完全 — Service名と型を一致させてください",
-      "status.success": "Service接続成立 — CALLを押してRequestを送信",
+      "status.success": "Service接続成立 — CALLを繰り返してGOALへ",
       "status.connect_first": "先にClientとServerを接続してください",
       "status.response": "Responseを受信 — success: true",
       "status.select_other": "ポートを選択中 — 反対側のポートをタップ",
@@ -799,7 +800,7 @@ export default defineStage({
       "node.server": "/toggle_lamp service server (replies)",
       sim_label: "ROBOT SIMULATION  (advances one step per service call)",
       "status.incomplete": "Graph incomplete — match service name and srv type",
-      "status.success": "Service connected — press CALL to send a request",
+      "status.success": "Service connected — repeat CALL to reach GOAL",
       "status.connect_first": "Connect the Client and Server first",
       "status.response": "Response received — success: true",
       "status.select_other": "Port selected — tap the port on the other side",

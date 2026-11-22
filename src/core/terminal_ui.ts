@@ -9,6 +9,7 @@ import { inspectionCommands, recommendedInspectionCommand } from "../lib/termina
 import * as topicMonitor from "./topic_monitor";
 import type { Ros2Concept } from "../types";
 import { t, onLangChange } from "../i18n";
+import { isStageSimulationPaused, isTerminalFocused } from "../lib/input_guard";
 
 const cmdHistory: string[] = [];
 let historyIdx = -1;
@@ -216,6 +217,23 @@ export function resetForStage(): void {
 
 export function setupTerminal(d: Deps): void {
   deps = d;
+  // A deliberate canvas/pad gesture hands control back before its target
+  // handlers synthesize mouse or keyboard input. Touch handlers prevent the
+  // browser's default focus change, so otherwise the terminal captures every
+  // subsequent gesture. Hovering or interacting behind a dialog must not exit.
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      if (
+        (event.target as Element | null)?.closest?.("#game, #touchpad") &&
+        !isStageSimulationPaused() &&
+        (isTerminalFocused() || isPadPaletteOpen())
+      ) {
+        resumeStageControls();
+      }
+    },
+    true,
+  );
   // Selects and Run also own Enter/Space; they must not activate a stage dialog.
   document.getElementById("ros-terminal")?.addEventListener("keydown", (event) => {
     event.stopPropagation();

@@ -2,16 +2,16 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#f3f6fb" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0f172a" />
     <script>
       (() => {
-        let theme = "light";
+        let theme = "dark";
         try {
-          if (localStorage.getItem("robot_quest_theme_v1") === "dark") theme = "dark";
+          if (localStorage.getItem("robot_quest_theme_v1") === "light") theme = "light";
         } catch {}
         document.documentElement.dataset.theme = theme;
         document.documentElement.style.colorScheme = theme;
@@ -104,10 +104,10 @@
             <span aria-hidden="true">↗</span>
           </a>
           <div class="theme-switcher" data-theme-switcher role="group" aria-label="表示テーマ">
-            <button type="button" data-theme-option="light" aria-pressed="true">
+            <button type="button" data-theme-option="light" aria-pressed="false">
               <span aria-hidden="true">☀</span><span data-theme-label>ライト</span>
             </button>
-            <button type="button" data-theme-option="dark" aria-pressed="false">
+            <button type="button" data-theme-option="dark" aria-pressed="true">
               <span aria-hidden="true">☾</span><span data-theme-label>ダーク</span>
             </button>
           </div>
@@ -293,7 +293,7 @@
                   <span class="robot-function-icon" aria-hidden="true">⌁</span>
                   <small>CONTROL</small>
                 </div>
-                <h3>狙った動きを実現する：適応的に制御する</h3>
+                <h3>フィードバックで狙った動きを実現する</h3>
                 <p>目標値と現在値を比較し、車輪や関節が安定して動くように指令を調整します。</p>
                 <span>速度・関節・フィードバック</span>
               </article>
@@ -630,7 +630,9 @@
           <span><strong>Robot System Quest</strong><small>Games and Lessons</small></span>
         </a>
         <p>ブラウザから実機へ。ロボットシステムを、動かしながら学ぶ。</p>
-        <small class="guide-analytics-note">アクセス解析にGoogle Analyticsを利用しています。</small>
+        <small class="guide-analytics-note" data-analytics-note hidden>
+          アクセス解析にGoogle Analyticsを利用しています。
+        </small>
         <a href="#overview">ページ上部へ ↑</a>
       </footer>
     </div>

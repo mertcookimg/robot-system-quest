@@ -458,13 +458,13 @@ export function makeBatteryRush(): Stage {
     lessonCmd: "ros2 topic echo /robot/battery_state",
     ros2: defineRos2Concept({
       title: tx(
-        "BatteryState — バッテリー残量を監視して自動充電",
-        "BatteryState — monitor the pack and auto-dock",
+        "BatteryState — 残量を見て充電ドックへ戻る",
+        "BatteryState — monitor charge and drive back to the dock",
       ),
       summary:
-        "実機のロボットは、sensor_msgs/BatteryStateを/battery_stateへpublishし続けます。" +
-        "監視Nodeが残量低下を検知したら充電ドックへ向かわせます。これは掃除ロボットの自動帰還にも使われる考え方です。" +
-        "このステージでは、移動や衝突によるバッテリー消費と、ドックでの充電を体験できます。",
+        "このステージはsensor_msgs/msg/BatteryStateを/robot/battery_stateへpublishします。" +
+        "監視Nodeは残量25%未満で警告を出します。充電ドックへ戻る判断と操縦はプレイヤーが行います。" +
+        "実機で自動帰還させる場合は、残量監視に加えてドックまでのナビゲーションを組み合わせます。",
       msgTypes: [
         "sensor_msgs/msg/BatteryState",
         "geometry_msgs/msg/Twist",
@@ -497,8 +497,8 @@ class BatteryMonitor(Node):
         elif msg.percentage > LOW + 0.15:
             self.warned = False`,
       realWorld: tx(
-        "掃除ロボットの自動帰還やNav2のDockingでも、バッテリー残量を監視して充電地点へ移動する考え方が使われます。/battery_stateが閾値を下回ったら、充電ステーションへのNavigation Goalを送ります。",
-        "A Roomba returning to base and Nav2's docking behavior work the same way: watch /battery_state and, below a threshold, send a navigation goal to the charging station.",
+        "実機の自動帰還では、BatteryStateによる残量監視と、充電地点までのナビゲーション・ドッキングを組み合わせます。例えば、この教材と同じ/robot/battery_stateを監視し、残量が閾値を下回ったら充電地点へのGoalを送る構成にできます。",
+        "Automatic return on a physical robot combines BatteryState monitoring with navigation and docking. For example, monitor /robot/battery_state as in this Game and send a goal to the charging station when charge falls below a threshold.",
       ),
       state: state({
         nodes: ["/robot_node", "/battery_monitor", "/teleop"],
@@ -527,7 +527,7 @@ export default defineStage({
   mode: "game",
   order: 10,
   diagram: `
-<svg viewBox="0 0 420 120" role="img" aria-label="robot publishes battery state, monitor node triggers docking below 25 percent">
+<svg viewBox="0 0 420 120" role="img" aria-label="robot publishes battery state; monitor warns below 25 percent and the player drives to the dock">
   <defs>
     <marker id="ld-batt-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
       <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
@@ -539,12 +539,12 @@ export default defineStage({
   <rect x="272" y="26" width="140" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
   <text x="342" y="48" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">battery_monitor</text>
   <text x="342" y="66" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">&lt; 25% ?</text>
-  <text x="342" y="84" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="9">→ go to DOCK ⚡</text>
+  <text x="342" y="84" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="9">→ LOW warning</text>
   <line x1="148" y1="60" x2="270" y2="60" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-batt-arrow)"/>
   <circle r="3.5" fill="light-dark(#925b00, #fbbf24)">
     <animateMotion dur="1.6s" repeatCount="indefinite" path="M 150 60 L 266 60"/>
   </circle>
-  <text x="210" y="46" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/battery_state</text>
+  <text x="210" y="16" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">/robot/battery_state</text>
   <text x="210" y="80" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="9">sensor_msgs/BatteryState</text>
 </svg>
 `,
@@ -554,8 +554,8 @@ export default defineStage({
       en: "BatteryState — a delivery score attack on battery power",
     },
     learn: {
-      ja: "実際のロボットは/battery_state（sensor_msgs/msg/BatteryState）へ残量をpublishし続け、監視Nodeが残量低下を検知すると充電ドックへ向かいます。HUDのバッテリー残量は、このTopicの内容を表しています。",
-      en: "Real robots keep publishing /battery_state (sensor_msgs/BatteryState); a monitor node sends them to the dock when it drops. The battery % in the HUD is exactly that topic.",
+      ja: "残量は/robot/battery_state（sensor_msgs/msg/BatteryState）へ配信され、HUDにも表示されます。このGameでは25%未満で警告が出ますが、ドックへは自分で操縦して戻ります。実機の自動帰還では、この残量監視とナビゲーションを組み合わせます。",
+      en: "Charge is published on /robot/battery_state (sensor_msgs/msg/BatteryState) and shown in the HUD. This Game warns below 25%, but you must drive back to the dock yourself. Automatic return on a physical robot combines battery monitoring with navigation.",
     },
     goal: {
       ja: "75秒間でできるだけ多く配達しましょう（6件で★3）。移動、ブースト、壁への衝突でバッテリーが減り、0%になると故障してゲームオーバーです。⚡ドックに乗ると急速充電できます。",

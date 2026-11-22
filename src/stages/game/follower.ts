@@ -162,9 +162,10 @@ export function makeFollower(): Stage {
       const stats =
         `Time      <b>${elapsed.toFixed(2)} s</b><br>` +
         `In-zone   <b>${inZoneTime.toFixed(2)} s / ${REQUIRED_TIME} s</b>`;
+      const timeSeconds = elapsed;
       g.setTimeout(() => {
         g.sfx.clear();
-        g.showClear(stars, stats);
+        g.showClear(stars, stats, { timeSeconds });
       }, 700);
       return;
     }
@@ -459,8 +460,8 @@ export default defineStage({
       en: "The leader's pose is published on the topic /target/pose. A Subscriber reads the topic and uses the data to decide how to act.",
     },
     goal: {
-      ja: "WASDで動き、青いリーダーロボットについていきましょう。\n近すぎず遠すぎない距離（55〜130px）を一定時間保てばクリアです。",
-      en: "Drive with WASD and tail the blue leader robot.\nStay in the sweet spot (55–130 px) long enough and you clear!",
+      ja: "WASDで青いリーダーロボットを追いかけ、距離55〜130pxの範囲に累計8秒入るとクリアです。\n範囲外では加算が止まりますが、それまでの時間は失われません。",
+      en: "Use WASD to follow the blue leader at 55–130 px for a total of 8 seconds.\nTime outside the band pauses progress without erasing the time already earned.",
     },
     first: {
       ja: "WASDでリーダーを追いかけ、近づきすぎず離れすぎない距離を保ちましょう。",
@@ -472,7 +473,7 @@ export default defineStage({
       "crash.wall": "壁に衝突",
       hint: "WASD で青いリーダーを 55–130 px で追走 / R リスタート",
       "status.complete": "FOLLOW COMPLETE",
-      "status.following": "追従中 — {t}s / {req}s",
+      "status.following": "累計追従時間 — {t}s / {req}s",
       "status.outzone": "範囲外 ({d} px)",
       "status.tip": "青いリーダーを 55–130 px の距離でキープせよ",
     },
@@ -480,7 +481,7 @@ export default defineStage({
       "crash.wall": "Crashed into wall",
       hint: "WASD to follow blue leader at 55–130 px / R to restart",
       "status.complete": "FOLLOW COMPLETE",
-      "status.following": "following — {t}s / {req}s",
+      "status.following": "total time in range — {t}s / {req}s",
       "status.outzone": "out of zone ({d} px)",
       "status.tip": "Keep distance 55–130 px from the blue leader",
     },

@@ -284,9 +284,10 @@ export function makeLidarExplorer(): Stage {
           `Battery  <b>${battery.toFixed(0)}%</b><br>` +
           `Mapped   <b>${discovered.size}</b> walls<br>` +
           `Data     <b>${collected.size} / 3</b>`;
+        const timeSeconds = elapsed;
         g.setTimeout(() => {
           g.sfx.clear();
-          g.showClear(stars, stats);
+          g.showClear(stars, stats, { timeSeconds });
         }, 700);
       }
     }
@@ -640,7 +641,7 @@ export default defineStage({
     },
     learn: {
       ja: "LiDARは周囲までの距離を測り、Topic /scanへpublishします。ロボットはこのセンサーデータを使って暗闇でも周囲を把握できます。",
-      en: 'A LiDAR measures distance to surroundings and publishes them on /scan. The robot uses this sensor data to \\"see\\" through the dark.',
+      en: 'A LiDAR measures distances to surrounding surfaces and publishes them on /scan. The robot uses this sensor data to "see" in the dark.',
     },
     goal: {
       ja: "WASDで迷路を進みましょう。A・B・Cの3つのデータを集めてGOALに到達すればクリアです。\n壁にぶつかったり、バッテリーが切れたりするとやり直しになります。",

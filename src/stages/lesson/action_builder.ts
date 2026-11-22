@@ -380,9 +380,10 @@ export function makeAction(): Stage {
           `Time   <b>${elapsed.toFixed(2)} s</b><br>` +
           `result <b>error_code: 0</b><br>` +
           `goal status <b>SUCCEEDED</b>`;
+        const timeSeconds = elapsed;
         g.setTimeout(() => {
           g.sfx.clear();
-          g.showClear(stars, stats);
+          g.showClear(stars, stats, { timeSeconds });
         }, 350);
       }
     }

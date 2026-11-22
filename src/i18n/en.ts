@@ -25,18 +25,49 @@ export const EN: Record<string, string> = {
   "terminal.input": "Enter a ROS 2 command (try help)",
   "terminal.welcome": "ROS 2 concepts (simulated) · Robot System Quest Terminal",
   "terminal.guide":
-    "Select a command or type one. The stage keeps running while you use the terminal.",
+    "This terminal is for inspection. Change settings through the stage controls. Automatic execution, timers and messages continue while manual input goes to the terminal. Press Esc / gamepad B, or press the game canvas or touchpad, to return to manual controls.",
   "terminal.noMessages":
-    "No recorded messages on {topic} yet. Operate the lesson, then run this command again.",
+    "No recorded messages on {topic} yet. Operate the stage, then run this command again.",
   "terminal.snapshot":
     "# Saved-log snapshot: latest {count} messages at command time. Run again to refresh.",
   "terminal.rateSnapshot":
     "# Calculated from saved-log intervals. Action-triggered events do not have a fixed publishing period.",
-  "terminal.noParameters": "{node} does not expose simulated parameters in this lesson.",
-  "terminal.noLifecycle": "{node} does not expose a managed lifecycle state in this lesson.",
+  "terminal.noParameters": "{node} does not expose simulated parameters in this stage.",
+  "terminal.noLifecycle": "{node} does not expose a managed lifecycle state in this stage.",
   "terminal.doctor":
     "Simulated graph: {nodes} nodes, {topics} topics. No real ROS 2 installation or hardware diagnostics are run.",
-  "terminal.unsupported": "{command}: not available in this game. Choose an inspect command.",
+  "terminal.unsupported":
+    "{command}: not available in this inspection-only terminal. Change settings and issue commands through the stage controls.",
+  "terminal.help.title": "Inspection commands (Esc / q / exit releases terminal input):",
+  "terminal.help.clear": "clear screen",
+  "terminal.help.exit": "leave terminal input",
+  "terminal.help.history": "history navigation: ↑ / ↓",
+  "terminal.help.inspectOnly":
+    "Change values and issue execution commands through the stage controls.",
+  "terminal.bye": "Terminal input released.",
+  "terminal.tryHelp": "try: help",
+  "terminal.usage": "Usage: {command}",
+  "terminal.commandNotFound": "bash: {command}: command not found",
+  "terminal.notImplemented": "Command not implemented: {command}",
+  "terminal.unknownVerb": "Unknown command: {command}. Try help for available commands.",
+  "terminal.missing": "(missing)",
+  "terminal.topicNotFound": "Topic '{name}' not found.",
+  "terminal.nodeNotFound": "Node '{name}' not found.",
+  "terminal.serviceNotFound": "Service '{name}' not found.",
+  "terminal.actionNotFound": "Action '{name}' not found in this stage.",
+  "terminal.parameterNotFound": "Parameter '{name}' not found.",
+  "terminal.noTopics": "(no topics in this stage)",
+  "terminal.noNodes": "(no nodes)",
+  "terminal.noServices": "(no services in this stage)",
+  "terminal.noActions": "(no actions in this stage)",
+  "terminal.notEnoughMessages":
+    "(not enough messages on {topic} yet; operate the stage and run again)",
+  "terminal.interfaceDeclared": "# Interface type declared by this simulation.",
+  "terminal.interfaceOmitted":
+    "# Its complete field definition is omitted by the lightweight simulator.",
+  "terminal.interfaceNotFound": "Interface '{name}' not in this game's database.",
+  "terminal.available": "Available:",
+  "terminal.interfaceSummary": "# Simplified interface summary; nested fields may be omitted.",
 
   // ── pubsub / service / action ──
   "puzzle.status.connect":
@@ -44,6 +75,7 @@ export const EN: Record<string, string> = {
 
   // ── block editor common ──
   "block.program.empty_short": "Empty program",
+  "block.program.empty_help": "Add a block from BLOCKS, then press ▶ RUN.",
   "block.program.count": "{n} blocks",
   "block.btn.up": "Move up",
   "block.btn.down": "Move down",
@@ -59,14 +91,6 @@ export const EN: Record<string, string> = {
   "block.running_lidar": "LiDAR avoidance running ({n} blocks)",
 
   // ── feedforward_controller ──
-  "ff_controller.tip": "Sandbox — arrange blocks and RUN",
-  "ff_controller.hint": "No obstacles or goal — try different cmd_vel values",
-  "ff_controller.palette_hint": "No goal or obstacles. Experiment freely with cmd_vel",
-  "ff_controller.practice_on": "🔄 Practice mode — RUN as many times as you want, no clear screen",
-  "ff_controller.practice_off": "🎯 Mission mode — clear by using forward / turn-left / turn-right",
-  "ff_controller.practice_done": "Program done — edit blocks freely and RUN again",
-  "ff_controller.need_all":
-    "Use {n}/3 patterns — forward(linear>0) / turn-left(angular>0) / turn-right(angular<0) for clear",
   "ff_controller.move_start_on":
     "✋ Move START ON — WASD / arrows / pad to drag. Press again to confirm",
   "ff_controller.move_start_off": "START position fixed. RUN replays from this spot",
@@ -77,14 +101,6 @@ export const EN: Record<string, string> = {
   "ff_mission.palette_hint": "Publish geometry_msgs/msg/Twist for `duration` seconds",
 
   // ── feedback_controller ──
-  "fb_controller.tip": "Recreates robot_feedback_control. Watch odom feedback in action",
-  "fb_controller.hint": "Combine go_straight / turn_left / turn_right to drive via odom feedback",
-  "fb_controller.palette_hint": "Subscribe /odom and stop once target distance / angle is met",
-  "fb_controller.practice_on": "🔄 Practice mode — RUN as many times as you want, no clear screen",
-  "fb_controller.practice_off": "🎯 Mission mode — clear by using all 3 block kinds",
-  "fb_controller.practice_done": "Program done — edit blocks freely and RUN again",
-  "fb_controller.need_all":
-    "Use {n}/3 kinds — go_straight / turn_left / turn_right needed for clear",
   "fb_controller.move_start_on":
     "✋ Move START ON — WASD / arrows / pad to drag. Press again to confirm",
   "fb_controller.move_start_off": "START position fixed. RUN replays from this spot",
@@ -92,5 +108,6 @@ export const EN: Record<string, string> = {
   // ── feedback_mission ──
   "fb_mission.tip": "Solve the same problem as feedforward_mission with feedback control",
   "fb_mission.hint": "Use go_straight / turn_left / turn_right to dodge walls → GOAL",
-  "fb_mission.palette_hint": "Use /odom feedback to dodge walls and reach GOAL",
+  "fb_mission.palette_hint":
+    "Use /robot/odometry/odometry to end each move at its target distance or angle",
 };
