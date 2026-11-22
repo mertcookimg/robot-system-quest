@@ -1,6 +1,9 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "./stage_colors";
+import { getTheme } from "../core/theme";
+
 // Sampled motion trail with throttle + ring-buffer trim. Stages call
 // `update(dt, x, y)` every frame and `draw(ctx)` from the render pass.
 
@@ -22,7 +25,7 @@ export class Trail {
   constructor(opts: TrailOptions = {}) {
     this.interval = opts.interval ?? 0.05;
     this.max = opts.max ?? 80;
-    this.color = opts.color ?? "rgba(196, 181, 253, ALPHA)";
+    this.color = opts.color ?? "rgba(109, 66, 181, ALPHA)";
     this.width = opts.width ?? 1.5;
   }
 
@@ -41,9 +44,14 @@ export class Trail {
 
   draw(ctx: CanvasRenderingContext2D, alphaScale = 0.55): void {
     const n = this.points.length;
+    const light = getTheme() === "light";
+    // Callers choose relative prominence; the light palette needs stronger
+    // ink even when a caller explicitly supplies the usual 0.5–0.65 scale.
+    const strength = light ? Math.min(1, alphaScale * 1.5) : alphaScale;
     for (let i = 1; i < n; i++) {
-      const a = (i / n) * alphaScale;
-      ctx.strokeStyle = this.color.replace("ALPHA", a.toFixed(3));
+      const age = i / n;
+      const a = (light ? 0.3 + 0.7 * age : age) * strength;
+      ctx.strokeStyle = stageColor(this.color.replace("ALPHA", a.toFixed(3)));
       ctx.lineWidth = this.width;
       ctx.beginPath();
       ctx.moveTo(this.points[i - 1].x, this.points[i - 1].y);

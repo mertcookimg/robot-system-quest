@@ -1,6 +1,9 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+import { drawWrappedText } from "../../lib/canvas_text";
+
 // localization_mission: Monte Carlo Localization (Particle Filter / AMCL)
 // Sequel to mapping_mission: the map is now KNOWN and the unknown is the
 // robot's own pose. Scatter ~300 hypotheses (particles) across the map, then
@@ -16,7 +19,7 @@
 // any time: an optional toy for replaying the convergence, and a nod to the
 // kidnapped-robot problem it exists to solve.
 import { type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { getTheme, theme, themeColor, withA } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
 import {
@@ -467,7 +470,7 @@ export function makeLocalizationMission(): Stage {
   function relocalize() {
     if (cleared) return;
     scatterAll();
-    fx.burst(robot.x, robot.y, "#c4b5fd", 24, 200);
+    fx.burst(robot.x, robot.y, "#6d42b5", 24, 200);
     g.sfx.bump();
     // Mirrors: ros2 service call /reinitialize_global_localization std_srvs/srv/Empty
     g.publish(
@@ -618,7 +621,7 @@ export function makeLocalizationMission(): Stage {
     cleared = true;
     cmd.v = 0;
     cmd.w = 0;
-    fx.burst(robot.x, robot.y, "#5eead4", 40, 260);
+    fx.burst(robot.x, robot.y, "#087764", 40, 260);
     g.shake(0.5);
     g.setStatus(t("localization_mission.status.clear"), "var(--ok)");
     const stars = elapsed < 30 ? 3 : elapsed < 50 ? 2 : 1;
@@ -711,34 +714,42 @@ export function makeLocalizationMission(): Stage {
     ctx.fillRect(METER_X, METER_Y, METER_W, METER_H);
     // Converge segment (blue) + hold segment (green).
     const fillW = METER_W * Math.min(progress, METER_SPLIT);
-    ctx.fillStyle = "#7dd3fc";
+    ctx.fillStyle = stageColor("#075f93");
     ctx.fillRect(METER_X, METER_Y, fillW, METER_H);
     if (progress > METER_SPLIT) {
-      ctx.fillStyle = "#5eead4";
+      ctx.fillStyle = stageColor("#087764");
       ctx.fillRect(splitX, METER_Y, METER_W * (progress - METER_SPLIT), METER_H);
     }
     // Split tick + border.
-    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.strokeStyle = themeColor("#425570", "rgba(255,255,255,0.35)");
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(splitX + 0.5, METER_Y);
     ctx.lineTo(splitX + 0.5, METER_Y + METER_H);
     ctx.stroke();
-    ctx.strokeStyle = progress >= 1 ? "#5eead4" : "rgba(125,211,252,0.6)";
+    ctx.strokeStyle = stageColor(progress >= 1 ? "#087764" : "rgba(7, 95, 147,0.6)");
     ctx.strokeRect(METER_X + 0.5, METER_Y + 0.5, METER_W - 1, METER_H - 1);
     // Label + percent.
     ctx.font = "700 11px ui-monospace, monospace";
     ctx.textBaseline = "middle";
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#eef2ff";
-    ctx.fillText(t("localization_mission.meter.label"), METER_X + 8, METER_Y + METER_H / 2 + 1);
-    ctx.textAlign = "right";
-    ctx.fillStyle = progress >= 1 ? "#5eead4" : "#eef2ff";
-    ctx.fillText(
-      progress >= 1 ? "100% ✓" : `${(progress * 100).toFixed(0)}%`,
-      METER_X + METER_W - 8,
-      METER_Y + METER_H / 2 + 1,
-    );
+    const labels = () => {
+      ctx.textAlign = "left";
+      ctx.fillText(t("localization_mission.meter.label"), METER_X + 8, METER_Y + METER_H / 2 + 1);
+      ctx.textAlign = "right";
+      ctx.fillText(
+        progress >= 1 ? "100% ✓" : `${(progress * 100).toFixed(0)}%`,
+        METER_X + METER_W - 8,
+        METER_Y + METER_H / 2 + 1,
+      );
+    };
+    ctx.fillStyle = theme.fg;
+    labels();
+    // Invert only the portion over the colored progress fill.
+    ctx.beginPath();
+    ctx.rect(METER_X, METER_Y, METER_W * Math.min(1, progress), METER_H);
+    ctx.clip();
+    ctx.fillStyle = theme.onAccent;
+    labels();
     ctx.restore();
   }
 
@@ -749,22 +760,25 @@ export function makeLocalizationMission(): Stage {
         const y = WORLD_Y + r * TILE;
         if (maze[r][c] === 1) {
           const isLandmark = c === LANDMARK.col && r === LANDMARK.row;
-          ctx.fillStyle = isLandmark ? "#3b2f1a" : "#1d2336";
+          ctx.fillStyle = themeColor(
+            isLandmark ? "#f6e5be" : "#8194ae",
+            isLandmark ? "#3b2f1a" : "#43536e",
+          );
           ctx.fillRect(x, y, TILE, TILE);
-          ctx.strokeStyle = isLandmark ? "#fbbf24" : "rgba(110,122,156,0.28)";
+          ctx.strokeStyle = stageColor(isLandmark ? "#925b00" : "rgba(88, 106, 130,0.28)");
           ctx.lineWidth = isLandmark ? 1.5 : 1;
           ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
           if (isLandmark) {
             // The one asymmetric wall — the clue that breaks the tie between
             // the two candidate chambers.
-            ctx.fillStyle = "#fbbf24";
+            ctx.fillStyle = stageColor("#925b00");
             ctx.font = "700 16px ui-monospace, monospace";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText("★", x + TILE / 2, y + TILE / 2 + 1);
           }
         } else {
-          ctx.fillStyle = "#070b16";
+          ctx.fillStyle = stageColor("#edf3fb");
           ctx.fillRect(x, y, TILE, TILE);
         }
       }
@@ -776,14 +790,14 @@ export function makeLocalizationMission(): Stage {
     for (const p of cloud) {
       // Overlapping particles in a cluster naturally read as brighter, so a
       // constant per-particle alpha communicates density.
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle = "#7dd3fc";
+      ctx.globalAlpha = getTheme() === "light" ? 0.8 : 0.5;
+      ctx.fillStyle = stageColor("#075f93");
       ctx.beginPath();
       ctx.arc(p.x, p.y, 1.6, 0, Math.PI * 2);
       ctx.fill();
       // Short heading tick.
-      ctx.globalAlpha = 0.35;
-      ctx.strokeStyle = "#7dd3fc";
+      ctx.globalAlpha = getTheme() === "light" ? 0.7 : 0.35;
+      ctx.strokeStyle = stageColor("#075f93");
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(p.x, p.y);
@@ -801,7 +815,7 @@ export function makeLocalizationMission(): Stage {
     ctx.save();
     ctx.setLineDash([4, 3]);
     ctx.lineWidth = 1.5;
-    ctx.strokeStyle = withA("#fbbf24", 0.85);
+    ctx.strokeStyle = stageColor(withA("#925b00", 0.85));
     ctx.font = "700 11px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -809,7 +823,7 @@ export function makeLocalizationMission(): Stage {
       ctx.beginPath();
       ctx.arc(c.x, c.y, 26, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.fillStyle = withA("#fbbf24", 0.9);
+      ctx.fillStyle = stageColor(withA("#925b00", 0.9));
       ctx.fillText("?", c.x, c.y - 34);
     }
     ctx.restore();
@@ -821,13 +835,13 @@ export function makeLocalizationMission(): Stage {
     for (const ray of lastScan) {
       const ex = robot.x + Math.cos(ray.angle) * ray.dist;
       const ey = robot.y + Math.sin(ray.angle) * ray.dist;
-      ctx.strokeStyle = "rgba(94,234,212,0.28)";
+      ctx.strokeStyle = themeColor("rgba(8, 119, 100,0.75)", "rgba(94, 234, 212,0.28)");
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(robot.x, robot.y);
       ctx.lineTo(ex, ey);
       ctx.stroke();
-      ctx.fillStyle = "#5eead4";
+      ctx.fillStyle = stageColor("#087764");
       ctx.beginPath();
       ctx.arc(ex, ey, 1.4, 0, Math.PI * 2);
       ctx.fill();
@@ -839,8 +853,8 @@ export function makeLocalizationMission(): Stage {
     // Dashed line from the estimate "ghost" to the true robot = the error.
     ctx.save();
     ctx.setLineDash([4, 4]);
-    ctx.strokeStyle = withA("#c4b5fd", 0.5);
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = withA(theme.accent2, getTheme() === "light" ? 0.85 : 0.5);
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(estX, estY);
     ctx.lineTo(robot.x, robot.y);
@@ -849,8 +863,8 @@ export function makeLocalizationMission(): Stage {
     // Estimate marker (purple diamond + heading).
     ctx.translate(estX, estY);
     ctx.globalAlpha = 0.9;
-    ctx.strokeStyle = "#c4b5fd";
-    ctx.fillStyle = withA("#c4b5fd", 0.18);
+    ctx.strokeStyle = stageColor("#6d42b5");
+    ctx.fillStyle = stageColor(withA("#6d42b5", 0.18));
     ctx.lineWidth = 1.6;
     ctx.beginPath();
     ctx.moveTo(0, -8);
@@ -864,7 +878,7 @@ export function makeLocalizationMission(): Stage {
     ctx.moveTo(0, 0);
     ctx.lineTo(Math.cos(estTheta) * 12, Math.sin(estTheta) * 12);
     ctx.stroke();
-    ctx.fillStyle = "#c4b5fd";
+    ctx.fillStyle = stageColor("#6d42b5");
     ctx.font = "700 8px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.fillText("EST", 0, -12);
@@ -874,28 +888,28 @@ export function makeLocalizationMission(): Stage {
   function drawSidePanel(ctx: CanvasRenderingContext2D) {
     const px = PANEL_X;
     const py = 40;
-    const ph = 268;
+    const ph = 286;
     ctx.save();
     ctx.fillStyle = withA(theme.scrim, 0.85);
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.strokeStyle = themeColor("#637892", "rgba(255,255,255,0.25)");
     ctx.lineWidth = 1;
     ctx.fillRect(px, py, PANEL_W, ph);
     ctx.strokeRect(px, py, PANEL_W, ph);
 
     // Title.
-    ctx.fillStyle = "#7dd3fc";
+    ctx.fillStyle = stageColor("#075f93");
     ctx.font = "700 12px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.fillText("PARTICLE FILTER", px + 12, py + 22);
     ctx.font = "9px ui-monospace, monospace";
     ctx.textAlign = "right";
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.fillText("/amcl_pose", px + PANEL_W - 12, py + 22);
 
     // Single objective — the clear condition, visible from second 0.
     ctx.textAlign = "left";
     ctx.font = "700 11px ui-monospace, monospace";
-    ctx.fillStyle = cleared ? "#5eead4" : "#eef2ff";
+    ctx.fillStyle = stageColor(cleared ? "#087764" : "#172b4d");
     ctx.fillText(
       `${cleared ? "✔" : "□"} ${t("localization_mission.check.step1")}`,
       px + 12,
@@ -906,51 +920,65 @@ export function makeLocalizationMission(): Stage {
     // still unsure (many, or a two-way tie), teal once it is down to one.
     const unsure = !cleared && (diffuse || modeCount >= 2);
     ctx.font = "700 11px ui-monospace, monospace";
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.fillText(t("localization_mission.hud.modes"), px + 12, py + 74);
     ctx.textAlign = "right";
-    ctx.fillStyle = unsure ? "#fbbf24" : "#5eead4";
+    ctx.fillStyle = stageColor(unsure ? "#925b00" : "#087764");
     ctx.fillText(modeLabel(), px + PANEL_W - 12, py + 74);
 
     // Numbers (plain words — the theory lives in the ROS Lab panel).
     ctx.textAlign = "left";
     ctx.font = "10px ui-monospace, monospace";
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.fillText(t("localization_mission.hud.particles"), px + 12, py + 100);
     ctx.fillText(t("localization_mission.hud.spread"), px + 12, py + 118);
     ctx.fillText(t("localization_mission.hud.err"), px + 12, py + 136);
     ctx.textAlign = "right";
-    ctx.fillStyle = "#eef2ff";
+    ctx.fillStyle = stageColor("#172b4d");
     ctx.font = "700 10px ui-monospace, monospace";
     ctx.fillText(`${cloud.length}`, px + PANEL_W - 12, py + 100);
     ctx.fillText(`${(spread / PX_PER_M).toFixed(2)} m`, px + PANEL_W - 12, py + 118);
-    ctx.fillStyle = estErr < ERR_THRESH ? "#5eead4" : "#fbbf24";
+    ctx.fillStyle = stageColor(estErr < ERR_THRESH ? "#087764" : "#925b00");
     ctx.fillText(`${(estErr / PX_PER_M).toFixed(2)} m`, px + PANEL_W - 12, py + 136);
 
     // Legend.
     ctx.textAlign = "left";
     ctx.font = "9px ui-monospace, monospace";
-    ctx.fillStyle = "#fbbf24";
+    ctx.fillStyle = stageColor("#925b00");
     ctx.fillText("■", px + 12, py + 168);
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.fillText(t("localization_mission.legend.real"), px + 26, py + 168);
-    ctx.fillStyle = "#c4b5fd";
+    ctx.fillStyle = stageColor("#6d42b5");
     ctx.fillText("◆", px + 12, py + 184);
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.fillText(t("localization_mission.legend.est"), px + 26, py + 184);
-    ctx.fillStyle = "#7dd3fc";
+    ctx.fillStyle = stageColor("#075f93");
     ctx.fillText("•", px + 12, py + 200);
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.fillText(t("localization_mission.legend.particles"), px + 26, py + 200);
 
     // Call to action — nudge toward the landmark while candidates are tied.
     ctx.font = "700 10px ui-monospace, monospace";
     if (isTwoWayTie()) {
-      ctx.fillStyle = "#fbbf24";
-      ctx.fillText(t("localization_mission.cta.disambiguate"), px + 12, py + 230);
+      ctx.fillStyle = stageColor("#925b00");
+      drawWrappedText(
+        ctx,
+        t("localization_mission.cta.disambiguate"),
+        px + 12,
+        py + 230,
+        PANEL_W - 24,
+        16,
+      );
     } else {
-      ctx.fillStyle = "#7dd3fc";
-      ctx.fillText(t("localization_mission.cta.converge"), px + 12, py + 230);
+      ctx.fillStyle = stageColor("#075f93");
+      drawWrappedText(
+        ctx,
+        t("localization_mission.cta.converge"),
+        px + 12,
+        py + 230,
+        PANEL_W - 24,
+        16,
+      );
     }
     ctx.restore();
   }
@@ -1059,44 +1087,44 @@ export default defineStage({
 <svg viewBox="0 0 420 130" role="img" aria-label="particles scattered across a known map converge onto the true robot pose as it drives">
   <defs>
     <marker id="ld-loc-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-      <polygon points="0 0, 9 3.5, 0 7" fill="#5eead4"/>
+      <polygon points="0 0, 9 3.5, 0 7" fill="light-dark(#087764, #5eead4)"/>
     </marker>
   </defs>
   <!-- Panel 1: scattered particles -->
   <g>
-    <rect x="10" y="18" width="180" height="94" rx="6" fill="#0a0e1a" stroke="#7dd3fc" stroke-width="1"/>
-    <text x="18" y="32" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9" font-weight="700">GLOBAL: scatter</text>
+    <rect x="10" y="18" width="180" height="94" rx="6" fill="light-dark(#d8e2ef, #3b506d)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1"/>
+    <text x="18" y="32" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">GLOBAL: scatter</text>
     <!-- known walls -->
-    <rect x="18" y="40" width="164" height="6" fill="#1d2336"/>
-    <rect x="18" y="100" width="164" height="6" fill="#1d2336"/>
-    <rect x="90" y="46" width="6" height="34" fill="#1d2336"/>
+    <rect x="18" y="40" width="164" height="6" fill="light-dark(#637892, #43536e)"/>
+    <rect x="18" y="100" width="164" height="6" fill="light-dark(#637892, #43536e)"/>
+    <rect x="90" y="46" width="6" height="34" fill="light-dark(#637892, #43536e)"/>
     <!-- particles everywhere -->
-    <g fill="#7dd3fc" opacity="0.7">
+    <g fill="light-dark(#075f93, #7dd3fc)" opacity="0.7">
       <circle cx="30" cy="60" r="1.5"/><circle cx="48" cy="88" r="1.5"/><circle cx="66" cy="54" r="1.5"/>
       <circle cx="120" cy="66" r="1.5"/><circle cx="150" cy="52" r="1.5"/><circle cx="164" cy="90" r="1.5"/>
       <circle cx="40" cy="72" r="1.5"/><circle cx="108" cy="94" r="1.5"/><circle cx="138" cy="78" r="1.5"/>
       <circle cx="72" cy="94" r="1.5"/><circle cx="130" cy="58" r="1.5"/><circle cx="56" cy="66" r="1.5"/>
     </g>
     <!-- true robot -->
-    <rect x="56" y="70" width="10" height="8" rx="2" fill="#181f3a" stroke="#fbbf24" stroke-width="1.5"/>
+    <rect x="56" y="70" width="10" height="8" rx="2" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
   </g>
   <!-- arrow: drive + resample -->
-  <line x1="196" y1="65" x2="224" y2="65" stroke="#5eead4" stroke-width="1.6" marker-end="url(#ld-loc-arrow)"/>
-  <text x="210" y="58" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="8" font-weight="700">drive</text>
+  <line x1="196" y1="65" x2="224" y2="65" stroke="light-dark(#087764, #5eead4)" stroke-width="1.6" marker-end="url(#ld-loc-arrow)"/>
+  <text x="210" y="58" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="8" font-weight="700">drive</text>
   <!-- Panel 2: converged cloud -->
   <g>
-    <rect x="230" y="18" width="180" height="94" rx="6" fill="#0a0e1a" stroke="#c4b5fd" stroke-width="1"/>
-    <text x="238" y="32" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="9" font-weight="700">CONVERGED</text>
-    <rect x="238" y="40" width="164" height="6" fill="#1d2336"/>
-    <rect x="238" y="100" width="164" height="6" fill="#1d2336"/>
-    <rect x="310" y="46" width="6" height="34" fill="#1d2336"/>
+    <rect x="230" y="18" width="180" height="94" rx="6" fill="light-dark(#d8e2ef, #3b506d)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1"/>
+    <text x="238" y="32" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">CONVERGED</text>
+    <rect x="238" y="40" width="164" height="6" fill="light-dark(#637892, #43536e)"/>
+    <rect x="238" y="100" width="164" height="6" fill="light-dark(#637892, #43536e)"/>
+    <rect x="310" y="46" width="6" height="34" fill="light-dark(#637892, #43536e)"/>
     <!-- tight cloud on the robot -->
-    <g fill="#7dd3fc" opacity="0.8">
+    <g fill="light-dark(#075f93, #7dd3fc)" opacity="0.8">
       <circle cx="292" cy="72" r="1.5"/><circle cx="296" cy="74" r="1.5"/><circle cx="288" cy="70" r="1.5"/>
       <circle cx="294" cy="68" r="1.5"/><circle cx="290" cy="76" r="1.5"/><circle cx="298" cy="72" r="1.5"/>
     </g>
-    <rect x="288" y="70" width="10" height="8" rx="2" fill="#181f3a" stroke="#fbbf24" stroke-width="1.5"/>
-    <text x="402" y="103" text-anchor="end" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="8">/amcl_pose</text>
+    <rect x="288" y="70" width="10" height="8" rx="2" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+    <text x="402" y="103" text-anchor="end" fill="light-dark(#172b4d, #edf3ff)" font-family="ui-monospace, monospace" font-size="8">/amcl_pose</text>
   </g>
 </svg>
 `,

@@ -1,13 +1,15 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+
 // lidar_avoidance: LiDAR Avoidance
 // Faithful re-implementation of robot_ros2_lecture / robot_lidar_control.py.
 // Subscribe to /scan, compute min distance in front/right/left sectors,
 // and reactively switch between forward / turn-left / turn-right / stop
 // based on a distance threshold.
 import { W, H, type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { theme, themeColor, withA } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
 import {
@@ -347,7 +349,7 @@ export function makeLidarAvoidance(): Stage {
       // Collision → reset (threshold too small or fwd_speed too high).
       bumpFlash = 1;
       g.shake(0.4);
-      particles.burst(robot.x, robot.y, "#fb7185", 22, 220);
+      particles.burst(robot.x, robot.y, "#be2949", 22, 220);
       isRunning = false;
       lastV = 0;
       lastW = 0;
@@ -403,28 +405,28 @@ export function makeLidarAvoidance(): Stage {
 
     // Walls.
     for (const wall of walls) {
-      c.fillStyle = "rgba(35, 44, 77, 0.75)";
-      c.strokeStyle = "rgba(110, 122, 156, 0.5)";
-      c.lineWidth = 1;
+      c.fillStyle = stageColor("rgba(170, 188, 212, 0.75)");
+      c.strokeStyle = themeColor("#586a82", "rgba(164, 181, 205, 0.5)");
+      c.lineWidth = 1.5;
       c.beginPath();
       c.roundRect(wall.x, wall.y, wall.w, wall.h, 4);
       c.fill();
       c.stroke();
     }
 
-    drawZone(c, GOAL, "#5eead4", "GOAL", elapsed);
+    drawZone(c, GOAL, "#087764", "GOAL", elapsed);
 
     // Start marker.
     c.save();
-    c.strokeStyle = "rgba(125, 211, 252, 0.45)";
-    c.lineWidth = 1;
+    c.strokeStyle = themeColor("#075f93", "rgba(125, 211, 252, 0.45)");
+    c.lineWidth = 1.5;
     c.setLineDash([4, 4]);
     c.beginPath();
     c.arc(START.x, START.y, 18, 0, Math.PI * 2);
     c.stroke();
     c.setLineDash([]);
-    c.fillStyle = "rgba(125, 211, 252, 0.65)";
-    c.font = "700 9px ui-monospace, monospace";
+    c.fillStyle = theme.accent;
+    c.font = "700 11px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("START", START.x, START.y - 24);
     c.restore();
@@ -434,10 +436,19 @@ export function makeLidarAvoidance(): Stage {
       const b = program[0];
       const sectorColor = (s: "front" | "right" | "left", blocked: boolean) => {
         if (s === "front")
-          return blocked ? "rgba(251, 113, 133, 0.55)" : "rgba(94, 234, 212, 0.35)";
+          return themeColor(
+            blocked ? "rgba(190, 41, 73, 0.9)" : "rgba(8, 119, 100, 0.75)",
+            blocked ? "rgba(253, 164, 175, 0.55)" : "rgba(94, 234, 212, 0.35)",
+          );
         if (s === "right")
-          return blocked ? "rgba(251, 191, 36, 0.55)" : "rgba(125, 211, 252, 0.18)";
-        return blocked ? "rgba(196, 181, 253, 0.55)" : "rgba(125, 211, 252, 0.18)";
+          return themeColor(
+            blocked ? "rgba(146, 91, 0, 0.9)" : "rgba(7, 95, 147, 0.65)",
+            blocked ? "rgba(251, 191, 36, 0.55)" : "rgba(125, 211, 252, 0.18)",
+          );
+        return themeColor(
+          blocked ? "rgba(109, 66, 181, 0.9)" : "rgba(7, 95, 147, 0.65)",
+          blocked ? "rgba(196, 181, 253, 0.55)" : "rgba(125, 211, 252, 0.18)",
+        );
       };
       const blockedFront = lastSector.front <= b.threshold;
       const blockedRight = lastSector.right < b.threshold;
@@ -446,7 +457,7 @@ export function makeLidarAvoidance(): Stage {
       for (const h of scanHits) {
         const blocked =
           h.sector === "front" ? blockedFront : h.sector === "right" ? blockedRight : blockedLeft;
-        c.strokeStyle = sectorColor(h.sector, blocked);
+        c.strokeStyle = stageColor(sectorColor(h.sector, blocked));
         const dir = robot.theta + h.angle;
         c.beginPath();
         c.moveTo(robot.x, robot.y);
@@ -480,7 +491,7 @@ export function makeLidarAvoidance(): Stage {
     const x = W - 130,
       y = H - 56;
     c.fillStyle = withA(theme.scrim, 0.78);
-    c.strokeStyle = "rgba(125, 211, 252, 0.25)";
+    c.strokeStyle = stageColor("rgba(7, 95, 147, 0.25)");
     c.lineWidth = 1;
     c.beginPath();
     c.roundRect(x, y, 118, 44, 6);
@@ -489,14 +500,14 @@ export function makeLidarAvoidance(): Stage {
     c.font = "9px ui-monospace, monospace";
     c.textAlign = "left";
     const item = (yy: number, color: string, label: string) => {
-      c.fillStyle = color;
+      c.fillStyle = stageColor(color);
       c.fillRect(x + 8, yy - 4, 10, 4);
       c.fillStyle = COLORS.FG_DIM;
       c.fillText(label, x + 22, yy);
     };
-    item(y + 12, "#fb7185", "front (blocked)");
-    item(y + 24, "#fbbf24", "right (blocked)");
-    item(y + 36, "#c4b5fd", "left  (blocked)");
+    item(y + 12, "#be2949", "front (blocked)");
+    item(y + 24, "#925b00", "right (blocked)");
+    item(y + 36, "#6d42b5", "left  (blocked)");
     c.restore();
   }
 
@@ -608,37 +619,37 @@ export default defineStage({
   diagram: `
 <svg viewBox="0 0 420 120" role="img" aria-label="LiDAR fans rays around the robot, red rays hit walls, green pass through">
   <!-- background -->
-  <rect x="6" y="6" width="408" height="108" rx="8" fill="rgba(8, 12, 28, 0.5)" stroke="#232c4d"/>
+  <rect x="6" y="6" width="408" height="108" rx="8" fill="rgba(var(--scrim-rgb), 0.5)" stroke="light-dark(#b8c8dc, #627895)"/>
   <!-- walls (obstacles) -->
-  <rect x="36" y="36" width="22" height="50" fill="#3a4366" stroke="#6e7a9c" stroke-width="0.5"/>
-  <rect x="362" y="42" width="22" height="42" fill="#3a4366" stroke="#6e7a9c" stroke-width="0.5"/>
+  <rect x="36" y="36" width="22" height="50" fill="light-dark(#8298b4, #4a6080)" stroke="light-dark(#586a82, #a4b5cd)" stroke-width="0.5"/>
+  <rect x="362" y="42" width="22" height="42" fill="light-dark(#8298b4, #4a6080)" stroke="light-dark(#586a82, #a4b5cd)" stroke-width="0.5"/>
   <!-- threshold ring -->
-  <circle cx="210" cy="60" r="62" fill="none" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>
-  <text x="278" y="22" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="10">threshold</text>
+  <circle cx="210" cy="60" r="62" fill="none" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>
+  <text x="278" y="22" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="10">threshold</text>
   <!-- blocked rays (hit walls within threshold) -->
-  <line x1="210" y1="60" x2="58" y2="55" stroke="#fb7185" stroke-width="1.5" opacity="0.85"/>
-  <line x1="210" y1="60" x2="362" y2="58" stroke="#fb7185" stroke-width="1.5" opacity="0.85"/>
-  <line x1="210" y1="60" x2="58" y2="80" stroke="#fb7185" stroke-width="1.4" opacity="0.7"/>
-  <line x1="210" y1="60" x2="362" y2="78" stroke="#fb7185" stroke-width="1.4" opacity="0.7"/>
+  <line x1="210" y1="60" x2="58" y2="55" stroke="light-dark(#be2949, #fda4af)" stroke-width="1.5" opacity="0.85"/>
+  <line x1="210" y1="60" x2="362" y2="58" stroke="light-dark(#be2949, #fda4af)" stroke-width="1.5" opacity="0.85"/>
+  <line x1="210" y1="60" x2="58" y2="80" stroke="light-dark(#be2949, #fda4af)" stroke-width="1.4" opacity="0.7"/>
+  <line x1="210" y1="60" x2="362" y2="78" stroke="light-dark(#be2949, #fda4af)" stroke-width="1.4" opacity="0.7"/>
   <!-- clear rays -->
-  <line x1="210" y1="60" x2="148" y2="14" stroke="#5eead4" stroke-width="1.2" opacity="0.6"/>
-  <line x1="210" y1="60" x2="210" y2="6" stroke="#5eead4" stroke-width="1.2" opacity="0.6"/>
-  <line x1="210" y1="60" x2="272" y2="14" stroke="#5eead4" stroke-width="1.2" opacity="0.6"/>
-  <line x1="210" y1="60" x2="148" y2="106" stroke="#5eead4" stroke-width="1.2" opacity="0.6"/>
-  <line x1="210" y1="60" x2="272" y2="106" stroke="#5eead4" stroke-width="1.2" opacity="0.6"/>
-  <line x1="210" y1="60" x2="100" y2="20" stroke="#5eead4" stroke-width="1.2" opacity="0.5"/>
-  <line x1="210" y1="60" x2="320" y2="20" stroke="#5eead4" stroke-width="1.2" opacity="0.5"/>
-  <line x1="210" y1="60" x2="100" y2="100" stroke="#5eead4" stroke-width="1.2" opacity="0.5"/>
-  <line x1="210" y1="60" x2="320" y2="100" stroke="#5eead4" stroke-width="1.2" opacity="0.5"/>
+  <line x1="210" y1="60" x2="148" y2="14" stroke="light-dark(#087764, #5eead4)" stroke-width="1.2" opacity="0.6"/>
+  <line x1="210" y1="60" x2="210" y2="6" stroke="light-dark(#087764, #5eead4)" stroke-width="1.2" opacity="0.6"/>
+  <line x1="210" y1="60" x2="272" y2="14" stroke="light-dark(#087764, #5eead4)" stroke-width="1.2" opacity="0.6"/>
+  <line x1="210" y1="60" x2="148" y2="106" stroke="light-dark(#087764, #5eead4)" stroke-width="1.2" opacity="0.6"/>
+  <line x1="210" y1="60" x2="272" y2="106" stroke="light-dark(#087764, #5eead4)" stroke-width="1.2" opacity="0.6"/>
+  <line x1="210" y1="60" x2="100" y2="20" stroke="light-dark(#087764, #5eead4)" stroke-width="1.2" opacity="0.5"/>
+  <line x1="210" y1="60" x2="320" y2="20" stroke="light-dark(#087764, #5eead4)" stroke-width="1.2" opacity="0.5"/>
+  <line x1="210" y1="60" x2="100" y2="100" stroke="light-dark(#087764, #5eead4)" stroke-width="1.2" opacity="0.5"/>
+  <line x1="210" y1="60" x2="320" y2="100" stroke="light-dark(#087764, #5eead4)" stroke-width="1.2" opacity="0.5"/>
   <!-- robot icon at center -->
-  <rect x="196" y="48" width="28" height="22" rx="3" fill="#181f3a" stroke="#7dd3fc" stroke-width="2"/>
-  <circle cx="204" cy="58" r="2" fill="#7dd3fc"/>
-  <circle cx="216" cy="58" r="2" fill="#7dd3fc"/>
-  <line x1="210" y1="70" x2="210" y2="78" stroke="#7dd3fc" stroke-width="2"/>
+  <rect x="196" y="48" width="28" height="22" rx="3" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="2"/>
+  <circle cx="204" cy="58" r="2" fill="light-dark(#075f93, #7dd3fc)"/>
+  <circle cx="216" cy="58" r="2" fill="light-dark(#075f93, #7dd3fc)"/>
+  <line x1="210" y1="70" x2="210" y2="78" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="2"/>
   <!-- annotations -->
-  <text x="50" y="100" text-anchor="middle" fill="#fb7185" font-family="ui-monospace, monospace" font-size="10" font-weight="700">blocked</text>
-  <text x="370" y="100" text-anchor="middle" fill="#fb7185" font-family="ui-monospace, monospace" font-size="10" font-weight="700">blocked</text>
-  <text x="210" y="103" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="11" font-weight="700">if min &lt; thr → turn</text>
+  <text x="50" y="100" text-anchor="middle" fill="light-dark(#be2949, #fda4af)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">blocked</text>
+  <text x="370" y="100" text-anchor="middle" fill="light-dark(#be2949, #fda4af)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">blocked</text>
+  <text x="210" y="103" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">if min &lt; thr → turn</text>
 </svg>
 `,
   lessonModal: {

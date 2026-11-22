@@ -1,0 +1,55 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+.theme-switcher {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+  max-width: 100%;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--fg);
+}
+
+.theme-switcher button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--fg-mid);
+  background: transparent;
+  font: 650 14px/1.2 var(--sans);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.theme-switcher button:hover {
+  color: var(--accent);
+  border-color: var(--line);
+  background: var(--panel);
+}
+
+.theme-switcher button[aria-pressed="true"] {
+  color: var(--on-accent);
+  border-color: var(--accent);
+  background: var(--accent);
+  font-weight: 750;
+}
+
+.theme-switcher button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (pointer: coarse) {
+  .theme-switcher button {
+    min-height: 42px;
+  }
+}

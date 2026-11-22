@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { cssStageColor } from "./stage_colors";
+
 // Tiny DSL for the stage HTML overlay panel (#stage-overlay). A handful of
 // LESSON stages need a small bottom-of-canvas control strip with sliders or
 // labels (mapping_mission, image_processing, ...). The construction is
@@ -105,9 +107,9 @@ export function makeOverlayPanel(
   panel.style.cssText =
     `${docked ? "position:relative; width:100%;" : `position:absolute; ${anchorCss};`}` +
     " padding:8px 12px; background:rgba(var(--scrim-rgb), 0.92);" +
-    " border:1px solid rgba(125,211,252,0.5); border-radius:8px;" +
+    " border:1px solid var(--line); border-radius:8px;" +
     " display:flex; gap:14px; align-items:center; flex-wrap:wrap;" +
-    " font-family:ui-monospace,monospace; font-size:11px; color:#eef2ff;" +
+    " font-family:ui-monospace,monospace; font-size:14px; color:var(--fg);" +
     " pointer-events:auto; z-index:5;";
 
   const refreshers: Array<() => void> = [];
@@ -144,11 +146,12 @@ export function makeOverlayPanel(
 function makeSlider(c: SliderControl): HTMLLabelElement {
   const wrap = document.createElement("label");
   wrap.className = "overlay-slider";
-  wrap.style.cssText = "display:flex; align-items:center; gap:6px; color:#9aa6c8;";
+  wrap.style.cssText =
+    "display:flex; align-items:center; gap:6px; color:light-dark(#425570, #c2cfe3);";
 
   const txt = document.createElement("span");
   txt.textContent = c.label;
-  txt.style.color = "#7dd3fc";
+  txt.style.color = cssStageColor("#075f93");
   txt.style.fontWeight = "700";
 
   const inp = document.createElement("input");
@@ -157,11 +160,11 @@ function makeSlider(c: SliderControl): HTMLLabelElement {
   inp.max = String(c.max);
   inp.step = String(c.step);
   inp.value = String(c.value);
-  inp.style.cssText = "width:80px; accent-color:#7dd3fc;";
+  inp.style.cssText = "width:80px; accent-color:light-dark(#075f93, #7dd3fc);";
 
   const val = document.createElement("span");
   val.textContent = `${c.value}${c.unit ? " " + c.unit : ""}`;
-  val.style.cssText = "min-width:54px; color:#eef2ff; font-weight:700;";
+  val.style.cssText = "min-width:54px; color:light-dark(#172b4d, #edf3ff); font-weight:700;";
 
   inp.addEventListener("input", () => {
     const v = parseFloat(inp.value);
@@ -178,21 +181,21 @@ function makeSlider(c: SliderControl): HTMLLabelElement {
 function makeNote(c: NoteControl): HTMLSpanElement {
   const span = document.createElement("span");
   span.className = "overlay-note";
-  span.style.cssText = "color:#9aa6c8;";
+  span.style.cssText = "color:light-dark(#425570, #c2cfe3);";
   span.textContent = c.text;
   return span;
 }
 
 const CHOICE_BTN_STYLE = [
-  "border:1px solid rgba(125,211,252,0.35)",
-  "background:rgba(125,211,252,0.06)",
-  "color:#9aa6c8",
+  "border:1px solid var(--line)",
+  "background:light-dark(rgba(7, 95, 147,0.06), rgba(125, 211, 252, 0.06))",
+  "color:light-dark(#425570, #c2cfe3)",
   "border-radius:6px",
   "padding:6px 10px",
   "font-family:inherit",
-  "font-size:11px",
+  "font-size:14px",
+  "min-height:36px",
   "cursor:pointer",
-  "outline:none",
 ].join(";");
 
 function resolveLabel(l: string | (() => string)): string {
@@ -208,12 +211,12 @@ function makeChoice(c: ChoiceControl): { el: HTMLSpanElement; refresh: () => voi
     const divider = document.createElement("span");
     divider.className = "overlay-divider";
     divider.textContent = "|";
-    divider.style.cssText = "color:#3a4870; margin:0 4px;";
+    divider.style.cssText = "color:light-dark(#93a7c1, #3a4870); margin:0 4px;";
     wrap.appendChild(divider);
   }
 
   const title = document.createElement("span");
-  title.style.cssText = "color:#7dd3fc; font-weight:700;";
+  title.style.cssText = "color:light-dark(#075f93, #7dd3fc); font-weight:700;";
   wrap.appendChild(title);
 
   const btns = new Map<string, HTMLButtonElement>();
@@ -234,9 +237,13 @@ function makeChoice(c: ChoiceControl): { el: HTMLSpanElement; refresh: () => voi
       const b = btns.get(opt.key)!;
       const active = opt.key === activeKey;
       b.textContent = resolveLabel(opt.label);
-      b.style.borderColor = active ? "var(--accent)" : "rgba(125,211,252,0.35)";
-      b.style.background = active ? "rgba(125,211,252,0.18)" : "rgba(125,211,252,0.06)";
-      b.style.color = active ? "var(--accent)" : "#9aa6c8";
+      b.style.borderColor = active ? "var(--accent)" : "var(--line)";
+      b.style.background = cssStageColor(
+        active ? "rgba(7, 95, 147,0.18)" : "rgba(7, 95, 147,0.06)",
+      );
+      b.style.color = cssStageColor(active ? "var(--accent)" : "#425570");
+      b.style.fontWeight = active ? "700" : "500";
+      b.style.boxShadow = active ? "inset 0 -2px var(--accent)" : "none";
       b.setAttribute("aria-pressed", active ? "true" : "false");
     }
     if (c.visible) wrap.style.display = c.visible() ? "flex" : "none";

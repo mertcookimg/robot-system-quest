@@ -1,6 +1,7 @@
 /* Copyright 2026 Masato Kobayashi */
 /* SPDX-License-Identifier: Apache-2.0 */
 .vla-lab {
+  overflow-wrap: anywhere;
   box-sizing: border-box;
   container: vla-lab / inline-size;
   width: min(800px, 100%);
@@ -10,7 +11,7 @@
   border-radius: 10px;
   background: var(--panel);
   color: var(--fg);
-  font: 13px/1.6 var(--sans);
+  font: 14px/1.6 var(--sans);
   text-align: left;
 }
 .vla-lab [hidden] {
@@ -50,7 +51,7 @@
 }
 .vla-card p {
   color: var(--fg-mid);
-  font-size: 12px;
+  font-size: 16px;
   margin-top: 8px;
 }
 .vla-pixels {
@@ -61,7 +62,7 @@
   aspect-ratio: 7 / 5;
   border: 1px solid var(--line);
   margin: 10px auto;
-  background: #334155;
+  background: var(--line-soft);
 }
 .vla-pixels span {
   display: block;
@@ -80,7 +81,7 @@
   border-radius: 6px;
   background: var(--panel);
   color: var(--fg);
-  font: 600 13px/1.5 var(--sans);
+  font: 600 14px/1.5 var(--sans);
   cursor: pointer;
 }
 .vla-button[aria-pressed="true"] {
@@ -89,14 +90,16 @@
   box-shadow: inset 0 -3px var(--accent);
 }
 .vla-button[data-action="red"] {
-  color: #fca5a5;
+  color: var(--danger);
 }
 .vla-button[data-action="blue"] {
-  color: #93c5fd;
+  color: var(--accent);
 }
 .vla-button:disabled {
-  opacity: 0.5;
-  cursor: default;
+  background: var(--panel-2);
+  border-color: var(--line);
+  color: var(--fg-dim);
+  cursor: not-allowed;
 }
 .vla-button:hover:not(:disabled) {
   border-color: var(--accent);
@@ -104,7 +107,12 @@
 .vla-primary {
   background: var(--ok);
   border-color: var(--ok);
-  color: var(--bg);
+  color: var(--on-accent);
+}
+.vla-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ok) 88%, black);
+  border-color: var(--ok);
+  color: var(--on-accent);
 }
 .vla-button:focus-visible,
 .vla-lab .opad-focus {
@@ -147,7 +155,7 @@
 }
 .vla-scope {
   margin-top: 10px !important;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--fg-mid);
 }
 .vla-results,
@@ -158,11 +166,12 @@
 }
 .vla-records {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
   gap: 10px;
   margin-top: 8px;
 }
 .vla-records article {
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 10px;
@@ -175,7 +184,7 @@
   margin: 8px 0 2px;
 }
 .vla-record-caption {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--fg-mid);
 }
 .vla-insight {

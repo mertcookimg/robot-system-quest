@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "./stage_colors";
+
 // Shared 2-link planar arm model for the robot-arm LESSON stages
 // (joint_teleop / ik_reach). One place owns the geometry, forward + inverse
 // kinematics, joint limits, the canvas drawing, and the shared reach course so
@@ -13,7 +15,7 @@
 // positive angle). Every position formula therefore uses `- L*sin(θ)` for the
 // y term. Keep that in mind when reading fk()/ik().
 
-import { withA } from "../core/theme";
+import { getTheme, theme, withA } from "../core/theme";
 
 export interface Pt {
   x: number;
@@ -203,13 +205,13 @@ export function armHitsRect(q1: number, q2: number, r: Rect): boolean {
 
 // ── Drawing ─────────────────────────────────────────────────────────────────
 const COL = {
-  link: "#7dd3fc",
-  link2: "#c4b5fd",
-  joint: "#eef2ff",
+  link: "#075f93",
+  link2: "#6d42b5",
+  joint: "#f8fafc",
   outline: "#0a0f1f",
-  danger: "#fb7185",
-  ok: "#5eead4",
-  dim: "#6e7a9c",
+  danger: "#be2949",
+  ok: "#087764",
+  dim: "#586a82",
 };
 
 function capsule(
@@ -223,13 +225,13 @@ function capsule(
   ctx.lineCap = "round";
   // Dark outline first, then the coloured core on top.
   ctx.globalAlpha = alpha;
-  ctx.strokeStyle = COL.outline;
+  ctx.strokeStyle = stageColor(COL.outline);
   ctx.lineWidth = w + 5;
   ctx.beginPath();
   ctx.moveTo(p0.x, p0.y);
   ctx.lineTo(p1.x, p1.y);
   ctx.stroke();
-  ctx.strokeStyle = fill;
+  ctx.strokeStyle = stageColor(fill);
   ctx.lineWidth = w;
   ctx.beginPath();
   ctx.moveTo(p0.x, p0.y);
@@ -240,8 +242,8 @@ function capsule(
 
 function joint(ctx: CanvasRenderingContext2D, p: Pt, r: number, alpha: number, hot: boolean) {
   ctx.globalAlpha = alpha;
-  ctx.fillStyle = hot ? COL.danger : COL.joint;
-  ctx.strokeStyle = COL.outline;
+  ctx.fillStyle = stageColor(hot ? COL.danger : COL.joint);
+  ctx.strokeStyle = stageColor(COL.outline);
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
@@ -268,14 +270,14 @@ export function drawArm(
   opts: DrawArmOpts = {},
 ) {
   const { elbow, ee } = fk(q1, q2);
-  const a = opts.ghost ? 0.28 : 1;
+  const a = opts.ghost ? (getTheme() === "light" ? 0.6 : 0.28) : 1;
   const hot = opts.linkHot === true;
   const c1 = hot ? COL.danger : COL.link;
   const c2 = hot ? COL.danger : COL.link2;
 
   // Pedestal.
   if (!opts.ghost) {
-    ctx.fillStyle = COL.outline;
+    ctx.fillStyle = stageColor(COL.outline);
     ctx.beginPath();
     ctx.moveTo(ARM.base.x - 26, ARM.base.y + 34);
     ctx.lineTo(ARM.base.x + 26, ARM.base.y + 34);
@@ -283,7 +285,7 @@ export function drawArm(
     ctx.lineTo(ARM.base.x - 16, ARM.base.y);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = withA("#7dd3fc", 0.35);
+    ctx.strokeStyle = stageColor(withA("#075f93", 0.35));
     ctx.lineWidth = 1.5;
     ctx.stroke();
   }
@@ -313,7 +315,7 @@ function drawGripper(
   ctx.globalAlpha = alpha;
   ctx.translate(ee.x, ee.y);
   ctx.rotate(-dir); // math angle → canvas (y-down) rotation
-  ctx.strokeStyle = hot ? COL.danger : COL.ok;
+  ctx.strokeStyle = stageColor(hot ? COL.danger : COL.ok);
   ctx.lineWidth = 3;
   ctx.lineCap = "round";
   // wrist stub
@@ -348,7 +350,7 @@ function drawGauge(
     y: pivot.y - rad * Math.sin(baseAngle + ang),
   });
   // range track
-  ctx.strokeStyle = withA("#6e7a9c", 0.5);
+  ctx.strokeStyle = withA(theme.fgDim, getTheme() === "light" ? 0.85 : 0.5);
   ctx.lineWidth = 2;
   ctx.beginPath();
   const steps = 24;
@@ -361,7 +363,7 @@ function drawGauge(
   ctx.stroke();
   // current tick
   const hot = hotFlag === true;
-  ctx.strokeStyle = hot ? COL.danger : COL.ok;
+  ctx.strokeStyle = stageColor(hot ? COL.danger : COL.ok);
   ctx.lineWidth = hot ? 3 : 2;
   const a0 = pt(cur, r - 5);
   const a1 = pt(cur, r + 5);
@@ -411,11 +413,14 @@ export function drawWorkspace(ctx: CanvasRenderingContext2D, edgeFlash = 0) {
     }
   }
   ctx.closePath();
-  ctx.fillStyle = withA("#7dd3fc", 0.05);
+  ctx.fillStyle = stageColor(withA("#075f93", 0.05));
   ctx.fill();
   // boundary rings
   const edge = edgeFlash > 0;
-  ctx.strokeStyle = edge ? withA("#fb7185", 0.35 + 0.5 * edgeFlash) : withA("#7dd3fc", 0.18);
+  const light = getTheme() === "light";
+  ctx.strokeStyle = edge
+    ? withA(theme.danger, light ? 0.75 + 0.25 * edgeFlash : 0.35 + 0.5 * edgeFlash)
+    : withA(theme.accent, light ? 0.65 : 0.18);
   ctx.lineWidth = edge ? 2.5 : 1.5;
   ctx.beginPath();
   arc(rMax, ARM.q1Min, ARM.q1Max);

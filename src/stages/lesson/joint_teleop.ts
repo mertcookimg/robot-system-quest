@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+
 // joint_teleop — "Joint Teleop". The first robot-ARM lesson: you drive each
 // joint DIRECTLY (shoulder + elbow) to touch a course of targets. The point is
 // visceral: reaching a Cartesian point by hand-jogging joint angles is
@@ -30,7 +32,7 @@ import {
   COURSE_TARGETS,
 } from "../../lib/arm";
 import * as armpad from "../../lib/armpad";
-import { withA } from "../../core/theme";
+import { withA, theme, themeColor } from "../../core/theme";
 import { t, tx } from "../../i18n";
 
 const DEG = Math.PI / 180;
@@ -137,7 +139,7 @@ export function makeJointTeleop(): Stage {
     if (tgt && Math.hypot(ee.x - tgt.x, ee.y - tgt.y) <= PICK_R) {
       dwell += dt;
       if (dwell >= DWELL) {
-        particles.burst(tgt.x, tgt.y, "#5eead4", 26, 200);
+        particles.burst(tgt.x, tgt.y, "#087764", 26, 200);
         g.sfx.pickup();
         activeIdx++;
         dwell = 0;
@@ -188,50 +190,50 @@ export function makeJointTeleop(): Stage {
     drawGrid(c);
     drawWorkspace(c);
 
-    // Targets: collected (dim ✓), active (pulsing), upcoming (faint).
+    // Targets: collected checkmarks, active filled orb, upcoming outlined orbs.
     for (let i = 0; i < COURSE_TARGETS.length; i++) {
       const p = COURSE_TARGETS[i];
       if (i < activeIdx) {
-        c.strokeStyle = withA("#5eead4", 0.5);
+        c.strokeStyle = themeColor(theme.ok, stageColor(withA("#087764", 0.5)));
         c.lineWidth = 2;
         c.beginPath();
         c.arc(p.x, p.y, ORB_R, 0, Math.PI * 2);
         c.stroke();
-        c.fillStyle = "#5eead4";
+        c.fillStyle = stageColor("#087764");
         c.font = "700 12px ui-monospace, monospace";
         c.textAlign = "center";
         c.textBaseline = "middle";
         c.fillText("✓", p.x, p.y);
       } else if (i === activeIdx) {
         const pulse = 0.6 + 0.4 * Math.sin(elapsed * 5);
-        c.fillStyle = withA("#fbbf24", 0.18 * pulse);
+        c.fillStyle = stageColor(withA("#925b00", 0.18 * pulse));
         c.beginPath();
         c.arc(p.x, p.y, ORB_R + 8 * pulse, 0, Math.PI * 2);
         c.fill();
-        c.fillStyle = "#fbbf24";
+        c.fillStyle = stageColor("#925b00");
         c.beginPath();
         c.arc(p.x, p.y, ORB_R, 0, Math.PI * 2);
         c.fill();
-        c.fillStyle = "#0a0f1f";
+        c.fillStyle = theme.panel;
         c.font = "700 12px ui-monospace, monospace";
         c.textAlign = "center";
         c.textBaseline = "middle";
         c.fillText(String(i + 1), p.x, p.y);
         // dwell ring
         if (dwell > 0) {
-          c.strokeStyle = "#5eead4";
+          c.strokeStyle = stageColor("#087764");
           c.lineWidth = 3;
           c.beginPath();
           c.arc(p.x, p.y, ORB_R + 5, -Math.PI / 2, -Math.PI / 2 + (dwell / DWELL) * Math.PI * 2);
           c.stroke();
         }
       } else {
-        c.strokeStyle = withA("#6e7a9c", 0.4);
+        c.strokeStyle = themeColor(theme.fgDim, stageColor(withA("#586a82", 0.4)));
         c.lineWidth = 1.5;
         c.beginPath();
         c.arc(p.x, p.y, ORB_R, 0, Math.PI * 2);
         c.stroke();
-        c.fillStyle = "#6e7a9c";
+        c.fillStyle = stageColor("#586a82");
         c.font = "600 11px ui-monospace, monospace";
         c.textAlign = "center";
         c.textBaseline = "middle";
@@ -319,31 +321,31 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="two-link arm: shoulder and elbow angles set the tip position">
   <defs>
     <marker id="ld-joint_teleop-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-      <polygon points="0 0, 9 3.5, 0 7" fill="#fbbf24"/>
+      <polygon points="0 0, 9 3.5, 0 7" fill="light-dark(#925b00, #fbbf24)"/>
     </marker>
   </defs>
   <!-- base -->
-  <polygon points="44,104 76,104 70,86 50,86" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
+  <polygon points="44,104 76,104 70,86 50,86" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
   <!-- link 1 -->
-  <line x1="60" y1="90" x2="150" y2="44" stroke="#7dd3fc" stroke-width="9" stroke-linecap="round"/>
+  <line x1="60" y1="90" x2="150" y2="44" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="9" stroke-linecap="round"/>
   <!-- link 2 -->
-  <line x1="150" y1="44" x2="248" y2="60" stroke="#c4b5fd" stroke-width="7" stroke-linecap="round"/>
+  <line x1="150" y1="44" x2="248" y2="60" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="7" stroke-linecap="round"/>
   <!-- joints -->
-  <circle cx="60" cy="90" r="7" fill="#eef2ff" stroke="#0a0f1f" stroke-width="2"/>
-  <circle cx="150" cy="44" r="6" fill="#eef2ff" stroke="#0a0f1f" stroke-width="2"/>
+  <circle cx="60" cy="90" r="7" fill="light-dark(#172b4d, #edf3ff)" stroke="#0a0f1f" stroke-width="2"/>
+  <circle cx="150" cy="44" r="6" fill="light-dark(#172b4d, #edf3ff)" stroke="#0a0f1f" stroke-width="2"/>
   <!-- gripper -->
-  <line x1="248" y1="60" x2="264" y2="60" stroke="#5eead4" stroke-width="3" stroke-linecap="round"/>
-  <line x1="262" y1="53" x2="272" y2="52" stroke="#5eead4" stroke-width="3" stroke-linecap="round"/>
-  <line x1="262" y1="67" x2="272" y2="68" stroke="#5eead4" stroke-width="3" stroke-linecap="round"/>
+  <line x1="248" y1="60" x2="264" y2="60" stroke="light-dark(#087764, #5eead4)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="262" y1="53" x2="272" y2="52" stroke="light-dark(#087764, #5eead4)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="262" y1="67" x2="272" y2="68" stroke="light-dark(#087764, #5eead4)" stroke-width="3" stroke-linecap="round"/>
   <!-- angle arcs -->
-  <path d="M 84 90 A 24 24 0 0 0 78 74" fill="none" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#ld-joint_teleop-arrow)"/>
-  <text x="92" y="82" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">q1</text>
-  <path d="M 172 46 A 20 20 0 0 1 168 66" fill="none" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#ld-joint_teleop-arrow)"/>
-  <text x="176" y="44" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">q2</text>
+  <path d="M 84 90 A 24 24 0 0 0 78 74" fill="none" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5" marker-end="url(#ld-joint_teleop-arrow)"/>
+  <text x="92" y="82" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">q1</text>
+  <path d="M 172 46 A 20 20 0 0 1 168 66" fill="none" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5" marker-end="url(#ld-joint_teleop-arrow)"/>
+  <text x="176" y="44" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">q2</text>
   <!-- target -->
-  <circle cx="300" cy="44" r="11" fill="none" stroke="#fbbf24" stroke-width="2"/>
-  <text x="300" y="48" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">1</text>
-  <text x="330" y="48" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">tip → target</text>
+  <circle cx="300" cy="44" r="11" fill="none" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2"/>
+  <text x="300" y="48" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">1</text>
+  <text x="330" y="48" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">tip → target</text>
 </svg>
 `,
   lessonModal: {

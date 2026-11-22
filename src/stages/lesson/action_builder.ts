@@ -1,12 +1,15 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+import { drawWrappedText } from "../../lib/canvas_text";
+
 // action: Action Builder — basics of the ROS 2 Action interface.
 // The client sends a Goal, the server processes it over a long period
 // while emitting periodic Feedback, then returns a final Result.
 // Compared to Service: long-running, streams progress, and cancellable.
 import { W, type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { theme, themeColor, withA } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
 import { drawHint, drawRobotBody, drawRobotLabel, COLORS, clearBackground } from "../../lib/draw";
@@ -69,7 +72,7 @@ const PORTS: Port[] = [
 const REQUIRED: { from: string; to: string }[] = [{ from: "c_act", to: "s_act" }];
 
 const TYPE_COLORS: Record<string, string> = {
-  "nav2_msgs/action/NavigateToPose": "#c4b5fd",
+  "nav2_msgs/action/NavigateToPose": "#6d42b5",
 };
 
 const ROBOT_START_X = 100;
@@ -348,7 +351,7 @@ export function makeAction(): Stage {
     if (valid && !allValid) {
       publishActionEvent("goal_accepted");
       g.shake(0.3);
-      particles.burst(400, 280, "#c4b5fd", 24);
+      particles.burst(400, 280, "#6d42b5", 24);
       g.setStatus(t("action_builder.status.success"), "var(--ok)");
     } else if (!valid && allValid) {
       g.setStatus(t("action_builder.status.incomplete"), "var(--warn)");
@@ -370,7 +373,7 @@ export function makeAction(): Stage {
       if (robotX >= ROBOT_GOAL_X) {
         cleared = true;
         publishActionEvent("result", { error_code: 0, status: "SUCCEEDED" });
-        particles.burst(ROBOT_GOAL_X, ROBOT_Y, "#c4b5fd", 36);
+        particles.burst(ROBOT_GOAL_X, ROBOT_Y, "#6d42b5", 36);
         g.shake(0.4);
         const stars = elapsed < 25 ? 3 : elapsed < 50 ? 2 : 1;
         const stats =
@@ -396,15 +399,15 @@ export function makeAction(): Stage {
     const c = g.ctx;
     clearBackground(c);
 
-    c.fillStyle = "#c4b5fd";
+    c.fillStyle = stageColor("#6d42b5");
     c.font = "700 18px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText(t("action_builder.title"), 40, 32);
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.font = "12px ui-monospace, monospace";
     c.fillText(t("action_builder.subtitle"), 40, 52);
 
-    c.strokeStyle = "rgba(35,44,77,0.7)";
+    c.strokeStyle = stageColor("rgba(170, 188, 212,0.7)");
     c.lineWidth = 1;
     c.beginPath();
     c.moveTo(40, 290);
@@ -435,9 +438,9 @@ export function makeAction(): Stage {
 
     c.fillStyle = theme.canvasPanel;
     c.fillRect(40, 320, W - 80, 160);
-    c.strokeStyle = "rgba(35,44,77,0.7)";
+    c.strokeStyle = stageColor("rgba(170, 188, 212,0.7)");
     c.strokeRect(40, 320, W - 80, 160);
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.font = "12px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText(t("action_builder.sim_label"), 50, 340);
@@ -447,19 +450,20 @@ export function makeAction(): Stage {
       const progress = Math.min(1, (robotX - ROBOT_START_X) / (ROBOT_GOAL_X - ROBOT_START_X));
       c.fillStyle = withA(theme.scrim, 0.85);
       c.fillRect(60, 360, 200, 18);
-      c.strokeStyle = "rgba(196,181,253,0.5)";
+      c.strokeStyle = themeColor(theme.accent2, stageColor("rgba(109, 66, 181,0.5)"));
       c.strokeRect(60, 360, 200, 18);
-      c.fillStyle = "#c4b5fd";
+      c.fillStyle = stageColor("#6d42b5");
       c.fillRect(60, 360, 200 * progress, 18);
-      c.fillStyle = theme.canvasPanel;
-      c.font = "700 11px ui-monospace, monospace";
-      c.textAlign = "center";
+      // Keep the percentage on a stable surface even before the fill reaches it.
+      c.fillStyle = theme.fg;
+      c.font = "700 12px ui-monospace, monospace";
+      c.textAlign = "left";
       c.textBaseline = "middle";
-      c.fillText(`${Math.floor(progress * 100)}%`, 160, 369);
+      c.fillText(`${Math.floor(progress * 100)}%`, 272, 369);
     }
 
     // GOAL
-    c.fillStyle = "rgba(94, 234, 212, 0.15)";
+    c.fillStyle = stageColor("rgba(8, 119, 100, 0.15)");
     c.beginPath();
     c.arc(ROBOT_GOAL_X, ROBOT_Y, 30, 0, Math.PI * 2);
     c.fill();
@@ -482,12 +486,12 @@ export function makeAction(): Stage {
     particles.draw(c);
 
     c.save();
-    const badgeColor = allValid ? COLORS.OK : "#fbbf24";
+    const badgeColor = allValid ? COLORS.OK : "#925b00";
     c.fillStyle = withA(theme.scrim, 0.85);
     c.fillRect(W - 240, 296, 200, 32);
-    c.strokeStyle = badgeColor;
+    c.strokeStyle = stageColor(badgeColor);
     c.strokeRect(W - 240, 296, 200, 32);
-    c.fillStyle = badgeColor;
+    c.fillStyle = stageColor(badgeColor);
     c.font = "700 13px ui-monospace, monospace";
     c.textAlign = "left";
     c.textBaseline = "middle";
@@ -499,23 +503,23 @@ export function makeAction(): Stage {
 
   function drawNode(c: CanvasRenderingContext2D, n: NodeCard) {
     c.save();
-    c.fillStyle = "#0e1426";
-    c.strokeStyle = "rgba(196, 181, 253, 0.4)";
+    c.fillStyle = stageColor("#e8eff7");
+    c.strokeStyle = themeColor(theme.accent2, stageColor("rgba(109, 66, 181, 0.4)"));
     c.lineWidth = 1.5;
     c.beginPath();
     c.roundRect(n.x, n.y, n.w, n.h, 8);
     c.fill();
     c.stroke();
-    c.fillStyle = "rgba(196, 181, 253, 0.18)";
+    c.fillStyle = themeColor(withA(theme.accent2, 0.06), stageColor("rgba(109, 66, 181, 0.18)"));
     c.fillRect(n.x + 1, n.y + 1, n.w - 2, 31);
-    c.fillStyle = "#c4b5fd";
+    c.fillStyle = stageColor("#6d42b5");
     c.font = "700 16px ui-monospace, monospace";
     c.textAlign = "left";
     c.textBaseline = "middle";
     c.fillText(n.name, n.x + 14, n.y + 16);
-    c.fillStyle = "#c8d0e4";
+    c.fillStyle = stageColor("#425570");
     c.font = "13px ui-monospace, monospace";
-    c.fillText(t(`action_builder.node.${n.id}`), n.x + 14, n.y + 50);
+    drawWrappedText(c, t(`action_builder.node.${n.id}`), n.x + 14, n.y + 45, n.w - 28, 15);
     c.restore();
   }
 
@@ -524,37 +528,37 @@ export function makeAction(): Stage {
     const isHover = portAt(mouseX, mouseY) === p;
     const isDrag = dragFrom === p;
     const isFocused = isPadMode() && PORTS[focusedPortIdx]?.id === p.id;
-    const typeColor = TYPE_COLORS[p.msgType] || "#94a3b8";
+    const typeColor = TYPE_COLORS[p.msgType] || "#586a82";
     c.save();
     const baseRadius = canvasInteractionRadius(g.canvas, 9, 12);
     const r = isHover || isDrag || isFocused ? baseRadius + 3 : baseRadius;
     if (isHover || isDrag) {
-      c.fillStyle = typeColor + "55";
+      c.fillStyle = stageColor(typeColor + "55");
       c.beginPath();
       c.arc(pos.x, pos.y, r + 4, 0, Math.PI * 2);
       c.fill();
     }
     if (isFocused) {
       const pulse = 0.5 + 0.5 * Math.sin(elapsed * 4);
-      c.strokeStyle = "#fbbf24";
+      c.strokeStyle = stageColor("#925b00");
       c.lineWidth = 2.5;
-      c.globalAlpha = 0.5 + 0.5 * pulse;
+      c.globalAlpha = 0.8 + 0.2 * pulse;
       c.beginPath();
       c.arc(pos.x, pos.y, r + 6, 0, Math.PI * 2);
       c.stroke();
       c.globalAlpha = 1;
     }
-    c.fillStyle = typeColor;
+    c.fillStyle = stageColor(typeColor);
     c.beginPath();
     c.arc(pos.x, pos.y, r, 0, Math.PI * 2);
     c.fill();
     if (p.kind === "in") {
-      c.fillStyle = "#0e1426";
+      c.fillStyle = stageColor("#e8eff7");
       c.beginPath();
       c.arc(pos.x, pos.y, r - 3, 0, Math.PI * 2);
       c.fill();
     }
-    c.fillStyle = "#0e1426";
+    c.fillStyle = p.kind === "in" ? stageColor(typeColor) : theme.onAccent;
     c.font = "700 9px ui-monospace, monospace";
     c.textAlign = "center";
     c.textBaseline = "middle";
@@ -564,17 +568,17 @@ export function makeAction(): Stage {
     if (p.kind === "out") {
       c.textAlign = "right";
       c.font = "700 15px ui-monospace, monospace";
-      c.fillStyle = typeColor;
+      c.fillStyle = stageColor(typeColor);
       c.fillText(p.topic, pos.x - 18, pos.y - 9);
-      c.fillStyle = "#8e98ba";
+      c.fillStyle = stageColor("#586a82");
       c.font = "11px ui-monospace, monospace";
       c.fillText(p.msgType, pos.x - 18, pos.y + 11);
     } else {
       c.textAlign = "left";
       c.font = "700 15px ui-monospace, monospace";
-      c.fillStyle = typeColor;
+      c.fillStyle = stageColor(typeColor);
       c.fillText(p.topic, pos.x + 18, pos.y - 9);
-      c.fillStyle = "#8e98ba";
+      c.fillStyle = stageColor("#586a82");
       c.font = "11px ui-monospace, monospace";
       c.fillText(p.msgType, pos.x + 18, pos.y + 11);
     }
@@ -590,9 +594,9 @@ export function makeAction(): Stage {
     w: WireData | null,
   ) {
     const valid = w?.valid ?? true;
-    const color = w === null ? "#9aa6c8" : valid ? COLORS.OK : COLORS.DANGER;
+    const color = w === null ? "#425570" : valid ? COLORS.OK : COLORS.DANGER;
     c.save();
-    c.strokeStyle = color;
+    c.strokeStyle = stageColor(color);
     c.lineWidth = 2.5;
     c.beginPath();
     const cpx = (x1 + x2) / 2;
@@ -607,15 +611,15 @@ export function makeAction(): Stage {
         const t = Math.min(1, elapsed);
         const xi = bezierAt(x1, cpx, cpx, x2, t);
         const yi = bezierAt(y1, y1, y2, y2, t);
-        c.fillStyle = "#5eead466";
+        c.fillStyle = stageColor("#08776466");
         c.beginPath();
         c.arc(xi, yi, 10, 0, Math.PI * 2);
         c.fill();
-        c.fillStyle = "#5eead4";
+        c.fillStyle = stageColor("#087764");
         c.beginPath();
         c.arc(xi, yi, 6, 0, Math.PI * 2);
         c.fill();
-        c.fillStyle = "#5eead4";
+        c.fillStyle = stageColor("#087764");
         c.font = "700 9px ui-monospace, monospace";
         c.textAlign = "center";
         c.fillText("GOAL", xi, yi - 14);
@@ -626,17 +630,17 @@ export function makeAction(): Stage {
           const t = 1 - phase;
           const xi = bezierAt(x1, cpx, cpx, x2, t);
           const yi = bezierAt(y1, y1, y2, y2, t);
-          c.fillStyle = "#fbbf24" + "66";
+          c.fillStyle = stageColor("#925b00" + "66");
           c.beginPath();
           c.arc(xi, yi, 8, 0, Math.PI * 2);
           c.fill();
-          c.fillStyle = "#fbbf24";
+          c.fillStyle = stageColor("#925b00");
           c.beginPath();
           c.arc(xi, yi, 4, 0, Math.PI * 2);
           c.fill();
         }
         // Label.
-        c.fillStyle = "#fbbf24";
+        c.fillStyle = stageColor("#925b00");
         c.font = "700 9px ui-monospace, monospace";
         c.textAlign = "center";
         c.fillText("FEEDBACK", (x1 + x2) / 2, (y1 + y2) / 2 - 16);
@@ -712,49 +716,49 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="action goal once, optional feedback during execution, result at the end">
   <defs>
     <marker id="ld-action-arrow-goal" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
     <marker id="ld-action-arrow-fb" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#fbbf24"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#925b00, #fbbf24)"/>
     </marker>
     <marker id="ld-action-arrow-res" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#fb7185"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#be2949, #fda4af)"/>
     </marker>
   </defs>
   <!-- client -->
-  <rect x="8" y="14" width="138" height="92" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="77" y="36" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="12" font-weight="700">client</text>
-  <text x="77" y="98" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">Action Client</text>
+  <rect x="8" y="14" width="138" height="92" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="77" y="36" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">client</text>
+  <text x="77" y="98" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">Action Client</text>
   <!-- server with progress bar working -->
-  <rect x="274" y="14" width="138" height="92" rx="8" fill="#181f3a" stroke="#c4b5fd" stroke-width="1.5"/>
-  <text x="343" y="36" text-anchor="middle" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="12" font-weight="700">server</text>
-  <rect x="290" y="50" width="106" height="10" rx="2" fill="#0c1124" stroke="#232c4d" stroke-width="0.5"/>
-  <rect x="291" y="51" width="0" height="8" rx="1" fill="#fbbf24">
+  <rect x="274" y="14" width="138" height="92" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
+  <text x="343" y="36" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">server</text>
+  <rect x="290" y="50" width="106" height="10" rx="2" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#586a82, #627895)" stroke-width="1"/>
+  <rect x="291" y="51" width="0" height="8" rx="1" fill="light-dark(#925b00, #fbbf24)">
     <animate attributeName="width" values="0;104;0" keyTimes="0;0.85;1" dur="3s" repeatCount="indefinite"/>
   </rect>
-  <text x="343" y="76" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">working...</text>
-  <text x="343" y="98" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">Action Server</text>
+  <text x="343" y="76" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">working...</text>
+  <text x="343" y="98" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">Action Server</text>
   <!-- Goal arrow + 1 dot -->
-  <line x1="146" y1="32" x2="272" y2="32" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-action-arrow-goal)"/>
-  <text x="209" y="26" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Goal (1 回)</text>
-  <circle r="3" fill="#5eead4">
+  <line x1="146" y1="32" x2="272" y2="32" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-action-arrow-goal)"/>
+  <text x="209" y="26" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Goal (1 回)</text>
+  <circle r="3" fill="light-dark(#087764, #5eead4)">
     <animateMotion dur="3s" repeatCount="indefinite" path="M 148 32 L 270 32"/>
   </circle>
   <!-- Feedback arrow + example periodic updates -->
-  <line x1="272" y1="64" x2="146" y2="64" stroke="#fbbf24" stroke-width="2" marker-end="url(#ld-action-arrow-fb)"/>
-  <text x="209" y="58" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Feedback (必要時)</text>
-  <circle r="2.5" fill="#fbbf24">
+  <line x1="272" y1="64" x2="146" y2="64" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2" marker-end="url(#ld-action-arrow-fb)"/>
+  <text x="209" y="58" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Feedback (必要時)</text>
+  <circle r="2.5" fill="light-dark(#925b00, #fbbf24)">
     <animateMotion dur="1.4s" repeatCount="indefinite" path="M 270 64 L 148 64"/>
   </circle>
-  <circle r="2.5" fill="#fbbf24" opacity="0.85">
+  <circle r="2.5" fill="light-dark(#925b00, #fbbf24)" opacity="0.85">
     <animateMotion dur="1.4s" repeatCount="indefinite" begin="0.45s" path="M 270 64 L 148 64"/>
   </circle>
-  <circle r="2.5" fill="#fbbf24" opacity="0.7">
+  <circle r="2.5" fill="light-dark(#925b00, #fbbf24)" opacity="0.7">
     <animateMotion dur="1.4s" repeatCount="indefinite" begin="0.9s" path="M 270 64 L 148 64"/>
   </circle>
   <!-- Result arrow + 1 dot at end -->
-  <line x1="272" y1="92" x2="146" y2="92" stroke="#fb7185" stroke-width="2" marker-end="url(#ld-action-arrow-res)"/>
-  <text x="209" y="106" text-anchor="middle" fill="#fb7185" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Result (1 回)</text>
+  <line x1="272" y1="92" x2="146" y2="92" stroke="light-dark(#be2949, #fda4af)" stroke-width="2" marker-end="url(#ld-action-arrow-res)"/>
+  <text x="209" y="106" text-anchor="middle" fill="light-dark(#be2949, #fda4af)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Result (1 回)</text>
 </svg>
 `,
   lessonModal: {

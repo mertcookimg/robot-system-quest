@@ -1,11 +1,14 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+import { drawWrappedText } from "../../lib/canvas_text";
+
 // service: Service Builder — basics of the request/reply pattern.
 // A client sends an on-demand request and handles the server's response.
 // Unlike Pub/Sub: on-demand request/response.
 import { W, type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { theme, themeColor, withA } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
 import { drawHint, drawRobotBody, drawRobotLabel, COLORS, clearBackground } from "../../lib/draw";
@@ -69,7 +72,7 @@ const PORTS: Port[] = [
 const REQUIRED: { from: string; to: string }[] = [{ from: "c_call", to: "s_srv" }];
 
 const TYPE_COLORS: Record<string, string> = {
-  "std_srvs/srv/Trigger": "#fbbf24",
+  "std_srvs/srv/Trigger": "#925b00",
 };
 
 const ROBOT_START_X = 100;
@@ -420,15 +423,15 @@ export function makeService(): Stage {
     const c = g.ctx;
     clearBackground(c);
 
-    c.fillStyle = "#fbbf24";
+    c.fillStyle = stageColor("#925b00");
     c.font = "700 18px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText(t("service_builder.title"), 40, 32);
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.font = "12px ui-monospace, monospace";
     c.fillText(t("service_builder.subtitle"), 40, 52);
 
-    c.strokeStyle = "rgba(35,44,77,0.7)";
+    c.strokeStyle = stageColor("rgba(170, 188, 212,0.7)");
     c.lineWidth = 1;
     c.beginPath();
     c.moveTo(40, 290);
@@ -460,9 +463,9 @@ export function makeService(): Stage {
     // Robot simulation
     c.fillStyle = theme.canvasPanel;
     c.fillRect(40, 320, W - 80, 160);
-    c.strokeStyle = "rgba(35,44,77,0.7)";
+    c.strokeStyle = stageColor("rgba(170, 188, 212,0.7)");
     c.strokeRect(40, 320, W - 80, 160);
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.font = "12px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText(t("service_builder.sim_label"), 50, 340);
@@ -470,21 +473,23 @@ export function makeService(): Stage {
     // Lamp readout.
     c.fillStyle = withA(theme.scrim, 0.85);
     c.fillRect(60, 360, 100, 36);
-    c.strokeStyle = lampOn ? COLORS.WARN : "rgba(110, 122, 156, 0.4)";
+    c.strokeStyle = lampOn
+      ? COLORS.WARN
+      : themeColor(theme.fgDim, stageColor("rgba(88, 106, 130, 0.4)"));
     c.lineWidth = 2;
     c.strokeRect(60, 360, 100, 36);
-    c.fillStyle = lampOn ? COLORS.WARN : theme.floor;
+    c.fillStyle = stageColor(lampOn ? COLORS.WARN : theme.floor);
     c.beginPath();
     c.arc(80, 378, 10, 0, Math.PI * 2);
     c.fill();
-    c.fillStyle = lampOn ? theme.canvasPanel : "#6e7a9c";
+    c.fillStyle = stageColor(lampOn ? theme.canvasPanel : "#586a82");
     c.font = "700 13px ui-monospace, monospace";
     c.textAlign = "left";
     c.textBaseline = "middle";
     c.fillText(lampOn ? "LAMP ON" : "LAMP OFF", 100, 378);
 
     // GOAL
-    c.fillStyle = "rgba(94, 234, 212, 0.15)";
+    c.fillStyle = stageColor("rgba(8, 119, 100, 0.15)");
     c.beginPath();
     c.arc(ROBOT_GOAL_X, ROBOT_Y, 30, 0, Math.PI * 2);
     c.fill();
@@ -509,12 +514,12 @@ export function makeService(): Stage {
 
     // Status badge.
     c.save();
-    const badgeColor = allValid ? COLORS.OK : "#fbbf24";
+    const badgeColor = allValid ? COLORS.OK : "#925b00";
     c.fillStyle = withA(theme.scrim, 0.85);
     c.fillRect(W - 240, 296, 200, 32);
-    c.strokeStyle = badgeColor;
+    c.strokeStyle = stageColor(badgeColor);
     c.strokeRect(W - 240, 296, 200, 32);
-    c.fillStyle = badgeColor;
+    c.fillStyle = stageColor(badgeColor);
     c.font = "700 13px ui-monospace, monospace";
     c.textAlign = "left";
     c.textBaseline = "middle";
@@ -526,23 +531,23 @@ export function makeService(): Stage {
 
   function drawNode(c: CanvasRenderingContext2D, n: NodeCard) {
     c.save();
-    c.fillStyle = "#0e1426";
-    c.strokeStyle = "rgba(251, 191, 36, 0.4)";
+    c.fillStyle = stageColor("#e8eff7");
+    c.strokeStyle = themeColor(theme.warn, stageColor("rgba(146, 91, 0, 0.4)"));
     c.lineWidth = 1.5;
     c.beginPath();
     c.roundRect(n.x, n.y, n.w, n.h, 8);
     c.fill();
     c.stroke();
-    c.fillStyle = "rgba(251, 191, 36, 0.18)";
+    c.fillStyle = themeColor(withA(theme.warn, 0.06), stageColor("rgba(146, 91, 0, 0.18)"));
     c.fillRect(n.x + 1, n.y + 1, n.w - 2, 31);
-    c.fillStyle = "#fbbf24";
+    c.fillStyle = stageColor("#925b00");
     c.font = "700 16px ui-monospace, monospace";
     c.textAlign = "left";
     c.textBaseline = "middle";
     c.fillText(n.name, n.x + 14, n.y + 16);
-    c.fillStyle = "#c8d0e4";
+    c.fillStyle = stageColor("#425570");
     c.font = "13px ui-monospace, monospace";
-    c.fillText(t(`service_builder.node.${n.id}`), n.x + 14, n.y + 50);
+    drawWrappedText(c, t(`service_builder.node.${n.id}`), n.x + 14, n.y + 45, n.w - 28, 15);
     c.restore();
   }
 
@@ -551,37 +556,37 @@ export function makeService(): Stage {
     const isHover = portAt(mouseX, mouseY) === p;
     const isDrag = dragFrom === p;
     const isFocused = isPadMode() && PORTS[focusedPortIdx]?.id === p.id;
-    const typeColor = TYPE_COLORS[p.msgType] || "#94a3b8";
+    const typeColor = TYPE_COLORS[p.msgType] || "#586a82";
     c.save();
     const baseRadius = canvasInteractionRadius(g.canvas, 9, 12);
     const r = isHover || isDrag || isFocused ? baseRadius + 3 : baseRadius;
     if (isHover || isDrag) {
-      c.fillStyle = typeColor + "55";
+      c.fillStyle = stageColor(typeColor + "55");
       c.beginPath();
       c.arc(pos.x, pos.y, r + 4, 0, Math.PI * 2);
       c.fill();
     }
     if (isFocused) {
       const pulse = 0.5 + 0.5 * Math.sin(elapsed * 4);
-      c.strokeStyle = "#fbbf24";
+      c.strokeStyle = stageColor("#925b00");
       c.lineWidth = 2.5;
-      c.globalAlpha = 0.5 + 0.5 * pulse;
+      c.globalAlpha = 0.8 + 0.2 * pulse;
       c.beginPath();
       c.arc(pos.x, pos.y, r + 6, 0, Math.PI * 2);
       c.stroke();
       c.globalAlpha = 1;
     }
-    c.fillStyle = typeColor;
+    c.fillStyle = stageColor(typeColor);
     c.beginPath();
     c.arc(pos.x, pos.y, r, 0, Math.PI * 2);
     c.fill();
     if (p.kind === "in") {
-      c.fillStyle = "#0e1426";
+      c.fillStyle = stageColor("#e8eff7");
       c.beginPath();
       c.arc(pos.x, pos.y, r - 3, 0, Math.PI * 2);
       c.fill();
     }
-    c.fillStyle = "#0e1426";
+    c.fillStyle = p.kind === "in" ? stageColor(typeColor) : theme.onAccent;
     c.font = "700 9px ui-monospace, monospace";
     c.textAlign = "center";
     c.textBaseline = "middle";
@@ -591,17 +596,17 @@ export function makeService(): Stage {
     if (p.kind === "out") {
       c.textAlign = "right";
       c.font = "700 15px ui-monospace, monospace";
-      c.fillStyle = typeColor;
+      c.fillStyle = stageColor(typeColor);
       c.fillText(p.topic, pos.x - 18, pos.y - 9);
-      c.fillStyle = "#8e98ba";
+      c.fillStyle = stageColor("#586a82");
       c.font = "12px ui-monospace, monospace";
       c.fillText(p.msgType, pos.x - 18, pos.y + 11);
     } else {
       c.textAlign = "left";
       c.font = "700 15px ui-monospace, monospace";
-      c.fillStyle = typeColor;
+      c.fillStyle = stageColor(typeColor);
       c.fillText(p.topic, pos.x + 18, pos.y - 9);
-      c.fillStyle = "#8e98ba";
+      c.fillStyle = stageColor("#586a82");
       c.font = "12px ui-monospace, monospace";
       c.fillText(p.msgType, pos.x + 18, pos.y + 11);
     }
@@ -617,9 +622,9 @@ export function makeService(): Stage {
     w: WireData | null,
   ) {
     const valid = w?.valid ?? true;
-    const color = w === null ? "#9aa6c8" : valid ? COLORS.OK : COLORS.DANGER;
+    const color = w === null ? "#425570" : valid ? COLORS.OK : COLORS.DANGER;
     c.save();
-    c.strokeStyle = color;
+    c.strokeStyle = stageColor(color);
     c.lineWidth = 2.5;
     c.beginPath();
     const cpx = (x1 + x2) / 2;
@@ -636,24 +641,24 @@ export function makeService(): Stage {
         const t = phase * 2;
         xi = bezierAt(x1, cpx, cpx, x2, t);
         yi = bezierAt(y1, y1, y2, y2, t);
-        dotColor = "#fbbf24"; // request = orange
+        dotColor = "#925b00"; // request = orange
       } else {
         // response: B → A
         const t = 1 - (phase - 0.5) * 2;
         xi = bezierAt(x1, cpx, cpx, x2, t);
         yi = bezierAt(y1, y1, y2, y2, t);
-        dotColor = "#7dd3fc"; // response = cyan
+        dotColor = "#075f93"; // response = cyan
       }
-      c.fillStyle = dotColor + "66";
+      c.fillStyle = stageColor(dotColor + "66");
       c.beginPath();
       c.arc(xi, yi, 9, 0, Math.PI * 2);
       c.fill();
-      c.fillStyle = dotColor;
+      c.fillStyle = stageColor(dotColor);
       c.beginPath();
       c.arc(xi, yi, 5, 0, Math.PI * 2);
       c.fill();
       // Label.
-      c.fillStyle = dotColor;
+      c.fillStyle = stageColor(dotColor);
       c.font = "700 9px ui-monospace, monospace";
       c.textAlign = "center";
       c.fillText(phase < 0.5 ? "REQ" : "RES", xi, yi - 12);
@@ -718,39 +723,39 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="press a button, the server toggles a lamp and replies">
   <defs>
     <marker id="ld-service-arrow-req" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
     <marker id="ld-service-arrow-res" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#fbbf24"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#925b00, #fbbf24)"/>
     </marker>
     <radialGradient id="ld-service-lamp-glow" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#fef3c7" stop-opacity="1"/>
-      <stop offset="60%" stop-color="#fbbf24" stop-opacity="0.85"/>
-      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+      <stop offset="60%" stop-color="light-dark(#925b00, #fbbf24)" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="light-dark(#925b00, #fbbf24)" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <!-- left: client with big push button -->
-  <rect x="8" y="14" width="148" height="92" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="82" y="32" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="11" font-weight="700">client</text>
-  <circle cx="82" cy="68" r="22" fill="#7f1d1d" stroke="#fb7185" stroke-width="2"/>
-  <circle cx="82" cy="66" r="17" fill="#fb7185"/>
-  <text x="82" y="70" text-anchor="middle" fill="#fff" font-family="ui-monospace, monospace" font-size="10" font-weight="700">PRESS</text>
-  <text x="82" y="100" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">Service Client</text>
+  <rect x="8" y="14" width="148" height="92" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="82" y="32" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">client</text>
+  <circle cx="82" cy="68" r="22" fill="#7f1d1d" stroke="light-dark(#be2949, #fda4af)" stroke-width="2"/>
+  <circle cx="82" cy="66" r="17" fill="light-dark(#be2949, #fda4af)"/>
+  <text x="82" y="70" text-anchor="middle" fill="var(--on-accent)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">PRESS</text>
+  <text x="82" y="100" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">Service Client</text>
   <!-- right: server with lamp -->
-  <rect x="264" y="14" width="148" height="92" rx="8" fill="#181f3a" stroke="#c4b5fd" stroke-width="1.5"/>
-  <text x="338" y="32" text-anchor="middle" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="11" font-weight="700">server</text>
+  <rect x="264" y="14" width="148" height="92" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
+  <text x="338" y="32" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">server</text>
   <!-- lamp glow -->
   <circle cx="338" cy="60" r="22" fill="url(#ld-service-lamp-glow)"/>
-  <circle cx="338" cy="60" r="11" fill="#fef3c7" stroke="#fbbf24" stroke-width="1.5"/>
-  <rect x="332" y="71" width="12" height="6" rx="1" fill="#9aa6c8"/>
-  <rect x="334" y="77" width="8" height="4" fill="#6e7a9c"/>
-  <text x="338" y="100" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">lamp_server</text>
+  <circle cx="338" cy="60" r="11" fill="#fef3c7" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <rect x="332" y="71" width="12" height="6" rx="1" fill="light-dark(#425570, #c2cfe3)"/>
+  <rect x="334" y="77" width="8" height="4" fill="light-dark(#586a82, #a4b5cd)"/>
+  <text x="338" y="100" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">lamp_server</text>
   <!-- request -->
-  <line x1="156" y1="48" x2="262" y2="48" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-service-arrow-req)"/>
-  <text x="210" y="42" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/toggle_lamp</text>
+  <line x1="156" y1="48" x2="262" y2="48" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-service-arrow-req)"/>
+  <text x="210" y="42" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/toggle_lamp</text>
   <!-- response -->
-  <line x1="262" y1="80" x2="156" y2="80" stroke="#fbbf24" stroke-width="2" marker-end="url(#ld-service-arrow-res)"/>
-  <text x="210" y="98" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="10">success: true</text>
+  <line x1="262" y1="80" x2="156" y2="80" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2" marker-end="url(#ld-service-arrow-res)"/>
+  <text x="210" y="98" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="10">success: true</text>
 </svg>
 `,
   lessonModal: {

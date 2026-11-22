@@ -6,16 +6,16 @@
   margin: 18px auto 22px;
   text-align: left;
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 14px;
   width: min(240px, 100%);
-  background: rgba(125, 211, 252, 0.04);
+  background: rgba(var(--accent-rgb), 0.04);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 10px 14px;
 }
 .rankings h4 {
   margin: 0 0 8px;
-  font-size: 11.5px;
+  font-size: 14px;
   color: var(--accent);
   letter-spacing: 3px;
   font-weight: 700;
@@ -30,7 +30,7 @@
   color: var(--fg-dim);
 }
 .rankings .row.current {
-  background: rgba(125, 211, 252, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent);
   font-weight: 700;
 }
@@ -47,7 +47,7 @@
 }
 .new-record {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 14px;
   letter-spacing: 4px;
   color: var(--warn);
   font-weight: 700;
@@ -89,20 +89,20 @@ button:hover {
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--bg);
+  color: var(--on-accent);
   font-weight: 600;
 }
 button.primary:hover {
-  background: #a5e0fd;
-  border-color: #a5e0fd;
-  color: var(--bg);
+  background: var(--accent-deep);
+  border-color: var(--accent-deep);
+  color: var(--on-accent);
 }
 
 @media (max-width: 420px) {
   .rankings {
     margin-block: 10px;
     padding: 7px 9px;
-    font-size: 11px;
+    font-size: 14px;
   }
   .actions button {
     flex: 1 1 110px;

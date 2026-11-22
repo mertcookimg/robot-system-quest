@@ -30,7 +30,7 @@ body.stage-loading .stage-overlay {
 /* While the clear or crash overlay is up, hide the stage-specific panel
    (e.g. the 1P/2P + difficulty switcher) so it doesn't collide with the
    Retry / Next buttons or peek through the blur. */
-.canvas-wrap:has(#clear-overlay.show) .stage-overlay,
+body:has(#clear-overlay.show) .stage-overlay,
 .canvas-wrap:has(#crash-overlay.show) .stage-overlay {
   visibility: hidden;
 }
@@ -41,7 +41,9 @@ body.stage-loading .stage-overlay {
   width: min(800px, 100%);
 }
 .stage-controls-dock .overlay-control-panel {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  box-shadow: 0 8px 24px rgba(var(--shadow-rgb), 0.11);
 }
 
 @media (max-width: 640px) {
@@ -62,7 +64,7 @@ body.stage-loading .stage-overlay {
     min-width: 0;
     min-height: 44px;
     padding-inline: 7px !important;
-    white-space: nowrap;
+    white-space: normal;
   }
   .stage-controls-dock .overlay-divider {
     display: none;

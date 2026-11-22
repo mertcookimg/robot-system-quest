@@ -194,6 +194,36 @@ test("the default preview ends after a short first-start excerpt without playing
   assert.equal(element("cards").textContent, results);
 });
 
+test("training and preview finish without taking focus from terminal inspection", () => {
+  const terminal = document.createElement("section");
+  terminal.id = "ros-terminal";
+  terminal.innerHTML = '<input aria-label="Terminal command">';
+  document.body.append(terminal);
+  const command = terminal.querySelector("input")!;
+
+  click("train");
+  command.focus();
+  until(() => visible(button("compare")), 21);
+  assert.match(element("learning-summary").textContent!, /600/);
+  assert.equal(document.activeElement, command);
+
+  click("compare");
+  command.focus();
+  until(() => !visible(button("show-results")), 35);
+  assert.equal(visible(button("finish")), true);
+  assert.equal(document.activeElement, command);
+});
+
+test("a command palette keeps input ownership when training finishes", () => {
+  click("train");
+  const palette = document.createElement("div");
+  palette.id = "terminal-pad-palette";
+  document.body.append(palette);
+  const focused = document.activeElement;
+  until(() => visible(button("compare")), 21);
+  assert.equal(document.activeElement, focused);
+});
+
 test("skip ends playback immediately and optional controls replay any chosen starting position", () => {
   train();
   click("compare");

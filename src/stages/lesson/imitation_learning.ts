@@ -1,11 +1,14 @@
 ﻿// Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
+
+import { cssStageColor, stageColor } from "../../lib/stage_colors";
 import type { Stage, GameContext } from "../../types";
 import { defineStage } from "../../core/stage_def";
 import { mountLabCompletion } from "../../lib/lab_completion";
 import { tx, onLangChange } from "../../i18n";
 import { clearBackground, drawRobotBody } from "../../lib/draw";
-import { theme, withA } from "../../core/theme";
+import { getTheme, theme, withA } from "../../core/theme";
+import { isStageInteractionBlocked } from "../../lib/input_guard";
 import {
   registerOverlayPad,
   unregisterOverlayPad,
@@ -142,7 +145,7 @@ function comparisonDataText(result: Comparison): string {
   );
   return parts.join(tx("", " "));
 }
-const COLORS = ["#b8c2d8", "#7dd3fc"];
+const COLORS = ["#586a82", "#075f93"];
 const emptyCounts = emptyImitationCounts;
 const timeInLane = (runs: LearnerRobot[]): number => {
   const duration = runs.reduce((sum, r) => sum + r.ticks * IMITATION_DT, 0);
@@ -1358,7 +1361,7 @@ export function makeImitationLearning(): Stage {
         .join(" "),
     );
     path.setAttribute("fill", "none");
-    path.setAttribute("stroke", "#5eead4");
+    path.setAttribute("stroke", cssStageColor("#087764"));
     path.setAttribute("stroke-width", "2");
     svg.append(path);
     for (const [x, y, label] of [
@@ -1370,7 +1373,7 @@ export function makeImitationLearning(): Stage {
       const text = document.createElementNS(svg.namespaceURI, "text");
       text.setAttribute("x", String(x));
       text.setAttribute("y", String(y));
-      text.setAttribute("fill", "#b0c1d8");
+      text.setAttribute("fill", cssStageColor("#425570"));
       text.setAttribute("font-size", "12");
       text.textContent = label;
       svg.append(text);
@@ -1923,7 +1926,8 @@ export function makeImitationLearning(): Stage {
       publishData("recording_complete", "manual");
       mode = "idle";
       note = "collected";
-      syncView(true);
+      if (isStageInteractionBlocked()) refresh();
+      else syncView(true);
       return;
     }
     robots.forEach((r, i) => evaluations[i].push({ ...r }));
@@ -1943,7 +1947,8 @@ export function makeImitationLearning(): Stage {
     mode = "idle";
     note = "done";
     renderResults();
-    syncView(true);
+    if (isStageInteractionBlocked()) refresh();
+    else syncView(true);
   }
   function clearExperiment(keepData: boolean): void {
     releaseSteering();
@@ -2100,10 +2105,10 @@ export function makeImitationLearning(): Stage {
     }
     for (let x = 740; x >= 60; x -= 4) c.lineTo(x, laneCenter(x, roadCourse) + 44);
     c.closePath();
-    c.fillStyle = withA("#7dd3fc", 0.07);
+    c.fillStyle = withA(theme.accent, getTheme() === "light" ? 0.12 : 0.07);
     c.fill();
-    c.strokeStyle = withA("#7dd3fc", 0.18);
-    c.lineWidth = 1.5;
+    c.strokeStyle = withA(theme.accent, getTheme() === "light" ? 0.85 : 0.18);
+    c.lineWidth = 2;
     c.stroke();
     c.beginPath();
     for (let x = 60; x <= 740; x += 4) {
@@ -2111,17 +2116,17 @@ export function makeImitationLearning(): Stage {
       else c.lineTo(x, laneCenter(x, roadCourse));
     }
     c.setLineDash([5, 12]);
-    c.strokeStyle = withA("#b8c2d8", 0.5);
+    c.strokeStyle = withA(theme.fgDim, getTheme() === "light" ? 0.85 : 0.5);
     c.lineWidth = 1.5;
     c.stroke();
     c.setLineDash([]);
-    c.strokeStyle = withA("#7dd3fc", 0.6);
+    c.strokeStyle = withA(theme.accent, getTheme() === "light" ? 1 : 0.6);
     c.beginPath();
     c.moveTo(740, laneCenter(740, roadCourse) - 44);
     c.lineTo(740, laneCenter(740, roadCourse) + 44);
     c.stroke();
-    const color = view === "manual" ? "#7dd3fc" : COLORS[index];
-    c.strokeStyle = color;
+    const color = view === "manual" ? "#075f93" : COLORS[index];
+    c.strokeStyle = stageColor(color);
     c.lineWidth = 3;
     c.lineCap = "round";
     c.beginPath();
@@ -2171,13 +2176,19 @@ export function makeImitationLearning(): Stage {
       return;
     }
     const title = view === "manual" ? tx("操作を記録", "Record actions") : caseName(testIndex);
-    drawImitationText(c, title, 24, 42, { size: 20, minCss: 14, weight: 600 });
+    drawImitationText(c, title, 24, 42, {
+      size: 20,
+      minCss: 14,
+      weight: 600,
+      maxWidth: 590,
+      maxLines: 1,
+    });
     drawImitationText(
       c,
       view === "manual" ? `${counts.manual} / ${MAX_SAMPLES_PER_CATEGORY}` : `${speed}×`,
       776,
       42,
-      { size: 18, minCss: 13, align: "right", mono: true, color: "#9aa6c8" },
+      { size: 18, minCss: 13, align: "right", mono: true, color: "#425570" },
     );
     if (view === "compare" && entrants.length) {
       for (let i = 0; i < 2; i++) {
@@ -2186,7 +2197,7 @@ export function makeImitationLearning(): Stage {
         c.beginPath();
         c.roundRect(x, 76, 376, 344, 10);
         c.fill();
-        drawImitationText(c, `${i === 0 ? "A" : "B"}  ${entrantName(entrants[i])}`, x + 16, 116, {
+        drawImitationText(c, `${i === 0 ? "A" : "B"}  ${entrantName(entrants[i])}`, x + 16, 108, {
           size: 18,
           minCss: 13,
           color: COLORS[i],
@@ -2214,13 +2225,21 @@ export function makeImitationLearning(): Stage {
               : tx("走行中", "Driving"),
           x + 16,
           398,
-          { size: 16, minCss: 12, color: robot.outside ? "#fda4af" : COLORS[i] },
+          {
+            size: 16,
+            minCss: 12,
+            maxWidth: 230,
+            maxLines: 1,
+            color: robot.outside ? "#be2949" : COLORS[i],
+          },
         );
         drawImitationText(c, `${timeInLane([robot]).toFixed(0)}%`, x + 360, 398, {
           size: 20,
           minCss: 14,
           align: "right",
           mono: true,
+          maxWidth: 100,
+          maxLines: 1,
           color: COLORS[i],
         });
       }
@@ -2229,7 +2248,7 @@ export function makeImitationLearning(): Stage {
         tx("割合：このコースで帯の中を走った時間", "Percent: time inside this course's band"),
         24,
         465,
-        { size: 16, minCss: 12, maxWidth: 752, maxLines: 1, color: "#9aa6c8" },
+        { size: 16, minCss: 12, maxWidth: 752, maxLines: 1, color: "#425570" },
       );
     } else {
       drawRoad(c, 0);
@@ -2245,14 +2264,18 @@ export function makeImitationLearning(): Stage {
         {
           size: 18,
           minCss: 13,
-          color: "#9aa6c8",
+          color: "#425570",
+          maxWidth: 360,
+          maxLines: 1,
         },
       );
       drawImitationText(c, tx("右へは自動", "Forward: automatic"), 776, 465, {
         size: 18,
         minCss: 13,
         align: "right",
-        color: "#9aa6c8",
+        color: "#425570",
+        maxWidth: 360,
+        maxLines: 1,
       });
     }
     if (mode === "countdown" || mode === "paused") {
@@ -2363,5 +2386,5 @@ export default defineStage({
       en: "Select Record your driving, review the up/down controls, then start recording.",
     },
   },
-  diagram: `<svg viewBox="0 0 420 100" role="img" aria-label="自分で操作を記録、AIを学習、3条件で走らせて比較 / Record your actions, train the AI, compare driving in 3 conditions"><g fill="#15243b" stroke="#7dd3fc"><rect x="5" y="15" width="110" height="65" rx="8"/><rect x="155" y="15" width="110" height="65" rx="8"/><rect x="305" y="15" width="110" height="65" rx="8"/></g><g fill="#e0f2fe" font-family="system-ui" font-size="11" text-anchor="middle"><text x="60" y="42">① 自分で記録</text><text x="60" y="62">Record actions</text><text x="135" y="52">→</text><text x="210" y="42">② AIを学習</text><text x="210" y="62">Train the AI</text><text x="285" y="52">→</text><text x="360" y="42">③ 走らせて比較</text><text x="360" y="62">Test 3 conditions</text></g></svg>`,
+  diagram: `<svg viewBox="0 0 420 100" role="img" aria-label="自分で操作を記録、AIを学習、3条件で走らせて比較 / Record your actions, train the AI, compare driving in 3 conditions"><g fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)"><rect x="5" y="15" width="110" height="65" rx="8"/><rect x="155" y="15" width="110" height="65" rx="8"/><rect x="305" y="15" width="110" height="65" rx="8"/></g><g fill="light-dark(#172b4d, #edf3ff)" font-family="system-ui" font-size="11" text-anchor="middle"><text x="60" y="42">① 自分で記録</text><text x="60" y="62">Record actions</text><text x="135" y="52">→</text><text x="210" y="42">② AIを学習</text><text x="210" y="62">Train the AI</text><text x="285" y="52">→</text><text x="360" y="42">③ 走らせて比較</text><text x="360" y="62">Test 3 conditions</text></g></svg>`,
 });

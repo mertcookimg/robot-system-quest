@@ -1,13 +1,15 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+
 // patrol: Patrol — evade WARDEN units (Service & Lifecycle)
 // Evade the rogue AI "WARDEN", hack 3 terminals, then escape through
 // the gate.
 // The boss locks on when the player enters its vision cone; the gate
 // unlocks after 3 hacks.
 import { W, H, type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { theme, withA, themeColor, getTheme } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
 import {
@@ -180,7 +182,7 @@ export function makeWarden(): Stage {
       if (dx * dx + dy * dy < (28 + ROBOT_R) ** 2) {
         hacked.add(hp.id);
         enemySpeedMul = Math.max(0, enemySpeedMul - 0.3);
-        particles.burst(hp.x, hp.y, "#7dd3fc", 36, 260);
+        particles.burst(hp.x, hp.y, "#075f93", 36, 260);
         g.sfx.pickup();
         g.shake(0.4);
         // Record the modeled service response on a diagnostic topic. A service
@@ -209,8 +211,8 @@ export function makeWarden(): Stage {
       const dy = robot.y - ESCAPE.y;
       if (dx * dx + dy * dy < (28 + ROBOT_R) ** 2) {
         cleared = true;
-        particles.burst(ESCAPE.x, ESCAPE.y, "#5eead4", 40);
-        particles.burst(ESCAPE.x, ESCAPE.y, "#fbbf24", 30);
+        particles.burst(ESCAPE.x, ESCAPE.y, "#087764", 40);
+        particles.burst(ESCAPE.x, ESCAPE.y, "#925b00", 30);
         g.sfx.deliver();
         g.shake(0.8);
         g.setStatus(t("patrol.status.escape_complete"), "var(--ok)");
@@ -309,7 +311,7 @@ export function makeWarden(): Stage {
     clearBackground(ctx);
 
     // Faint warning grid on the floor.
-    ctx.strokeStyle = "rgba(248, 113, 113, 0.06)";
+    ctx.strokeStyle = stageColor("rgba(248, 113, 113, 0.06)");
     ctx.lineWidth = 1;
     for (let x = 0; x <= W; x += 50) {
       ctx.beginPath();
@@ -326,8 +328,8 @@ export function makeWarden(): Stage {
 
     // Walls.
     for (const wall of walls) {
-      ctx.fillStyle = "rgba(35, 44, 77, 0.85)";
-      ctx.strokeStyle = "rgba(110, 122, 156, 0.6)";
+      ctx.fillStyle = themeColor("#c5d2e3", stageColor("rgba(170, 188, 212, 0.85)"));
+      ctx.strokeStyle = themeColor("#586a82", stageColor("rgba(88, 106, 130, 0.6)"));
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.roundRect(wall.x, wall.y, wall.w, wall.h, 4);
@@ -343,9 +345,9 @@ export function makeWarden(): Stage {
 
     // ESCAPE GATE
     if (escapeOpen) {
-      drawZone(ctx, { x: ESCAPE.x, y: ESCAPE.y, r: 30 }, "#5eead4", "ESCAPE", animTime);
+      drawZone(ctx, { x: ESCAPE.x, y: ESCAPE.y, r: 30 }, "#087764", "ESCAPE", animTime);
     } else {
-      drawZone(ctx, { x: ESCAPE.x, y: ESCAPE.y, r: 30 }, "#6e7a9c", "LOCKED", animTime);
+      drawZone(ctx, { x: ESCAPE.x, y: ESCAPE.y, r: 30 }, "#586a82", "LOCKED", animTime);
     }
 
     // Trail.
@@ -388,15 +390,24 @@ export function makeWarden(): Stage {
         ctx.rotate(e.theta);
         const intensity = Math.max(0.06, (lockon / LOCKON_TIME) * 0.4);
         const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, ENEMY_VISION_RANGE);
-        grd.addColorStop(0, `rgba(248, 113, 113, ${0.12 + intensity * 0.6})`);
-        grd.addColorStop(1, "rgba(248, 113, 113, 0)");
-        ctx.fillStyle = grd;
+        grd.addColorStop(
+          0,
+          themeColor(
+            withA(theme.danger, 0.22 + intensity * 0.6),
+            `rgba(248, 113, 113, ${0.12 + intensity * 0.6})`,
+          ),
+        );
+        grd.addColorStop(1, stageColor("rgba(248, 113, 113, 0)"));
+        ctx.fillStyle = stageColor(grd);
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.arc(0, 0, ENEMY_VISION_RANGE, -ENEMY_VISION_HALF_ANGLE, ENEMY_VISION_HALF_ANGLE);
         ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = `rgba(248, 113, 133, ${0.25 + intensity * 0.5})`;
+        ctx.strokeStyle = themeColor(
+          withA(theme.danger, 0.8 + intensity * 0.3),
+          `rgba(248, 113, 133, ${0.25 + intensity * 0.5})`,
+        );
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -420,7 +431,7 @@ export function makeWarden(): Stage {
   function drawSingleEnemy(ctx: CanvasRenderingContext2D, e: Enemy, disabled: boolean) {
     // Shadow.
     ctx.save();
-    ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+    ctx.fillStyle = stageColor("rgba(0, 0, 0, 0.45)");
     ctx.beginPath();
     ctx.ellipse(e.x, e.y + 18, 22, 5, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -432,7 +443,7 @@ export function makeWarden(): Stage {
     ctx.rotate(e.theta);
 
     // Outer shell.
-    ctx.fillStyle = disabled ? "#374151" : "#7f1d1d";
+    ctx.fillStyle = stageColor(disabled ? "#374151" : "#7f1d1d");
     ctx.beginPath();
     ctx.roundRect(-20, -14, 40, 28, 6);
     ctx.fill();
@@ -440,36 +451,36 @@ export function makeWarden(): Stage {
     // Main body.
     const grad = ctx.createLinearGradient(0, -12, 0, 12);
     if (disabled) {
-      grad.addColorStop(0, "#9ca3af");
-      grad.addColorStop(1, "#374151");
+      grad.addColorStop(0, stageColor("#9ca3af"));
+      grad.addColorStop(1, stageColor("#374151"));
     } else {
-      grad.addColorStop(0, "#fecaca");
-      grad.addColorStop(0.5, "#dc2626");
-      grad.addColorStop(1, "#7f1d1d");
+      grad.addColorStop(0, stageColor("#fecaca"));
+      grad.addColorStop(0.5, stageColor("#dc2626"));
+      grad.addColorStop(1, stageColor("#7f1d1d"));
     }
-    ctx.fillStyle = grad;
+    ctx.fillStyle = stageColor(grad);
     ctx.beginPath();
     ctx.roundRect(-17, -12, 34, 24, 5);
     ctx.fill();
-    ctx.strokeStyle = disabled ? "#6b7280" : "#fb7185";
+    ctx.strokeStyle = stageColor(disabled ? "#6b7280" : "#be2949");
     ctx.lineWidth = 1;
     ctx.stroke();
 
     // Central core.
     if (!disabled) {
       const corePulse = 0.6 + 0.4 * Math.sin(animTime * 5);
-      ctx.fillStyle = `rgba(220, 38, 38, ${0.5 * corePulse})`;
+      ctx.fillStyle = stageColor(`rgba(220, 38, 38, ${0.5 * corePulse})`);
       ctx.fillRect(-12, -9, 24, 14);
-      ctx.fillStyle = "#fb7185";
+      ctx.fillStyle = stageColor("#be2949");
       ctx.beginPath();
       ctx.arc(0, -2, 2.5, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle = stageColor("#fff");
       ctx.beginPath();
       ctx.arc(0, -2, 1, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      ctx.strokeStyle = "#6b7280";
+      ctx.strokeStyle = stageColor("#6b7280");
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(-5, -6);
@@ -480,7 +491,7 @@ export function makeWarden(): Stage {
     }
 
     // Wheels.
-    ctx.fillStyle = "#08101e";
+    ctx.fillStyle = stageColor("#edf3fb");
     ctx.fillRect(-20, -14, 4, 5);
     ctx.fillRect(16, -14, 4, 5);
     ctx.fillRect(-20, 9, 4, 5);
@@ -488,11 +499,11 @@ export function makeWarden(): Stage {
 
     // Front sensor.
     if (!disabled) {
-      ctx.fillStyle = "#0a0e1f";
+      ctx.fillStyle = stageColor("#d8e2ef");
       ctx.beginPath();
       ctx.arc(13, 0, 4, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#fb7185";
+      ctx.fillStyle = stageColor("#be2949");
       ctx.beginPath();
       ctx.arc(13, 0, 2.2, 0, Math.PI * 2);
       ctx.fill();
@@ -513,12 +524,12 @@ export function makeWarden(): Stage {
     ctx.save();
     ctx.translate(x, y);
     if (hacked) {
-      ctx.globalAlpha = 0.4;
-      ctx.strokeStyle = "#5eead4";
-      ctx.fillStyle = "rgba(94, 234, 212, 0.15)";
+      ctx.globalAlpha = getTheme() === "light" ? 0.8 : 0.4;
+      ctx.strokeStyle = stageColor("#087764");
+      ctx.fillStyle = stageColor("rgba(8, 119, 100, 0.15)");
     } else {
-      ctx.strokeStyle = "#7dd3fc";
-      ctx.fillStyle = `rgba(125, 211, 252, ${0.15 * pulse})`;
+      ctx.strokeStyle = stageColor("#075f93");
+      ctx.fillStyle = stageColor(`rgba(7, 95, 147, ${0.15 * pulse})`);
     }
     ctx.lineWidth = 2;
     // Server-rack style.
@@ -527,13 +538,13 @@ export function makeWarden(): Stage {
     ctx.fill();
     ctx.stroke();
     // Slit.
-    ctx.fillStyle = ctx.strokeStyle;
+    ctx.fillStyle = stageColor(ctx.strokeStyle);
     for (let i = 0; i < 4; i++) {
       ctx.fillRect(-14, -16 + i * 9, 28, 1.5);
     }
     if (hacked) {
       // Check mark.
-      ctx.strokeStyle = "#5eead4";
+      ctx.strokeStyle = stageColor("#087764");
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(-7, 2);
@@ -543,7 +554,7 @@ export function makeWarden(): Stage {
     } else {
       // ID
       ctx.globalAlpha = 1;
-      ctx.fillStyle = "#7dd3fc";
+      ctx.fillStyle = stageColor("#075f93");
       ctx.font = "700 14px ui-monospace, monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -556,16 +567,16 @@ export function makeWarden(): Stage {
     ctx.save();
     ctx.translate(x, y - 30);
     // Frame.
-    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+    ctx.fillStyle = stageColor("rgba(0, 0, 0, 0.6)");
     ctx.fillRect(-30, -7, 60, 8);
-    ctx.strokeStyle = "rgba(248, 113, 113, 0.7)";
+    ctx.strokeStyle = stageColor("rgba(248, 113, 113, 0.7)");
     ctx.lineWidth = 1;
     ctx.strokeRect(-30, -7, 60, 8);
     // Bar.
-    ctx.fillStyle = pct > 0.7 ? "#dc2626" : "#fb7185";
+    ctx.fillStyle = stageColor(pct > 0.7 ? "#dc2626" : "#be2949");
     ctx.fillRect(-30, -7, 60 * pct, 8);
     // Label.
-    ctx.fillStyle = "#fb7185";
+    ctx.fillStyle = stageColor("#be2949");
     ctx.font = "700 8px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
@@ -576,7 +587,7 @@ export function makeWarden(): Stage {
   function drawHackHUD(ctx: CanvasRenderingContext2D) {
     ctx.save();
     ctx.fillStyle = withA(theme.scrim, 0.85);
-    ctx.strokeStyle = "rgba(125, 211, 252, 0.4)";
+    ctx.strokeStyle = stageColor("rgba(7, 95, 147, 0.4)");
     ctx.lineWidth = 1;
     const w = 156;
     const h = 26;
@@ -586,7 +597,7 @@ export function makeWarden(): Stage {
     ctx.roundRect(x, y, w, h, 6);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "#7a89ad";
+    ctx.fillStyle = stageColor("#586a82");
     ctx.font = "10px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
@@ -595,11 +606,11 @@ export function makeWarden(): Stage {
       const cx = x + 60 + i * 30;
       const cy = y + h / 2;
       const got = hacked.has(hp.id);
-      ctx.fillStyle = got ? "#5eead4" : "rgba(122, 137, 173, 0.3)";
+      ctx.fillStyle = stageColor(got ? "#087764" : "rgba(88, 106, 130, 0.3)");
       ctx.beginPath();
       ctx.arc(cx, cy, 8, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = got ? COLORS.BG_DARK : "#7a89ad";
+      ctx.fillStyle = got ? COLORS.ON_ACCENT : themeColor("#172b4d", stageColor("#586a82"));
       ctx.font = "700 9px ui-monospace, monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -614,14 +625,14 @@ export function makeWarden(): Stage {
     const h = 22;
     const x = W - w - 12;
     const y = H - h - 30;
-    ctx.fillStyle = "rgba(196, 181, 253, 0.18)";
-    ctx.strokeStyle = "rgba(196, 181, 253, 0.5)";
+    ctx.fillStyle = stageColor("rgba(109, 66, 181, 0.18)");
+    ctx.strokeStyle = stageColor("rgba(109, 66, 181, 0.5)");
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(x, y, w, h, 5);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "#c4b5fd";
+    ctx.fillStyle = stageColor("#6d42b5");
     ctx.font = "600 10px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
@@ -733,23 +744,23 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="client triggers service, server responds">
   <defs>
     <marker id="ld-warden-arrow-req" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
     <marker id="ld-warden-arrow-res" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#fbbf24"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#925b00, #fbbf24)"/>
     </marker>
   </defs>
-  <rect x="8" y="26" width="148" height="68" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="82" y="56" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="12" font-weight="700">player</text>
-  <text x="82" y="78" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">Client</text>
-  <rect x="264" y="26" width="148" height="68" rx="8" fill="#181f3a" stroke="#c4b5fd" stroke-width="1.5"/>
-  <text x="338" y="56" text-anchor="middle" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="12" font-weight="700">module</text>
-  <text x="338" y="78" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">Server</text>
-  <line x1="156" y1="50" x2="262" y2="50" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-warden-arrow-req)"/>
-  <line x1="262" y1="74" x2="156" y2="74" stroke="#fbbf24" stroke-width="2" marker-end="url(#ld-warden-arrow-res)"/>
-  <text x="210" y="44" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/hack (Trigger)</text>
-  <text x="210" y="68" text-anchor="middle" fill="#6e7a9c" font-family="ui-monospace, monospace" font-size="9">request →</text>
-  <text x="210" y="92" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="9">← response</text>
+  <rect x="8" y="26" width="148" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="82" y="56" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">player</text>
+  <text x="82" y="78" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">Client</text>
+  <rect x="264" y="26" width="148" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
+  <text x="338" y="56" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">module</text>
+  <text x="338" y="78" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">Server</text>
+  <line x1="156" y1="50" x2="262" y2="50" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-warden-arrow-req)"/>
+  <line x1="262" y1="74" x2="156" y2="74" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2" marker-end="url(#ld-warden-arrow-res)"/>
+  <text x="210" y="44" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/hack (Trigger)</text>
+  <text x="210" y="68" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="9">request →</text>
+  <text x="210" y="92" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="9">← response</text>
 </svg>
 `,
   lessonModal: {

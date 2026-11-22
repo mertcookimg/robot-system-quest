@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "./stage_colors";
+
 // Shared base for "camera mission" stages (edge_detection /
 // object_detection): a teleop robot on a top-down map with walls and
 // colored circular targets, plus a pseudo onboard camera (perspective
@@ -18,7 +20,7 @@
 // Stages keep what actually differs: their processing pipeline, capture
 // rules, the right-hand panel, HUD lines, goal handling, and publishing.
 import { W, H, type GameContext } from "../types";
-import { theme, withA } from "../core/theme";
+import { getTheme, theme, withA, onThemeChange } from "../core/theme";
 
 import { drawGrid, drawZone, drawRobotBody, drawRobotLabel, COLORS } from "./draw";
 import { Trail } from "./trail";
@@ -115,6 +117,10 @@ export function createCameraMission(opts: CameraMissionOpts) {
   worldCanvas.width = MAP_W;
   worldCanvas.height = MAP_H;
   const worldCtx = worldCanvas.getContext("2d", { willReadFrequently: true })!;
+  const mapCanvas = document.createElement("canvas");
+  mapCanvas.width = MAP_W;
+  mapCanvas.height = MAP_H;
+  const mapCtx = mapCanvas.getContext("2d")!;
   let worldData: Uint8ClampedArray | null = null; // cached after paintWorld()
 
   // -- Camera offscreen (rewritten every frame).
@@ -122,6 +128,7 @@ export function createCameraMission(opts: CameraMissionOpts) {
   camCanvas.width = IMG_W;
   camCanvas.height = IMG_H;
   const camCtx = camCanvas.getContext("2d", { willReadFrequently: true })!;
+  let stopThemeListener: (() => void) | undefined;
 
   /** Call from the stage's init(): binds the context and enters DRIVE mode. */
   function enter(ctx: GameContext) {
@@ -129,10 +136,14 @@ export function createCameraMission(opts: CameraMissionOpts) {
     tuneMode = false;
     prevYBtn = false;
     setBlockpadGamepadDisabled(true);
+    stopThemeListener?.();
+    stopThemeListener = onThemeChange(() => paintWorldView(mapCtx, false));
   }
 
   /** Call from the stage's dispose(): gives the pad back to the blockpad. */
   function leave() {
+    stopThemeListener?.();
+    stopThemeListener = undefined;
     setBlockpadGamepadDisabled(false);
   }
 
@@ -167,9 +178,14 @@ export function createCameraMission(opts: CameraMissionOpts) {
   // World render (on reset).
   // ====================================================================
   function paintWorld() {
-    const c = worldCtx;
+    paintWorldView(worldCtx, true);
+    paintWorldView(mapCtx, false);
+  }
+
+  function paintWorldView(c: CanvasRenderingContext2D, sensor: boolean) {
     // Floor.
-    c.fillStyle = theme.floor;
+    // Sensor input colors stay fixed so image-processing results are theme-independent.
+    c.fillStyle = sensor ? "#1a2138" : theme.floor;
     c.fillRect(0, 0, MAP_W, MAP_H);
 
     // Yellow line (route hint).
@@ -191,10 +207,10 @@ export function createCameraMission(opts: CameraMissionOpts) {
 
     // Walls / obstacles.
     for (const wall of WALLS) {
-      c.fillStyle = "#3a4366";
+      c.fillStyle = sensor ? "#3a4366" : stageColor("#8298b4");
       c.fillRect(wall.x, wall.y, wall.w, wall.h);
-      c.strokeStyle = "rgba(110, 122, 156, 0.65)";
-      c.lineWidth = 1;
+      c.strokeStyle = sensor ? "rgba(110, 122, 156, 0.65)" : theme.fgDim;
+      c.lineWidth = sensor ? 1 : 2;
       c.strokeRect(wall.x + 0.5, wall.y + 0.5, wall.w - 1, wall.h - 1);
       // Highlight (top and left edges).
       c.fillStyle = "rgba(255, 255, 255, 0.10)";
@@ -215,19 +231,19 @@ export function createCameraMission(opts: CameraMissionOpts) {
       c.arc(t.x, t.y, t.r, 0, Math.PI * 2);
       c.fill();
       // Rim.
-      c.strokeStyle = "rgba(255,255,255,0.4)";
-      c.lineWidth = 1.5;
+      c.strokeStyle = sensor ? "rgba(255,255,255,0.4)" : "#172b4d";
+      c.lineWidth = sensor ? 1.5 : 2;
       c.beginPath();
       c.arc(t.x, t.y, t.r, 0, Math.PI * 2);
       c.stroke();
       // Label drawn on the floor — appearing upside down from the bot is fine.
-      c.fillStyle = "rgba(0,0,0,0.55)";
-      c.font = "700 8px ui-monospace, monospace";
+      c.fillStyle = sensor ? "rgba(0,0,0,0.55)" : "#172b4d";
+      c.font = sensor ? "700 8px ui-monospace, monospace" : "700 10px ui-monospace, monospace";
       c.textAlign = "center";
       c.fillText(t.label, t.x, t.y + 3);
     }
     // Cache the entire pixel buffer for floor projection.
-    worldData = worldCtx.getImageData(0, 0, MAP_W, MAP_H).data;
+    if (sensor) worldData = worldCtx.getImageData(0, 0, MAP_W, MAP_H).data;
   }
 
   function drawLinePath(c: CanvasRenderingContext2D, p: { x: number; y: number }[]) {
@@ -433,7 +449,7 @@ export function createCameraMission(opts: CameraMissionOpts) {
   // Top-down (left pane) rendering.
   // ====================================================================
   function drawTopDown(c: CanvasRenderingContext2D, elapsed: number) {
-    c.drawImage(worldCanvas, 0, 0);
+    c.drawImage(mapCanvas, 0, 0);
     drawGrid(c, MAP_W, MAP_H);
 
     // Captured targets get a ✓ overlay; uncaptured ones are highlighted.
@@ -458,9 +474,9 @@ export function createCameraMission(opts: CameraMissionOpts) {
         // Pulsing outer ring to signal "not captured yet".
         const pulse = 0.5 + 0.5 * Math.sin(elapsed * 4 + i);
         c.save();
-        c.strokeStyle = t.color;
-        c.globalAlpha = 0.35 + 0.3 * pulse;
-        c.lineWidth = 1.5;
+        c.strokeStyle = stageColor(t.color);
+        c.globalAlpha = getTheme() === "light" ? 0.8 + 0.2 * pulse : 0.35 + 0.3 * pulse;
+        c.lineWidth = 2;
         c.beginPath();
         c.arc(t.x, t.y, t.r + 6 + pulse * 3, 0, Math.PI * 2);
         c.stroke();
@@ -469,19 +485,19 @@ export function createCameraMission(opts: CameraMissionOpts) {
     }
 
     // Goal — glows strongly once everything is captured.
-    drawZone(c, GOAL, allCaptured() ? COLORS.OK : "rgba(94,234,212,0.5)", "GOAL", elapsed);
+    drawZone(c, GOAL, allCaptured() ? COLORS.OK : theme.fgDim, "GOAL", elapsed);
 
     // Start marker.
     c.save();
-    c.strokeStyle = "rgba(125,211,252,0.55)";
-    c.lineWidth = 1;
+    c.strokeStyle = withA(theme.accent, getTheme() === "light" ? 0.85 : 0.55);
+    c.lineWidth = 1.5;
     c.setLineDash([4, 4]);
     c.beginPath();
     c.arc(START.x, START.y, 18, 0, Math.PI * 2);
     c.stroke();
     c.setLineDash([]);
-    c.fillStyle = "rgba(125,211,252,0.7)";
-    c.font = "700 9px ui-monospace, monospace";
+    c.fillStyle = theme.accent;
+    c.font = "700 12px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("START", START.x, START.y - 24);
     c.restore();
@@ -489,7 +505,7 @@ export function createCameraMission(opts: CameraMissionOpts) {
     // Trail.
     if (trail.length > 1) {
       const samples = trail.samples();
-      c.strokeStyle = "rgba(125,211,252,0.45)";
+      c.strokeStyle = withA(theme.accent, getTheme() === "light" ? 0.8 : 0.45);
       c.lineWidth = 2;
       c.beginPath();
       c.moveTo(samples[0].x, samples[0].y);
@@ -504,9 +520,9 @@ export function createCameraMission(opts: CameraMissionOpts) {
     c.save();
     c.translate(robot.x, robot.y);
     c.rotate(robot.theta);
-    c.fillStyle = "rgba(125,211,252,0.10)";
-    c.strokeStyle = "rgba(125,211,252,0.35)";
-    c.lineWidth = 1;
+    c.fillStyle = stageColor("rgba(7, 95, 147,0.10)");
+    c.strokeStyle = withA(theme.accent, getTheme() === "light" ? 0.75 : 0.35);
+    c.lineWidth = 1.5;
     c.beginPath();
     c.moveTo(0, 0);
     c.lineTo(FRUSTUM_DEPTH, -FRUSTUM_HALF_W);
@@ -530,29 +546,29 @@ export function createCameraMission(opts: CameraMissionOpts) {
     // top-right which would clash with the camera panel here.
     c.save();
     c.fillStyle = withA(theme.scrim, 0.85);
-    c.strokeStyle = "rgba(125, 211, 252, 0.3)";
+    c.strokeStyle = theme.line;
     c.fillRect(MAP_W - 130, 12, 110, 26);
     c.strokeRect(MAP_W - 130, 12, 110, 26);
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.font = "600 12px ui-monospace, monospace";
     c.textAlign = "right";
     c.textBaseline = "middle";
     c.fillText(`${elapsed.toFixed(2)}s`, MAP_W - 28, 25);
-    c.fillStyle = "#6e7a9c";
-    c.font = "9px ui-monospace, monospace";
+    c.fillStyle = stageColor("#586a82");
+    c.font = "11px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText("TIME", MAP_W - 122, 26);
     c.restore();
 
     // Mode badge (top-left): which input the pad is driving right now.
     c.save();
-    const badgeColor = tuneMode ? "#c4b5fd" : "#7dd3fc";
-    const badgeBg = tuneMode ? "rgba(196, 181, 253, 0.18)" : "rgba(125, 211, 252, 0.15)";
-    c.fillStyle = badgeBg;
-    c.strokeStyle = badgeColor;
+    const badgeColor = tuneMode ? "#6d42b5" : "#075f93";
+    const badgeBg = tuneMode ? "rgba(109, 66, 181, 0.18)" : "rgba(7, 95, 147, 0.15)";
+    c.fillStyle = stageColor(badgeBg);
+    c.strokeStyle = stageColor(badgeColor);
     c.fillRect(12, 12, 156, 26);
     c.strokeRect(12, 12, 156, 26);
-    c.fillStyle = badgeColor;
+    c.fillStyle = stageColor(badgeColor);
     c.font = "700 11px ui-monospace, monospace";
     c.textAlign = "left";
     c.textBaseline = "middle";
@@ -564,7 +580,7 @@ export function createCameraMission(opts: CameraMissionOpts) {
   function drawRightPanelFrame(c: CanvasRenderingContext2D) {
     c.fillStyle = theme.rightPane;
     c.fillRect(MAP_W, 0, W - MAP_W, H);
-    c.strokeStyle = "rgba(35,44,77,0.7)";
+    c.strokeStyle = theme.line;
     c.beginPath();
     c.moveTo(MAP_W, 0);
     c.lineTo(MAP_W, H);

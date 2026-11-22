@@ -127,11 +127,11 @@ function renderPalette(): void {
     const row = document.createElement("div");
     row.textContent = (i === paletteIdx ? "▶ " : "  ") + cmd;
     row.style.cssText = [
-      "padding:2px 8px",
+      "padding:6px 10px",
       "white-space:pre",
       i === paletteIdx
-        ? "color:var(--accent, #7dd3fc); background:rgba(125,211,252,0.12)"
-        : "color:#9aa6c8",
+        ? "color:var(--accent); background:rgba(var(--accent-rgb),0.1)"
+        : "color:var(--fg-mid)",
     ].join(";");
     row.onclick = () => {
       paletteIdx = i;
@@ -153,12 +153,12 @@ export function openPadPalette(): void {
   paletteEl = document.createElement("div");
   paletteEl.id = "terminal-pad-palette";
   paletteEl.style.cssText = [
-    "max-height:140px",
+    "max-height:180px",
     "overflow-y:auto",
-    "border-top:1px solid rgba(125,211,252,0.3)",
+    "border-top:1px solid var(--line)",
     "background:rgba(var(--scrim-rgb), 0.96)",
     "font-family:ui-monospace,monospace",
-    "font-size:11px",
+    "font-size:13px",
     "line-height:1.6",
   ].join(";");
   ui.terminalInput.parentElement?.insertBefore(paletteEl, ui.terminalInput);
@@ -170,7 +170,7 @@ export function closePadPalette(): void {
   paletteEl = null;
 }
 
-/** Explicitly hand input back to the stage, without changing its state. */
+/** Hand input focus back to the stage; its simulation keeps running throughout. */
 export function resumeStageControls(): void {
   closePadPalette();
   if (!ui.canvas.hasAttribute("tabindex")) ui.canvas.tabIndex = -1;
@@ -229,12 +229,6 @@ export function setupTerminal(d: Deps): void {
   ) as HTMLSelectElement | null;
   commandSelectEl = commandSelect;
   const commandRun = document.getElementById("terminal-command-run") as HTMLButtonElement | null;
-  const resumeButton = document.createElement("button");
-  resumeButton.id = "terminal-resume";
-  resumeButton.className = "terminal-command-run terminal-resume";
-  resumeButton.type = "button";
-  resumeButton.addEventListener("click", resumeStageControls);
-  commandRun?.after(resumeButton);
   const terminalTitle = document.getElementById("terminal-title");
   const terminalHint = document.getElementById("terminal-hint");
   const commandLabel = document.getElementById("terminal-command-label");
@@ -243,7 +237,6 @@ export function setupTerminal(d: Deps): void {
     if (terminalHint) terminalHint.textContent = t("terminal.hint");
     if (commandLabel) commandLabel.textContent = t("terminal.command");
     if (commandRun) commandRun.textContent = t("terminal.run");
-    resumeButton.textContent = t("terminal.resume");
     ui.terminalInput.placeholder = t("terminal.input");
     ui.terminalStage.textContent = t("terminal.stage", { name: deps?.getStageName() ?? "—" });
     if (commandSelect) {

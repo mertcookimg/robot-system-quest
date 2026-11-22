@@ -1,13 +1,15 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+
 // treasure_map: Treasure Map (Explore + Build a Map = SLAM lite)
 // Drive an unknown maze, light it up with LiDAR, and persist seen walls
 // into an occupancy grid.
 // Collect 3 chests and exit. Vision uses fog-of-war; known tiles persist
 // in the side-panel mini-map.
 import { type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { theme, withA, getTheme, themeColor } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
 import {
@@ -250,7 +252,7 @@ export function makeMazeMapper(): Stage {
       if (dx * dx + dy * dy < (TILE * 0.45) ** 2) {
         ch.collected = true;
         collectedCount++;
-        particles.burst(cx, cy, "#fbbf24", 28, 260);
+        particles.burst(cx, cy, "#925b00", 28, 260);
         g.sfx.pickup();
         g.shake(0.45);
         g.publish("/treasure/picked", `id:${ch.id} count:${collectedCount}/3`);
@@ -275,7 +277,7 @@ export function makeMazeMapper(): Stage {
         dy = robot.y - ey;
       if (dx * dx + dy * dy < (TILE * 0.45) ** 2) {
         cleared = true;
-        particles.burst(ex, ey, "#5eead4", 50, 320);
+        particles.burst(ex, ey, "#087764", 50, 320);
         g.shake(0.7);
         g.setStatus(t("treasure_map.status.complete"), "var(--ok)");
         const known = countSeen();
@@ -361,24 +363,27 @@ export function makeMazeMapper(): Stage {
         const seen = seenMap[idx] !== 0;
 
         if (!seen) {
-          // Pitch dark.
-          ctx.fillStyle = "#02050b";
+          // Unknown terrain stays distinct from the revealed floor in both themes.
+          ctx.fillStyle = themeColor("#a4b4ca", stageColor("#e7eef7"));
           ctx.fillRect(x, y, TILE, TILE);
           continue;
         }
 
         if (isW) {
-          ctx.fillStyle = lit ? "#3a4366" : "#1d2336";
+          ctx.fillStyle = stageColor(lit ? "#8298b4" : "#a4b4ca");
           ctx.fillRect(x, y, TILE, TILE);
-          ctx.strokeStyle = lit ? "rgba(110,122,156,0.7)" : "rgba(110,122,156,0.28)";
+          ctx.strokeStyle = themeColor(
+            "#425570",
+            stageColor(lit ? "rgba(88, 106, 130,0.7)" : "rgba(88, 106, 130,0.28)"),
+          );
           ctx.lineWidth = 1;
           ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
         } else {
-          ctx.fillStyle = lit ? "#0d1426" : "#070b16";
+          ctx.fillStyle = themeColor(lit ? "#ffffff" : "#e2ebf5", stageColor("#edf3fb"));
           ctx.fillRect(x, y, TILE, TILE);
           if (lit) {
             // grid hatching when lit
-            ctx.strokeStyle = "rgba(125,211,252,0.07)";
+            ctx.strokeStyle = withA(theme.accent, getTheme() === "light" ? 0.2 : 0.07);
             ctx.lineWidth = 1;
             ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
           }
@@ -427,26 +432,26 @@ export function makeMazeMapper(): Stage {
     ctx.save();
     if (lit) {
       // Glowing ring.
-      ctx.fillStyle = `rgba(251, 191, 36, ${0.18 * pulse})`;
+      ctx.fillStyle = stageColor(`rgba(146, 91, 0, ${0.18 * pulse})`);
       ctx.beginPath();
       ctx.arc(x, y, 22, 0, Math.PI * 2);
       ctx.fill();
     }
     // Body.
-    const alpha = lit ? 1.0 : 0.5;
+    const alpha = lit ? 1.0 : getTheme() === "light" ? 0.8 : 0.5;
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = "#fbbf24";
+    ctx.fillStyle = stageColor("#925b00");
     ctx.fillRect(x - 10, y - 7, 20, 14);
-    ctx.fillStyle = "#92400e";
+    ctx.fillStyle = stageColor("#92400e");
     ctx.fillRect(x - 10, y - 1, 20, 3);
-    ctx.fillStyle = "#fef3c7";
+    ctx.fillStyle = stageColor("#fef3c7");
     ctx.fillRect(x - 2, y - 1, 4, 5);
     // Rim.
-    ctx.strokeStyle = "rgba(0,0,0,0.55)";
+    ctx.strokeStyle = stageColor("rgba(0,0,0,0.55)");
     ctx.lineWidth = 1;
     ctx.strokeRect(x - 10, y - 7, 20, 14);
     if (lit) {
-      ctx.fillStyle = "#fef3c7";
+      ctx.fillStyle = stageColor("#925b00");
       ctx.font = "700 8px ui-monospace, monospace";
       ctx.textAlign = "center";
       ctx.fillText(id, x, y - 12);
@@ -457,14 +462,14 @@ export function makeMazeMapper(): Stage {
   function drawExit(ctx: CanvasRenderingContext2D, x: number, y: number, lit: boolean) {
     const pulse = 0.5 + 0.5 * Math.sin(elapsed * 5);
     ctx.save();
-    ctx.globalAlpha = lit ? 1 : 0.6;
+    ctx.globalAlpha = lit ? 1 : getTheme() === "light" ? 0.85 : 0.6;
     // Halo.
-    ctx.fillStyle = `rgba(94, 234, 212, ${0.15 + 0.18 * pulse})`;
+    ctx.fillStyle = stageColor(`rgba(8, 119, 100, ${0.15 + 0.18 * pulse})`);
     ctx.beginPath();
     ctx.arc(x, y, 22 + pulse * 4, 0, Math.PI * 2);
     ctx.fill();
     // Arrow + EXIT.
-    ctx.fillStyle = "#5eead4";
+    ctx.fillStyle = stageColor("#087764");
     ctx.beginPath();
     ctx.moveTo(x - 8, y - 7);
     ctx.lineTo(x + 4, y - 7);
@@ -475,7 +480,7 @@ export function makeMazeMapper(): Stage {
     ctx.lineTo(x - 8, y + 7);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = "#0c1124";
+    ctx.fillStyle = stageColor("#087764");
     ctx.font = "700 8px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.fillText("EXIT", x, y + 18);
@@ -484,17 +489,17 @@ export function makeMazeMapper(): Stage {
 
   function drawLockedExit(ctx: CanvasRenderingContext2D, x: number, y: number, lit: boolean) {
     ctx.save();
-    ctx.globalAlpha = lit ? 0.85 : 0.45;
+    ctx.globalAlpha = getTheme() === "light" ? 1 : lit ? 0.85 : 0.45;
     // Lock icon.
-    ctx.strokeStyle = "#fb7185";
-    ctx.fillStyle = "rgba(251,113,133,0.15)";
+    ctx.strokeStyle = stageColor("#be2949");
+    ctx.fillStyle = stageColor("rgba(190, 41, 73,0.15)");
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.arc(x, y - 3, 5, 0, Math.PI * 2);
     ctx.stroke();
     ctx.fillRect(x - 6, y, 12, 8);
     ctx.strokeRect(x - 6, y, 12, 8);
-    ctx.fillStyle = "#fb7185";
+    ctx.fillStyle = stageColor("#be2949");
     ctx.font = "700 7px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.fillText("LOCKED", x, y + 18);
@@ -507,14 +512,17 @@ export function makeMazeMapper(): Stage {
     for (const ray of lastScan) {
       const ex = robot.x + Math.cos(ray.angle) * ray.dist;
       const ey = robot.y + Math.sin(ray.angle) * ray.dist;
-      ctx.strokeStyle = ray.hit ? "rgba(125,211,252,0.32)" : "rgba(125,211,252,0.14)";
+      ctx.strokeStyle = withA(
+        theme.accent,
+        getTheme() === "light" ? (ray.hit ? 0.65 : 0.3) : ray.hit ? 0.32 : 0.14,
+      );
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(robot.x, robot.y);
       ctx.lineTo(ex, ey);
       ctx.stroke();
       if (ray.hit) {
-        ctx.fillStyle = "#7dd3fc";
+        ctx.fillStyle = stageColor("#075f93");
         ctx.beginPath();
         ctx.arc(ex, ey, 1.4, 0, Math.PI * 2);
         ctx.fill();
@@ -527,17 +535,17 @@ export function makeMazeMapper(): Stage {
     // panel
     ctx.save();
     ctx.fillStyle = withA(theme.scrim, 0.85);
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.strokeStyle = themeColor("#586a82", "rgba(255,255,255,0.25)");
     ctx.lineWidth = 1;
     ctx.fillRect(MINI_X - 6, MINI_Y - 22, MINI_W + 12, MINI_H + 30);
     ctx.strokeRect(MINI_X - 6, MINI_Y - 22, MINI_W + 12, MINI_H + 30);
 
     // header
-    ctx.fillStyle = "#7dd3fc";
+    ctx.fillStyle = stageColor("#075f93");
     ctx.font = "700 11px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.fillText("OCCUPANCY GRID", MINI_X, MINI_Y - 8);
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.font = "9px ui-monospace, monospace";
     ctx.textAlign = "right";
     ctx.fillText("/map", MINI_X + MINI_W, MINI_Y - 8);
@@ -550,11 +558,11 @@ export function makeMazeMapper(): Stage {
         const x = MINI_X + c * MINI_TW;
         const y = MINI_Y + r * MINI_TH;
         if (seen === 0) {
-          ctx.fillStyle = "#0a0e1a";
+          ctx.fillStyle = themeColor("#93a7c1", stageColor("#d8e2ef"));
         } else if (seen === 1) {
-          ctx.fillStyle = "#c4b5fd"; // known = wall (light purple)
+          ctx.fillStyle = stageColor("#6d42b5"); // known = wall (light purple)
         } else {
-          ctx.fillStyle = "#1f2a4a"; // known = floor
+          ctx.fillStyle = themeColor("#ffffff", stageColor("#e4edf8")); // known = floor
         }
         ctx.fillRect(x, y, MINI_TW + 0.5, MINI_TH + 0.5);
       }
@@ -566,7 +574,7 @@ export function makeMazeMapper(): Stage {
       if (seenMap[idx] === 0 && !ch.collected) continue;
       const cx = MINI_X + ch.col * MINI_TW + MINI_TW / 2;
       const cy = MINI_Y + ch.row * MINI_TH + MINI_TH / 2;
-      ctx.fillStyle = ch.collected ? "rgba(94,234,212,0.55)" : "#fbbf24";
+      ctx.fillStyle = stageColor(ch.collected ? "rgba(8, 119, 100,0.55)" : "#925b00");
       ctx.beginPath();
       ctx.arc(cx, cy, 3, 0, Math.PI * 2);
       ctx.fill();
@@ -575,7 +583,7 @@ export function makeMazeMapper(): Stage {
     if (collectedCount === 3) {
       const cx = MINI_X + EXIT.col * MINI_TW + MINI_TW / 2;
       const cy = MINI_Y + EXIT.row * MINI_TH + MINI_TH / 2;
-      ctx.fillStyle = "#5eead4";
+      ctx.fillStyle = stageColor("#087764");
       ctx.beginPath();
       ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
       ctx.fill();
@@ -585,12 +593,12 @@ export function makeMazeMapper(): Stage {
     {
       const cx = MINI_X + (robot.x / TILE) * MINI_TW;
       const cy = MINI_Y + ((robot.y - WORLD_Y) / TILE) * MINI_TH;
-      ctx.fillStyle = "#fbbf24";
+      ctx.fillStyle = stageColor("#925b00");
       ctx.beginPath();
       ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
       ctx.fill();
       // facing
-      ctx.strokeStyle = "#fbbf24";
+      ctx.strokeStyle = stageColor("#925b00");
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
@@ -599,7 +607,7 @@ export function makeMazeMapper(): Stage {
     }
 
     // border
-    ctx.strokeStyle = "rgba(125,211,252,0.55)";
+    ctx.strokeStyle = stageColor("rgba(7, 95, 147,0.55)");
     ctx.lineWidth = 1;
     ctx.strokeRect(MINI_X, MINI_Y, MINI_W, MINI_H);
     ctx.restore();
@@ -610,48 +618,48 @@ export function makeMazeMapper(): Stage {
     const py = MINI_Y + MINI_H + 16;
     ctx.save();
     ctx.fillStyle = withA(theme.scrim, 0.85);
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.strokeStyle = themeColor("#586a82", "rgba(255,255,255,0.25)");
     ctx.lineWidth = 1;
     ctx.fillRect(px, py, MINI_W + 12, 156);
     ctx.strokeRect(px, py, MINI_W + 12, 156);
 
     // treasures
-    ctx.fillStyle = "#fbbf24";
+    ctx.fillStyle = stageColor("#925b00");
     ctx.font = "700 11px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.fillText("TREASURE", px + 8, py + 18);
-    ctx.fillStyle = "#eef2ff";
+    ctx.fillStyle = stageColor("#172b4d");
     ctx.font = "700 22px ui-monospace, monospace";
     ctx.fillText(`${collectedCount} / 3`, px + 8, py + 42);
     // chest icons
     for (let i = 0; i < 3; i++) {
       const ix = px + 116 + i * 28;
       const iy = py + 36;
-      ctx.fillStyle = chests[i]?.collected ? "#fbbf24" : "rgba(110,122,156,0.45)";
+      ctx.fillStyle = stageColor(chests[i]?.collected ? "#925b00" : "rgba(88, 106, 130,0.45)");
       ctx.fillRect(ix - 8, iy - 5, 16, 10);
-      ctx.fillStyle = chests[i]?.collected ? "#92400e" : "rgba(60,72,100,0.55)";
+      ctx.fillStyle = stageColor(chests[i]?.collected ? "#92400e" : "rgba(60,72,100,0.55)");
       ctx.fillRect(ix - 8, iy - 1, 16, 2);
     }
 
     // map coverage bar
-    ctx.fillStyle = "#7dd3fc";
+    ctx.fillStyle = stageColor("#075f93");
     ctx.font = "700 11px ui-monospace, monospace";
     ctx.fillText("MAP COVERAGE", px + 8, py + 76);
     const cov = countSeen() / (COLS * ROWS);
     ctx.fillStyle = withA(theme.scrim, 0.85);
     ctx.fillRect(px + 8, py + 84, MINI_W - 4, 12);
-    ctx.fillStyle = "#7dd3fc";
+    ctx.fillStyle = stageColor("#075f93");
     ctx.fillRect(px + 8, py + 84, (MINI_W - 4) * cov, 12);
-    ctx.strokeStyle = "rgba(125,211,252,0.5)";
+    ctx.strokeStyle = stageColor("rgba(7, 95, 147,0.5)");
     ctx.strokeRect(px + 8, py + 84, MINI_W - 4, 12);
-    ctx.fillStyle = "#eef2ff";
+    ctx.fillStyle = stageColor("#172b4d");
     ctx.font = "700 14px ui-monospace, monospace";
     ctx.fillText(`${(cov * 100).toFixed(0)}%`, px + 8, py + 116);
 
     // exit status
-    const exitColor = collectedCount === 3 ? "#5eead4" : "#fb7185";
+    const exitColor = collectedCount === 3 ? "#087764" : "#be2949";
     const exitText = collectedCount === 3 ? "EXIT OPEN ✓" : "EXIT LOCKED";
-    ctx.fillStyle = exitColor;
+    ctx.fillStyle = stageColor(exitColor);
     ctx.font = "700 11px ui-monospace, monospace";
     ctx.fillText(exitText, px + 8, py + 142);
 
@@ -732,24 +740,24 @@ export default defineStage({
 <svg viewBox="0 0 420 130" role="img" aria-label="lidar rays sweep an unknown maze and the visited cells become a known occupancy grid">
   <defs>
     <radialGradient id="ld-mm-fog" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.32"/>
-      <stop offset="60%" stop-color="#7dd3fc" stop-opacity="0.10"/>
-      <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0"/>
+      <stop offset="0%" stop-color="light-dark(#075f93, #7dd3fc)" stop-opacity="0.32"/>
+      <stop offset="60%" stop-color="light-dark(#075f93, #7dd3fc)" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="light-dark(#075f93, #7dd3fc)" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <!-- Left panel: WORLD (mostly dark, with a lit cone) -->
-  <rect x="6" y="10" width="186" height="110" rx="6" fill="#02050b" stroke="#232c4d" stroke-width="1"/>
-  <text x="14" y="24" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">WORLD (fog of war)</text>
+  <rect x="6" y="10" width="186" height="110" rx="6" fill="light-dark(#e7eef7, #111e32)" stroke="light-dark(#7487a0, #627895)" stroke-width="1"/>
+  <text x="14" y="24" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">WORLD (fog of war)</text>
   <!-- known walls (lit) drawn as faint shapes outside the cone, but visible inside the cone clearly -->
-  <rect x="50" y="32" width="14" height="64" fill="#1d2336" stroke="rgba(110,122,156,0.3)"/>
-  <rect x="100" y="64" width="68" height="14" fill="#1d2336" stroke="rgba(110,122,156,0.3)"/>
+  <rect x="50" y="32" width="14" height="64" fill="light-dark(#a4b4ca, #43536e)" stroke="light-dark(#425570, rgba(164, 181, 205, 0.3))"/>
+  <rect x="100" y="64" width="68" height="14" fill="light-dark(#a4b4ca, #43536e)" stroke="light-dark(#425570, rgba(164, 181, 205, 0.3))"/>
   <!-- LiDAR cone glow -->
   <circle cx="98" cy="78" r="48" fill="url(#ld-mm-fog)"/>
   <!-- bright walls in cone -->
-  <rect x="50" y="48" width="14" height="40" fill="#3a4366" stroke="rgba(110,122,156,0.7)"/>
-  <rect x="118" y="68" width="42" height="10" fill="#3a4366" stroke="rgba(110,122,156,0.7)"/>
+  <rect x="50" y="48" width="14" height="40" fill="light-dark(#8298b4, #4a6080)" stroke="light-dark(rgba(88, 106, 130,0.7), rgba(164, 181, 205, 0.7))"/>
+  <rect x="118" y="68" width="42" height="10" fill="light-dark(#8298b4, #4a6080)" stroke="light-dark(rgba(88, 106, 130,0.7), rgba(164, 181, 205, 0.7))"/>
   <!-- rays -->
-  <g stroke="#7dd3fc" stroke-width="0.9" opacity="0.7">
+  <g stroke="light-dark(#075f93, #7dd3fc)" stroke-width="0.9" opacity="0.7">
     <line x1="98" y1="78" x2="55" y2="68"/>
     <line x1="98" y1="78" x2="55" y2="58"/>
     <line x1="98" y1="78" x2="62" y2="78"/>
@@ -761,51 +769,51 @@ export default defineStage({
     <line x1="98" y1="78" x2="146" y2="92"/>
   </g>
   <!-- robot -->
-  <rect x="89" y="70" width="18" height="16" rx="3" fill="#181f3a" stroke="#fbbf24" stroke-width="1.6"/>
-  <circle cx="93" cy="78" r="1.5" fill="#fbbf24"/>
-  <circle cx="103" cy="78" r="1.5" fill="#fbbf24"/>
+  <rect x="89" y="70" width="18" height="16" rx="3" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.6"/>
+  <circle cx="93" cy="78" r="1.5" fill="light-dark(#925b00, #fbbf24)"/>
+  <circle cx="103" cy="78" r="1.5" fill="light-dark(#925b00, #fbbf24)"/>
   <!-- chest -->
-  <rect x="148" y="38" width="14" height="9" fill="#fbbf24" stroke="rgba(0,0,0,0.6)" stroke-width="0.5"/>
+  <rect x="148" y="38" width="14" height="9" fill="light-dark(#925b00, #fbbf24)" stroke="rgba(0,0,0,0.6)" stroke-width="0.5"/>
   <rect x="148" y="42" width="14" height="2" fill="#92400e"/>
   <!-- arrow from world to map -->
   <defs>
     <marker id="ld-mm-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-      <polygon points="0 0, 9 3.5, 0 7" fill="#5eead4"/>
+      <polygon points="0 0, 9 3.5, 0 7" fill="light-dark(#087764, #5eead4)"/>
     </marker>
   </defs>
-  <line x1="196" y1="65" x2="222" y2="65" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-mm-arrow)"/>
-  <text x="210" y="58" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="9" font-weight="700">/scan</text>
-  <text x="210" y="80" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="8">→ /map</text>
+  <line x1="196" y1="65" x2="222" y2="65" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-mm-arrow)"/>
+  <text x="210" y="58" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">/scan</text>
+  <text x="210" y="80" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="8">→ /map</text>
   <!-- Right panel: OCCUPANCY GRID built so far -->
-  <rect x="226" y="10" width="186" height="110" rx="6" fill="#0a0e1a" stroke="#7dd3fc" stroke-width="1"/>
-  <text x="234" y="24" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9" font-weight="700">OCCUPANCY GRID (/map)</text>
+  <rect x="226" y="10" width="186" height="110" rx="6" fill="light-dark(#d8e2ef, #3b506d)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1"/>
+  <text x="234" y="24" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">OCCUPANCY GRID (/map)</text>
   <!-- Grid: simulate 14x6 cells, some known walls, some known free, some unknown -->
-  <g stroke="rgba(125,211,252,0.18)" stroke-width="0.4">
+  <g stroke="light-dark(#637892, rgba(125, 211, 252, 0.18))" stroke-width="0.4">
     <!-- known free (dark blue) -->
-    <rect x="232" y="32"  width="22" height="14" fill="#1f2a4a"/>
-    <rect x="256" y="32"  width="22" height="14" fill="#1f2a4a"/>
-    <rect x="282" y="32"  width="22" height="14" fill="#1f2a4a"/>
-    <rect x="232" y="50"  width="22" height="14" fill="#1f2a4a"/>
-    <rect x="282" y="50"  width="22" height="14" fill="#1f2a4a"/>
-    <rect x="232" y="68"  width="22" height="14" fill="#1f2a4a"/>
-    <rect x="256" y="68"  width="22" height="14" fill="#1f2a4a"/>
-    <rect x="282" y="68"  width="22" height="14" fill="#1f2a4a"/>
-    <rect x="232" y="86"  width="22" height="14" fill="#1f2a4a"/>
+    <rect x="232" y="32"  width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+    <rect x="256" y="32"  width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+    <rect x="282" y="32"  width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+    <rect x="232" y="50"  width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+    <rect x="282" y="50"  width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+    <rect x="232" y="68"  width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+    <rect x="256" y="68"  width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+    <rect x="282" y="68"  width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+    <rect x="232" y="86"  width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
     <!-- known walls (purple) -->
-    <rect x="256" y="50"  width="22" height="14" fill="#c4b5fd"/>
-    <rect x="306" y="32"  width="22" height="14" fill="#c4b5fd"/>
-    <rect x="306" y="50"  width="22" height="14" fill="#c4b5fd"/>
-    <rect x="256" y="86"  width="22" height="14" fill="#c4b5fd"/>
+    <rect x="256" y="50"  width="22" height="14" fill="light-dark(#6d42b5, #c4b5fd)"/>
+    <rect x="306" y="32"  width="22" height="14" fill="light-dark(#6d42b5, #c4b5fd)"/>
+    <rect x="306" y="50"  width="22" height="14" fill="light-dark(#6d42b5, #c4b5fd)"/>
+    <rect x="256" y="86"  width="22" height="14" fill="light-dark(#6d42b5, #c4b5fd)"/>
     <!-- unknown (almost black) -->
-    <rect x="332" y="32"  width="76" height="68" fill="#0a0e1a"/>
-    <rect x="306" y="68"  width="22" height="32" fill="#0a0e1a"/>
+    <rect x="332" y="32"  width="76" height="68" fill="light-dark(#93a7c1, #3b506d)"/>
+    <rect x="306" y="68"  width="22" height="32" fill="light-dark(#93a7c1, #3b506d)"/>
   </g>
   <!-- robot blip on grid -->
-  <circle cx="242" cy="76" r="2.2" fill="#fbbf24"/>
+  <circle cx="242" cy="76" r="2.2" fill="light-dark(#925b00, #fbbf24)"/>
   <!-- chest dot on grid -->
-  <circle cx="318" cy="38" r="1.8" fill="#fbbf24"/>
+  <circle cx="318" cy="38" r="1.8" fill="light-dark(#925b00, #fbbf24)"/>
   <!-- coverage label -->
-  <text x="408" y="116" text-anchor="end" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="8">map grows as you explore</text>
+  <text x="408" y="116" text-anchor="end" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="8">map grows as you explore</text>
 </svg>
 `,
   lessonModal: {

@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+
 // robo_kitchen — arm-powered cooking score attack. Read the live order, catch
 // the right ingredients and stack them in sequence. A return conveyor loops
 // every missed or dropped ingredient back into play, so no food is discarded.
@@ -10,7 +12,7 @@ import { clearBackground, drawGrid, drawHint } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
 import { ARM, drawArm, drawWorkspace, fk, ik, slew } from "../../lib/arm";
 import * as armpad from "../../lib/armpad";
-import { withA } from "../../core/theme";
+import { withA, themeColor } from "../../core/theme";
 import { t, tx } from "../../i18n";
 
 type Food = "bun" | "patty" | "cheese" | "lettuce" | "tomato";
@@ -32,7 +34,7 @@ const FOOD: Record<Food, { color: string; label: string }> = {
   patty: { color: "#9a5b42", label: "MEAT" },
   cheese: { color: "#facc15", label: "CHEESE" },
   lettuce: { color: "#4ade80", label: "LETTUCE" },
-  tomato: { color: "#fb7185", label: "TOMATO" },
+  tomato: { color: "#be2949", label: "TOMATO" },
 };
 
 const RECIPES: Recipe[] = [
@@ -130,7 +132,7 @@ export function makeRoboKitchen(): Stage {
     bestCombo = Math.max(bestCombo, combo);
     const bonus = 500 + combo * 100 + Math.ceil(remaining) * 2;
     score += bonus;
-    particles.burst(PLATE.x, PLATE.y, "#5eead4", 55, 270);
+    particles.burst(PLATE.x, PLATE.y, "#087764", 55, 270);
     g.sfx.deliver();
     recipeIdx = (recipeIdx + 1) % RECIPES.length;
     layerIdx = 0;
@@ -342,15 +344,15 @@ export function makeRoboKitchen(): Stage {
     c.rotate(angle);
     c.scale(scale, scale);
     const col = FOOD[kind].color;
-    c.fillStyle = col;
-    c.strokeStyle = "#0a0f1f";
+    c.fillStyle = stageColor(col);
+    c.strokeStyle = stageColor("#0a0f1f");
     c.lineWidth = 2.5;
     if (kind === "bun") {
       c.beginPath();
       c.roundRect(-16, -9, 32, 18, 9);
       c.fill();
       c.stroke();
-      c.fillStyle = "#fff3";
+      c.fillStyle = stageColor("#fff3");
       for (const sx of [-8, 0, 8]) c.fillRect(sx - 1, -5, 3, 2);
     } else if (kind === "cheese") {
       c.beginPath();
@@ -383,8 +385,8 @@ export function makeRoboKitchen(): Stage {
   }
 
   function drawBelt(c: CanvasRenderingContext2D) {
-    c.fillStyle = "#11182c";
-    c.strokeStyle = mistakeFlash > 0 ? "#fb7185" : "#6e7a9c";
+    c.fillStyle = stageColor("#edf3fb");
+    c.strokeStyle = stageColor(mistakeFlash > 0 ? "#be2949" : "#586a82");
     c.lineWidth = 2;
     c.beginPath();
     c.roundRect(BELT.x, BELT.y, BELT.w, BELT.h, 8);
@@ -394,7 +396,7 @@ export function makeRoboKitchen(): Stage {
     c.beginPath();
     c.rect(BELT.x + 5, BELT.y + 5, BELT.w - 10, BELT.h - 10);
     c.clip();
-    c.strokeStyle = withA("#7dd3fc", 0.3);
+    c.strokeStyle = themeColor("#637892", stageColor(withA("#075f93", 0.3)));
     c.lineWidth = 3;
     for (let x = BELT.x - 40 + beltPhase; x < BELT.x + BELT.w + 40; x += 34) {
       c.beginPath();
@@ -406,37 +408,37 @@ export function makeRoboKitchen(): Stage {
   }
 
   function drawOrder(c: CanvasRenderingContext2D) {
-    c.fillStyle = "#11182ceF";
-    c.strokeStyle = "#fbbf24";
+    c.fillStyle = stageColor("#edf3fbef");
+    c.strokeStyle = stageColor("#925b00");
     c.lineWidth = 1.5;
     c.beginPath();
     c.roundRect(18, 20, 210, 105, 9);
     c.fill();
     c.stroke();
-    c.fillStyle = "#fbbf24";
+    c.fillStyle = stageColor("#925b00");
     c.font = "800 13px ui-monospace, monospace";
     c.textAlign = "left";
     c.textBaseline = "middle";
     c.fillText(`ORDER: ${recipe().name}`, 31, 40);
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.font = "600 9px ui-monospace, monospace";
     c.fillText("BUILD LEFT → RIGHT", 31, 57);
     recipe().layers.forEach((kind, i) => {
       drawFood(c, kind, 48 + i * 35, 83, 0.62);
-      c.strokeStyle = i === layerIdx ? "#eef2ff" : i < layerIdx ? "#5eead4" : "#394361";
+      c.strokeStyle = stageColor(i === layerIdx ? "#172b4d" : i < layerIdx ? "#087764" : "#a4b4ca");
       c.lineWidth = 2;
       c.beginPath();
       c.arc(48 + i * 35, 83, 14, 0, Math.PI * 2);
       c.stroke();
     });
-    c.fillStyle = FOOD[needed()].color;
+    c.fillStyle = stageColor("#172b4d");
     c.font = "800 10px ui-monospace, monospace";
     c.fillText(`NEXT: ${FOOD[needed()].label}`, 31, 108);
   }
 
   function drawPlate(c: CanvasRenderingContext2D) {
-    c.fillStyle = "#dbeafe18";
-    c.strokeStyle = "#dbeafe";
+    c.fillStyle = themeColor("#dce8f5", stageColor("#dbeafe18"));
+    c.strokeStyle = stageColor("#637892");
     c.lineWidth = 3;
     c.beginPath();
     c.ellipse(PLATE.x, PLATE.y + 17, 58, 20, 0, 0, Math.PI * 2);
@@ -445,7 +447,7 @@ export function makeRoboKitchen(): Stage {
     recipe()
       .layers.slice(0, layerIdx)
       .forEach((kind, i) => drawFood(c, kind, PLATE.x, PLATE.y + 5 - i * 10, 0.9));
-    c.fillStyle = "#dbeafe";
+    c.fillStyle = stageColor("#075f93");
     c.font = "800 10px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("SERVE HERE", PLATE.x, PLATE.y + 52);
@@ -454,7 +456,7 @@ export function makeRoboKitchen(): Stage {
   function drawGripper(c: CanvasRenderingContext2D) {
     const tip = fk(q1, q2).ee;
     const gap = gripClosed ? 5 : 11;
-    c.strokeStyle = "#eef2ff";
+    c.strokeStyle = stageColor("#172b4d");
     c.lineWidth = 3;
     c.beginPath();
     c.moveTo(tip.x - gap, tip.y + 3);
@@ -467,7 +469,7 @@ export function makeRoboKitchen(): Stage {
   }
 
   function drawCursor(c: CanvasRenderingContext2D) {
-    c.strokeStyle = edgeFlash > 0 ? "#fb7185" : "#fbbf24";
+    c.strokeStyle = stageColor(edgeFlash > 0 ? "#be2949" : "#925b00");
     c.lineWidth = 1.5;
     c.beginPath();
     c.arc(cursor.x, cursor.y, 7, 0, Math.PI * 2);
@@ -495,7 +497,7 @@ export function makeRoboKitchen(): Stage {
     drawArm(c, q1, q2);
     drawGripper(c);
     drawCursor(c);
-    c.fillStyle = remaining < 10 ? "#fb7185" : "#eef2ff";
+    c.fillStyle = stageColor(remaining < 10 ? "#be2949" : "#172b4d");
     c.font = "900 24px ui-monospace, monospace";
     c.textAlign = "right";
     c.textBaseline = "top";
@@ -568,39 +570,39 @@ export default defineStage({
   diagram: `
 <svg viewBox="0 0 420 140" role="img" aria-label="read the recipe, catch the ingredient, and place it on the plate; missed food returns on the conveyor">
   <!-- order card -->
-  <rect x="8" y="12" width="112" height="76" rx="7" fill="#181f3a" stroke="#fbbf24" stroke-width="1.5"/>
-  <text x="18" y="30" fill="#fbbf24" font-family="ui-monospace,monospace" font-size="10" font-weight="700">ORDER: CLASSIC</text>
+  <rect x="8" y="12" width="112" height="76" rx="7" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <text x="18" y="30" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace,monospace" font-size="10" font-weight="700">ORDER: CLASSIC</text>
   <rect x="18" y="45" width="19" height="9" rx="4" fill="#f6c66b"/>
   <rect x="43" y="45" width="19" height="9" rx="4" fill="#9a5b42"/>
   <path d="M68 45h20l-3 9H70z" fill="#facc15"/>
   <rect x="94" y="45" width="19" height="9" rx="4" fill="#f6c66b"/>
-  <circle cx="27" cy="68" r="9" fill="none" stroke="#eef2ff" stroke-width="2"/>
-  <text x="42" y="72" fill="#eef2ff" font-family="ui-monospace,monospace" font-size="9">NEXT: BUN</text>
+  <circle cx="27" cy="68" r="9" fill="none" stroke="light-dark(#172b4d, #edf3ff)" stroke-width="2"/>
+  <text x="42" y="72" fill="light-dark(#172b4d, #edf3ff)" font-family="ui-monospace,monospace" font-size="9">NEXT: BUN</text>
   <!-- arm and conveyor, matching the game layout -->
-  <rect x="112" y="108" width="205" height="22" rx="5" fill="#181f3a" stroke="#6e7a9c"/>
-  <path d="M118 117h192" stroke="#7dd3fc" stroke-width="3" stroke-dasharray="14 8" opacity=".45"/>
+  <rect x="112" y="108" width="205" height="22" rx="5" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#586a82, #a4b5cd)"/>
+  <path d="M118 117h192" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="3" stroke-dasharray="14 8" opacity=".8"/>
   <rect x="145" y="101" width="30" height="14" rx="7" fill="#f6c66b" stroke="#0a0f1f"/>
-  <polygon points="210,132 238,132 233,117 215,117" fill="#181f3a" stroke="#7dd3fc"/>
-  <line x1="224" y1="119" x2="254" y2="66" stroke="#7dd3fc" stroke-width="9" stroke-linecap="round"/>
-  <line x1="254" y1="66" x2="164" y2="101" stroke="#c4b5fd" stroke-width="7" stroke-linecap="round"/>
-  <circle cx="254" cy="66" r="6" fill="#eef2ff" stroke="#0a0f1f"/>
-  <path d="M157 94v13m14-13v13" stroke="#eef2ff" stroke-width="3"/>
+  <polygon points="210,132 238,132 233,117 215,117" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)"/>
+  <line x1="224" y1="119" x2="254" y2="66" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="9" stroke-linecap="round"/>
+  <line x1="254" y1="66" x2="164" y2="101" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="254" cy="66" r="6" fill="light-dark(#172b4d, #edf3ff)" stroke="#0a0f1f"/>
+  <path d="M157 94v13m14-13v13" stroke="light-dark(#172b4d, #edf3ff)" stroke-width="3"/>
   <!-- plate and completed stack -->
-  <ellipse cx="365" cy="119" rx="43" ry="12" fill="#dbeafe22" stroke="#dbeafe" stroke-width="2"/>
+  <ellipse cx="365" cy="119" rx="43" ry="12" fill="light-dark(#dce8f5, #dbeafe22)" stroke="light-dark(#637892, #dbeafe)" stroke-width="2"/>
   <rect x="347" y="101" width="36" height="11" rx="5" fill="#f6c66b" stroke="#0a0f1f"/>
   <rect x="349" y="92" width="32" height="10" rx="4" fill="#9a5b42" stroke="#0a0f1f"/>
   <path d="M348 91h34l-4-9h-26z" fill="#facc15" stroke="#0a0f1f"/>
   <rect x="347" y="72" width="36" height="11" rx="6" fill="#f6c66b" stroke="#0a0f1f"/>
   <!-- clear three-step flow -->
-  <text x="137" y="22" fill="#5eead4" font-family="ui-monospace,monospace" font-size="10" font-weight="700">1 READ</text>
-  <path d="M122 35h35" stroke="#5eead4" stroke-width="2"/>
-  <text x="173" y="22" fill="#5eead4" font-family="ui-monospace,monospace" font-size="10" font-weight="700">2 CATCH</text>
-  <path d="M224 35h48" stroke="#5eead4" stroke-width="2"/>
-  <text x="284" y="22" fill="#5eead4" font-family="ui-monospace,monospace" font-size="10" font-weight="700">3 PLACE &amp; SERVE</text>
-  <path d="M177 96 Q267 40 344 75" fill="none" stroke="#5eead4" stroke-width="2" stroke-dasharray="5 4"/>
+  <text x="137" y="22" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace,monospace" font-size="10" font-weight="700">1 READ</text>
+  <path d="M122 35h35" stroke="light-dark(#087764, #5eead4)" stroke-width="2"/>
+  <text x="173" y="22" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace,monospace" font-size="10" font-weight="700">2 CATCH</text>
+  <path d="M224 35h48" stroke="light-dark(#087764, #5eead4)" stroke-width="2"/>
+  <text x="284" y="22" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace,monospace" font-size="10" font-weight="700">3 PLACE &amp; SERVE</text>
+  <path d="M177 96 Q267 40 344 75" fill="none" stroke="light-dark(#087764, #5eead4)" stroke-width="2" stroke-dasharray="5 4"/>
   <!-- return loop: no food waste -->
-  <path d="M310 135 Q210 145 120 133" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4 3"/>
-  <text x="215" y="137" text-anchor="middle" fill="#a78bfa" font-family="ui-monospace,monospace" font-size="8">MISSED FOOD RETURNS</text>
+  <path d="M310 135 Q210 145 120 133" fill="none" stroke="light-dark(#6d42b5, #a78bfa)" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="215" y="137" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace,monospace" font-size="8">MISSED FOOD RETURNS</text>
 </svg>`,
   lessonModal: {
     title: {

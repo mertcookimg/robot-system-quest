@@ -5,6 +5,21 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f3f6fb" />
+    <script>
+      (() => {
+        let theme = "light";
+        try {
+          if (localStorage.getItem("robot_quest_theme_v1") === "dark") theme = "dark";
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+        document.querySelector('meta[name="color-scheme"]').content = theme;
+        document.querySelector('meta[name="theme-color"]').content =
+          theme === "dark" ? "#0f172a" : "#f3f6fb";
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
@@ -88,6 +103,14 @@
             <span class="repository-star" aria-hidden="true">☆</span>
             <span aria-hidden="true">↗</span>
           </a>
+          <div class="theme-switcher" data-theme-switcher role="group" aria-label="表示テーマ">
+            <button type="button" data-theme-option="light" aria-pressed="true">
+              <span aria-hidden="true">☀</span><span data-theme-label>ライト</span>
+            </button>
+            <button type="button" data-theme-option="dark" aria-pressed="false">
+              <span aria-hidden="true">☾</span><span data-theme-label>ダーク</span>
+            </button>
+          </div>
           <div
             id="guide-lang"
             class="language-switcher"

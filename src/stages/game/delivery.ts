@@ -1,6 +1,10 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { themeColor } from "../../core/theme";
+
+import { stageColor } from "../../lib/stage_colors";
+
 // delivery: Delivery — warehouse pickup-and-deliver mission (walls only, no enemies).
 import { W, H, type Stage, type GameContext } from "../../types";
 import {
@@ -129,7 +133,7 @@ export function makeDelivery(): Stage {
       const dy = robot.y - PICKUP.y;
       if (dx * dx + dy * dy < PICKUP.r * PICKUP.r) {
         mission = "carrying";
-        particles.burst(PICKUP.x, PICKUP.y, "#5eead4", 32, 240);
+        particles.burst(PICKUP.x, PICKUP.y, "#087764", 32, 240);
         g.sfx.pickup();
         g.shake(0.3);
         g.setStatus(t("delivery.status.deliver"), "var(--accent)");
@@ -140,8 +144,8 @@ export function makeDelivery(): Stage {
       if (dx * dx + dy * dy < DELIVERY.r * DELIVERY.r) {
         mission = "delivered";
         cleared = true;
-        particles.burst(DELIVERY.x, DELIVERY.y, "#7dd3fc", 36);
-        particles.burst(DELIVERY.x, DELIVERY.y, "#fbbf24", 24);
+        particles.burst(DELIVERY.x, DELIVERY.y, "#075f93", 36);
+        particles.burst(DELIVERY.x, DELIVERY.y, "#925b00", 24);
         g.sfx.deliver();
         g.shake(0.6);
         g.setStatus(t("delivery.status.complete"), "var(--ok)");
@@ -161,16 +165,16 @@ export function makeDelivery(): Stage {
     clearBackground(ctx);
 
     const vg = ctx.createRadialGradient(W / 2, H / 2, 100, W / 2, H / 2, 600);
-    vg.addColorStop(0, "rgba(125, 211, 252, 0.04)");
-    vg.addColorStop(1, "rgba(0, 0, 0, 0)");
-    ctx.fillStyle = vg;
+    vg.addColorStop(0, stageColor("rgba(7, 95, 147, 0.04)"));
+    vg.addColorStop(1, stageColor("rgba(0, 0, 0, 0)"));
+    ctx.fillStyle = stageColor(vg);
     ctx.fillRect(0, 0, W, H);
 
     drawGrid(ctx);
 
     for (const wall of walls) {
-      ctx.fillStyle = "rgba(35, 44, 77, 0.75)";
-      ctx.strokeStyle = "rgba(110, 122, 156, 0.5)";
+      ctx.fillStyle = themeColor("#c5d2e3", stageColor("rgba(170, 188, 212, 0.75)"));
+      ctx.strokeStyle = themeColor("#586a82", stageColor("rgba(88, 106, 130, 0.5)"));
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.roundRect(wall.x, wall.y, wall.w, wall.h, 4);
@@ -178,8 +182,8 @@ export function makeDelivery(): Stage {
       ctx.stroke();
     }
 
-    if (mission === "idle") drawZone(ctx, PICKUP, "#5eead4", "PICKUP", animTime);
-    if (mission === "carrying") drawZone(ctx, DELIVERY, "#7dd3fc", "DELIVER", animTime);
+    if (mission === "idle") drawZone(ctx, PICKUP, "#087764", "PICKUP", animTime);
+    if (mission === "carrying") drawZone(ctx, DELIVERY, "#075f93", "DELIVER", animTime);
 
     trail.draw(ctx, 0.55);
     particles.draw(ctx);
@@ -194,17 +198,21 @@ export function makeDelivery(): Stage {
     drawRobotBody(ctx, bumpFlash, animTime);
     if (mission === "carrying") {
       ctx.rotate(-robot.theta);
-      ctx.fillStyle = "#fbbf24";
-      ctx.strokeStyle = "#d97706";
+      ctx.save();
+      // Carry the marker below the robot when its usual position is offscreen.
+      if (robot.y < 36) ctx.translate(0, 44);
+      ctx.fillStyle = stageColor("#925b00");
+      ctx.strokeStyle = stageColor("#d97706");
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.roundRect(-9, -29, 18, 12, 2);
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = "#7c4a03";
+      ctx.fillStyle = themeColor("#ffffff", "#7c4a03");
       ctx.font = "600 7px ui-monospace, monospace";
       ctx.textAlign = "center";
       ctx.fillText("PKG", 0, -21);
+      ctx.restore();
       ctx.rotate(robot.theta);
     }
     ctx.rotate(-robot.theta);
@@ -218,14 +226,14 @@ export function makeDelivery(): Stage {
 
   function drawGhostBadge(ctx: CanvasRenderingContext2D) {
     ctx.save();
-    ctx.fillStyle = "rgba(196, 181, 253, 0.18)";
-    ctx.strokeStyle = "rgba(196, 181, 253, 0.5)";
+    ctx.fillStyle = stageColor("rgba(109, 66, 181, 0.18)");
+    ctx.strokeStyle = stageColor("rgba(109, 66, 181, 0.5)");
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(12, 12, 96, 22, 5);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "#c4b5fd";
+    ctx.fillStyle = stageColor("#6d42b5");
     ctx.font = "600 10px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
@@ -306,21 +314,21 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="WASD publisher to robot subscriber via /cmd_vel">
   <defs>
     <marker id="ld-delivery-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
   </defs>
-  <rect x="8" y="26" width="148" height="68" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="82" y="56" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="12" font-weight="700">teleop_node</text>
-  <text x="82" y="78" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">WASD → Publisher</text>
-  <rect x="264" y="26" width="148" height="68" rx="8" fill="#181f3a" stroke="#c4b5fd" stroke-width="1.5"/>
-  <text x="338" y="56" text-anchor="middle" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="12" font-weight="700">robot</text>
-  <text x="338" y="78" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">Subscriber</text>
-  <line x1="156" y1="60" x2="262" y2="60" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-delivery-arrow)"/>
-  <circle r="3.5" fill="#fbbf24">
+  <rect x="8" y="26" width="148" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="82" y="56" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">teleop_node</text>
+  <text x="82" y="78" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">WASD → Publisher</text>
+  <rect x="264" y="26" width="148" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
+  <text x="338" y="56" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">robot</text>
+  <text x="338" y="78" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">Subscriber</text>
+  <line x1="156" y1="60" x2="262" y2="60" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-delivery-arrow)"/>
+  <circle r="3.5" fill="light-dark(#925b00, #fbbf24)">
     <animateMotion dur="1.6s" repeatCount="indefinite" path="M 158 60 L 258 60"/>
   </circle>
-  <text x="210" y="46" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/cmd_vel</text>
-  <text x="210" y="80" text-anchor="middle" fill="#6e7a9c" font-family="ui-monospace, monospace" font-size="9">geometry_msgs/msg/Twist</text>
+  <text x="210" y="46" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/cmd_vel</text>
+  <text x="210" y="80" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="9">geometry_msgs/msg/Twist</text>
 </svg>
 `,
   lessonModal: {

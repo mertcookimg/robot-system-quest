@@ -9,10 +9,10 @@
   height: 22px;
   border: 2px solid var(--warn);
   border-radius: 50%;
-  background: rgba(251, 191, 36, 0.12);
+  background: rgba(var(--warn-rgb), 0.12);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.6),
-    0 0 12px rgba(251, 191, 36, 0.55);
+    0 0 0 1px rgba(var(--shadow-rgb), 0.23),
+    0 0 12px rgba(var(--warn-rgb), 0.55);
   transform: translate(-50%, -50%);
   z-index: 200;
   display: none;
@@ -30,10 +30,10 @@
 }
 #pad-cursor.dragging {
   border-color: var(--ok);
-  background: rgba(94, 234, 212, 0.2);
+  background: rgba(var(--ok-rgb), 0.2);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.6),
-    0 0 18px rgba(94, 234, 212, 0.75);
+    0 0 0 1px rgba(var(--shadow-rgb), 0.23),
+    0 0 18px rgba(var(--ok-rgb), 0.75);
 }
 #pad-cursor.dragging::after {
   background: var(--ok);

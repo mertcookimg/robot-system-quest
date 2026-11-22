@@ -1,6 +1,9 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { cssStageColor, stageColor } from "../../lib/stage_colors";
+import { theme, themeColor } from "../../core/theme";
+
 // behavior_tree: Behavior Tree Editor — teaches the BT concepts used by Nav2.
 // The player arranges four "if condition → action" rules and a default action
 // to build a policy that guides the robot to the goal.
@@ -265,14 +268,15 @@ export function makeBtEditor(): Stage {
   function setStatus(msg: string, kind: "" | "running" | "success" | "error") {
     if (!statusEl) return;
     statusEl.textContent = msg;
-    statusEl.style.color =
+    statusEl.style.color = cssStageColor(
       kind === "success"
         ? "var(--ok)"
         : kind === "running"
           ? "var(--accent)"
           : kind === "error"
             ? "var(--danger)"
-            : "var(--fg-dim)";
+            : "var(--fg-dim)",
+    );
   }
 
   // ============================================================
@@ -290,8 +294,8 @@ export function makeBtEditor(): Stage {
     panel.style.cssText =
       "width:min(800px, 100%); margin:10px auto 0; padding:10px 14px;" +
       "background:rgba(var(--scrim-rgb), 0.92);" +
-      "border:1px solid rgba(125,211,252,0.5); border-radius:8px;" +
-      "font-family:ui-monospace,monospace; font-size:14px; color:#eef2ff;" +
+      "border:1px solid light-dark(rgba(7, 95, 147,0.5), rgba(125, 211, 252, 0.5)); border-radius:8px;" +
+      "font-family:ui-monospace,monospace; font-size:14px; color:light-dark(#172b4d, #edf3ff);" +
       "display:grid; grid-template-columns: auto minmax(0,1fr); gap:6px 10px; align-items:center;";
 
     // Header row
@@ -302,7 +306,7 @@ export function makeBtEditor(): Stage {
       const idx = i;
       const num = document.createElement("span");
       num.textContent = String(i + 1);
-      num.style.cssText = "color:#7dd3fc; font-weight:700;";
+      num.style.cssText = "color:light-dark(#075f93, #7dd3fc); font-weight:700;";
       panel.appendChild(num);
 
       const ruleWrap = document.createElement("span");
@@ -313,7 +317,7 @@ export function makeBtEditor(): Stage {
       ifLabel.className = "bt-condition-label";
       ifLabel.id = `bt-condition-label-${i}`;
       ifLabel.textContent = tx("条件", "If");
-      ifLabel.style.color = "#9aa6c8";
+      ifLabel.style.color = cssStageColor("#425570");
       const condSel = makeSelect(
         [{ id: "", label: "—" }, ...CONDITIONS],
         rules[idx].cond ?? "",
@@ -330,7 +334,7 @@ export function makeBtEditor(): Stage {
       arrow.className = "bt-action-label";
       arrow.id = `bt-action-label-${i}`;
       arrow.textContent = tx("動作", "Do");
-      arrow.style.color = "#9aa6c8";
+      arrow.style.color = cssStageColor("#425570");
       const actSel = makeSelect(
         [{ id: "", label: "—" }, ...ACTIONS],
         rules[idx].action ?? "",
@@ -351,7 +355,7 @@ export function makeBtEditor(): Stage {
     // Default row
     const defLabel = document.createElement("span");
     defLabel.textContent = "—";
-    defLabel.style.color = "#9aa6c8";
+    defLabel.style.color = cssStageColor("#425570");
     panel.appendChild(defLabel);
 
     const defWrap = document.createElement("span");
@@ -361,7 +365,7 @@ export function makeBtEditor(): Stage {
     const defText = document.createElement("span");
     defText.id = "bt-default-label";
     defText.textContent = tx("該当なし", "Otherwise");
-    defText.style.color = "#9aa6c8";
+    defText.style.color = cssStageColor("#425570");
     const defSel = makeSelect(ACTIONS, defaultAction, (v) => {
       defaultAction = v as Action;
     });
@@ -376,21 +380,21 @@ export function makeBtEditor(): Stage {
     buttons.dataset.opadRow = "1";
     const runBtn = document.createElement("button");
     runBtn.className = "bt-action";
-    styleBtn(runBtn, "#5eead4");
+    styleBtn(runBtn, "#087764");
     runBtn.textContent = "▶ RUN";
     runBtn.onclick = () => onRun();
     buttons.appendChild(runBtn);
 
     const stopBtn = document.createElement("button");
     stopBtn.className = "bt-action";
-    styleBtn(stopBtn, "#fbbf24");
+    styleBtn(stopBtn, "#925b00");
     stopBtn.textContent = "STOP";
     stopBtn.onclick = () => onStop();
     buttons.appendChild(stopBtn);
 
     const resetBtn = document.createElement("button");
     resetBtn.className = "bt-action";
-    styleBtn(resetBtn, "#9aa6c8");
+    styleBtn(resetBtn, "#425570");
     resetBtn.textContent = "RESET";
     resetBtn.onclick = () => reset();
     buttons.appendChild(resetBtn);
@@ -400,15 +404,15 @@ export function makeBtEditor(): Stage {
     const statusBox = document.createElement("div");
     statusBox.className = "bt-status";
     statusBox.style.cssText =
-      "grid-column: 1 / -1; padding-top:6px; border-top:1px solid rgba(125,211,252,0.2);" +
-      "font-size:14px; color:#9aa6c8;";
+      "grid-column: 1 / -1; padding-top:6px; border-top:1px solid light-dark(rgba(7, 95, 147,0.2), rgba(125, 211, 252, 0.2));" +
+      "font-size:14px; color:light-dark(#425570, #c2cfe3);";
     const status = document.createElement("span");
     status.textContent = t("behavior_tree.status.idle");
     statusEl = status;
     statusBox.appendChild(status);
     const padHint = document.createElement("span");
     padHint.className = "bt-pad-hint";
-    padHint.style.cssText = "float:right; color:#fbbf24;";
+    padHint.style.cssText = "float:right; color:light-dark(#925b00, #fbbf24);";
     const renderPadHint = () => {
       padHint.textContent = tx(
         "🎮 ↑↓ 項目選択 · A 一覧を開く／ボタン実行 · B キャンセル",
@@ -448,7 +452,8 @@ export function makeBtEditor(): Stage {
     const s = document.createElement("span");
     s.className = "bt-header-cell";
     s.textContent = text;
-    s.style.cssText = "color:#7dd3fc; font-size:13px; font-weight:700; letter-spacing:0.05em;";
+    s.style.cssText =
+      "color:light-dark(#075f93, #7dd3fc); font-size:13px; font-weight:700; letter-spacing:0.05em;";
     return s;
   }
 
@@ -460,7 +465,7 @@ export function makeBtEditor(): Stage {
     const sel = document.createElement("select");
     sel.className = "bt-rule-select";
     sel.style.cssText =
-      "padding:4px 6px; background:#0c1124; color:#eef2ff;" +
+      "padding:4px 6px; background:light-dark(#f1f5fb, #131f35); color:light-dark(#172b4d, #edf3ff);" +
       "border:1px solid #2c3554; border-radius:4px; font-family:inherit; font-size:16px; min-height:44px;";
     for (const o of options) {
       const opt = document.createElement("option");
@@ -475,7 +480,7 @@ export function makeBtEditor(): Stage {
 
   function styleBtn(b: HTMLButtonElement, color: string) {
     b.style.cssText =
-      `padding:4px 10px; background:${color}; color:#0c1124; border:none; border-radius:4px;` +
+      `padding:4px 10px; background:${cssStageColor(color)}; color:var(--on-accent); border:none; border-radius:4px;` +
       "font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; min-height:44px;";
   }
 
@@ -607,14 +612,14 @@ export function makeBtEditor(): Stage {
 
   function drawWorld(c: CanvasRenderingContext2D) {
     // Workspace background
-    c.fillStyle = "rgba(15, 22, 48, 0.6)";
+    c.fillStyle = stageColor("rgba(232, 239, 247, 0.6)");
     c.fillRect(WORLD_X0, WORLD_Y0, WORLD_W, WORLD_H);
 
     // Walls
     for (const w of walls) {
-      c.fillStyle = "rgba(35, 44, 77, 0.85)";
-      c.strokeStyle = "rgba(110, 122, 156, 0.55)";
-      c.lineWidth = 1;
+      c.fillStyle = themeColor("#aabcd4", stageColor("rgba(170, 188, 212, 0.85)"));
+      c.strokeStyle = themeColor(theme.fgDim, stageColor("rgba(88, 106, 130, 0.55)"));
+      c.lineWidth = 1.5;
       c.fillRect(w.x, w.y, w.w, w.h);
       c.strokeRect(w.x + 0.5, w.y + 0.5, w.w - 1, w.h - 1);
     }
@@ -622,8 +627,8 @@ export function makeBtEditor(): Stage {
     // Goal
     const pulse = 0.7 + 0.3 * Math.sin(elapsed * 3);
     c.save();
-    c.strokeStyle = "rgba(94, 234, 212, 0.85)";
-    c.fillStyle = "rgba(94, 234, 212, 0.18)";
+    c.strokeStyle = stageColor("rgba(8, 119, 100, 0.85)");
+    c.fillStyle = stageColor("rgba(8, 119, 100, 0.18)");
     c.lineWidth = 1.6;
     c.beginPath();
     c.arc(GOAL.x, GOAL.y, GOAL.r, 0, Math.PI * 2);
@@ -634,16 +639,16 @@ export function makeBtEditor(): Stage {
     c.arc(GOAL.x, GOAL.y, GOAL.r * (1.2 + 0.2 * pulse), 0, Math.PI * 2);
     c.stroke();
     c.globalAlpha = 1;
-    c.fillStyle = "#5eead4";
-    c.font = "700 9px ui-monospace, monospace";
+    c.fillStyle = stageColor("#087764");
+    c.font = "700 12px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("GOAL", GOAL.x, GOAL.y - GOAL.r - 6);
     c.restore();
 
     // Start marker
     c.save();
-    c.strokeStyle = "rgba(125, 211, 252, 0.6)";
-    c.lineWidth = 1;
+    c.strokeStyle = themeColor(theme.accent, stageColor("rgba(7, 95, 147, 0.6)"));
+    c.lineWidth = 1.5;
     c.setLineDash([3, 3]);
     c.beginPath();
     c.arc(START.x, START.y, ROBOT_R + 4, 0, Math.PI * 2);
@@ -657,8 +662,8 @@ export function makeBtEditor(): Stage {
     // Sensor rays (only when running)
     if (isRunning) {
       c.save();
-      c.strokeStyle = "rgba(125, 211, 252, 0.45)";
-      c.lineWidth = 1;
+      c.strokeStyle = themeColor(theme.accent, stageColor("rgba(7, 95, 147, 0.45)"));
+      c.lineWidth = 1.5;
       drawRay(c, robot, 0, sensors.front);
       drawRay(c, robot, -Math.PI / 2, sensors.left);
       drawRay(c, robot, Math.PI / 2, sensors.right);
@@ -694,13 +699,13 @@ export function makeBtEditor(): Stage {
 
   function drawTree(c: CanvasRenderingContext2D) {
     // Frame
-    c.fillStyle = "rgba(15, 22, 48, 0.6)";
+    c.fillStyle = stageColor("rgba(232, 239, 247, 0.6)");
     c.fillRect(TREE_X0, TREE_Y0, TREE_W, TREE_H);
-    c.strokeStyle = "rgba(125, 211, 252, 0.3)";
+    c.strokeStyle = themeColor(theme.fgDim, stageColor("rgba(7, 95, 147, 0.3)"));
     c.lineWidth = 1;
     c.strokeRect(TREE_X0 + 0.5, TREE_Y0 + 0.5, TREE_W - 1, TREE_H - 1);
 
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.font = "700 11px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("BEHAVIOR TREE", TREE_X0 + TREE_W / 2, TREE_Y0 + 16);
@@ -708,7 +713,7 @@ export function makeBtEditor(): Stage {
     // Root: Selector
     const rootX = TREE_X0 + TREE_W / 2;
     const rootY = TREE_Y0 + 40;
-    drawNode(c, rootX, rootY, 80, 22, "Selector", "#c4b5fd", false);
+    drawNode(c, rootX, rootY, 80, 22, "Selector", "#6d42b5", false);
 
     // Each rule = Sequence with [Cond, Action]; default = Action
     const branchY = rootY + 50;
@@ -718,8 +723,10 @@ export function makeBtEditor(): Stage {
       const r = rules[i];
       const fired = isRunning && activeRule === i;
       // Connection from root
-      c.strokeStyle = fired ? "#fbbf24" : "rgba(125, 211, 252, 0.3)";
-      c.lineWidth = fired ? 2 : 1;
+      c.strokeStyle = fired
+        ? theme.warn
+        : themeColor(theme.fgDim, stageColor("rgba(7, 95, 147, 0.3)"));
+      c.lineWidth = fired ? 2.5 : 1.5;
       c.beginPath();
       c.moveTo(rootX, rootY + 11);
       c.lineTo(cx, branchY - 11);
@@ -733,43 +740,45 @@ export function makeBtEditor(): Stage {
         slotW - 8,
         18,
         "Seq " + (i + 1),
-        valid ? "#5eead4" : "#3a4366",
+        valid ? "#087764" : "#586a82",
         fired,
       );
       // Cond + Action below
       const condY = branchY + 28;
-      drawLeaf(c, cx, condY, slotW - 14, r.cond ?? "—", "#fbbf24");
+      drawLeaf(c, cx, condY, slotW - 14, r.cond ?? "—", "#925b00");
       const actY = condY + 22;
-      drawLeaf(c, cx, actY, slotW - 14, r.action ?? "—", "#7dd3fc");
+      drawLeaf(c, cx, actY, slotW - 14, r.action ?? "—", "#075f93");
     }
 
     // Default
     const defX = TREE_X0 + slotW * (RULE_COUNT + 0.5);
     const defFired = isRunning && activeRule === -1;
-    c.strokeStyle = defFired ? "#fbbf24" : "rgba(125, 211, 252, 0.3)";
-    c.lineWidth = defFired ? 2 : 1;
+    c.strokeStyle = defFired
+      ? theme.warn
+      : themeColor(theme.fgDim, stageColor("rgba(7, 95, 147, 0.3)"));
+    c.lineWidth = defFired ? 2.5 : 1.5;
     c.beginPath();
     c.moveTo(rootX, rootY + 11);
     c.lineTo(defX, branchY - 11);
     c.stroke();
-    drawLeaf(c, defX, branchY, slotW - 8, "default", "#9aa6c8");
-    drawLeaf(c, defX, branchY + 28, slotW - 14, defaultAction, "#7dd3fc");
+    drawLeaf(c, defX, branchY, slotW - 8, "default", "#425570");
+    drawLeaf(c, defX, branchY + 28, slotW - 14, defaultAction, "#075f93");
 
     // Legend
     c.font = "9px ui-monospace, monospace";
     c.textAlign = "left";
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.fillText("● cond   ● action   ─ pri →", TREE_X0 + 10, TREE_Y0 + TREE_H - 12);
 
     // Active rule callout
     if (isRunning) {
-      c.fillStyle = "#fbbf24";
+      c.fillStyle = stageColor("#925b00");
       c.font = "700 10px ui-monospace, monospace";
       c.textAlign = "right";
       c.fillText(
         activeRule >= 0 ? `▶ Rule ${activeRule + 1} firing` : "▶ default firing",
         TREE_X0 + TREE_W - 10,
-        TREE_Y0 + TREE_H - 12,
+        TREE_Y0 + TREE_H - 32,
       );
     }
   }
@@ -785,15 +794,15 @@ export function makeBtEditor(): Stage {
     highlight: boolean,
   ) {
     c.save();
-    c.fillStyle = highlight ? "rgba(251, 191, 36, 0.18)" : "rgba(15, 22, 48, 0.85)";
-    c.strokeStyle = highlight ? "#fbbf24" : color;
+    c.fillStyle = stageColor(highlight ? "rgba(146, 91, 0, 0.18)" : "rgba(232, 239, 247, 0.85)");
+    c.strokeStyle = stageColor(highlight ? "#925b00" : color);
     c.lineWidth = highlight ? 2 : 1.4;
     c.beginPath();
     if (typeof c.roundRect === "function") c.roundRect(cx - w / 2, cy - h / 2, w, h, 4);
     else c.rect(cx - w / 2, cy - h / 2, w, h);
     c.fill();
     c.stroke();
-    c.fillStyle = highlight ? "#fbbf24" : color;
+    c.fillStyle = highlight ? theme.fg : stageColor(color);
     c.font = "700 10px ui-monospace, monospace";
     c.textAlign = "center";
     c.textBaseline = "middle";
@@ -816,15 +825,15 @@ export function makeBtEditor(): Stage {
     const isMulti = lines.length > 1;
     const boxH = isMulti ? 22 : 16;
     c.save();
-    c.fillStyle = "rgba(15, 22, 48, 0.6)";
-    c.strokeStyle = color;
+    c.fillStyle = stageColor("rgba(232, 239, 247, 0.6)");
+    c.strokeStyle = stageColor(color);
     c.lineWidth = 1;
     c.beginPath();
     if (typeof c.roundRect === "function") c.roundRect(cx - w / 2, cy - boxH / 2, w, boxH, 3);
     else c.rect(cx - w / 2, cy - boxH / 2, w, boxH);
     c.fill();
     c.stroke();
-    c.fillStyle = color;
+    c.fillStyle = stageColor(color);
     // Gradually reduce the font size to fit the box width.
     const longest = Math.max(...lines.map((s) => s.length));
     const fontPx = longest <= 7 ? 9 : longest <= 9 ? 8 : 7;
@@ -902,28 +911,28 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="Selector with conditional branches">
   <defs>
     <marker id="ld-bt-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#c4b5fd"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#6d42b5, #c4b5fd)"/>
     </marker>
   </defs>
   <!-- Selector root -->
-  <rect x="178" y="10" width="64" height="22" rx="5" fill="#181f3a" stroke="#c4b5fd" stroke-width="1.5"/>
-  <text x="210" y="25" text-anchor="middle" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="10" font-weight="700">Selector</text>
+  <rect x="178" y="10" width="64" height="22" rx="5" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
+  <text x="210" y="25" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">Selector</text>
   <!-- Branches -->
-  <line x1="210" y1="32" x2="80"  y2="56" stroke="#c4b5fd" stroke-width="1" marker-end="url(#ld-bt-arrow)"/>
-  <line x1="210" y1="32" x2="210" y2="56" stroke="#fbbf24" stroke-width="2" marker-end="url(#ld-bt-arrow)"/>
-  <line x1="210" y1="32" x2="340" y2="56" stroke="#c4b5fd" stroke-width="1" marker-end="url(#ld-bt-arrow)"/>
+  <line x1="210" y1="32" x2="80"  y2="56" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1" marker-end="url(#ld-bt-arrow)"/>
+  <line x1="210" y1="32" x2="210" y2="56" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2" marker-end="url(#ld-bt-arrow)"/>
+  <line x1="210" y1="32" x2="340" y2="56" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1" marker-end="url(#ld-bt-arrow)"/>
   <!-- Sequence 1: at_goal → stop -->
-  <rect x="14" y="58" width="132" height="18" rx="3" fill="#181f3a" stroke="#5eead4" stroke-width="1"/>
-  <text x="80" y="71" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="9" font-weight="700">Seq: at_goal → stop</text>
+  <rect x="14" y="58" width="132" height="18" rx="3" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#087764, #5eead4)" stroke-width="1"/>
+  <text x="80" y="71" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">Seq: at_goal → stop</text>
   <!-- Sequence 2 (firing) -->
-  <rect x="144" y="58" width="132" height="18" rx="3" fill="rgba(251,191,36,0.18)" stroke="#fbbf24" stroke-width="2"/>
-  <text x="210" y="71" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="9" font-weight="700">Seq: obstacle → turn</text>
+  <rect x="144" y="58" width="132" height="18" rx="3" fill="light-dark(rgba(146, 91, 0,0.08), rgba(251, 191, 36, 0.08))" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2"/>
+  <text x="210" y="71" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">Seq: obstacle → turn</text>
   <!-- Default -->
-  <rect x="274" y="58" width="132" height="18" rx="3" fill="#181f3a" stroke="#7dd3fc" stroke-width="1"/>
-  <text x="340" y="71" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9" font-weight="700">default: forward</text>
+  <rect x="274" y="58" width="132" height="18" rx="3" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1"/>
+  <text x="340" y="71" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">default: forward</text>
   <!-- Caption -->
-  <text x="210" y="98" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">Selector evaluates children top-down; first success wins</text>
-  <text x="210" y="112" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="8">↑ priority order</text>
+  <text x="210" y="98" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">Selector evaluates children top-down; first success wins</text>
+  <text x="210" y="112" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="8">↑ priority order</text>
 </svg>
 `,
   lessonModal: {

@@ -2,16 +2,34 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 /* === Canvas === */
+:root {
+  --scene-sticky-top: max(8px, env(safe-area-inset-top));
+  --scene-height-limit: 50svh;
+  --scene-readout-limit: min(120px, 18svh);
+  /* Keep Tab navigation and scrollIntoView targets below the following scene. */
+  scroll-padding-top: calc(
+    var(--scene-sticky-top) + min(500px, var(--scene-height-limit), (100vw - 24px) * 5 / 8) +
+      var(--scene-readout-limit) + 12px
+  );
+}
+
 .canvas-wrap {
-  position: relative;
+  position: sticky;
+  top: var(--scene-sticky-top);
+  z-index: 30;
   width: min(800px, 100%);
   min-width: 0;
-  max-width: 100%;
+  /* Scale the whole scene so pointer coordinates and overlays stay aligned.
+     Leave room below it for the controls, even in a short landscape window. */
+  max-width: min(100%, var(--scene-height-limit) * var(--scene-aspect, 1.6));
+  flex-shrink: 0;
+  margin-inline: auto;
+  background: var(--panel);
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow:
     0 0 0 1px var(--line),
-    0 20px 60px -20px rgba(0, 0, 0, 0.6);
+    0 20px 60px -20px rgba(var(--shadow-rgb), 0.23);
 }
 .canvas-wrap.shake {
   animation: shake 0.22s cubic-bezier(0.36, 0.07, 0.19, 0.97);
@@ -55,22 +73,28 @@ canvas#game.touch-interactive {
   display: none;
 }
 
-@media (max-width: 840px) {
-  .canvas-readout:not([hidden]) {
-    display: grid;
-    gap: 5px;
-    padding: 9px 12px;
-    border-top: 1px solid var(--line);
-    background: var(--panel);
-    color: var(--fg-mid);
-    font: 14px/1.5 var(--sans);
-    overflow-wrap: anywhere;
-  }
-  .canvas-readout p {
-    margin: 0;
-  }
-  .canvas-readout-time {
-    color: var(--fg);
-    font-variant-numeric: tabular-nums;
+.canvas-readout:not([hidden]) {
+  display: grid;
+  max-height: var(--scene-readout-limit);
+  overflow-y: auto;
+  gap: 5px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--fg-mid);
+  font: 15px/1.6 var(--sans);
+  overflow-wrap: anywhere;
+}
+.canvas-readout p {
+  margin: 0;
+}
+.canvas-readout-time {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  body:has(.be-param input:focus) .canvas-wrap {
+    max-width: min(72vw, 280px, var(--scene-height-limit) * var(--scene-aspect, 1.6));
   }
 }

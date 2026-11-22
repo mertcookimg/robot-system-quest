@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { cssStageColor } from "./stage_colors";
+
 // Generic toggle button helper for the block-editor's `.be-actions` row.
 // Used for stage-specific modes like Practice / Mission, or any other
 // 2-state switch the stage wants to expose.
@@ -29,7 +31,7 @@ export interface ModeToggleOptions {
   onColor?: string;
   /** Inactive color. Default: "" (the standard .be-btn style). */
   offColor?: string;
-  /** Background. Default while active: rgba(125,211,252,0.18). */
+  /** Background. Default while active: rgba(7, 95, 147,0.18). */
   onBackground?: string;
   /** Called on a toggle with the new state. */
   onChange?: (active: boolean) => void;
@@ -66,9 +68,13 @@ export function setupModeToggle(buttonId: string, opts: ModeToggleOptions): Mode
     if (!btn) return;
     btn.textContent = active ? opts.onLabel : opts.offLabel;
     btn.title = (active ? opts.onTitle : opts.offTitle) ?? "";
-    btn.style.background = active ? (opts.onBackground ?? "rgba(125,211,252,0.18)") : "";
-    btn.style.borderColor = active ? (opts.onColor ?? "var(--accent)") : "";
-    btn.style.color = active ? (opts.onColor ?? "var(--accent)") : (opts.offColor ?? "");
+    btn.style.background = cssStageColor(
+      active ? (opts.onBackground ?? "rgba(7, 95, 147,0.18)") : "",
+    );
+    btn.style.borderColor = cssStageColor(active ? (opts.onColor ?? "var(--accent)") : "");
+    btn.style.color = cssStageColor(
+      active ? (opts.onColor ?? "var(--accent)") : (opts.offColor ?? ""),
+    );
   };
   refresh();
 

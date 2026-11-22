@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+
 // ik_reach — "IK Reach". The second robot-ARM lesson and the pay-off to
 // joint_teleop (A1). Now you command the TIP directly (a cursor) and the arm
 // solves inverse kinematics to follow it. The exact course that felt fiddly in
@@ -20,7 +22,7 @@ import { Particles } from "../../lib/particles";
 import { formatSeconds } from "../../lib/hud";
 import { ARM, fk, ik, slew, drawArm, drawWorkspace, COURSE_TARGETS, PX_PER_M } from "../../lib/arm";
 import * as armpad from "../../lib/armpad";
-import { withA } from "../../core/theme";
+import { withA, theme, themeColor } from "../../core/theme";
 import { t, tx } from "../../i18n";
 
 const PICK_R = 22;
@@ -158,7 +160,7 @@ export function makeIkReach(): Stage {
     if (tgt && sol.reachable && Math.hypot(ee.x - tgt.x, ee.y - tgt.y) <= PICK_R) {
       dwell += dt;
       if (dwell >= DWELL) {
-        particles.burst(tgt.x, tgt.y, "#5eead4", 26, 200);
+        particles.burst(tgt.x, tgt.y, "#087764", 26, 200);
         g.sfx.pickup();
         activeIdx++;
         dwell = 0;
@@ -209,45 +211,45 @@ export function makeIkReach(): Stage {
     for (let i = 0; i < COURSE_TARGETS.length; i++) {
       const p = COURSE_TARGETS[i];
       if (i < activeIdx) {
-        c.strokeStyle = withA("#5eead4", 0.5);
+        c.strokeStyle = themeColor(theme.ok, stageColor(withA("#087764", 0.5)));
         c.lineWidth = 2;
         c.beginPath();
         c.arc(p.x, p.y, ORB_R, 0, Math.PI * 2);
         c.stroke();
-        c.fillStyle = "#5eead4";
+        c.fillStyle = stageColor("#087764");
         c.font = "700 12px ui-monospace, monospace";
         c.textAlign = "center";
         c.textBaseline = "middle";
         c.fillText("✓", p.x, p.y);
       } else if (i === activeIdx) {
         const pulse = 0.6 + 0.4 * Math.sin(elapsed * 5);
-        c.fillStyle = withA("#fbbf24", 0.18 * pulse);
+        c.fillStyle = stageColor(withA("#925b00", 0.18 * pulse));
         c.beginPath();
         c.arc(p.x, p.y, ORB_R + 8 * pulse, 0, Math.PI * 2);
         c.fill();
-        c.fillStyle = "#fbbf24";
+        c.fillStyle = stageColor("#925b00");
         c.beginPath();
         c.arc(p.x, p.y, ORB_R, 0, Math.PI * 2);
         c.fill();
-        c.fillStyle = "#0a0f1f";
+        c.fillStyle = theme.panel;
         c.font = "700 12px ui-monospace, monospace";
         c.textAlign = "center";
         c.textBaseline = "middle";
         c.fillText(String(i + 1), p.x, p.y);
         if (dwell > 0) {
-          c.strokeStyle = "#5eead4";
+          c.strokeStyle = stageColor("#087764");
           c.lineWidth = 3;
           c.beginPath();
           c.arc(p.x, p.y, ORB_R + 5, -Math.PI / 2, -Math.PI / 2 + (dwell / DWELL) * Math.PI * 2);
           c.stroke();
         }
       } else {
-        c.strokeStyle = withA("#6e7a9c", 0.4);
+        c.strokeStyle = themeColor(theme.fgDim, stageColor(withA("#586a82", 0.4)));
         c.lineWidth = 1.5;
         c.beginPath();
         c.arc(p.x, p.y, ORB_R, 0, Math.PI * 2);
         c.stroke();
-        c.fillStyle = "#6e7a9c";
+        c.fillStyle = stageColor("#586a82");
         c.font = "600 11px ui-monospace, monospace";
         c.textAlign = "center";
         c.textBaseline = "middle";
@@ -271,7 +273,7 @@ export function makeIkReach(): Stage {
 
   function drawCursor(c: CanvasRenderingContext2D) {
     const reachHot = edgeFlash > 0.01;
-    c.strokeStyle = reachHot ? "#fb7185" : "#fbbf24";
+    c.strokeStyle = stageColor(reachHot ? "#be2949" : "#925b00");
     c.lineWidth = 1.5;
     c.beginPath();
     c.arc(cursor.x, cursor.y, 8, 0, Math.PI * 2);
@@ -358,30 +360,30 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="cursor sets the tip; IK solves joint angles; two elbow solutions">
   <defs>
     <marker id="ld-ik_reach-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-      <polygon points="0 0, 9 3.5, 0 7" fill="#5eead4"/>
+      <polygon points="0 0, 9 3.5, 0 7" fill="light-dark(#087764, #5eead4)"/>
     </marker>
   </defs>
   <!-- reachable annulus hint -->
-  <path d="M 60 96 A 92 92 0 0 1 244 96" fill="none" stroke="#7dd3fc" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+  <path d="M 60 96 A 92 92 0 0 1 244 96" fill="none" stroke="light-dark(#075f93, rgba(125, 211, 252, 0.5))" stroke-width="1.5" stroke-dasharray="3 3"/>
   <!-- base -->
-  <polygon points="44,104 76,104 70,86 50,86" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
+  <polygon points="44,104 76,104 70,86 50,86" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
   <!-- solid arm (elbow up) -->
-  <line x1="60" y1="90" x2="140" y2="40" stroke="#7dd3fc" stroke-width="9" stroke-linecap="round"/>
-  <line x1="140" y1="40" x2="232" y2="52" stroke="#c4b5fd" stroke-width="7" stroke-linecap="round"/>
-  <circle cx="60" cy="90" r="7" fill="#eef2ff" stroke="#0a0f1f" stroke-width="2"/>
-  <circle cx="140" cy="40" r="6" fill="#eef2ff" stroke="#0a0f1f" stroke-width="2"/>
+  <line x1="60" y1="90" x2="140" y2="40" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="9" stroke-linecap="round"/>
+  <line x1="140" y1="40" x2="232" y2="52" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="60" cy="90" r="7" fill="light-dark(#172b4d, #edf3ff)" stroke="#0a0f1f" stroke-width="2"/>
+  <circle cx="140" cy="40" r="6" fill="light-dark(#172b4d, #edf3ff)" stroke="#0a0f1f" stroke-width="2"/>
   <!-- cursor target -->
-  <circle cx="232" cy="52" r="9" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
-  <line x1="232" y1="38" x2="232" y2="46" stroke="#fbbf24" stroke-width="1.5"/>
-  <line x1="232" y1="58" x2="232" y2="66" stroke="#fbbf24" stroke-width="1.5"/>
-  <line x1="218" y1="52" x2="226" y2="52" stroke="#fbbf24" stroke-width="1.5"/>
-  <line x1="238" y1="52" x2="246" y2="52" stroke="#fbbf24" stroke-width="1.5"/>
+  <circle cx="232" cy="52" r="9" fill="none" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <line x1="232" y1="38" x2="232" y2="46" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <line x1="232" y1="58" x2="232" y2="66" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <line x1="218" y1="52" x2="226" y2="52" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <line x1="238" y1="52" x2="246" y2="52" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
   <!-- flow: cursor → IK → joints -->
-  <text x="300" y="40" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">tip pose</text>
-  <line x1="300" y1="48" x2="300" y2="64" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-ik_reach-arrow)"/>
-  <text x="300" y="80" fill="#5eead4" font-family="ui-monospace, monospace" font-size="11" font-weight="700">IK</text>
-  <line x1="300" y1="86" x2="300" y2="100" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-ik_reach-arrow)"/>
-  <text x="300" y="114" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="10">q1, q2</text>
+  <text x="300" y="40" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">tip pose</text>
+  <line x1="300" y1="48" x2="300" y2="64" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-ik_reach-arrow)"/>
+  <text x="300" y="80" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">IK</text>
+  <line x1="300" y1="86" x2="300" y2="100" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-ik_reach-arrow)"/>
+  <text x="300" y="114" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="10">q1, q2</text>
 </svg>
 `,
   lessonModal: {

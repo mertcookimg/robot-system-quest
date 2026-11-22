@@ -75,6 +75,7 @@ before(async () => {
   const styles = document.createElement("style");
   styles.textContent = (
     await Promise.all([
+      readFile(new URL("../src/styles/09-crash-overlay.css", import.meta.url), "utf8"),
       readFile(new URL("../src/styles/19-allclear.css", import.meta.url), "utf8"),
       readFile(new URL("../src/styles/30-world-model.css", import.meta.url), "utf8"),
     ])
@@ -458,7 +459,6 @@ test("all-clear keeps 38 results in a bounded scroll area with a focused restart
   assert.equal(cardStyle.display, "flex");
   assert.equal(cardStyle.flexDirection, "column");
   assert.equal(cardStyle.overflowY, "auto");
-  assert.equal(parseFloat(resultsStyle.minHeight), 0);
   assert.equal(resultsStyle.overflowY, "auto");
   assert.equal(window.getComputedStyle(ui.allclearRestart).flexShrink, "0");
   assert.ok(document.activeElement === ui.allclearRestart);

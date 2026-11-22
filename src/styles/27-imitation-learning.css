@@ -3,6 +3,7 @@
 
 /* Read each experiment in order: evidence, next action, optional controls. */
 .imitation-lab {
+  overflow-wrap: anywhere;
   --il-line: var(--line-soft);
   --il-muted: var(--fg-mid);
   box-sizing: border-box;
@@ -14,7 +15,7 @@
   border-radius: 10px;
   background: var(--panel);
   color: var(--fg);
-  font: 13px/1.6 var(--sans);
+  font: 14px/1.6 var(--sans);
   text-align: left;
   box-shadow: none;
 }
@@ -28,7 +29,7 @@
 }
 .imitation-lab button,
 .imitation-lab select {
-  font: 600 13px/1.45 var(--sans);
+  font: 600 14px/1.45 var(--sans);
 }
 .il-workflow {
   display: grid;
@@ -38,7 +39,7 @@
   margin: -12px -14px 12px;
   border-bottom: 1px solid var(--line-soft);
   border-radius: 9px 9px 0 0;
-  background: linear-gradient(90deg, rgba(125, 211, 252, 0.08), transparent);
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.08), transparent);
   list-style: none;
 }
 .il-workflow li {
@@ -50,11 +51,11 @@
   min-width: 0;
   min-height: 42px;
   color: var(--fg-mid);
-  font: 600 13px/1.4 var(--sans);
+  font: 600 14px/1.4 var(--sans);
 }
 .il-workflow li > span:first-child,
 .il-workflow-number {
-  font: 700 12px/1 var(--mono);
+  font: 700 14px/1 var(--mono);
   font-variant-numeric: tabular-nums;
 }
 .il-workflow li[aria-current="step"] {
@@ -103,7 +104,7 @@
 }
 .il-section > p {
   color: var(--il-muted);
-  font-size: 13px;
+  font-size: 16px;
 }
 .il-button {
   min-height: 44px;
@@ -131,13 +132,13 @@
   min-height: 44px;
   border: 1px solid var(--ok);
   background: var(--ok);
-  color: var(--bg);
+  color: var(--on-accent);
   font: 700 14px/1.45 var(--mono);
 }
 .il-button.il-primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--ok) 90%, white);
-  border-color: color-mix(in srgb, var(--ok) 90%, white);
-  color: var(--bg);
+  background: color-mix(in srgb, var(--ok) 90%, black);
+  border-color: color-mix(in srgb, var(--ok) 90%, black);
+  color: var(--on-accent);
 }
 .il-button.il-primary:disabled {
   background: transparent;
@@ -151,7 +152,7 @@
 }
 .il-button[data-action="stop"]:hover:not(:disabled) {
   background: var(--danger);
-  color: var(--bg);
+  color: var(--on-accent);
 }
 .il-next {
   display: flex;
@@ -163,7 +164,7 @@
 .il-next p {
   flex: 1 1 220px;
   color: var(--fg-mid);
-  font-size: 13px;
+  font-size: 16px;
 }
 .il-actions,
 .il-secondary,
@@ -178,13 +179,13 @@
 }
 .il-actions .il-button {
   flex: 1 1 auto;
-  font-size: 13px;
+  font-size: 14px;
 }
 .il-secondary {
   margin-top: 8px;
 }
 .il-secondary .il-button {
-  font-size: 13px;
+  font-size: 14px;
   background: transparent;
 }
 .il-utilities {
@@ -202,7 +203,7 @@
   border-color: transparent;
   background: transparent;
   color: var(--il-muted);
-  font-size: 13px;
+  font-size: 14px;
   white-space: nowrap;
 }
 .il-utilities .il-button[aria-expanded="true"] {
@@ -228,13 +229,13 @@
 .il-reset-row > p {
   flex: 1 1 180px;
   color: var(--il-muted);
-  font-size: 12px;
+  font-size: 16px;
 }
 .il-button.il-reset-button {
   background: transparent;
   color: var(--fg-mid);
   border-color: var(--line);
-  font-size: 13px;
+  font-size: 14px;
 }
 .il-button.il-reset-button:disabled {
   border-color: var(--line);
@@ -272,7 +273,7 @@
 .il-category-description,
 .il-category-count {
   color: var(--il-muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .il-category-description {
   margin: 3px 0;
@@ -283,13 +284,13 @@
 }
 .il-category > .il-category-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
   margin-top: auto;
 }
 .il-category-actions .il-button {
   padding: 6px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .il-category-toggle[aria-checked="true"]:not(:disabled) {
   border-color: var(--accent);
@@ -316,23 +317,23 @@
 }
 .il-fit-evidence > p {
   color: var(--il-muted);
-  font-size: 13px;
+  font-size: 16px;
 }
 .il-fit-evidence .il-fit-takeaway,
 .il-results > .il-fit-takeaway {
   margin-top: 7px;
   color: var(--fg);
-  font-size: 13px;
+  font-size: 14px;
 }
 .il-probe {
   margin-top: 10px;
   color: var(--fg);
-  font-size: 13px;
+  font-size: 14px;
 }
 .il-probe > p:last-child {
   margin-top: 8px;
   color: var(--il-muted);
-  font-size: 12px;
+  font-size: 16px;
 }
 .il-probe-cards {
   display: grid;
@@ -351,20 +352,20 @@
   color: var(--fg);
   font: 700 23px/1.3 var(--mono);
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .il-stat span {
   display: block;
   margin-top: 3px;
   color: var(--il-muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .il-probe-cards .il-stat strong {
   font-size: 16px;
 }
 .il-details-toggle {
   margin-top: 0;
-  font-size: 13px;
+  font-size: 14px;
   text-align: left;
 }
 .il-fit-details {
@@ -372,7 +373,7 @@
   min-width: 0;
   margin-top: 12px;
   color: var(--il-muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .il-fit-details > p + p {
   margin-top: 8px;
@@ -390,7 +391,7 @@
 }
 .il-test-options {
   display: grid;
-  grid-template-columns: 1.3fr 0.7fr;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
   gap: 12px;
   margin-top: 12px;
 }
@@ -400,10 +401,11 @@
   gap: 5px;
   min-width: 0;
   color: var(--il-muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .il-section select {
   width: 100%;
+  min-width: 0;
   min-height: 44px;
   padding: 8px;
   border: 1px solid var(--line);
@@ -416,14 +418,14 @@
 }
 .il-result-caption {
   color: var(--il-muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .il-results > .il-result-caption {
   margin-top: 8px;
 }
 .il-result-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 12px;
 }
@@ -459,7 +461,7 @@
 .il-result-card > p {
   margin-top: 5px;
   color: var(--il-muted);
-  font-size: 12px;
+  font-size: 16px;
 }
 .il-result-card .il-result-metrics {
   margin-top: auto;
@@ -487,11 +489,11 @@
 .il-insight p {
   margin-top: 4px;
   color: var(--fg-mid);
-  font-size: 12px;
+  font-size: 16px;
 }
 .il-results > [data-action="toggle-results"] {
   margin-top: 10px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .il-table-wrap {
   overflow-x: auto;
@@ -500,7 +502,7 @@
 .il-table-wrap table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 14px;
 }
 .il-table-wrap caption {
   padding-bottom: 8px;
@@ -545,7 +547,7 @@
   border-top: 1px solid var(--il-line);
   background: transparent;
   color: var(--fg);
-  font-size: 13px;
+  font-size: 14px;
 }
 .il-cases {
   display: grid;
@@ -561,7 +563,7 @@
 .il-cases strong,
 .il-cases span {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
 }
 .il-cases span,
 .imitation-lab [data-pane="help"] > small {
@@ -570,12 +572,12 @@
 .imitation-lab [data-pane="help"] > small {
   display: block;
   margin-top: 10px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .il-empty {
   padding: 12px 0;
   color: var(--il-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 .il-brief {
   background: transparent;
@@ -583,26 +585,26 @@
 .il-input-pair {
   margin-top: 8px !important;
   color: var(--fg) !important;
-  font-size: 12px !important;
+  font-size: 14px !important;
 }
 .il-record-summary {
   margin-bottom: 10px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .il-record-summary [data-recording-note] {
   margin-top: 6px;
   color: var(--fg-mid);
-  font-size: 12px;
+  font-size: 14px;
 }
 .il-key-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin: 12px 0;
 }
 .il-key-grid > div {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 3px 12px;
   padding: 10px;
@@ -622,7 +624,7 @@
 }
 .il-key-grid span {
   color: var(--il-muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .imitation-lab[data-running="true"] .il-body {
   display: none;
@@ -653,7 +655,7 @@
   gap: 10px;
   margin-bottom: 8px;
   color: var(--fg-mid);
-  font: 12px/1.5 var(--sans);
+  font: 14px/1.5 var(--sans);
 }
 .il-live > span {
   min-width: 0;
@@ -692,7 +694,7 @@
   .il-secondary .il-button {
     flex: 1 1 auto;
     padding: 8px 10px;
-    font-size: 13px;
+    font-size: 14px;
   }
   .il-utilities {
     gap: 4px;
@@ -702,7 +704,7 @@
   .il-utilities .il-button {
     flex: 1 1 auto;
     padding: 7px 4px;
-    font-size: 13px;
+    font-size: 14px;
   }
   .il-distribution {
     grid-template-columns: 1fr;
@@ -771,7 +773,7 @@
     grid-template-columns: 1fr;
   }
   .il-reset-row > p {
-    font-size: 12px;
+    font-size: 16px;
   }
   .il-live {
     flex-wrap: wrap;
@@ -793,6 +795,19 @@
   }
   .il-result-card .il-stat strong {
     font-size: 18px;
+  }
+}
+
+@media (max-width: 420px) {
+  .il-category,
+  .il-result-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .il-result-card + .il-result-card {
+    padding-left: 0;
+    padding-top: 10px;
+    border-left: 0;
+    border-top: 1px solid var(--il-line);
   }
 }
 

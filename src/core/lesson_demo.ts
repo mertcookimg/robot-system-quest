@@ -8,6 +8,7 @@
 // ball, etc.). Split out of lesson_modal.ts, which owns the modal DOM.
 
 import { drawRobotBody, clearBackground } from "../lib/draw";
+import { getTheme, theme, themeColor, withA } from "./theme";
 
 let demoRaf = 0;
 let demoStart = 0;
@@ -69,7 +70,7 @@ function drawZone(
   ctx.stroke();
   ctx.globalAlpha = 1;
   ctx.fillStyle = color;
-  ctx.font = "700 8px ui-monospace, monospace";
+  ctx.font = "700 10px ui-monospace, monospace";
   ctx.textAlign = "center";
   ctx.fillText(label, x, y - r - 4);
   ctx.restore();
@@ -91,25 +92,40 @@ function drawRobotAt(
 
 // === Per-stage demos ===========================================
 
+function drawWall(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): void {
+  ctx.save();
+  ctx.fillStyle = themeColor("#b8c8dc", withA(theme.accent, 0.16));
+  ctx.strokeStyle = themeColor(theme.fgDim, withA(theme.accent, 0.4));
+  ctx.lineWidth = 1.2;
+  ctx.fillRect(x, y, width, height);
+  ctx.strokeRect(x, y, width, height);
+  ctx.restore();
+}
+
 function demoDelivery(ctx: CanvasRenderingContext2D, W: number, H: number, t: number): void {
   const cy = H / 2 + 4;
   const STARTX = 24; // robot spawn point (left edge)
-  const PICK = { x: 110, y: cy, color: "#5eead4" };
-  const DROP = { x: W - 60, y: cy, color: "#7dd3fc" };
+  const PICK = { x: 110, y: cy, color: theme.ok };
+  const DROP = { x: W - 60, y: cy, color: theme.accent };
   // walls (stylized) — a small obstacle in the middle
-  ctx.fillStyle = "rgba(125, 211, 252, 0.18)";
-  ctx.fillRect(W / 2 - 14, 24, 28, 18);
-  ctx.fillRect(W / 2 - 14, H - 42, 28, 18);
+  drawWall(ctx, W / 2 - 14, 24, 28, 18);
+  drawWall(ctx, W / 2 - 14, H - 42, 28, 18);
   // Spawn marker (subtle dashed circle so the start is obvious)
   ctx.save();
-  ctx.strokeStyle = "rgba(125, 211, 252, 0.45)";
+  ctx.strokeStyle = themeColor(theme.accent, withA(theme.accent, 0.45));
   ctx.setLineDash([3, 3]);
   ctx.beginPath();
   ctx.arc(STARTX, cy, 10, 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = "rgba(125, 211, 252, 0.55)";
-  ctx.font = "700 7px ui-monospace, monospace";
+  ctx.fillStyle = theme.accent;
+  ctx.font = "700 8px ui-monospace, monospace";
   ctx.textAlign = "center";
   ctx.fillText("START", STARTX, cy - 16);
   ctx.restore();
@@ -147,7 +163,7 @@ function demoDelivery(ctx: CanvasRenderingContext2D, W: number, H: number, t: nu
   if (visible) drawRobotAt(ctx, rx, cy, 0, t);
   // tiny package on robot when carrying
   if (carrying) {
-    ctx.fillStyle = "#fbbf24";
+    ctx.fillStyle = theme.warn;
     ctx.fillRect(rx - 3, cy - 14, 6, 5);
     ctx.strokeStyle = "#d97706";
     ctx.lineWidth = 1;
@@ -170,15 +186,15 @@ function demoFollower(ctx: CanvasRenderingContext2D, W: number, H: number, t: nu
   const inZone = dx * dx + dy * dy < 28 * 28;
   // zone ring around target
   ctx.save();
-  ctx.strokeStyle = inZone ? "#5eead4" : "rgba(125, 211, 252, 0.45)";
-  ctx.fillStyle = inZone ? "rgba(94, 234, 212, 0.12)" : "rgba(125, 211, 252, 0.06)";
+  ctx.strokeStyle = inZone ? theme.ok : themeColor(theme.accent, withA(theme.accent, 0.45));
+  ctx.fillStyle = inZone ? withA(theme.ok, 0.12) : withA(theme.accent, 0.06);
   ctx.lineWidth = 1.4;
   ctx.beginPath();
   ctx.arc(targetX, targetY, 22, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = inZone ? "#5eead4" : "#7dd3fc";
-  ctx.font = "700 8px ui-monospace, monospace";
+  ctx.fillStyle = inZone ? theme.ok : theme.accent;
+  ctx.font = "700 9px ui-monospace, monospace";
   ctx.textAlign = "center";
   ctx.fillText("TARGET", targetX, targetY - 28);
   // target dot
@@ -194,11 +210,10 @@ function demoFollower(ctx: CanvasRenderingContext2D, W: number, H: number, t: nu
 function demoLidarExplorer(ctx: CanvasRenderingContext2D, W: number, H: number, t: number): void {
   // tiny maze cells + 3 data points + lidar fan
   // walls (top and bottom border cells)
-  ctx.fillStyle = "rgba(125, 211, 252, 0.16)";
   for (let x = 0; x < W; x += 22) {
     if (Math.floor(x / 22) % 3 === 0) {
-      ctx.fillRect(x + 2, 12, 18, 14);
-      ctx.fillRect(x + 2, H - 26, 18, 14);
+      drawWall(ctx, x + 2, 12, 18, 14);
+      drawWall(ctx, x + 2, H - 26, 18, 14);
     }
   }
   // 3 data dots
@@ -215,20 +230,20 @@ function demoLidarExplorer(ctx: CanvasRenderingContext2D, W: number, H: number, 
   for (const d of dots) {
     d.hit = rx >= d.x - 4;
     ctx.save();
-    ctx.fillStyle = d.hit ? "#c4b5fd" : "rgba(196, 181, 253, 0.35)";
-    ctx.strokeStyle = "#c4b5fd";
+    ctx.fillStyle = d.hit ? theme.accent2 : withA(theme.accent2, 0.35);
+    ctx.strokeStyle = theme.accent2;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(d.x, d.y, 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
     ctx.restore();
-    if (d.hit && Math.abs(rx - d.x) < 2) spawnSparkles(d.x, d.y, "#c4b5fd", 6);
+    if (d.hit && Math.abs(rx - d.x) < 2) spawnSparkles(d.x, d.y, theme.accent2, 6);
   }
   // LiDAR fan
   ctx.save();
-  ctx.strokeStyle = "rgba(125, 211, 252, 0.4)";
-  ctx.lineWidth = 0.8;
+  ctx.strokeStyle = themeColor(theme.accent, withA(theme.accent, 0.4));
+  ctx.lineWidth = 1;
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2;
     ctx.beginPath();
@@ -244,9 +259,9 @@ function demoPatrol(ctx: CanvasRenderingContext2D, W: number, H: number, t: numb
   // 3 hack rings (top), 1 enemy with rotating cone (right-mid), escape gate (right)
   const cy = H / 2 + 4;
   const HACKS = [
-    { x: 60, y: 28, hit: false, color: "#fbbf24" },
-    { x: 130, y: H - 28, hit: false, color: "#fbbf24" },
-    { x: 220, y: 28, hit: false, color: "#fbbf24" },
+    { x: 60, y: 28, hit: false, color: theme.warn },
+    { x: 130, y: H - 28, hit: false, color: theme.warn },
+    { x: 220, y: 28, hit: false, color: theme.warn },
   ];
   const escapeX = W - 40;
   // Enemy patrolling
@@ -254,9 +269,8 @@ function demoPatrol(ctx: CanvasRenderingContext2D, W: number, H: number, t: numb
   const enemyY = cy;
   const coneA = Math.sin(t * 0.8) * 0.6;
   // walls
-  ctx.fillStyle = "rgba(125, 211, 252, 0.16)";
-  ctx.fillRect(110, 56, 30, 8);
-  ctx.fillRect(260, 56, 30, 8);
+  drawWall(ctx, 110, 56, 30, 8);
+  drawWall(ctx, 260, 56, 30, 8);
   // hacks
   HACKS.forEach((h, i) => {
     h.hit = t % 8 > i * 1.4 + 0.4;
@@ -270,7 +284,7 @@ function demoPatrol(ctx: CanvasRenderingContext2D, W: number, H: number, t: numb
     ctx.stroke();
     if (h.hit) {
       ctx.fillStyle = h.color;
-      ctx.font = "700 7px ui-monospace, monospace";
+      ctx.font = "700 8px ui-monospace, monospace";
       ctx.textAlign = "center";
       ctx.fillText("✓", h.x, h.y + 2);
     }
@@ -280,19 +294,22 @@ function demoPatrol(ctx: CanvasRenderingContext2D, W: number, H: number, t: numb
   ctx.save();
   ctx.translate(enemyX, enemyY);
   ctx.rotate(Math.PI + coneA);
-  ctx.fillStyle = "rgba(251, 113, 133, 0.18)";
+  ctx.fillStyle = withA(theme.danger, 0.18);
+  ctx.strokeStyle = themeColor(theme.danger, withA(theme.danger, 0.5));
+  ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.moveTo(0, 0);
   ctx.arc(0, 0, 38, -0.5, 0.5);
   ctx.closePath();
   ctx.fill();
+  ctx.stroke();
   ctx.restore();
-  ctx.fillStyle = "#fb7185";
+  ctx.fillStyle = theme.danger;
   ctx.beginPath();
   ctx.arc(enemyX, enemyY, 6, 0, Math.PI * 2);
   ctx.fill();
   // escape gate
-  drawZone(ctx, escapeX, cy, 12, "#5eead4", "ESCAPE", t);
+  drawZone(ctx, escapeX, cy, 12, theme.ok, "ESCAPE", t);
   // robot path: weave between hacks then dash to escape
   const LOOP = 8;
   const ph = (t % LOOP) / LOOP;
@@ -321,12 +338,12 @@ function demoRacing(ctx: CanvasRenderingContext2D, W: number, H: number, t: numb
     ry = H / 2 - 18;
   // track
   ctx.save();
-  ctx.strokeStyle = "rgba(125, 211, 252, 0.15)";
+  ctx.strokeStyle = withA(theme.accent, 0.15);
   ctx.lineWidth = 26;
   ctx.beginPath();
   ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.strokeStyle = "rgba(125, 211, 252, 0.45)";
+  ctx.strokeStyle = themeColor(theme.accent, withA(theme.accent, 0.45));
   ctx.lineWidth = 1.5;
   ctx.setLineDash([4, 6]);
   ctx.beginPath();
@@ -336,10 +353,10 @@ function demoRacing(ctx: CanvasRenderingContext2D, W: number, H: number, t: numb
   ctx.restore();
   // finish line
   ctx.save();
-  ctx.fillStyle = "#fbbf24";
+  ctx.fillStyle = theme.warn;
   ctx.fillRect(cx + rx - 3, cy - 8, 6, 16);
-  ctx.fillStyle = "#fbbf24";
-  ctx.font = "700 8px ui-monospace, monospace";
+  ctx.fillStyle = theme.warn;
+  ctx.font = "700 9px ui-monospace, monospace";
   ctx.textAlign = "center";
   ctx.fillText("FINISH", cx + rx, cy - 14);
   ctx.restore();
@@ -352,7 +369,7 @@ function demoRacing(ctx: CanvasRenderingContext2D, W: number, H: number, t: numb
   const p2y = cy + Math.sin(a2) * ry;
   // opponent (faded)
   ctx.save();
-  ctx.globalAlpha = 0.45;
+  ctx.globalAlpha = getTheme() === "light" ? 0.8 : 0.45;
   drawRobotAt(ctx, p2x, p2y, a2 + Math.PI / 2, t);
   ctx.restore();
   drawRobotAt(ctx, p1x, p1y, a1 + Math.PI / 2, t);
@@ -362,8 +379,8 @@ function demoRoboSoccer(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   const cy = H / 2 + 2;
   // field
   ctx.save();
-  ctx.strokeStyle = "rgba(125, 211, 252, 0.25)";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = themeColor(theme.accent, withA(theme.accent, 0.25));
+  ctx.lineWidth = 1.5;
   ctx.strokeRect(20, 22, W - 40, H - 44);
   ctx.beginPath();
   ctx.moveTo(W / 2, 22);
@@ -373,10 +390,10 @@ function demoRoboSoccer(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   ctx.arc(W / 2, cy, 14, 0, Math.PI * 2);
   ctx.stroke();
   // goals
-  ctx.strokeStyle = "#7dd3fc";
+  ctx.strokeStyle = theme.accent;
   ctx.lineWidth = 2;
   ctx.strokeRect(14, cy - 18, 8, 36);
-  ctx.strokeStyle = "#fb7185";
+  ctx.strokeStyle = theme.danger;
   ctx.strokeRect(W - 22, cy - 18, 8, 36);
   ctx.restore();
   // ball + robot loop: kick ball into right goal
@@ -393,7 +410,7 @@ function demoRoboSoccer(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   } else if (ph < 0.7) {
     bx = W - 18; // ball in goal
     rx = W - 38;
-    if (demoSparkles.length === 0) spawnSparkles(W - 18, cy, "#fb7185", 16);
+    if (demoSparkles.length === 0) spawnSparkles(W - 18, cy, theme.danger, 16);
   } else {
     bx = W / 2; // reset
     rx = W / 2 - 30;
@@ -420,12 +437,11 @@ function demoTreasureMap(ctx: CanvasRenderingContext2D, W: number, H: number, t:
     { x: W * 0.75, y: cy - 18, got: false },
   ];
   // walls (random-looking maze cells)
-  ctx.fillStyle = "rgba(125, 211, 252, 0.16)";
-  ctx.fillRect(80, 26, 16, 14);
-  ctx.fillRect(160, H - 38, 16, 14);
-  ctx.fillRect(260, 26, 16, 14);
+  drawWall(ctx, 80, 26, 16, 14);
+  drawWall(ctx, 160, H - 38, 16, 14);
+  drawWall(ctx, 260, 26, 16, 14);
   // exit (rightmost)
-  drawZone(ctx, W - 30, cy, 10, "#5eead4", "EXIT", t);
+  drawZone(ctx, W - 30, cy, 10, theme.ok, "EXIT", t);
   // animation: visit chests sequentially in a zigzag
   const LOOP = 6;
   const ph = (t % LOOP) / LOOP;
@@ -448,19 +464,19 @@ function demoTreasureMap(ctx: CanvasRenderingContext2D, W: number, H: number, t:
   // chests
   CHESTS.forEach((c) => {
     ctx.save();
-    ctx.fillStyle = c.got ? "rgba(251, 191, 36, 0.25)" : "#fbbf24";
-    ctx.strokeStyle = "#fbbf24";
+    ctx.fillStyle = c.got ? withA(theme.warn, 0.25) : theme.warn;
+    ctx.strokeStyle = theme.warn;
     ctx.lineWidth = 1;
     ctx.fillRect(c.x - 5, c.y - 4, 10, 8);
     ctx.strokeRect(c.x - 5, c.y - 4, 10, 8);
     if (!c.got) {
-      ctx.fillStyle = "#1f1408";
+      ctx.fillStyle = theme.onAccent;
       ctx.font = "700 6px ui-monospace, monospace";
       ctx.textAlign = "center";
       ctx.fillText("$", c.x, c.y + 2);
     } else {
-      ctx.fillStyle = "#fbbf24";
-      ctx.font = "700 7px ui-monospace, monospace";
+      ctx.fillStyle = theme.warn;
+      ctx.font = "700 8px ui-monospace, monospace";
       ctx.textAlign = "center";
       ctx.fillText("✓", c.x, c.y + 2);
     }
@@ -475,13 +491,13 @@ function demoSumoBattle(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   const R = H / 2 - 16;
   // Dohyo ring with tawara edge.
   ctx.save();
-  ctx.fillStyle = "rgba(30, 38, 70, 0.55)";
+  ctx.fillStyle = withA(theme.line, 0.55);
   ctx.beginPath();
   ctx.arc(cx, cy, R, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "#b08d57";
+  ctx.strokeStyle = themeColor(theme.warn, "#b08d57");
   ctx.lineWidth = 3;
-  ctx.globalAlpha = 0.85;
+  ctx.globalAlpha = getTheme() === "light" ? 1 : 0.85;
   ctx.beginPath();
   ctx.arc(cx, cy, R, 0, Math.PI * 2);
   ctx.stroke();
@@ -497,12 +513,12 @@ function demoSumoBattle(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   } else if (ph < 0.5) {
     px = cx - 14;
     ex = cx + 14; // locked together at the shikiri
-    if (demoSparkles.length === 0) spawnSparkles(cx, cy, "#7dd3fc", 12);
+    if (demoSparkles.length === 0) spawnSparkles(cx, cy, theme.accent, 12);
   } else if (ph < 0.9) {
     const u = (ph - 0.5) / 0.4; // boost shove: rival crosses the tawara
     px = cx - 14 + R * 0.45 * u;
     ex = cx + 14 + (R + 6 - 14) * u;
-    if (u > 0.85 && demoSparkles.length === 0) spawnSparkles(cx + R, cy, "#fbbf24", 16);
+    if (u > 0.85 && demoSparkles.length === 0) spawnSparkles(cx + R, cy, theme.warn, 16);
   } else {
     px = cx - R + 20;
     ex = cx + R - 20;
@@ -510,7 +526,7 @@ function demoSumoBattle(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   }
   // Rival (faded, facing left).
   ctx.save();
-  ctx.globalAlpha = 0.5;
+  ctx.globalAlpha = getTheme() === "light" ? 0.8 : 0.5;
   drawRobotAt(ctx, ex, cy, Math.PI, t);
   ctx.restore();
   drawRobotAt(ctx, px, cy, 0, t);
@@ -521,12 +537,11 @@ function demoTagChase(ctx: CanvasRenderingContext2D, W: number, H: number, t: nu
     cy = H / 2 + 4;
   // Arena + obstacles that break line of sight.
   ctx.save();
-  ctx.strokeStyle = "rgba(125, 211, 252, 0.25)";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = themeColor(theme.accent, withA(theme.accent, 0.25));
+  ctx.lineWidth = 1.5;
   ctx.strokeRect(16, 20, W - 32, H - 40);
-  ctx.fillStyle = "rgba(125, 211, 252, 0.16)";
-  ctx.fillRect(cx - 50, cy - 26, 18, 14);
-  ctx.fillRect(cx + 34, cy + 12, 18, 14);
+  drawWall(ctx, cx - 50, cy - 26, 18, 14);
+  drawWall(ctx, cx + 34, cy + 12, 18, 14);
   ctx.restore();
   // Runner loops an ellipse; two taggers trail behind at fixed phase lags.
   const rx = W / 2 - 46,
@@ -537,7 +552,7 @@ function demoTagChase(ctx: CanvasRenderingContext2D, W: number, H: number, t: nu
   for (const lag of [0.55, 0.95]) {
     const ta = a - lag;
     ctx.save();
-    ctx.fillStyle = lag === 0.55 ? "#fb7185" : "#fbbf24";
+    ctx.fillStyle = lag === 0.55 ? theme.danger : theme.warn;
     ctx.beginPath();
     ctx.arc(cx + Math.cos(ta) * rx, cy + Math.sin(ta) * ry, 6, 0, Math.PI * 2);
     ctx.fill();
@@ -546,7 +561,7 @@ function demoTagChase(ctx: CanvasRenderingContext2D, W: number, H: number, t: nu
   drawRobotAt(ctx, runX, runY, a + Math.PI / 2, t);
   // Survival timer countdown.
   ctx.save();
-  ctx.fillStyle = "#fbbf24";
+  ctx.fillStyle = theme.warn;
   ctx.font = "700 9px ui-monospace, monospace";
   ctx.textAlign = "center";
   ctx.fillText(`⏱ ${(30 - ((t * 4) % 30)).toFixed(0)}s`, cx, 16);
@@ -559,19 +574,19 @@ function demoRoboBaseball(ctx: CanvasRenderingContext2D, W: number, H: number, t
   const batterX = W - 58;
   const targetY = H / 2 + 8;
 
-  ctx.fillStyle = "#173f2d";
+  ctx.fillStyle = themeColor("#d7ebdf", "#173f2d");
   ctx.fillRect(0, groundY - 32, W, 48);
-  ctx.fillStyle = "#9f704b";
+  ctx.fillStyle = themeColor("#e3bc95", "#9f704b");
   ctx.fillRect(0, groundY, W, H - groundY);
-  ctx.strokeStyle = "rgba(255,255,255,.65)";
+  ctx.strokeStyle = withA(theme.fgMid, 0.8);
   ctx.beginPath();
   ctx.moveTo(0, groundY);
   ctx.lineTo(W, groundY);
   ctx.stroke();
-  ctx.fillStyle = "rgba(125,211,252,.12)";
+  ctx.fillStyle = withA(theme.accent, 0.12);
   ctx.fillRect(0, groundY - 54, W, 22);
   for (let x = 8; x < W; x += 17) {
-    ctx.fillStyle = ["#7dd3fc", "#fbbf24", "#f472b6"][x % 3];
+    ctx.fillStyle = [theme.accent, theme.warn, themeColor("#ad246e", "#f472b6")][x % 3];
     ctx.fillRect(x, groundY - 47, 3, 3);
   }
 
@@ -582,7 +597,7 @@ function demoRoboBaseball(ctx: CanvasRenderingContext2D, W: number, H: number, t
   ctx.scale(1.15, 1.15);
   drawRobotBody(ctx, 0, t);
   ctx.restore();
-  ctx.strokeStyle = "rgba(125,211,252,.62)";
+  ctx.strokeStyle = themeColor(theme.accent, withA(theme.accent, 0.62));
   ctx.setLineDash([5, 4]);
   ctx.strokeRect(batterX - 39, targetY - 35, 47, 68);
   ctx.setLineDash([]);
@@ -596,7 +611,7 @@ function demoRoboBaseball(ctx: CanvasRenderingContext2D, W: number, H: number, t
     const eased = u * u * (3 - 2 * u);
     bx = pitcherX + 18 + (batterX - pitcherX - 36) * eased;
     by = targetY - Math.sin(u * Math.PI) * 25;
-    ctx.strokeStyle = "rgba(94,234,212,.42)";
+    ctx.strokeStyle = themeColor(theme.ok, withA(theme.ok, 0.42));
     ctx.setLineDash([4, 5]);
     ctx.beginPath();
     ctx.moveTo(bx, by);
@@ -612,7 +627,7 @@ function demoRoboBaseball(ctx: CanvasRenderingContext2D, W: number, H: number, t
   ctx.save();
   ctx.translate(batterX - 13, groundY - 27);
   ctx.rotate(hit ? Math.PI + 0.1 : -0.95);
-  ctx.strokeStyle = "#fbbf24";
+  ctx.strokeStyle = theme.warn;
   ctx.lineWidth = 6;
   ctx.lineCap = "round";
   ctx.beginPath();
@@ -621,7 +636,7 @@ function demoRoboBaseball(ctx: CanvasRenderingContext2D, W: number, H: number, t
   ctx.stroke();
   ctx.restore();
 
-  ctx.strokeStyle = "#5eead4";
+  ctx.strokeStyle = theme.ok;
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.arc(batterX - 27, targetY, 10, 0, Math.PI * 2);
@@ -630,8 +645,8 @@ function demoRoboBaseball(ctx: CanvasRenderingContext2D, W: number, H: number, t
   ctx.moveTo(batterX - 20, targetY);
   ctx.lineTo(batterX - 12, targetY);
   ctx.stroke();
-  ctx.fillStyle = "#5eead4";
-  ctx.font = "700 7px ui-monospace, monospace";
+  ctx.fillStyle = theme.ok;
+  ctx.font = "700 8px ui-monospace, monospace";
   ctx.textAlign = "center";
   ctx.fillText("PREDICT", batterX - 27, targetY - 16);
 
@@ -642,8 +657,11 @@ function demoRoboBaseball(ctx: CanvasRenderingContext2D, W: number, H: number, t
   ctx.arc(bx, by, 5, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
+  ctx.strokeStyle = "#425570";
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
   if (hit && phase < 0.78) {
-    ctx.fillStyle = "#fbbf24";
+    ctx.fillStyle = theme.warn;
     ctx.font = "900 16px ui-monospace, monospace";
     ctx.fillText("NICE HIT!", W / 2, 26);
   }
@@ -651,11 +669,11 @@ function demoRoboBaseball(ctx: CanvasRenderingContext2D, W: number, H: number, t
 
 function demoRoboTennis(ctx: CanvasRenderingContext2D, W: number, H: number, t: number): void {
   const court = { x: 24, y: 18, w: W - 48, h: H - 36 };
-  ctx.fillStyle = "#176b61";
+  ctx.fillStyle = themeColor("#bfe3d7", "#176b61");
   ctx.fillRect(court.x, court.y, court.w, court.h);
   ctx.fillStyle = "rgba(5,46,42,.25)";
   ctx.fillRect(W / 2, court.y, court.w / 2, court.h);
-  ctx.strokeStyle = "rgba(255,255,255,.82)";
+  ctx.strokeStyle = withA(themeColor("#087764", "#e2f4ed"), 0.9);
   ctx.lineWidth = 1.5;
   ctx.strokeRect(court.x, court.y, court.w, court.h);
   const singlesTop = court.y + 14;
@@ -676,7 +694,7 @@ function demoRoboTennis(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   ctx.moveTo(serviceLeft, H / 2);
   ctx.lineTo(serviceRight, H / 2);
   ctx.stroke();
-  ctx.fillStyle = "#dbeafe";
+  ctx.fillStyle = themeColor("#425570", "#dbeafe");
   ctx.fillRect(W / 2 - 2, court.y - 6, 4, court.h + 12);
 
   const phase = (t * 0.3) % 1;
@@ -693,8 +711,8 @@ function demoRoboTennis(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   drawRobotAt(ctx, leftX, leftY, 0, t);
   drawRobotAt(ctx, rightX, rightY, Math.PI, t);
   for (const [x, y, a, color] of [
-    [leftX + 14, leftY - 3, -0.72, "#fbbf24"],
-    [rightX - 14, rightY - 3, Math.PI + 0.72, "#f472b6"],
+    [leftX + 14, leftY - 3, -0.72, theme.warn],
+    [rightX - 14, rightY - 3, Math.PI + 0.72, themeColor("#ad246e", "#f472b6")],
   ] as const) {
     ctx.save();
     ctx.translate(x, y);
@@ -712,15 +730,15 @@ function demoRoboTennis(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   ctx.beginPath();
   ctx.ellipse(bx, lane + 5, 8, 3, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.shadowColor = "#d9f99d";
+  ctx.shadowColor = themeColor("#3f6f11", "#d9f99d");
   ctx.shadowBlur = 10;
-  ctx.fillStyle = "#d9f99d";
+  ctx.fillStyle = themeColor("#3f6f11", "#d9f99d");
   ctx.beginPath();
   ctx.arc(bx, by, 5, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
-  ctx.fillStyle = "#5eead4";
-  ctx.font = "700 8px ui-monospace, monospace";
+  ctx.fillStyle = theme.ok;
+  ctx.font = "700 9px ui-monospace, monospace";
   ctx.textAlign = "center";
   ctx.fillText(`RALLY ${1 + (Math.floor(t * 0.7) % 8)}`, W / 2, 13);
 }
@@ -757,7 +775,7 @@ function drawDemo(stageId: string, now: number): void {
   // Clear with a stage-themed background
   clearBackground(ctx, W, H);
   // subtle dotted grid
-  ctx.fillStyle = "rgba(125, 211, 252, 0.05)";
+  ctx.fillStyle = withA(theme.accent, 0.05);
   for (let x = 12; x < W; x += 16) for (let y = 12; y < H; y += 16) ctx.fillRect(x, y, 1, 1);
 
   const fn = STAGE_DEMO[stageId];
@@ -766,7 +784,7 @@ function drawDemo(stageId: string, now: number): void {
   } else {
     // Fallback: simple straight-line drive
     const LANE = H / 2 + 4;
-    drawZone(ctx, W - 50, LANE, 14, "#5eead4", "GOAL", elapsed);
+    drawZone(ctx, W - 50, LANE, 14, theme.ok, "GOAL", elapsed);
     const ph = (elapsed % 4) / 4;
     const u = Math.min(1, ph / 0.7);
     const rx = 36 + (W - 86) * u;
@@ -779,7 +797,7 @@ function drawDemo(stageId: string, now: number): void {
   ctx.save();
   ctx.font = "700 9px ui-monospace, monospace";
   ctx.textAlign = "left";
-  ctx.fillStyle = "rgba(125, 211, 252, 0.35)";
+  ctx.fillStyle = theme.fgDim;
   ctx.fillText("DEMO", 8, 14);
   ctx.restore();
 }

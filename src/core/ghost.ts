@@ -61,7 +61,9 @@ export function isGhostOn(): boolean {
 
 export function setupGhostToggle(toggleEl: HTMLElement, onClick?: () => void): void {
   const sync = () => {
-    toggleEl.textContent = on ? "ON" : "OFF";
+    (toggleEl.querySelector<HTMLElement>("[data-toggle-state]") ?? toggleEl).textContent = on
+      ? "ON"
+      : "OFF";
     toggleEl.classList.toggle("muted", !on);
     const label = `Ghost replay: ${on ? "ON" : "OFF"} — toggle / ゴースト再生: ${on ? "ON" : "OFF"} — 切り替え`;
     toggleEl.title = label;

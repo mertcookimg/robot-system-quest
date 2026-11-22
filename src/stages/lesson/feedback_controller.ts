@@ -610,41 +610,41 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="feedback closed loop: cmd_vel forward, robot reports /odom back">
   <defs>
     <marker id="ld-feedback_controller-arrow-cmd" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
     <marker id="ld-feedback_controller-arrow-odom" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#fbbf24"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#925b00, #fbbf24)"/>
     </marker>
   </defs>
   <!-- controller with target/measurement gauge -->
-  <rect x="8" y="14" width="148" height="92" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="82" y="32" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="12" font-weight="700">controller</text>
+  <rect x="8" y="14" width="148" height="92" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="82" y="32" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">controller</text>
   <!-- target line + moving current dot -->
-  <line x1="22" y1="68" x2="142" y2="68" stroke="#6e7a9c" stroke-width="1" stroke-dasharray="3 2"/>
-  <circle cx="22" cy="68" r="2.5" fill="#6e7a9c"/>
-  <circle cx="142" cy="68" r="3" fill="#5eead4"/>
-  <text x="14" y="62" fill="#6e7a9c" font-family="ui-monospace, monospace" font-size="8">start</text>
-  <text x="148" y="62" text-anchor="end" fill="#5eead4" font-family="ui-monospace, monospace" font-size="8">target</text>
-  <circle r="3.5" fill="#fbbf24">
+  <line x1="22" y1="68" x2="142" y2="68" stroke="light-dark(#586a82, #a4b5cd)" stroke-width="1" stroke-dasharray="3 2"/>
+  <circle cx="22" cy="68" r="2.5" fill="light-dark(#586a82, #a4b5cd)"/>
+  <circle cx="142" cy="68" r="3" fill="light-dark(#087764, #5eead4)"/>
+  <text x="14" y="62" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="8">start</text>
+  <text x="148" y="62" text-anchor="end" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="8">target</text>
+  <circle r="3.5" fill="light-dark(#925b00, #fbbf24)">
     <animateMotion dur="2.4s" repeatCount="indefinite" path="M 22 68 L 142 68"/>
   </circle>
-  <text x="82" y="92" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">"あと何 m?" を確認</text>
+  <text x="82" y="92" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">"あと何 m?" を確認</text>
   <!-- robot with sensor "eye" -->
-  <rect x="264" y="14" width="148" height="92" rx="8" fill="#181f3a" stroke="#c4b5fd" stroke-width="1.5"/>
-  <text x="338" y="32" text-anchor="middle" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="12" font-weight="700">robot</text>
+  <rect x="264" y="14" width="148" height="92" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
+  <text x="338" y="32" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">robot</text>
   <g transform="translate(322,52)">
-    <rect x="0" y="0" width="32" height="22" rx="3" fill="none" stroke="#c4b5fd" stroke-width="1.5"/>
-    <circle cx="8" cy="10" r="2" fill="#c4b5fd"/>
-    <circle cx="24" cy="10" r="2" fill="#c4b5fd"/>
-    <line x1="16" y1="22" x2="16" y2="28" stroke="#c4b5fd" stroke-width="1.5"/>
+    <rect x="0" y="0" width="32" height="22" rx="3" fill="none" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
+    <circle cx="8" cy="10" r="2" fill="light-dark(#6d42b5, #c4b5fd)"/>
+    <circle cx="24" cy="10" r="2" fill="light-dark(#6d42b5, #c4b5fd)"/>
+    <line x1="16" y1="22" x2="16" y2="28" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
   </g>
-  <text x="338" y="98" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">moves + reports pose</text>
+  <text x="338" y="98" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">moves + reports pose</text>
   <!-- /cmd_vel forward -->
-  <line x1="156" y1="46" x2="262" y2="46" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-feedback_controller-arrow-cmd)"/>
-  <text x="209" y="40" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/cmd_vel</text>
+  <line x1="156" y1="46" x2="262" y2="46" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-feedback_controller-arrow-cmd)"/>
+  <text x="209" y="40" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/cmd_vel</text>
   <!-- /odom back -->
-  <line x1="262" y1="78" x2="156" y2="78" stroke="#fbbf24" stroke-width="2" marker-end="url(#ld-feedback_controller-arrow-odom)"/>
-  <text x="209" y="98" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/odom</text>
+  <line x1="262" y1="78" x2="156" y2="78" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2" marker-end="url(#ld-feedback_controller-arrow-odom)"/>
+  <text x="209" y="98" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/odom</text>
 </svg>
 `,
   lessonModal: {

@@ -4,6 +4,7 @@
 // Shared by the shell and stages that read raw keyboard/gamepad input.
 // No game DOM is required at module load, so Guide previews can import it.
 let windowActive = true;
+let stageInputSuppressed = false;
 
 export function isPageInactive(): boolean {
   return !windowActive || document.hidden;
@@ -27,15 +28,36 @@ export function isTerminalFocused(): boolean {
   return !!document.activeElement?.closest("#ros-terminal");
 }
 
-export function isStageInteractionBlocked(): boolean {
+/** True only for surfaces that pause the simulation, not terminal inspection. */
+export function isStageSimulationPaused(): boolean {
   return (
     isPageInactive() ||
-    isTerminalFocused() ||
     !!document.querySelector(
       "#intro-screen.show, #lesson-modal.show, #help-modal.show, #clear-overlay.show, " +
-        "#allclear-screen.show, body.stage-menu-open, body.stage-loading, #terminal-pad-palette",
+        "#allclear-screen.show, body.stage-menu-open, body.stage-loading",
     )
   );
+}
+
+/** Terminal controls capture player input while the simulation keeps running. */
+export function isStageInteractionBlocked(): boolean {
+  return (
+    stageInputSuppressed ||
+    isStageSimulationPaused() ||
+    isTerminalFocused() ||
+    !!document.getElementById("terminal-pad-palette")
+  );
+}
+
+/** Consume a UI dismissal for the entire update, including direct pad readers. */
+export function withStageInputSuppressed(suppressed: boolean, update: () => void): void {
+  const previous = stageInputSuppressed;
+  stageInputSuppressed ||= suppressed;
+  try {
+    update();
+  } finally {
+    stageInputSuppressed = previous;
+  }
 }
 
 export function setupInputGuard(release: () => void): () => void {

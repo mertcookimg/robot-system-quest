@@ -107,20 +107,20 @@ function ensureStyle(): void {
   // element with [data-opad-row] to get a soft row-wide highlight too.
   s.textContent = `
     .opad-focus {
-      outline: 3px solid #fbbf24 !important;
+      outline: 3px solid light-dark(#925b00, #fbbf24) !important;
       outline-offset: 2px !important;
-      box-shadow: 0 0 0 3px rgba(251,191,36,0.30), 0 0 18px rgba(251,191,36,0.55) !important;
+      box-shadow: 0 0 0 3px light-dark(rgba(146, 91, 0,0.30), rgba(251, 191, 36, 0.30)), 0 0 18px light-dark(rgba(146, 91, 0,0.55), rgba(251, 191, 36, 0.55)) !important;
       border-radius: 4px !important;
       position: relative !important;
       z-index: 2 !important;
     }
-    input[type="range"].opad-focus { accent-color: #fbbf24 !important; }
+    input[type="range"].opad-focus { accent-color: light-dark(#925b00, #fbbf24) !important; }
     /* Add emphasis in slider-edit mode with a pulse and thicker border. */
     input[type="range"].opad-editing {
-      outline: 3px solid #5eead4 !important;
+      outline: 3px solid light-dark(#087764, #5eead4) !important;
       outline-offset: 3px !important;
-      box-shadow: 0 0 0 4px rgba(94,234,212,0.30), 0 0 22px rgba(94,234,212,0.7) !important;
-      accent-color: #5eead4 !important;
+      box-shadow: 0 0 0 4px light-dark(rgba(8, 119, 100,0.30), rgba(94, 234, 212, 0.30)), 0 0 22px light-dark(rgba(8, 119, 100,0.7), rgba(94, 234, 212, 0.7)) !important;
+      accent-color: light-dark(#087764, #5eead4) !important;
       animation: opad-pulse 1s ease-in-out infinite;
     }
     @keyframes opad-pulse {
@@ -128,26 +128,26 @@ function ensureStyle(): void {
       50%      { filter: brightness(1.18); }
     }
     .opad-focus-row {
-      background: rgba(251,191,36,0.10) !important;
-      box-shadow: inset 0 0 0 1px rgba(251,191,36,0.45) !important;
+      background: light-dark(rgba(146, 91, 0,0.10), rgba(251, 191, 36, 0.10)) !important;
+      box-shadow: inset 0 0 0 1px light-dark(rgba(146, 91, 0,0.45), rgba(251, 191, 36, 0.45)) !important;
       border-radius: 4px;
     }
     .opad-list {
       position: fixed; z-index: 9999;
-      background: #0c1124; border: 2px solid #fbbf24; border-radius: 6px;
+      background: light-dark(#f1f5fb, #131f35); border: 2px solid light-dark(#925b00, #fbbf24); border-radius: 6px;
       padding: 4px 0; min-width: 160px; max-height: 280px; overflow-y: auto;
-      font-family: ui-monospace, monospace; font-size: 12px; color: #eef2ff;
-      box-shadow: 0 12px 36px rgba(0,0,0,0.55), 0 0 0 2px rgba(251,191,36,0.25);
+      font-family: ui-monospace, monospace; font-size: 12px; color: light-dark(#172b4d, #edf3ff);
+      box-shadow: 0 12px 36px light-dark(rgba(23,43,77,0.16), rgba(237, 243, 255, 0.16)), 0 0 0 2px light-dark(rgba(146, 91, 0,0.25), rgba(251, 191, 36, 0.25));
     }
     .opad-list-row {
       padding: 7px 14px; cursor: pointer; white-space: nowrap;
     }
     .opad-list-row.hi {
-      background: rgba(251,191,36,0.22); color: #fbbf24; font-weight: 700;
+      background: light-dark(rgba(146, 91, 0,0.22), rgba(251, 191, 36, 0.22)); color: light-dark(#925b00, #fbbf24); font-weight: 700;
     }
     .opad-list-foot {
-      padding: 5px 14px; border-top: 1px solid rgba(125,211,252,0.18);
-      font-size: 10px; color: #9aa6c8;
+      padding: 5px 14px; border-top: 1px solid light-dark(rgba(7, 95, 147,0.18), rgba(125, 211, 252, 0.18));
+      font-size: 10px; color: light-dark(#425570, #c2cfe3);
     }
   `;
   document.head.appendChild(s);

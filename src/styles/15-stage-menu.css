@@ -16,7 +16,7 @@ button.primary.gp-focus {
 }
 body.stage-menu-open #stage-selector,
 body.stage-menu-open #mode-tabs {
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 18px 50px rgba(var(--shadow-rgb), 0.21);
   transition: box-shadow 0.2s;
 }
 body.stage-menu-open::before {
@@ -24,7 +24,7 @@ body.stage-menu-open::before {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(0, 3, 12, 0.76);
+  background: rgba(var(--backdrop-rgb), 0.28);
   backdrop-filter: blur(5px) saturate(0.72);
 }
 body.stage-menu-open #mode-tabs {
@@ -72,5 +72,5 @@ body.stage-menu-open #mode-tabs .mode-tab {
 }
 .be-block.bp-drag-over {
   border-top: 2px solid var(--accent);
-  background: rgba(125, 211, 252, 0.1);
+  background: rgba(var(--accent-rgb), 0.1);
 }

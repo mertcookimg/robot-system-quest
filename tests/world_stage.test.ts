@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { Window } from "happy-dom";
 import { createServer, type ViteDevServer } from "vite";
 import type { GameContext, Stage } from "../src/types";
+import { theme, withA } from "../src/core/theme";
 import {
   WORLD_INITIAL,
   WORLD_VIEW_MIN,
@@ -184,7 +185,7 @@ function draw(): { prediction: number | undefined; actual: number } {
   textCommands = [];
   stage.draw();
   const ghost = rectangles.find(
-    (r) => r.width === 40 && r.height === 40 && r.fill === "rgba(125,211,252,.18)",
+    (r) => r.width === 40 && r.height === 40 && r.fill === withA(theme.accent, 0.18),
   );
   const box = rectangles.find((r) => r.width === 40 && r.height === 40 && r.fill === "#e9a54b")!;
   assert.ok(box, "The actual box must remain visible before and after predicting");
@@ -371,7 +372,7 @@ test("the same primary button and table stay in place throughout the three trial
       (rectangle) =>
         rectangle.width === 40 &&
         rectangle.height === 40 &&
-        ["rgba(125,211,252,.18)", "rgba(125,211,252,.07)"].includes(rectangle.fill),
+        [withA(theme.accent, 0.18), withA(theme.accent, 0.07)].includes(rectangle.fill),
     );
     assert.equal(
       ghosts.length,

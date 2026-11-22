@@ -3,7 +3,9 @@
 
 /* Responsive layouts for stage-specific controls rendered below the canvas. */
 .stage-tool-panel {
+  min-width: 0;
   max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .bt-rule-row {
@@ -34,19 +36,17 @@
 }
 
 .object-detection-view {
-  position: relative;
-  width: min(800px, 100%);
-  min-width: 0;
+  /* The camera follows the page through the parameter controls below results. */
+  display: contents;
 }
 
 .object-detection-readout {
-  position: absolute;
-  top: 38%;
-  right: 1.5%;
-  bottom: 28px;
-  width: 31.5%;
-  padding: 8px;
-  overflow: auto;
+  position: relative;
+  width: min(800px, 100%);
+  min-width: 0;
+  padding: 12px;
+  margin-top: 10px;
+  overflow-wrap: anywhere;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -62,7 +62,7 @@
 
 .object-detection-metrics {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 5px 8px;
   margin: 0 0 8px;
 }
@@ -70,7 +70,7 @@
 .object-detection-metrics dt,
 .object-detection-list-label {
   color: var(--fg-mid);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .object-detection-metrics dd {
@@ -93,12 +93,14 @@
 
 .object-detection-list li {
   display: flex;
+  min-width: 0;
   justify-content: space-between;
   gap: 5px;
   overflow-wrap: anywhere;
 }
 
 .object-detection-list strong {
+  flex-shrink: 0;
   color: var(--accent);
 }
 
@@ -116,15 +118,10 @@
   margin: 6px 0 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font: 13px/1.45 var(--mono);
+  font: 14px/1.45 var(--mono);
 }
 
 @media (max-width: 840px) {
-  /* Keep results outside the sticky camera view while editing on a phone. */
-  .object-detection-view {
-    display: contents;
-  }
-
   .object-detection-readout {
     position: static;
     width: min(800px, 100%);
@@ -187,7 +184,7 @@
   }
   .tf-puzzle-reminder {
     padding-top: 5px;
-    border-top: 1px solid rgba(125, 211, 252, 0.18);
+    border-top: 1px solid rgba(var(--accent-rgb), 0.18);
   }
 }
 

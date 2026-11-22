@@ -1,6 +1,10 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { theme, withA } from "../../core/theme";
+
+import { stageColor } from "../../lib/stage_colors";
+
 // edge_detection: Camera Line Follower
 // Connects the blur → canny pipeline learned in image_processing to a
 // pseudo-onboard camera and drives a line follower that steers on the
@@ -407,19 +411,24 @@ export function makeCameraMission(): Stage {
     const x0 = MAP_W + 20;
     c.save();
     mission.drawRightPanelFrame(c);
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.font = "700 12px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText("CAMERA", x0, 22);
-    c.fillStyle = "#6e7a9c";
+    c.fillStyle = stageColor("#586a82");
     c.font = "9px ui-monospace, monospace";
     c.fillText(`${IMG_W}×${IMG_H} bgr8`, x0 + 80, 22);
 
     // Input camera image.
     c.drawImage(mission.camCanvas, x0, 32);
-    c.strokeStyle = "rgba(35,44,77,0.9)";
+    c.strokeStyle = theme.fgDim;
     c.strokeRect(x0 - 1, 31, IMG_W + 2, IMG_H + 2);
 
+    // Reticles stay inside the camera frame as targets enter or leave view.
+    c.save();
+    c.beginPath();
+    c.rect(x0, 32, IMG_W, IMG_H);
+    c.clip();
     // Targets in view get a lock-on reticle and a score-progress bar.
     for (const seen of targetSeen) {
       const t = TARGETS[seen.idx];
@@ -435,33 +444,40 @@ export function makeCameraMission(): Stage {
       c.stroke();
       // Score bar (under the ring).
       c.globalAlpha = 1;
-      c.fillStyle = "rgba(0,0,0,0.5)";
+      c.fillStyle = stageColor("rgba(0,0,0,0.5)");
       c.fillRect(cx - rr, cy + rr + 2, rr * 2, 4);
       c.fillStyle = t.color;
       c.fillRect(cx - rr, cy + rr + 2, rr * 2 * seen.score, 4);
       // Label.
-      c.fillStyle = t.color;
       c.font = "700 9px ui-monospace, monospace";
       c.textAlign = "center";
-      c.fillText(t.label, cx, cy - rr - 3);
+      const labelWidth = c.measureText(t.label).width + 6;
+      const labelX = Math.max(x0 + labelWidth / 2, Math.min(x0 + IMG_W - labelWidth / 2, cx));
+      const labelY = Math.max(32, Math.min(32 + IMG_H - 13, cy - rr - 13));
+      c.fillStyle = "#172b4d";
+      c.fillRect(labelX - labelWidth / 2, labelY, labelWidth, 13);
+      c.fillStyle = t.color;
+      c.fillText(t.label, labelX, labelY + 10);
     }
 
+    c.restore();
     // Progress counter overlaid on the camera image.
     const capN = mission.capturedCount();
-    c.fillStyle = "rgba(0,0,0,0.55)";
+    c.fillStyle = withA(theme.scrim, 0.94);
     c.fillRect(x0 + 6, 32 + IMG_H - 22, 100, 16);
-    c.fillStyle = capN === TARGETS.length ? COLORS.OK : "#fbbf24";
+    c.fillStyle = stageColor(capN === TARGETS.length ? COLORS.OK : "#925b00");
     c.font = "700 11px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText(`SCANNED ${capN} / ${TARGETS.length}`, x0 + 10, 32 + IMG_H - 10);
 
     // DETECTED label.
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.font = "700 12px ui-monospace, monospace";
     c.fillText("DETECTED (canny)", x0, 32 + IMG_H + 26);
 
     // canny mask
     drawEdgeMask(c, x0, 32 + IMG_H + 36, detected, IMG_W, IMG_H);
+    c.strokeStyle = theme.fgDim;
     c.strokeRect(x0 - 1, 32 + IMG_H + 35, IMG_W + 2, IMG_H + 2);
 
     // Mirror the reticles onto the canny mask too.
@@ -482,13 +498,13 @@ export function makeCameraMission(): Stage {
     // cmd_vel readout.
     const yCmd = 32 + (IMG_H + 36) * 2 + 10;
     c.textAlign = "left";
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.font = "11px ui-monospace, monospace";
     c.fillText(`cmd_vel:`, x0, yCmd);
-    c.fillStyle = "#eef2ff";
+    c.fillStyle = stageColor("#172b4d");
     c.fillText(`v=${lastV.toFixed(2)}`, x0 + 60, yCmd);
     c.fillText(`w=${lastW.toFixed(2)}`, x0 + 130, yCmd);
-    c.fillStyle = "#6e7a9c";
+    c.fillStyle = stageColor("#586a82");
     c.font = "10px ui-monospace, monospace";
     c.fillText(`pipeline ${lastPipelineMs.toFixed(1)} ms`, x0, yCmd + 18);
     c.restore();
@@ -582,27 +598,27 @@ export default defineStage({
   diagram: `
 <svg viewBox="0 0 420 120" role="img" aria-label="robot with camera FoV pointing at colored targets">
   <!-- background scene -->
-  <rect x="6" y="6" width="408" height="108" rx="8" fill="rgba(8, 12, 28, 0.5)" stroke="#232c4d"/>
+  <rect x="6" y="6" width="408" height="108" rx="8" fill="rgba(var(--scrim-rgb), 0.5)" stroke="light-dark(#b8c8dc, #627895)"/>
   <!-- camera FoV (frustum) -->
-  <polygon points="62,60 414,18 414,102" fill="rgba(125,211,252,0.08)" stroke="#7dd3fc" stroke-width="1" stroke-dasharray="3 2"/>
+  <polygon points="62,60 414,18 414,102" fill="light-dark(rgba(7, 95, 147,0.08), rgba(125, 211, 252, 0.08))" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1" stroke-dasharray="3 2"/>
   <!-- colored targets inside -->
-  <circle cx="170" cy="50" r="9" fill="#fb7185"/>
-  <circle cx="170" cy="50" r="13" fill="none" stroke="#5eead4" stroke-width="1.2" opacity="0.85" stroke-dasharray="2 1"/>
-  <circle cx="240" cy="78" r="9" fill="#5eead4"/>
-  <circle cx="240" cy="78" r="13" fill="none" stroke="#5eead4" stroke-width="1.2" opacity="0.85" stroke-dasharray="2 1"/>
-  <circle cx="310" cy="42" r="9" fill="#c4b5fd"/>
-  <circle cx="310" cy="42" r="13" fill="none" stroke="#5eead4" stroke-width="1.2" opacity="0.85" stroke-dasharray="2 1"/>
-  <circle cx="350" cy="80" r="9" fill="#fbbf24"/>
-  <circle cx="380" cy="56" r="9" fill="#86efac"/>
+  <circle cx="170" cy="50" r="9" fill="light-dark(#be2949, #fda4af)"/>
+  <circle cx="170" cy="50" r="13" fill="none" stroke="light-dark(#087764, #5eead4)" stroke-width="1.2" opacity="0.85" stroke-dasharray="2 1"/>
+  <circle cx="240" cy="78" r="9" fill="light-dark(#087764, #5eead4)"/>
+  <circle cx="240" cy="78" r="13" fill="none" stroke="light-dark(#087764, #5eead4)" stroke-width="1.2" opacity="0.85" stroke-dasharray="2 1"/>
+  <circle cx="310" cy="42" r="9" fill="light-dark(#6d42b5, #c4b5fd)"/>
+  <circle cx="310" cy="42" r="13" fill="none" stroke="light-dark(#087764, #5eead4)" stroke-width="1.2" opacity="0.85" stroke-dasharray="2 1"/>
+  <circle cx="350" cy="80" r="9" fill="light-dark(#925b00, #fbbf24)"/>
+  <circle cx="380" cy="56" r="9" fill="light-dark(#167346, #86efac)"/>
   <!-- robot with camera lens -->
-  <rect x="32" y="48" width="30" height="24" rx="3" fill="#181f3a" stroke="#7dd3fc" stroke-width="2"/>
-  <circle cx="40" cy="58" r="2" fill="#7dd3fc"/>
-  <circle cx="54" cy="58" r="2" fill="#7dd3fc"/>
-  <rect x="59" y="56" width="6" height="10" fill="#7dd3fc"/>
-  <text x="48" y="92" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9">robot</text>
-  <text x="48" y="104" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="8">+ camera</text>
+  <rect x="32" y="48" width="30" height="24" rx="3" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="2"/>
+  <circle cx="40" cy="58" r="2" fill="light-dark(#075f93, #7dd3fc)"/>
+  <circle cx="54" cy="58" r="2" fill="light-dark(#075f93, #7dd3fc)"/>
+  <rect x="59" y="56" width="6" height="10" fill="light-dark(#075f93, #7dd3fc)"/>
+  <text x="48" y="92" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9">robot</text>
+  <text x="48" y="104" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="8">+ camera</text>
   <!-- annotation -->
-  <text x="408" y="115" text-anchor="end" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">teleop + canny capture</text>
+  <text x="408" y="115" text-anchor="end" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">teleop + canny capture</text>
 </svg>
 `,
   lessonModal: {

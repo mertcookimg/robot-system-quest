@@ -2,18 +2,18 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 .language-switcher {
-  --language-accent: var(--accent, var(--cyan, #7dd3fc));
+  --language-accent: var(--accent);
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   gap: 0;
   padding: 1px 6px;
-  border: 1px solid var(--line, #293447);
+  border: 1px solid var(--line);
   border-radius: 7px;
-  background: rgba(255, 255, 255, 0.025);
-  color: var(--fg-mid, #a8b5ca);
-  font: 600 12px/1 var(--mono, monospace);
+  background: var(--panel);
+  color: var(--fg-mid);
+  font: 600 14px/1 var(--mono, monospace);
   letter-spacing: 0;
   white-space: nowrap;
 }
@@ -24,14 +24,14 @@
 }
 
 .language-switcher > span + button + span {
-  color: var(--fg-dim, #8290a3);
+  color: var(--fg-dim);
   font-weight: 400;
 }
 
 .language-switcher > button {
   position: relative;
   min-width: 32px;
-  min-height: 30px;
+  min-height: 38px;
   margin: 0;
   padding: 0 6px;
   border: 0;
@@ -44,12 +44,12 @@
 }
 
 .language-switcher > button:hover {
-  color: var(--fg, #f0f4ff);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg);
+  background: var(--panel-2);
 }
 
 .language-switcher > button[aria-pressed="true"] {
-  color: var(--fg, #f0f4ff);
+  color: var(--fg);
 }
 
 .language-switcher > button[aria-pressed="true"]::after {

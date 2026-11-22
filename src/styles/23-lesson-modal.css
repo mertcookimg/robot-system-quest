@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(var(--scrim-rgb), 0.85);
+  background: rgba(var(--backdrop-rgb), 0.28);
   backdrop-filter: blur(8px);
   opacity: 0;
   pointer-events: none;
@@ -27,7 +27,9 @@
   padding: 28px 30px;
   max-width: 520px;
   width: 100%;
-  max-height: calc(100vh - 40px);
+  min-width: 0;
+  max-height: calc(100dvh - 40px);
+  overflow-wrap: anywhere;
   overflow-y: auto;
   overscroll-behavior: contain;
   box-shadow: var(--shadow-soft);
@@ -45,16 +47,14 @@
   letter-spacing: 1px;
   color: var(--warn);
   line-height: 1;
-  text-shadow:
-    0 0 12px rgba(251, 191, 36, 0.45),
-    0 0 32px rgba(251, 191, 36, 0.18);
+  text-shadow: none;
   margin-bottom: 4px;
 }
 
 .lesson-eyebrow {
   display: inline-block;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 4px;
   color: var(--accent);
   font-weight: 700;
@@ -66,8 +66,8 @@
 .lesson-modal[data-kind="game"] .lesson-eyebrow {
   color: var(--warn);
   letter-spacing: 6px;
-  border-color: rgba(251, 191, 36, 0.6);
-  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(var(--warn-rgb), 0.6);
+  background: rgba(var(--warn-rgb), 0.08);
 }
 
 .lesson-title {
@@ -82,11 +82,11 @@
   font-size: 30px;
   letter-spacing: 2px;
   margin: 6px 0 4px;
-  background: linear-gradient(180deg, #fef3e8 0%, #c4b5fd 100%);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 24px rgba(125, 211, 252, 0.18);
+  text-shadow: none;
 }
 
 .lesson-subtitle {
@@ -96,7 +96,7 @@
   display: block;
   margin: 0 0 18px;
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 14px;
   color: var(--fg-dim);
   letter-spacing: 1.2px;
   line-height: 1.4;
@@ -116,17 +116,17 @@
   display: inline;
 }
 .lesson-modal[data-kind="game"] .lesson-start {
-  font-size: 13px;
+  font-size: 14px;
   padding: 14px;
   letter-spacing: 6px;
-  background: linear-gradient(180deg, var(--warn), #f59e0b);
+  background: linear-gradient(180deg, var(--accent), var(--accent-deep));
   border: none;
-  color: #1f1408;
+  color: var(--on-accent);
   font-weight: 800;
-  box-shadow: 0 8px 28px rgba(251, 191, 36, 0.35);
+  box-shadow: 0 8px 24px rgba(var(--accent-rgb), 0.18);
 }
 .lesson-modal[data-kind="game"] .lesson-start:hover {
-  filter: brightness(1.05);
+  filter: brightness(0.9);
   transform: translateY(-1px);
 }
 
@@ -190,7 +190,7 @@
   transform-origin: center;
   stroke-dashoffset: 78;
   animation: ig-score 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
-  filter: drop-shadow(0 0 4px rgba(94, 234, 212, 0.65));
+  filter: drop-shadow(0 0 4px rgba(var(--ok-rgb), 0.65));
 }
 @keyframes ig-card-focus {
   0%,
@@ -201,7 +201,7 @@
   7%,
   13% {
     opacity: 1;
-    filter: drop-shadow(0 0 6px rgba(125, 211, 252, 0.24));
+    filter: drop-shadow(0 0 6px rgba(var(--accent-rgb), 0.24));
   }
 }
 @keyframes ig-noise {
@@ -274,7 +274,7 @@
 }
 .lesson-section h3 {
   margin: 0 0 6px;
-  font-size: 12.5px;
+  font-size: 14px;
   font-family: var(--mono);
   letter-spacing: 2px;
   font-weight: 700;
@@ -290,7 +290,7 @@
 }
 .lesson-section p {
   margin: 0;
-  font-size: 14.5px;
+  font-size: 16px;
   line-height: 1.7;
   color: var(--fg);
 }
@@ -326,8 +326,8 @@
 }
 
 .lesson-modal[data-kind="game"] [data-section="goal"] {
-  background: linear-gradient(135deg, rgba(94, 234, 212, 0.14), rgba(94, 234, 212, 0));
-  border: 1px solid rgba(94, 234, 212, 0.45);
+  background: linear-gradient(135deg, rgba(var(--ok-rgb), 0.14), rgba(var(--ok-rgb), 0));
+  border: 1px solid rgba(var(--ok-rgb), 0.45);
   border-radius: 14px;
   padding: 16px 18px;
   position: relative;
@@ -339,7 +339,7 @@
   inset: -40% -10% auto auto;
   width: 140px;
   height: 140px;
-  background: radial-gradient(circle, rgba(94, 234, 212, 0.18), transparent 70%);
+  background: radial-gradient(circle, rgba(var(--ok-rgb), 0.18), transparent 70%);
   pointer-events: none;
 }
 .lesson-modal[data-kind="game"] [data-section="goal"] h3 {
@@ -354,18 +354,18 @@
   white-space: pre-line; /* Preserve line breaks (\n) for readability. */
 }
 .lesson-modal[data-kind="game"] [data-section="first"] {
-  background: linear-gradient(135deg, rgba(125, 211, 252, 0.1), rgba(125, 211, 252, 0));
-  border: 1px solid rgba(125, 211, 252, 0.35);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.1), rgba(var(--accent-rgb), 0));
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
   border-radius: 14px;
   padding: 14px 18px;
 }
 .lesson-modal[data-kind="game"] [data-section="first"] h3 {
   color: var(--accent);
-  font-size: 13.5px;
+  font-size: 14px;
   letter-spacing: 2px;
 }
 .lesson-modal[data-kind="game"] [data-section="first"] p {
-  font-size: 14.5px;
+  font-size: 16px;
   line-height: 1.7;
 }
 
@@ -383,18 +383,34 @@
   margin: 0 0 12px;
   padding: 8px;
   background:
-    linear-gradient(180deg, rgba(var(--scrim-rgb), 0.65), rgba(3, 6, 13, 0.65)),
-    radial-gradient(ellipse 60% 60% at 50% 50%, rgba(125, 211, 252, 0.05), transparent);
-  border: 1px solid rgba(125, 211, 252, 0.18);
+    linear-gradient(180deg, rgba(var(--scrim-rgb), 0.65), var(--panel)),
+    radial-gradient(ellipse 60% 60% at 50% 50%, rgba(var(--accent-rgb), 0.05), transparent);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
   border-radius: 12px;
   position: relative;
 }
 .lesson-demo canvas {
   width: 100%;
   height: auto;
-  max-height: 120px;
   display: block;
   border-radius: 8px;
   image-rendering: pixelated; /* preserve crisp pixel-art */
   image-rendering: -moz-crisp-edges;
+}
+
+@media (max-width: 480px) {
+  .lesson-modal {
+    padding: 12px;
+  }
+  .lesson-card {
+    padding: 20px 16px;
+    max-height: calc(100dvh - 24px);
+  }
+  .lesson-modal[data-kind="game"] .lesson-title {
+    font-size: 25px;
+    letter-spacing: 1px;
+  }
+  .lesson-modal[data-kind="game"] [data-section="goal"] {
+    padding: 12px;
+  }
 }

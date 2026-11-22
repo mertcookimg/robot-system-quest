@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { drawRobotBody } from "../lib/draw";
+import { theme, withA } from "./theme";
 
 let raf = 0;
 let startedAt = 0;
@@ -26,14 +27,14 @@ function draw(now: number, canvas: HTMLCanvasElement, ctx: CanvasRenderingContex
   ctx.clearRect(0, 0, W, H);
 
   const glow = ctx.createRadialGradient(W * 0.52, H * 0.55, 10, W * 0.52, H * 0.55, W * 0.55);
-  glow.addColorStop(0, "rgba(125, 211, 252, 0.09)");
-  glow.addColorStop(0.65, "rgba(196, 181, 253, 0.025)");
+  glow.addColorStop(0, withA(theme.accent, 0.09));
+  glow.addColorStop(0.65, withA(theme.accent2, 0.025));
   glow.addColorStop(1, "rgba(0, 0, 0, 0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, H);
 
   // Technical map grid.
-  ctx.strokeStyle = "rgba(125, 211, 252, 0.075)";
+  ctx.strokeStyle = withA(theme.accent, 0.075);
   ctx.lineWidth = 1;
   for (let x = 20; x < W; x += 24) {
     ctx.beginPath();
@@ -55,7 +56,7 @@ function draw(now: number, canvas: HTMLCanvasElement, ctx: CanvasRenderingContex
   ctx.save();
   ctx.setLineDash([6, 8]);
   ctx.lineDashOffset = -t * 14;
-  ctx.strokeStyle = "rgba(125, 211, 252, 0.38)";
+  ctx.strokeStyle = withA(theme.accent, 0.38);
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(startX, y);
@@ -65,10 +66,10 @@ function draw(now: number, canvas: HTMLCanvasElement, ctx: CanvasRenderingContex
   ctx.restore();
 
   const nodes = [
-    { x: startX, y, label: "START", color: "#7dd3fc" },
-    { x: W * 0.35, y: 65, label: "SENSE", color: "#c4b5fd" },
-    { x: W * 0.64, y: 70, label: "PLAN", color: "#c4b5fd" },
-    { x: goalX, y, label: "GOAL", color: "#5eead4" },
+    { x: startX, y, label: "START", color: theme.accent },
+    { x: W * 0.35, y: 65, label: "SENSE", color: theme.accent2 },
+    { x: W * 0.64, y: 70, label: "PLAN", color: theme.accent2 },
+    { x: goalX, y, label: "GOAL", color: theme.ok },
   ];
   for (const node of nodes) {
     const pulse = 7 + Math.sin(t * 2.4 + node.x) * 1.5;
@@ -80,14 +81,14 @@ function draw(now: number, canvas: HTMLCanvasElement, ctx: CanvasRenderingContex
     ctx.globalAlpha = 1;
     ctx.fillStyle = node.color;
     ctx.fillRect(node.x - 2, node.y - 2, 4, 4);
-    ctx.font = "700 8px ui-monospace, monospace";
+    ctx.font = "700 10px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.fillText(node.label, node.x, node.y + 20);
   }
 
   // A few map obstacles.
-  ctx.fillStyle = "rgba(196, 181, 253, 0.13)";
-  ctx.strokeStyle = "rgba(196, 181, 253, 0.35)";
+  ctx.fillStyle = withA(theme.accent2, 0.13);
+  ctx.strokeStyle = withA(theme.accent2, 0.35);
   for (const [x, oy, w, h] of [
     [180, 21, 54, 18],
     [395, 101, 70, 17],
@@ -110,8 +111,8 @@ function draw(now: number, canvas: HTMLCanvasElement, ctx: CanvasRenderingContex
   ctx.translate(robotX, robotY);
   ctx.rotate(Math.sin(t * 1.1) * 0.06);
   const sweep = ctx.createRadialGradient(0, 0, 4, 0, 0, 48);
-  sweep.addColorStop(0, "rgba(125, 211, 252, 0.22)");
-  sweep.addColorStop(1, "rgba(125, 211, 252, 0)");
+  sweep.addColorStop(0, withA(theme.accent, 0.22));
+  sweep.addColorStop(1, withA(theme.accent, 0));
   ctx.fillStyle = sweep;
   ctx.beginPath();
   ctx.moveTo(0, 0);
@@ -126,13 +127,13 @@ function draw(now: number, canvas: HTMLCanvasElement, ctx: CanvasRenderingContex
   for (let i = 0; i < 9; i++) {
     const p = (t * 0.22 + i / 9) % 1;
     ctx.globalAlpha = 0.2 + p * 0.6;
-    ctx.fillStyle = i % 3 === 0 ? "#c4b5fd" : "#7dd3fc";
+    ctx.fillStyle = i % 3 === 0 ? theme.accent2 : theme.accent;
     ctx.fillRect(20 + p * (robotX - 35), 18 + (i % 3) * 5, 2, 2);
   }
   ctx.globalAlpha = 1;
 
-  ctx.fillStyle = "rgba(125, 211, 252, 0.46)";
-  ctx.font = "700 8px ui-monospace, monospace";
+  ctx.fillStyle = theme.fgDim;
+  ctx.font = "700 10px ui-monospace, monospace";
   ctx.textAlign = "left";
   ctx.fillText(`X ${robotX.toFixed(1).padStart(5, "0")}  V 0.25 m/s`, 14, H - 9);
 

@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+
 // pick_place — a timed conveyor sorting game that turns the arm lessons into
 // a complete manipulation task: approach, grasp, lift, transport and release.
 import { W, H, type GameContext, type Stage } from "../../types";
@@ -10,7 +12,7 @@ import { Particles } from "../../lib/particles";
 import { ARM, drawArm, drawWorkspace, fk, ik, slew, PX_PER_M } from "../../lib/arm";
 import * as armpad from "../../lib/armpad";
 import { formatSeconds } from "../../lib/hud";
-import { withA } from "../../core/theme";
+import { getTheme, withA, theme } from "../../core/theme";
 import { t, tx } from "../../i18n";
 
 type ParcelKind = "cyan" | "amber" | "rose";
@@ -23,9 +25,9 @@ interface Parcel {
 }
 
 const COLORS: Record<ParcelKind, string> = {
-  cyan: "#5eead4",
-  amber: "#fbbf24",
-  rose: "#fb7185",
+  cyan: "#087764",
+  amber: "#925b00",
+  rose: "#be2949",
 };
 
 const LABELS: Record<ParcelKind, string> = { cyan: "A", amber: "B", rose: "C" };
@@ -295,8 +297,8 @@ export function makePickPlace(): Stage {
   }
 
   function drawBelt(c: CanvasRenderingContext2D) {
-    c.fillStyle = "#11182c";
-    c.strokeStyle = "#6e7a9c";
+    c.fillStyle = stageColor("#edf3fb");
+    c.strokeStyle = stageColor("#586a82");
     c.lineWidth = 2;
     c.beginPath();
     c.roundRect(BELT.x, BELT.y, BELT.w, BELT.h, 8);
@@ -306,7 +308,7 @@ export function makePickPlace(): Stage {
     c.beginPath();
     c.rect(BELT.x + 5, BELT.y + 5, BELT.w - 10, BELT.h - 10);
     c.clip();
-    c.strokeStyle = withA("#7dd3fc", 0.28);
+    c.strokeStyle = withA(theme.accent, getTheme() === "light" ? 0.65 : 0.28);
     c.lineWidth = 3;
     for (let x = BELT.x - 40 + beltPhase; x < BELT.x + BELT.w + 40; x += 36) {
       c.beginPath();
@@ -315,7 +317,7 @@ export function makePickPlace(): Stage {
       c.stroke();
     }
     c.restore();
-    c.fillStyle = "#6e7a9c";
+    c.fillStyle = stageColor("#586a82");
     c.font = "700 9px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText("CONVEYOR  →", BELT.x + 10, BELT.y + BELT.h + 15);
@@ -325,14 +327,14 @@ export function makePickPlace(): Stage {
     const p = DOCKS[kind];
     const color = COLORS[kind];
     const pulse = 0.72 + 0.28 * Math.sin(elapsed * 4 + p.x);
-    c.fillStyle = withA(color, 0.08 + pulse * 0.05);
-    c.strokeStyle = withA(color, 0.75);
+    c.fillStyle = stageColor(withA(color, 0.08 + pulse * 0.05));
+    c.strokeStyle = stageColor(withA(color, getTheme() === "light" ? 1 : 0.75));
     c.lineWidth = 2;
     c.beginPath();
     c.roundRect(p.x - 38, p.y - 27, 76, 54, 9);
     c.fill();
     c.stroke();
-    c.fillStyle = color;
+    c.fillStyle = stageColor(color);
     c.font = "800 18px ui-monospace, monospace";
     c.textAlign = "center";
     c.textBaseline = "middle";
@@ -346,17 +348,17 @@ export function makePickPlace(): Stage {
     c.translate(p.x, p.y);
     c.rotate(p.angle);
     const color = COLORS[p.kind];
-    c.shadowColor = color;
+    c.shadowColor = stageColor(color);
     c.shadowBlur = held ? 12 : 5;
-    c.fillStyle = color;
-    c.strokeStyle = "#0a0f1f";
+    c.fillStyle = stageColor(color);
+    c.strokeStyle = stageColor("#0a0f1f");
     c.lineWidth = 3;
     c.beginPath();
     c.roundRect(-14, -13, 28, 26, 4);
     c.fill();
     c.stroke();
     c.shadowBlur = 0;
-    c.fillStyle = "#0a0f1f";
+    c.fillStyle = theme.onAccent;
     c.font = "900 13px ui-monospace, monospace";
     c.textAlign = "center";
     c.textBaseline = "middle";
@@ -369,7 +371,7 @@ export function makePickPlace(): Stage {
     const hot = actionFlash > 0;
     c.save();
     c.translate(tip.x, tip.y);
-    c.strokeStyle = hot ? "#fb7185" : "#eef2ff";
+    c.strokeStyle = stageColor(hot ? "#be2949" : "#172b4d");
     c.lineWidth = 3;
     const gap = gripClosed ? 5 : 11;
     c.beginPath();
@@ -384,7 +386,7 @@ export function makePickPlace(): Stage {
   }
 
   function drawCursor(c: CanvasRenderingContext2D) {
-    c.strokeStyle = edgeFlash > 0 ? "#fb7185" : withA("#fbbf24", 0.85);
+    c.strokeStyle = stageColor(edgeFlash > 0 ? "#be2949" : withA("#925b00", 0.85));
     c.lineWidth = 1.5;
     c.beginPath();
     c.arc(cursor.x, cursor.y, 7, 0, Math.PI * 2);
@@ -475,16 +477,16 @@ export default defineStage({
   order: 19,
   diagram: `
 <svg viewBox="0 0 420 120" role="img" aria-label="robot arm sorts coloured parcels from a conveyor into matching zones">
-  <rect x="20" y="83" width="190" height="25" rx="5" fill="#181f3a" stroke="#6e7a9c"/>
-  <path d="M25 90h180M25 101h180" stroke="#7dd3fc" stroke-width="2" stroke-dasharray="14 8" opacity=".45"/>
-  <rect x="92" y="80" width="22" height="20" rx="3" fill="#fbbf24"/><text x="103" y="94" text-anchor="middle" fill="#0a0f1f" font-size="11" font-weight="800">B</text>
-  <polygon points="216,110 246,110 240,94 222,94" fill="#181f3a" stroke="#7dd3fc"/>
-  <line x1="231" y1="96" x2="286" y2="47" stroke="#7dd3fc" stroke-width="9" stroke-linecap="round"/>
-  <line x1="286" y1="47" x2="340" y2="72" stroke="#c4b5fd" stroke-width="7" stroke-linecap="round"/>
-  <circle cx="286" cy="47" r="6" fill="#eef2ff"/><rect x="329" y="69" width="22" height="20" rx="3" fill="#fbbf24"/>
-  <rect x="362" y="66" width="48" height="38" rx="7" fill="#fbbf2420" stroke="#fbbf24" stroke-width="2"/>
-  <text x="386" y="89" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="800">B</text>
-  <path d="M338 52 Q370 35 389 57" fill="none" stroke="#5eead4" stroke-width="2" stroke-dasharray="4 3"/>
+  <rect x="20" y="83" width="190" height="25" rx="5" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#586a82, #a4b5cd)"/>
+  <path d="M25 90h180M25 101h180" stroke="light-dark(rgba(7,95,147,.75), rgba(125,211,252,.45))" stroke-width="2" stroke-dasharray="14 8"/>
+  <rect x="92" y="80" width="22" height="20" rx="3" fill="light-dark(#925b00, #fbbf24)"/><text x="103" y="94" text-anchor="middle" fill="var(--on-accent)" font-size="11" font-weight="800">B</text>
+  <polygon points="216,110 246,110 240,94 222,94" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)"/>
+  <line x1="231" y1="96" x2="286" y2="47" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="9" stroke-linecap="round"/>
+  <line x1="286" y1="47" x2="340" y2="72" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="286" cy="47" r="6" fill="light-dark(#172b4d, #edf3ff)"/><rect x="329" y="69" width="22" height="20" rx="3" fill="light-dark(#925b00, #fbbf24)"/>
+  <rect x="362" y="66" width="48" height="38" rx="7" fill="light-dark(#925b0020, #fbbf2420)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2"/>
+  <text x="386" y="89" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-size="15" font-weight="800">B</text>
+  <path d="M338 52 Q370 35 389 57" fill="none" stroke="light-dark(#087764, #5eead4)" stroke-width="2" stroke-dasharray="4 3"/>
 </svg>`,
   lessonModal: {
     title: {

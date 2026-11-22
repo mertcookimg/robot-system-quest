@@ -15,6 +15,7 @@ export const StorageKeys = {
   ghostOn: "robot_ghost",
   mode: "robot_mode",
   lang: "robot_quest_lang_v1",
+  theme: "robot_quest_theme_v1",
 } as const;
 
 export type StorageValidator<T> = (value: unknown) => value is T;

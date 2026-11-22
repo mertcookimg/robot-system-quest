@@ -10,7 +10,11 @@ import * as topicMonitor from "./topic_monitor";
 import * as ambient from "./ambient";
 import * as crash from "./crash";
 import * as stageManager from "./stage_manager";
-import { isStageInteractionBlocked } from "../lib/input_guard";
+import {
+  isStageInteractionBlocked,
+  isStageSimulationPaused,
+  withStageInputSuppressed,
+} from "../lib/input_guard";
 import { releaseStageInputs } from "./input_reset";
 import { beginCanvasReadoutFrame, endCanvasReadoutFrame } from "../lib/canvas_readout";
 import { ui } from "./dom";
@@ -29,10 +33,12 @@ export function startLoop(): void {
     // freeze the canvas or desync overlays. The rAF is requeued either way.
     try {
       const wasGated = isStageInteractionBlocked();
+      const wasPaused = isStageSimulationPaused();
       gamepad.poll();
 
       // A press used to close a dialog is consumed for this whole frame.
       const gated = wasGated || isStageInteractionBlocked();
+      const paused = wasPaused || isStageSimulationPaused();
       if (gated) releaseStageInputs();
 
       // Navpad runs even with no gamepad (keyboard-only). Polled outside
@@ -52,10 +58,10 @@ export function startLoop(): void {
       input.syncKeys();
 
       const stage = stageManager.getCurrent();
-      // Menus, help, completion and terminal interaction pause timers/physics
-      // as well as raw per-stage gamepad readers. Drawing remains available.
-      if (stageManager.isStageReady() && !gated && !crash.consumeHitStop(dt)) {
-        stage.update(dt);
+      // Terminal inspection keeps timers, autonomous motion and topics live.
+      // Its controls still own all player input, including the dismissal frame.
+      if (stageManager.isStageReady() && !paused && !crash.consumeHitStop(dt)) {
+        withStageInputSuppressed(gated, () => stage.update(dt));
       }
       beginCanvasReadoutFrame();
       try {

@@ -1,11 +1,13 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+
 // battery_rush: Battery Rush — 75-second delivery score attack. The battery
 // drains as you drive; dock at the charging pad before it hits 0%.
 // Teaches sensor_msgs/BatteryState monitoring + auto-docking behavior.
 import { W, H, type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { theme, withA, themeColor, getTheme } from "../../core/theme";
 
 import {
   drawGrid,
@@ -116,7 +118,7 @@ export function makeBatteryRush(): Stage {
 
   function finish() {
     cleared = true;
-    particles.burst(robot.x, robot.y, "#7dd3fc", 30);
+    particles.burst(robot.x, robot.y, "#075f93", 30);
     g.setStatus(t("battery_rush.status.timeup"), "var(--ok)");
     const stars = score >= 6 ? 3 : score >= 4 ? 2 : 1;
     const stats =
@@ -186,7 +188,7 @@ export function makeBatteryRush(): Stage {
     if (!carrying) {
       if (Math.hypot(robot.x - PICKUP.x, robot.y - PICKUP.y) < PICKUP.r) {
         carrying = true;
-        particles.burst(PICKUP.x, PICKUP.y, "#5eead4", 24, 220);
+        particles.burst(PICKUP.x, PICKUP.y, "#087764", 24, 220);
         g.sfx.pickup();
         g.setStatus(t("battery_rush.status.deliver"), "var(--accent)");
       }
@@ -195,8 +197,8 @@ export function makeBatteryRush(): Stage {
       if (Math.hypot(robot.x - spot.x, robot.y - spot.y) < spot.r) {
         carrying = false;
         score++;
-        particles.burst(spot.x, spot.y, "#7dd3fc", 30);
-        particles.burst(spot.x, spot.y, "#fbbf24", 18);
+        particles.burst(spot.x, spot.y, "#075f93", 30);
+        particles.burst(spot.x, spot.y, "#925b00", 18);
         g.sfx.deliver();
         g.shake(0.4);
         pickNextSpot();
@@ -243,25 +245,32 @@ export function makeBatteryRush(): Stage {
     bumpCd = 0.5;
     bumpFlash = 0.6;
     battery = Math.max(0, battery - WALL_HIT_COST);
-    particles.burst(robot.x, robot.y, "#fb7185", 10, 160);
+    particles.burst(robot.x, robot.y, "#be2949", 10, 160);
     g.sfx.bump();
     g.shake(0.2);
   }
 
   function drawDock(c: CanvasRenderingContext2D) {
     c.save();
-    const pulse = charging ? 0.6 + 0.4 * Math.abs(Math.sin(animTime * 6)) : 0.5;
-    c.strokeStyle = `rgba(251, 191, 36, ${pulse})`;
+    const pulse =
+      getTheme() === "light"
+        ? charging
+          ? 0.8 + 0.2 * Math.abs(Math.sin(animTime * 6))
+          : 0.85
+        : charging
+          ? 0.6 + 0.4 * Math.abs(Math.sin(animTime * 6))
+          : 0.5;
+    c.strokeStyle = stageColor(`rgba(146, 91, 0, ${pulse})`);
     c.lineWidth = charging ? 2.5 : 1.5;
     c.beginPath();
     c.arc(DOCK.x, DOCK.y, DOCK.r, 0, Math.PI * 2);
     c.stroke();
-    c.fillStyle = "rgba(251, 191, 36, 0.10)";
+    c.fillStyle = stageColor("rgba(146, 91, 0, 0.10)");
     c.beginPath();
     c.arc(DOCK.x, DOCK.y, DOCK.r * 0.85, 0, Math.PI * 2);
     c.fill();
     // Lightning bolt.
-    c.fillStyle = "#fbbf24";
+    c.fillStyle = stageColor("#925b00");
     c.beginPath();
     c.moveTo(DOCK.x + 3, DOCK.y - 12);
     c.lineTo(DOCK.x - 6, DOCK.y + 2);
@@ -273,7 +282,7 @@ export function makeBatteryRush(): Stage {
     c.fill();
     c.font = "600 10px ui-monospace, monospace";
     c.textAlign = "center";
-    c.fillStyle = "#fbbf24";
+    c.fillStyle = stageColor("#925b00");
     c.fillText(charging ? "CHARGING" : "DOCK", DOCK.x, DOCK.y - DOCK.r - 10);
     c.restore();
   }
@@ -285,7 +294,7 @@ export function makeBatteryRush(): Stage {
       h = 40;
     c.save();
     c.fillStyle = withA(theme.scrim, 0.85);
-    c.strokeStyle = "rgba(125, 211, 252, 0.3)";
+    c.strokeStyle = stageColor("rgba(7, 95, 147, 0.3)");
     c.lineWidth = 1;
     c.beginPath();
     c.roundRect(x, y, w, h, 6);
@@ -296,15 +305,15 @@ export function makeBatteryRush(): Stage {
       by = y + 8,
       bw = 74,
       bh = 12;
-    c.strokeStyle = "#9aa6c8";
+    c.strokeStyle = stageColor("#425570");
     c.strokeRect(bx, by, bw, bh);
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.fillRect(bx + bw, by + 3, 3, bh - 6);
     const color = battery > 50 ? COLORS.OK : battery > LOW_BATT ? COLORS.WARN : COLORS.DANGER;
     const blink = battery <= LOW_BATT && Math.sin(animTime * 8) > 0;
-    c.fillStyle = blink ? "rgba(251, 113, 133, 0.35)" : color;
+    c.fillStyle = stageColor(blink ? "rgba(190, 41, 73, 0.35)" : color);
     c.fillRect(bx + 1, by + 1, ((bw - 2) * battery) / 100, bh - 2);
-    c.fillStyle = color;
+    c.fillStyle = stageColor(color);
     c.font = "600 11px ui-monospace, monospace";
     c.textAlign = "left";
     c.textBaseline = "middle";
@@ -324,13 +333,13 @@ export function makeBatteryRush(): Stage {
     const danger = remaining < 15;
     c.save();
     c.fillStyle = withA(theme.scrim, 0.85);
-    c.strokeStyle = danger ? "rgba(251, 113, 133, 0.6)" : "rgba(125, 211, 252, 0.3)";
+    c.strokeStyle = stageColor(danger ? "rgba(190, 41, 73, 0.6)" : "rgba(7, 95, 147, 0.3)");
     c.lineWidth = 1;
     c.beginPath();
     c.roundRect(x, y, w, h, 6);
     c.fill();
     c.stroke();
-    c.fillStyle = danger ? COLORS.DANGER : COLORS.ACCENT;
+    c.fillStyle = stageColor(danger ? COLORS.DANGER : COLORS.ACCENT);
     c.font = "600 12px ui-monospace, monospace";
     c.textAlign = "right";
     c.textBaseline = "middle";
@@ -350,8 +359,11 @@ export function makeBatteryRush(): Stage {
     c.save();
     c.translate(robot.x + Math.cos(a) * 32, robot.y + Math.sin(a) * 32);
     c.rotate(a);
-    c.globalAlpha = 0.55 + 0.25 * Math.sin(animTime * 5);
-    c.fillStyle = carrying ? "#7dd3fc" : battery < LOW_BATT ? "#fbbf24" : "#5eead4";
+    c.globalAlpha =
+      getTheme() === "light"
+        ? 0.85 + 0.15 * Math.sin(animTime * 5)
+        : 0.55 + 0.25 * Math.sin(animTime * 5);
+    c.fillStyle = stageColor(carrying ? "#075f93" : battery < LOW_BATT ? "#925b00" : "#087764");
     c.beginPath();
     c.moveTo(0, -5);
     c.lineTo(9, 0);
@@ -366,16 +378,16 @@ export function makeBatteryRush(): Stage {
     clearBackground(c);
 
     const vg = c.createRadialGradient(W / 2, H / 2, 100, W / 2, H / 2, 600);
-    vg.addColorStop(0, "rgba(125, 211, 252, 0.04)");
-    vg.addColorStop(1, "rgba(0, 0, 0, 0)");
-    c.fillStyle = vg;
+    vg.addColorStop(0, stageColor("rgba(7, 95, 147, 0.04)"));
+    vg.addColorStop(1, stageColor("rgba(0, 0, 0, 0)"));
+    c.fillStyle = stageColor(vg);
     c.fillRect(0, 0, W, H);
 
     drawGrid(c);
 
     for (const wall of walls) {
-      c.fillStyle = "rgba(35, 44, 77, 0.75)";
-      c.strokeStyle = "rgba(110, 122, 156, 0.5)";
+      c.fillStyle = themeColor("#c5d2e3", stageColor("rgba(170, 188, 212, 0.75)"));
+      c.strokeStyle = themeColor("#586a82", stageColor("rgba(88, 106, 130, 0.5)"));
       c.lineWidth = 1;
       c.beginPath();
       c.roundRect(wall.x, wall.y, wall.w, wall.h, 4);
@@ -384,8 +396,8 @@ export function makeBatteryRush(): Stage {
     }
 
     drawDock(c);
-    if (!carrying) drawZone(c, PICKUP, "#5eead4", "PICKUP", animTime);
-    else drawZone(c, SPOTS[spotIdx], "#7dd3fc", "DELIVER", animTime);
+    if (!carrying) drawZone(c, PICKUP, "#087764", "PICKUP", animTime);
+    else drawZone(c, SPOTS[spotIdx], "#075f93", "DELIVER", animTime);
 
     trail.draw(c, 0.55);
     particles.draw(c);
@@ -400,17 +412,20 @@ export function makeBatteryRush(): Stage {
     drawRobotBody(c, bumpFlash, animTime);
     if (carrying) {
       c.rotate(-robot.theta);
-      c.fillStyle = "#fbbf24";
-      c.strokeStyle = "#d97706";
+      c.save();
+      if (robot.y < 36) c.translate(0, 44);
+      c.fillStyle = stageColor("#925b00");
+      c.strokeStyle = stageColor("#d97706");
       c.lineWidth = 1;
       c.beginPath();
       c.roundRect(-9, -29, 18, 12, 2);
       c.fill();
       c.stroke();
-      c.fillStyle = "#7c4a03";
+      c.fillStyle = themeColor("#ffffff", "#7c4a03");
       c.font = "600 7px ui-monospace, monospace";
       c.textAlign = "center";
       c.fillText("PKG", 0, -21);
+      c.restore();
       c.rotate(robot.theta);
     }
     c.rotate(-robot.theta);
@@ -421,9 +436,9 @@ export function makeBatteryRush(): Stage {
     if (battery < LOW_BATT && !cleared) {
       const a = 0.1 + 0.08 * Math.abs(Math.sin(animTime * 4));
       const rg = c.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 520);
-      rg.addColorStop(0, "rgba(251, 113, 133, 0)");
-      rg.addColorStop(1, `rgba(251, 113, 133, ${a})`);
-      c.fillStyle = rg;
+      rg.addColorStop(0, stageColor("rgba(190, 41, 73, 0)"));
+      rg.addColorStop(1, stageColor(`rgba(190, 41, 73, ${a})`));
+      c.fillStyle = stageColor(rg);
       c.fillRect(0, 0, W, H);
     }
 
@@ -515,22 +530,22 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="robot publishes battery state, monitor node triggers docking below 25 percent">
   <defs>
     <marker id="ld-batt-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
   </defs>
-  <rect x="8" y="26" width="140" height="68" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="78" y="52" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="12" font-weight="700">robot_node</text>
-  <text x="78" y="72" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">battery sensor</text>
-  <rect x="272" y="26" width="140" height="68" rx="8" fill="#181f3a" stroke="#fbbf24" stroke-width="1.5"/>
-  <text x="342" y="48" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">battery_monitor</text>
-  <text x="342" y="66" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">&lt; 25% ?</text>
-  <text x="342" y="84" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="9">→ go to DOCK ⚡</text>
-  <line x1="148" y1="60" x2="270" y2="60" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-batt-arrow)"/>
-  <circle r="3.5" fill="#fbbf24">
+  <rect x="8" y="26" width="140" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="78" y="52" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">robot_node</text>
+  <text x="78" y="72" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">battery sensor</text>
+  <rect x="272" y="26" width="140" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <text x="342" y="48" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">battery_monitor</text>
+  <text x="342" y="66" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">&lt; 25% ?</text>
+  <text x="342" y="84" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="9">→ go to DOCK ⚡</text>
+  <line x1="148" y1="60" x2="270" y2="60" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-batt-arrow)"/>
+  <circle r="3.5" fill="light-dark(#925b00, #fbbf24)">
     <animateMotion dur="1.6s" repeatCount="indefinite" path="M 150 60 L 266 60"/>
   </circle>
-  <text x="210" y="46" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/battery_state</text>
-  <text x="210" y="80" text-anchor="middle" fill="#6e7a9c" font-family="ui-monospace, monospace" font-size="9">sensor_msgs/BatteryState</text>
+  <text x="210" y="46" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/battery_state</text>
+  <text x="210" y="80" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="9">sensor_msgs/BatteryState</text>
 </svg>
 `,
   lessonModal: {

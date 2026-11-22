@@ -1,7 +1,10 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
+
+import { stageColor } from "../../lib/stage_colors";
 import type { GameContext, Stage } from "../../types";
 import { defineStage } from "../../core/stage_def";
+import { theme, themeColor, withA } from "../../core/theme";
 import { tx, onLangChange } from "../../i18n";
 import { clearBackground, drawRobotBody } from "../../lib/draw";
 import { registerOverlayPad, unregisterOverlayPad } from "../../lib/overlaypad";
@@ -631,11 +634,11 @@ export function makeWorldModel(): Stage {
     x: number,
     y: number,
     size = 20,
-    color = "#e2e8f0",
+    color = "#172b4d",
     align: CanvasTextAlign = "center",
   ): void {
     const c = g.ctx;
-    c.fillStyle = color;
+    c.fillStyle = stageColor(color);
     c.font = `600 ${size}px system-ui, sans-serif`;
     c.textAlign = align;
     c.fillText(value, x, y);
@@ -651,9 +654,9 @@ export function makeWorldModel(): Stage {
     const step = phase();
     const shownCandidates = selection ? ACTIONS : [];
     text(`${goalName(goal)} · ${distance(WORLD_TARGET_X[goal] - WORLD_INITIAL.x)}`, 400, 30, 24);
-    c.fillStyle = "#142137";
+    c.fillStyle = stageColor("#e8eff7");
     c.fillRect(46, y - 50, 708, 110);
-    c.strokeStyle = "#334155";
+    c.strokeStyle = themeColor("#425570", "#a4b5cd");
     c.lineWidth = 1;
     for (let x = 70; x < 740; x += 33) {
       c.beginPath();
@@ -661,7 +664,7 @@ export function makeWorldModel(): Stage {
       c.lineTo(x, y + 49);
       c.stroke();
     }
-    c.strokeStyle = "#64748b";
+    c.strokeStyle = theme.fgDim;
     c.setLineDash([3, 5]);
     c.beginPath();
     c.moveTo(screenX(initial.x), y - 52);
@@ -669,7 +672,7 @@ export function makeWorldModel(): Stage {
     c.stroke();
     c.setLineDash([]);
     const targetX = screenX(WORLD_TARGET_X[goal]);
-    c.strokeStyle = "#86efac";
+    c.strokeStyle = stageColor("#167346");
     c.lineWidth = 3;
     c.beginPath();
     c.moveTo(targetX, y - 55);
@@ -685,19 +688,19 @@ export function makeWorldModel(): Stage {
       targetX,
       y + 90,
       22,
-      "#86efac",
+      "#167346",
     );
     // Keep the same predicted markers visible while the actual box moves.
     for (const choice of shownCandidates) {
       const x = screenX(candidates[choice].finalX);
       const selected = !!selection && choice === action;
-      c.fillStyle = selected ? "rgba(125,211,252,.18)" : "rgba(125,211,252,.07)";
+      c.fillStyle = withA(theme.accent, selected ? 0.18 : 0.07);
       c.fillRect(x - 20, y - 20, 40, 40);
-      text(actionName(choice), x, 80, 22, selected ? "#7dd3fc" : "#94a3b8");
+      text(actionName(choice), x, 80, 22, selected ? "#075f93" : "#586a82");
     }
-    c.fillStyle = "#e9a54b";
+    c.fillStyle = stageColor("#e9a54b");
     c.fillRect(boxX - 20, y - 20, 40, 40);
-    c.strokeStyle = "#ffe4b5";
+    c.strokeStyle = themeColor("#925b00", "#ffe4b5");
     c.lineWidth = 2;
     c.strokeRect(boxX - 20, y - 20, 40, 40);
     c.beginPath();
@@ -708,8 +711,8 @@ export function makeWorldModel(): Stage {
     // outline last so even overlapping predictions remain visible as a point.
     for (const choice of shownCandidates) {
       const selected = !!selection && choice === action;
-      c.strokeStyle = selected ? "#7dd3fc" : "#64849c";
-      c.lineWidth = selected ? 3 : 1;
+      c.strokeStyle = selected ? theme.accent : theme.fgDim;
+      c.lineWidth = selected ? 3 : 1.75;
       c.setLineDash([7, 5]);
       c.strokeRect(screenX(candidates[choice].finalX) - 20, y - 20, 40, 40);
     }
@@ -724,10 +727,10 @@ export function makeWorldModel(): Stage {
     c.scale(1.8, 1.8);
     drawRobotBody(c, 0, elapsed);
     c.restore();
-    text(tx("開始", "Start"), screenX(initial.x), y + 90, 22, "#94a3b8");
+    text(tx("開始", "Start"), screenX(initial.x), y + 90, 22, "#586a82");
     if (initial.velocity > 0 && step < 2) {
       const arrowX = screenX(initial.x) + 30;
-      c.strokeStyle = "#f5c17a";
+      c.strokeStyle = stageColor("#925b00");
       c.lineWidth = 2;
       c.beginPath();
       c.moveTo(arrowX, y);
@@ -748,7 +751,7 @@ export function makeWorldModel(): Stage {
           : note === "stopped"
             ? tx("中止 · 開始位置に戻しました", "Stopped · returned to the start")
             : tx("まだ動かしていません", "Not executed yet");
-    text(paused ? tx("一時停止中", "Paused") : actualLabel, 400, 275, 22, "#f5c17a");
+    text(paused ? tx("一時停止中", "Paused") : actualLabel, 400, 275, 22, "#925b00");
   }
   return {
     id: "world_model",
@@ -849,5 +852,5 @@ export default defineStage({
       en: "Select “See predictions”, then use the same button to move the box and check the result in the same table.",
     },
   },
-  diagram: `<svg viewBox="0 0 420 110" role="img" aria-label="予想を見る、動かす、同じ表で比べる / Predict, run, compare in the same table"><g fill="#15243b" stroke="#7dd3fc"><rect x="5" y="15" width="115" height="80" rx="8"/><rect x="152" y="15" width="115" height="80" rx="8" stroke="#f5c17a"/><rect x="300" y="15" width="115" height="80" rx="8" stroke="#86efac"/></g><g fill="#e0f2fe" text-anchor="middle" font-family="system-ui" font-size="12"><text x="62" y="45">予想を見る</text><text x="62" y="70">Predict</text><text x="136" y="58">→</text><text x="210" y="45">2秒動かす</text><text x="210" y="70">Run for 2 s</text><text x="284" y="58">→</text><text x="357" y="45">同じ表で比べる</text><text x="357" y="70">Compare</text></g></svg>`,
+  diagram: `<svg viewBox="0 0 420 110" role="img" aria-label="予想を見る、動かす、同じ表で比べる / Predict, run, compare in the same table"><g fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)"><rect x="5" y="15" width="115" height="80" rx="8"/><rect x="152" y="15" width="115" height="80" rx="8" stroke="light-dark(#925b00, #fbbf24)"/><rect x="300" y="15" width="115" height="80" rx="8" stroke="light-dark(#167346, #86efac)"/></g><g fill="light-dark(#172b4d, #edf3ff)" text-anchor="middle" font-family="system-ui" font-size="12"><text x="62" y="45">予想を見る</text><text x="62" y="70">Predict</text><text x="136" y="58">→</text><text x="210" y="45">2秒動かす</text><text x="210" y="70">Run for 2 s</text><text x="284" y="58">→</text><text x="357" y="45">同じ表で比べる</text><text x="357" y="70">Compare</text></g></svg>`,
 });

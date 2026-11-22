@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+
 // image_processing: Image Processing — Edge Threshold Tuning
 // Mirrors robot_ros2_lecture / lesson 7 (Image Processing).
 // Apply gaussian_blur → canny edge detection to a pseudo-camera frame
@@ -442,6 +444,7 @@ export function makeImageProcessing(): Stage {
   const tmpCtx = tmpCanvas.getContext("2d")!;
 
   let editorEl: HTMLElement | null = null;
+  let pipelineEl: HTMLParagraphElement | null = null;
   let statusBadgeEl: HTMLElement | null = null;
   let bp: BlockProgramHandle | null = null;
 
@@ -468,6 +471,14 @@ export function makeImageProcessing(): Stage {
     editorEl = document.getElementById("block-editor");
     statusBadgeEl = document.getElementById("be-status");
     if (editorEl) editorEl.style.display = "";
+    pipelineEl = document.createElement("p");
+    pipelineEl.className = "image-processing-pipeline";
+    pipelineEl.style.cssText =
+      "width:min(800px,100%); margin:0; padding:12px 14px; border:1px solid var(--line);" +
+      "border-radius:8px; background:var(--panel); color:var(--fg-mid); font:14px/1.6 var(--mono);" +
+      "overflow-wrap:anywhere; white-space:pre-wrap;";
+    if (editorEl) editorEl.before(pipelineEl);
+    else (g.canvas.closest(".canvas-wrap") ?? g.canvas).after(pipelineEl);
 
     if (program.length === 0 && runCount === 0) {
       // Default sample: naive settings — score still low.
@@ -560,6 +571,8 @@ export function makeImageProcessing(): Stage {
   }
 
   function dispose() {
+    pipelineEl?.remove();
+    pipelineEl = null;
     if (editorEl) editorEl.style.display = "none";
     bp?.dispose();
     bp = null;
@@ -718,11 +731,11 @@ export function makeImageProcessing(): Stage {
     clearBackground(c);
 
     // Title.
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.font = "700 14px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText("Image Processing Pipeline", 40, 38);
-    c.fillStyle = "#6e7a9c";
+    c.fillStyle = stageColor("#586a82");
     c.font = "10px ui-monospace, monospace";
     c.fillText(
       tx(
@@ -753,11 +766,11 @@ export function makeImageProcessing(): Stage {
     // Pixel inspector — reads a pixel on the INPUT panel (center if no hover).
     drawPixelInspector(c);
 
-    // Parameter legend (placed below the inspector at y0+h = 418).
-    c.fillStyle = "#9aa6c8";
+    // An editable pipeline may have any number of blocks. Its full text
+    // belongs in wrapping HTML, rather than a single clipped canvas line.
+    c.fillStyle = stageColor("#425570");
     c.font = "11px ui-monospace, monospace";
     c.textAlign = "left";
-    let lineY = 436;
     const params =
       program
         .map((b) =>
@@ -766,14 +779,10 @@ export function makeImageProcessing(): Stage {
             : `canny(low=${b.low}, high=${b.high})`,
         )
         .join("  →  ") || "(no blocks — add gaussian_blur and canny from BLOCKS)";
-    c.fillText(`pipeline:  ${params}`, 40, lineY);
-    lineY += 16;
-    c.fillStyle = "#6e7a9c";
-    c.fillText(
-      `cost: ${lastPipelineMs.toFixed(1)} ms/frame   resolution: ${IMG_W}×${IMG_H}`,
-      40,
-      lineY,
-    );
+    const metrics = `cost: ${lastPipelineMs.toFixed(1)} ms/frame   resolution: ${IMG_W}×${IMG_H}`;
+    const summary = `pipeline: ${params}\n${metrics}`;
+    if (pipelineEl && pipelineEl.textContent !== summary) pipelineEl.textContent = summary;
+    c.fillText(metrics, 40, 444);
 
     drawHint(c, t("image_processing.hint"));
 
@@ -802,7 +811,7 @@ export function makeImageProcessing(): Stage {
 
     // Crosshair on both NOISY and CLEAN panels (synced).
     c.save();
-    c.strokeStyle = "#fbbf24";
+    c.strokeStyle = stageColor("#925b00");
     c.lineWidth = 1;
     for (const panelIdx of [0, 1]) {
       const markX = PANEL_X[panelIdx] + px * SCALE_X;
@@ -827,11 +836,11 @@ export function makeImageProcessing(): Stage {
       h = 110;
     c.fillStyle = theme.canvasPanel;
     c.fillRect(x0, y0, w, h);
-    c.strokeStyle = "rgba(35, 44, 77, 0.9)";
+    c.strokeStyle = theme.fgDim;
     c.strokeRect(x0, y0, w, h);
 
     // Label.
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.font = "700 11px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText(`PIXEL INSPECTOR  (${px}, ${py})`, x0 + 10, y0 + 16);
@@ -840,26 +849,26 @@ export function makeImageProcessing(): Stage {
     const sx = x0 + 10;
     let yy = y0 + 26;
     c.font = "9px ui-monospace, monospace";
-    c.fillStyle = "#6e7a9c";
+    c.fillStyle = stageColor("#586a82");
     c.fillText("clean (no noise)", sx, yy);
     // swatch
     c.fillStyle = `rgb(${cR}, ${cG}, ${cB})`;
     c.fillRect(sx, yy + 4, 22, 22);
-    c.strokeStyle = "rgba(255,255,255,0.4)";
+    c.strokeStyle = theme.fgDim;
     c.strokeRect(sx, yy + 4, 22, 22);
     // RGB numbers (colored).
     c.font = "700 11px ui-monospace, monospace";
-    c.fillStyle = "#fb7185";
+    c.fillStyle = stageColor("#be2949");
     c.fillText(`R=${String(cR).padStart(3, " ")}`, sx + 32, yy + 14);
-    c.fillStyle = "#86efac";
+    c.fillStyle = stageColor("#167346");
     c.fillText(`G=${String(cG).padStart(3, " ")}`, sx + 32, yy + 26);
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.fillText(`B=${String(cB).padStart(3, " ")}`, sx + 32, yy + 38);
     // gray
     c.fillStyle = `rgb(${cGray}, ${cGray}, ${cGray})`;
     c.fillRect(sx + 100, yy + 4, 22, 22);
     c.strokeRect(sx + 100, yy + 4, 22, 22);
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.font = "9px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("gray", sx + 111, yy + 0);
@@ -868,24 +877,24 @@ export function makeImageProcessing(): Stage {
     // -- Middle section: NOISY (camera input) --
     const mx = x0 + 160;
     c.font = "9px ui-monospace, monospace";
-    c.fillStyle = "#6e7a9c";
+    c.fillStyle = stageColor("#586a82");
     c.textAlign = "left";
     c.fillText("noisy (camera input)", mx, yy);
     c.fillStyle = `rgb(${r}, ${g_}, ${b})`;
     c.fillRect(mx, yy + 4, 22, 22);
-    c.strokeStyle = "rgba(255,255,255,0.4)";
+    c.strokeStyle = theme.fgDim;
     c.strokeRect(mx, yy + 4, 22, 22);
     c.font = "700 11px ui-monospace, monospace";
-    c.fillStyle = "#fb7185";
+    c.fillStyle = stageColor("#be2949");
     c.fillText(`R=${String(r).padStart(3, " ")}`, mx + 32, yy + 14);
-    c.fillStyle = "#86efac";
+    c.fillStyle = stageColor("#167346");
     c.fillText(`G=${String(g_).padStart(3, " ")}`, mx + 32, yy + 26);
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.fillText(`B=${String(b).padStart(3, " ")}`, mx + 32, yy + 38);
     c.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
     c.fillRect(mx + 100, yy + 4, 22, 22);
     c.strokeRect(mx + 100, yy + 4, 22, 22);
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.font = "9px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("gray", mx + 111, yy + 0);
@@ -895,24 +904,24 @@ export function makeImageProcessing(): Stage {
     const tx = x0 + 320;
     c.textAlign = "left";
     c.font = "9px ui-monospace, monospace";
-    c.fillStyle = "#6e7a9c";
+    c.fillStyle = stageColor("#586a82");
     c.fillText("noise = noisy − clean", tx, yy);
     c.font = "700 11px ui-monospace, monospace";
-    c.fillStyle = "#fb7185";
+    c.fillStyle = stageColor("#be2949");
     c.fillText(`ΔR=${signed(r - cR)}`, tx, yy + 14);
-    c.fillStyle = "#86efac";
+    c.fillStyle = stageColor("#167346");
     c.fillText(`ΔG=${signed(g_ - cG)}`, tx, yy + 26);
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.fillText(`ΔB=${signed(b - cB)}`, tx, yy + 38);
     // formula
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.font = "9px ui-monospace, monospace";
     c.fillText(`gray = 0.299·R + 0.587·G + 0.114·B`, tx, yy + 56);
     // canny / GT
     c.font = "700 10px ui-monospace, monospace";
-    c.fillStyle = isEdge ? COLORS.OK : "#6e7a9c";
+    c.fillStyle = stageColor(isEdge ? COLORS.OK : "#586a82");
     c.fillText(`canny: ${isEdge ? "EDGE" : "—"}`, tx, yy + 74);
-    c.fillStyle = isGT ? "#5eead4" : "#6e7a9c";
+    c.fillStyle = stageColor(isGT ? "#087764" : "#586a82");
     c.fillText(`GT:    ${isGT ? "EDGE" : "—"}`, tx + 78, yy + 74);
 
     // -- Right section: zoomed pixel grid (clean / noisy side-by-side) --
@@ -940,7 +949,7 @@ export function makeImageProcessing(): Stage {
     const total = nCells * cellSize;
 
     // Label.
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.font = "9px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText(label, gx, gy + 9);
@@ -973,7 +982,7 @@ export function makeImageProcessing(): Stage {
     }
 
     // Grid lines (emphasize pixel boundaries).
-    c.strokeStyle = "rgba(255, 255, 255, 0.18)";
+    c.strokeStyle = "rgba(255, 255, 255, 0.5)";
     c.lineWidth = 0.5;
     for (let i = 0; i <= nCells; i++) {
       c.beginPath();
@@ -989,12 +998,12 @@ export function makeImageProcessing(): Stage {
     // Frame the center cell (= hover pixel) in yellow.
     const ccX = gx + half * cellSize;
     const ccY = oy + half * cellSize;
-    c.strokeStyle = "#fbbf24";
+    c.strokeStyle = stageColor("#925b00");
     c.lineWidth = 2;
     c.strokeRect(ccX - 0.5, ccY - 0.5, cellSize + 1, cellSize + 1);
 
     // Outer frame.
-    c.strokeStyle = "rgba(35, 44, 77, 0.9)";
+    c.strokeStyle = theme.fgDim;
     c.lineWidth = 1;
     c.strokeRect(gx - 0.5, oy - 0.5, total + 1, total + 1);
   }
@@ -1013,10 +1022,10 @@ export function makeImageProcessing(): Stage {
     c.save();
     c.fillStyle = theme.canvasPanel;
     c.fillRect(x - 4, y - 22, PANEL_W + 8, PANEL_H + 30);
-    c.strokeStyle = "rgba(35, 44, 77, 0.9)";
+    c.strokeStyle = theme.fgDim;
     c.lineWidth = 1;
     c.strokeRect(x - 4, y - 22, PANEL_W + 8, PANEL_H + 30);
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.font = "10px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText(label, x, y - 6);
@@ -1074,36 +1083,36 @@ export function makeImageProcessing(): Stage {
     c.save();
     c.fillStyle = theme.canvasPanel;
     c.fillRect(x, y, w, h);
-    c.strokeStyle = "#232c4d";
+    c.strokeStyle = theme.fgDim;
     c.strokeRect(x, y, w, h);
     // Fill.
     const filled = Math.max(0, Math.min(1, f1)) * w;
     const grad = c.createLinearGradient(x, y, x + w, y);
-    grad.addColorStop(0, "#fb7185");
-    grad.addColorStop(0.55, "#fbbf24");
-    grad.addColorStop(0.82, "#5eead4");
-    grad.addColorStop(1, "#7dd3fc");
-    c.fillStyle = grad;
+    grad.addColorStop(0, stageColor("#be2949"));
+    grad.addColorStop(0.55, stageColor("#925b00"));
+    grad.addColorStop(0.82, stageColor("#087764"));
+    grad.addColorStop(1, stageColor("#075f93"));
+    c.fillStyle = stageColor(grad);
     c.fillRect(x, y, filled, h);
     // Threshold marker.
     for (const th of STAR_THRESHOLDS) {
       const tx = x + th * w;
-      c.strokeStyle = "rgba(255, 255, 255, 0.5)";
+      c.strokeStyle = stageColor(th <= f1 ? "rgba(255, 255, 255, 0.8)" : "rgba(23, 43, 77, 0.7)");
       c.lineWidth = 1;
       c.beginPath();
       c.moveTo(tx, y);
       c.lineTo(tx, y + h);
       c.stroke();
     }
-    // Label.
-    c.fillStyle = "#eef2ff";
+    // Keep the score legible over both the filled and empty portions.
+    const label = `${tx("輪郭の一致度", "EDGE MATCH")} ${Math.round(f1 * 100)}%`;
     c.font = "700 13px ui-monospace, monospace";
+    const labelWidth = c.measureText(label).width + 16;
+    c.fillStyle = theme.panel;
+    c.fillRect(x + (w - labelWidth) / 2, y + (h - 18) / 2, labelWidth, 18);
+    c.fillStyle = stageColor("#172b4d");
     c.textAlign = "center";
-    c.fillText(
-      `${tx("輪郭の一致度", "EDGE MATCH")} ${Math.round(f1 * 100)}%`,
-      x + w / 2,
-      y + h / 2 + 4,
-    );
+    c.fillText(label, x + w / 2, y + h / 2 + 4);
     c.restore();
   }
 
@@ -1186,7 +1195,7 @@ export default defineStage({
       <rect width="90" height="70" rx="5"/>
     </clipPath>
     <marker id="ig-arrow" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto">
-      <path d="M0 0 7 3 0 6Z" fill="#5eead4"/>
+      <path d="M0 0 7 3 0 6Z" fill="light-dark(#087764, #5eead4)"/>
     </marker>
     <g id="ig-warehouse">
       <rect width="90" height="34" fill="#263d4c"/>
@@ -1215,8 +1224,8 @@ export default defineStage({
   </defs>
 
   <g class="ig-card" transform="translate(2 16)">
-    <rect width="98" height="112" rx="9" fill="#0b1221" stroke="#334669"/>
-    <text x="10" y="14" fill="#7dd3fc" font-size="7" font-weight="700">01  CAMERA</text>
+    <rect width="98" height="112" rx="9" fill="light-dark(#f1f5fb, #131f35)" stroke="#334669"/>
+    <text x="10" y="14" fill="light-dark(#075f93, #7dd3fc)" font-size="7" font-weight="700">01  CAMERA</text>
     <g transform="translate(4 22)" clip-path="url(#ig-frame)">
       <use href="#ig-warehouse"/>
       <g class="ig-noise" fill="#d9f7ff">
@@ -1225,25 +1234,25 @@ export default defineStage({
         <circle cx="84" cy="9" r=".6"/><circle cx="13" cy="57" r=".7"/><circle cx="36" cy="61" r=".8"/>
         <circle cx="61" cy="53" r=".6"/><circle cx="81" cy="64" r=".8"/>
       </g>
-      <path class="ig-scan" d="M0 8H90" stroke="#7dd3fc" stroke-opacity=".55"/>
+      <path class="ig-scan" d="M0 8H90" stroke="#7dd3fc" stroke-opacity=".75"/>
     </g>
-    <text x="49" y="103" text-anchor="middle" fill="#91a1bd" font-size="7">NOISE IN IMAGE</text>
+    <text x="49" y="103" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-size="7">NOISE IN IMAGE</text>
   </g>
 
   <g class="ig-card ig-card-delay-1" transform="translate(113 16)">
-    <rect width="98" height="112" rx="9" fill="#0b1221" stroke="#536044"/>
-    <text x="10" y="14" fill="#fbbf24" font-size="7" font-weight="700">02  GAUSSIAN BLUR</text>
+    <rect width="98" height="112" rx="9" fill="light-dark(#f1f5fb, #131f35)" stroke="#536044"/>
+    <text x="10" y="14" fill="light-dark(#925b00, #fbbf24)" font-size="7" font-weight="700">02  GAUSSIAN BLUR</text>
     <g transform="translate(4 22)" clip-path="url(#ig-frame)">
       <g filter="url(#ig-soften)"><use href="#ig-warehouse"/></g>
-      <rect class="ig-clean-sweep" width="90" height="70" fill="#fbbf24" fill-opacity=".08"/>
+      <rect class="ig-clean-sweep" width="90" height="70" fill="light-dark(#925b00, #fbbf24)" fill-opacity=".08"/>
     </g>
-    <text x="49" y="103" text-anchor="middle" fill="#fbbf24" font-size="7">REDUCE NOISE</text>
+    <text x="49" y="103" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-size="7">REDUCE NOISE</text>
   </g>
 
   <g class="ig-card ig-card-delay-2" transform="translate(224 16)">
-    <rect width="98" height="112" rx="9" fill="#071019" stroke="#315f64"/>
-    <text x="10" y="14" fill="#5eead4" font-size="7" font-weight="700">03  CANNY</text>
-    <g transform="translate(4 22)" clip-path="url(#ig-frame)" fill="none" stroke="#63efe0" stroke-width="1">
+    <rect width="98" height="112" rx="9" fill="light-dark(#edf7f6, #102a35)" stroke="#315f64"/>
+    <text x="10" y="14" fill="light-dark(#087764, #5eead4)" font-size="7" font-weight="700">03  CANNY</text>
+    <g transform="translate(4 22)" clip-path="url(#ig-frame)" fill="none" stroke="light-dark(#087764, #5eead4)" stroke-width="1">
       <g opacity=".2">
         <path d="M0 34H90M45 34 8 70M45 34 82 70M0 49H90"/>
         <path d="M3 17H23V47H3ZM67 17H87V47H67ZM3 27H23M3 37H23M67 27H87M67 37H87"/>
@@ -1253,32 +1262,32 @@ export default defineStage({
       <path class="ig-edge ig-edge-b" d="M3 17H23V47H3ZM67 17H87V47H67ZM3 27H23M3 37H23M67 27H87M67 37H87"/>
       <path class="ig-edge ig-edge-c" d="M46 34C45 46 55 53 50 72M54 53v-10q0-4 4-4h12q4 0 4 4v18q0 4-4 4H58q-4 0-4-4Z"/>
     </g>
-    <text x="49" y="103" text-anchor="middle" fill="#5eead4" font-size="7">FIND EDGES</text>
+    <text x="49" y="103" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-size="7">FIND EDGES</text>
   </g>
 
   <g class="ig-card ig-card-delay-3" transform="translate(335 16)">
-    <rect width="97" height="112" rx="9" fill="#0b1221" stroke="#4b4772"/>
-    <text x="10" y="14" fill="#c4b5fd" font-size="7" font-weight="700">04  COMPARE</text>
+    <rect width="97" height="112" rx="9" fill="light-dark(#f1f5fb, #131f35)" stroke="#4b4772"/>
+    <text x="10" y="14" fill="light-dark(#6d42b5, #c4b5fd)" font-size="7" font-weight="700">04  COMPARE</text>
     <g transform="translate(48 57)">
-      <circle r="25" fill="#09101d" stroke="#273553" stroke-width="5"/>
-      <circle class="ig-progress" r="25" fill="none" stroke="#5eead4" stroke-width="5" pathLength="100" stroke-dasharray="78 100"/>
-      <text y="-1" text-anchor="middle" fill="#eafdfb" font-size="13" font-weight="800">78%</text>
-      <text y="10" text-anchor="middle" fill="#8190aa" font-size="5.5">EDGE MATCH</text>
+      <circle r="25" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#c9d7e8, #334c6b)" stroke-width="5"/>
+      <circle class="ig-progress" r="25" fill="none" stroke="light-dark(#087764, #5eead4)" stroke-width="5" pathLength="100" stroke-dasharray="78 100"/>
+      <text y="-1" text-anchor="middle" fill="light-dark(#172b4d, #edf3ff)" font-size="13" font-weight="800">78%</text>
+      <text y="10" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-size="5.5">EDGE MATCH</text>
     </g>
-    <text x="48" y="103" text-anchor="middle" fill="#c4b5fd" font-size="7">数値は例 / EXAMPLE</text>
+    <text x="48" y="103" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-size="7">数値は例 / EXAMPLE</text>
   </g>
 
-  <g stroke="#5eead4" stroke-width="1.5" marker-end="url(#ig-arrow)">
+  <g stroke="light-dark(#087764, #5eead4)" stroke-width="1.5" marker-end="url(#ig-arrow)">
     <line x1="101" y1="72" x2="110" y2="72"/>
     <line x1="212" y1="72" x2="221" y2="72"/>
     <line x1="323" y1="72" x2="332" y2="72"/>
   </g>
-  <g fill="#dffdfa">
+  <g fill="light-dark(#172b4d, #edf3ff)">
     <circle r="2" cy="72"><animate attributeName="cx" values="101;110" dur=".75s" repeatCount="indefinite"/></circle>
     <circle r="2" cy="72"><animate attributeName="cx" values="212;221" dur=".75s" begin=".25s" repeatCount="indefinite"/></circle>
     <circle r="2" cy="72"><animate attributeName="cx" values="323;332" dur=".75s" begin=".5s" repeatCount="indefinite"/></circle>
   </g>
-  <text x="217" y="149" text-anchor="middle" fill="#71809c" font-size="7.5" letter-spacing=".7">
+  <text x="217" y="149" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-size="7.5" letter-spacing=".7">
     CLEAN THE IMAGE  →  FIND THE EDGES  →  CHECK THE RESULT
   </text>
 </svg>

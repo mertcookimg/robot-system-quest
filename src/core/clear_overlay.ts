@@ -24,6 +24,7 @@ export type ClearOverlayCloseReason = "dismiss" | "restart" | "next" | "allclear
 let focus: Focus = "next";
 let allclearTimeout: StageTimeout | null = null;
 let focusBeforeOpen: HTMLElement | null = null;
+let completionSlot: Comment | null = null;
 /** True when the open result just completed every stage for the first time. */
 let nextShowsAllClear = false;
 
@@ -68,6 +69,8 @@ export function close(reason: ClearOverlayCloseReason = "dismiss"): void {
   ui.clearOverlay.classList.remove("show");
   ui.clearOverlay.inert = true;
   ui.clearOverlay.setAttribute("aria-hidden", "true");
+  completionSlot?.replaceWith(ui.clearOverlay);
+  completionSlot = null;
   clearOverlayFocus();
   if (!wasOpen) return;
   // A stage may re-enable its completed results before focus returns to it.
@@ -152,6 +155,15 @@ export function show(
     </div>`;
   }
   ui.clearStats.innerHTML = html;
+  ui.clearStats.scrollTop = 0;
+  // Results can be taller than the game canvas, especially with rankings or
+  // mobile layouts. Escape its clipping/transform without disturbing a lab's
+  // existing body-level completion lifecycle.
+  if (ui.clearOverlay.parentElement !== document.body) {
+    completionSlot = document.createComment("clear-overlay-slot");
+    ui.clearOverlay.before(completionSlot);
+    document.body.append(ui.clearOverlay);
+  }
   ui.clearOverlay.inert = false;
   ui.clearOverlay.setAttribute("aria-hidden", "false");
   ui.clearOverlay.classList.add("show");
@@ -235,7 +247,20 @@ export function setupClearOverlay(deps: WireDeps): void {
     });
   }
   ui.clearOverlay.addEventListener("keydown", (event) => {
-    if (!isOpen() || event.key !== "Tab") return;
+    if (!isOpen()) return;
+    const scrollKeys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"];
+    if (scrollKeys.includes(event.key)) {
+      event.preventDefault();
+      event.stopPropagation();
+      const amount = event.key.startsWith("Page")
+        ? Math.max(40, ui.clearStats.clientHeight * 0.8)
+        : 40;
+      if (event.key === "Home") ui.clearStats.scrollTop = 0;
+      else if (event.key === "End") ui.clearStats.scrollTop = ui.clearStats.scrollHeight;
+      else ui.clearStats.scrollTop += event.key.endsWith("Up") ? -amount : amount;
+      return;
+    }
+    if (event.key !== "Tab") return;
     event.preventDefault();
     event.stopPropagation();
     setFocus(focus === "next" ? "restart" : "next");

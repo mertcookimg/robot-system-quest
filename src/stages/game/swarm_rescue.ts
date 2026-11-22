@@ -1,13 +1,16 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+import { drawCanvasLabel } from "../../lib/canvas_text";
+
 // swarm_rescue — coordinate three friendly robots to find lost mini-bots and
 // bring them back to the charging station.
 import { W, H, type GameContext, type Stage } from "../../types";
 import { defineStage } from "../../core/stage_def";
 import { clearBackground, drawGrid, drawHint, drawRobotBody } from "../../lib/draw";
 import { Particles } from "../../lib/particles";
-import { withA } from "../../core/theme";
+import { withA, theme, getTheme, themeColor } from "../../core/theme";
 import { t, tx } from "../../i18n";
 import * as armpad from "../../lib/armpad";
 
@@ -56,9 +59,9 @@ export function makeSwarmRescue(): Stage {
   let g!: GameContext;
   const particles = new Particles();
   const bots: Bot[] = [
-    { role: "SCOUT", x: 65, y: 230, theta: 0, color: "#7dd3fc", connected: true, carrying: null },
-    { role: "CARRIER", x: 65, y: 250, theta: 0, color: "#5eead4", connected: true, carrying: null },
-    { role: "RELAY", x: 65, y: 270, theta: 0, color: "#c4b5fd", connected: true, carrying: null },
+    { role: "SCOUT", x: 65, y: 230, theta: 0, color: "#075f93", connected: true, carrying: null },
+    { role: "CARRIER", x: 65, y: 250, theta: 0, color: "#087764", connected: true, carrying: null },
+    { role: "RELAY", x: 65, y: 270, theta: 0, color: "#6d42b5", connected: true, carrying: null },
   ];
   const victims: Victim[] = VICTIM_START.map((p) => ({ ...p, rescued: false, carried: false }));
   const explored = new Uint8Array(COLS * ROWS);
@@ -340,9 +343,9 @@ export function makeSwarmRescue(): Stage {
           carrier.carrying = idx;
           victims[idx].carried = true;
           combo++;
-          particles.burst(carrier.x, carrier.y, "#fbbf24", 24, 180);
+          particles.burst(carrier.x, carrier.y, "#925b00", 24, 180);
           g.sfx.pickup();
-          g.setStatus(t("swarm_rescue.status.carrying"), "#fbbf24");
+          g.setStatus(t("swarm_rescue.status.carrying"), "var(--warn)");
         }
       } else {
         const v = victims[carrier.carrying];
@@ -354,7 +357,7 @@ export function makeSwarmRescue(): Stage {
           carrier.carrying = null;
           rescued++;
           score += 500 + combo * 75 + Math.ceil(remaining);
-          particles.burst(BASE.x, BASE.y, "#5eead4", 38, 230);
+          particles.burst(BASE.x, BASE.y, "#087764", 38, 230);
           g.sfx.deliver();
           g.setStatus(
             t("swarm_rescue.status.saved", { n: rescued, total: victims.length }),
@@ -392,12 +395,12 @@ export function makeSwarmRescue(): Stage {
 
   function drawWalls(c: CanvasRenderingContext2D) {
     WALLS.forEach((w) => {
-      c.fillStyle = "#202842";
-      c.strokeStyle = "#53607f";
+      c.fillStyle = stageColor("#d9e3f0");
+      c.strokeStyle = stageColor("#53607f");
       c.lineWidth = 2;
       c.fillRect(w.x, w.y, w.w, w.h);
       c.strokeRect(w.x, w.y, w.w, w.h);
-      c.strokeStyle = withA("#fb7185", 0.18);
+      c.strokeStyle = stageColor(withA("#be2949", 0.18));
       for (let y = w.y + 6; y < w.y + w.h; y += 13) {
         c.beginPath();
         c.moveTo(w.x, y);
@@ -422,7 +425,7 @@ export function makeSwarmRescue(): Stage {
         )
           best = bots[j];
       if (best && b.connected) {
-        c.strokeStyle = withA("#5eead4", 0.5);
+        c.strokeStyle = withA(theme.ok, getTheme() === "light" ? 0.85 : 0.5);
         c.beginPath();
         c.moveTo(b.x, b.y);
         c.lineTo(best.x, best.y);
@@ -434,22 +437,22 @@ export function makeSwarmRescue(): Stage {
 
   function drawVictim(c: CanvasRenderingContext2D, v: Victim, i: number) {
     if (v.rescued || (!v.carried && !visible(v.x, v.y))) return;
-    c.fillStyle = "#fbbf24";
-    c.strokeStyle = "#0a0f1f";
+    c.fillStyle = stageColor("#925b00");
+    c.strokeStyle = stageColor("#0a0f1f");
     c.lineWidth = 2;
     c.beginPath();
     c.arc(v.x, v.y, 10, 0, Math.PI * 2);
     c.fill();
     c.stroke();
-    c.fillStyle = "#0a0f1f";
+    c.fillStyle = theme.panel;
     c.font = "900 10px monospace";
     c.textAlign = "center";
     c.textBaseline = "middle";
     c.fillText("☺", v.x, v.y + 1);
     if (!v.carried) {
-      c.fillStyle = "#fbbf24";
+      c.fillStyle = stageColor("#925b00");
       c.font = "700 8px monospace";
-      c.fillText(`BOT ${i + 1}`, v.x, v.y - 17);
+      drawCanvasLabel(c, `BOT ${i + 1}`, v.x, v.y - 17);
     }
   }
 
@@ -458,29 +461,29 @@ export function makeSwarmRescue(): Stage {
     c.translate(b.x, b.y);
     c.rotate(b.theta);
     if (i === active) {
-      c.strokeStyle = b.color;
+      c.strokeStyle = stageColor(b.color);
       c.lineWidth = 2;
       c.beginPath();
       c.arc(0, 0, 21 + switchFlash * 4, 0, Math.PI * 2);
       c.stroke();
     }
     if (!b.connected) {
-      c.fillStyle = withA("#fb7185", 0.25);
+      c.fillStyle = stageColor(withA("#be2949", 0.25));
       c.beginPath();
       c.arc(0, 0, 19, 0, Math.PI * 2);
       c.fill();
     }
     drawRobotBody(c, !b.connected ? 0.4 : 0, animTime);
     c.restore();
-    c.fillStyle = b.color;
+    c.fillStyle = stageColor(b.color);
     c.font = "800 8px ui-monospace,monospace";
     c.textAlign = "center";
     c.textBaseline = "middle";
-    c.fillText(`${i + 1}  ${i === active ? "MANUAL" : "AUTO"}`, b.x, b.y - 25);
+    drawCanvasLabel(c, `${i + 1}  ${i === active ? "MANUAL" : "AUTO"}`, b.x, b.y - 25);
   }
 
   function drawFog(c: CanvasRenderingContext2D) {
-    c.fillStyle = "rgba(4, 7, 17, .88)";
+    c.fillStyle = themeColor("#a4b4ca", withA(theme.scrim, 0.88));
     for (let y = 0; y < ROWS; y++)
       for (let x = 0; x < COLS; x++) {
         if (!explored[y * COLS + x]) c.fillRect(x * CELL, y * CELL, CELL + 1, CELL + 1);
@@ -492,16 +495,17 @@ export function makeSwarmRescue(): Stage {
     clearBackground(c);
     drawGrid(c);
     drawWalls(c);
-    c.fillStyle = withA("#5eead4", 0.12);
-    c.strokeStyle = "#5eead4";
+    c.fillStyle = stageColor(withA("#087764", 0.12));
+    c.strokeStyle = stageColor("#087764");
     c.lineWidth = 2;
     c.beginPath();
     c.arc(BASE.x, BASE.y, BASE.r, 0, Math.PI * 2);
     c.fill();
     c.stroke();
-    c.fillStyle = "#5eead4";
+    c.fillStyle = stageColor("#087764");
     c.font = "800 10px monospace";
     c.textAlign = "center";
+    c.textBaseline = "alphabetic";
     c.fillText("CHARGE HOME", BASE.x, BASE.y - 51);
     drawNetwork(c);
     victims.forEach((v, i) => drawVictim(c, v, i));
@@ -510,7 +514,7 @@ export function makeSwarmRescue(): Stage {
     drawFog(c);
     // Active bots stay visible above fog, but hidden terrain does not.
     bots.forEach(drawBot.bind(null, c));
-    c.fillStyle = remaining < 15 ? "#fb7185" : "#eef2ff";
+    c.fillStyle = stageColor(remaining < 15 ? "#be2949" : "#172b4d");
     c.font = "900 24px ui-monospace,monospace";
     c.textAlign = "right";
     c.textBaseline = "top";
@@ -578,13 +582,13 @@ export default defineStage({
   mode: "game",
   order: 12,
   diagram: `<svg viewBox="0 0 420 130" role="img" aria-label="scout finds a lost mini-bot, relay maintains the radio link, carrier brings it home">
-    <rect x="8" y="23" width="82" height="76" rx="9" fill="#5eead418" stroke="#5eead4"/><text x="49" y="43" text-anchor="middle" fill="#5eead4" font-size="10" font-weight="700">HOME</text>
-    <circle cx="132" cy="65" r="22" fill="#c4b5fd18" stroke="#c4b5fd"/><text x="132" y="70" text-anchor="middle" fill="#c4b5fd" font-size="15" font-weight="700">3</text>
-    <circle cx="242" cy="35" r="22" fill="#7dd3fc18" stroke="#7dd3fc"/><text x="242" y="40" text-anchor="middle" fill="#7dd3fc" font-size="15" font-weight="700">1</text>
-    <circle cx="242" cy="99" r="22" fill="#5eead418" stroke="#5eead4"/><text x="242" y="104" text-anchor="middle" fill="#5eead4" font-size="15" font-weight="700">2</text>
-    <circle cx="365" cy="67" r="12" fill="#fbbf24"/><text x="365" y="71" text-anchor="middle" fill="#0a0f1f" font-size="13" font-weight="900">!</text>
-    <path d="M90 61L110 63M154 59L220 40M154 72L220 94M264 40L350 61M350 75L264 94M220 103Q120 125 78 96" fill="none" stroke="#5eead4" stroke-width="2" stroke-dasharray="5 4"/>
-    <text x="210" y="124" text-anchor="middle" fill="#9aa6c8" font-size="9">FIND → LINK → PICK UP → HOME</text>
+    <rect x="8" y="23" width="82" height="76" rx="9" fill="light-dark(#08776418, #5eead418)" stroke="light-dark(#087764, #5eead4)"/><text x="49" y="43" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-size="10" font-weight="700">HOME</text>
+    <circle cx="132" cy="65" r="22" fill="light-dark(#6d42b518, #c4b5fd18)" stroke="light-dark(#6d42b5, #c4b5fd)"/><text x="132" y="70" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-size="15" font-weight="700">3</text>
+    <circle cx="242" cy="35" r="22" fill="light-dark(#075f9318, #7dd3fc18)" stroke="light-dark(#075f93, #7dd3fc)"/><text x="242" y="40" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-size="15" font-weight="700">1</text>
+    <circle cx="242" cy="99" r="22" fill="light-dark(#08776418, #5eead418)" stroke="light-dark(#087764, #5eead4)"/><text x="242" y="104" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-size="15" font-weight="700">2</text>
+    <circle cx="365" cy="67" r="12" fill="light-dark(#925b00, #fbbf24)"/><text x="365" y="71" text-anchor="middle" fill="var(--on-accent)" font-size="13" font-weight="900">!</text>
+    <path d="M90 61L110 63M154 59L220 40M154 72L220 94M264 40L350 61M350 75L264 94M220 103Q120 125 78 96" fill="none" stroke="light-dark(#087764, #5eead4)" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="210" y="124" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-size="9">FIND → LINK → PICK UP → HOME</text>
   </svg>`,
   lessonModal: {
     title: {

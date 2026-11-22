@@ -3,15 +3,22 @@
 
 /* === Footer === */
 footer {
+  width: min(800px, 100%);
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 5px 8px;
   align-items: center;
-  font-size: 12.5px;
+  font-size: 12px;
+  line-height: 1.6;
   color: var(--fg-dim);
-  font-family: var(--mono);
-  letter-spacing: 0.3px;
+  font-family: var(--sans);
+  letter-spacing: 0;
 }
 footer code {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-family: var(--mono);
+  font-size: inherit;
   background: var(--panel);
   padding: 2px 8px;
   border-radius: 4px;
@@ -23,9 +30,10 @@ footer strong {
   font-weight: 600;
 }
 footer .analytics-note {
+  order: 3;
+  width: 100%;
   color: var(--fg-dim);
-  font-size: 9px;
-  opacity: 0.62;
+  font-size: 11.5px;
 }
 footer .oss-link {
   display: inline-flex;
@@ -36,8 +44,8 @@ footer .oss-link {
   transition: color 0.12s;
 }
 footer .oss-link svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   flex: 0 0 auto;
 }
 footer .oss-link .oss-star {
@@ -62,14 +70,4 @@ footer .author-link:hover {
 }
 footer .author-link strong {
   color: inherit;
-}
-
-@media (max-width: 840px) {
-  footer {
-    flex-wrap: wrap;
-  }
-  footer .analytics-note {
-    order: 3;
-    width: 100%;
-  }
 }

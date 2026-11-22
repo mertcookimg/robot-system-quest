@@ -3,12 +3,21 @@
 
 import test, { after, before, beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import { Window } from "happy-dom";
 import { consumeStageGamepadButtons, readStageGamepads } from "../src/lib/stage_gamepads";
+import { withStageInputSuppressed } from "../src/lib/input_guard";
 
 let pads: Array<Gamepad | null> = [];
 const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+const originalDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+let browser: Window;
 
 before(() => {
+  browser = new Window({ url: "http://localhost/" });
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    value: browser.document,
+  });
   Object.defineProperty(globalThis, "navigator", {
     configurable: true,
     value: { getGamepads: () => pads },
@@ -16,6 +25,7 @@ before(() => {
 });
 
 beforeEach(() => {
+  browser.document.body.replaceChildren();
   pads = [];
   consumeStageGamepadButtons();
 });
@@ -23,6 +33,9 @@ beforeEach(() => {
 after(() => {
   if (originalNavigator) Object.defineProperty(globalThis, "navigator", originalNavigator);
   else Reflect.deleteProperty(globalThis, "navigator");
+  if (originalDocument) Object.defineProperty(globalThis, "document", originalDocument);
+  else Reflect.deleteProperty(globalThis, "document");
+  browser.happyDOM.abort();
 });
 
 function controller(pressed: number[], id = "controller"): Gamepad {
@@ -93,4 +106,55 @@ test("disconnecting or replacing a controller does not transfer its consumed but
   consumeStageGamepadButtons();
   pads = [controller([0], "replacement")];
   assert.equal(readStageGamepads()[0], pads[0]);
+});
+
+function assertNeutralController(raw: Gamepad): void {
+  const visible = readStageGamepads()[0]!;
+  assert.deepEqual(visible.axes, [0, 0, 0, 0]);
+  assert.ok(visible.buttons.every((button) => !button.pressed && !button.touched && !button.value));
+  for (const field of [
+    "id",
+    "index",
+    "connected",
+    "mapping",
+    "timestamp",
+    "vibrationActuator",
+  ] as const)
+    assert.equal(visible[field], raw[field], `${field} must survive suppression`);
+  assert.deepEqual(raw.axes, [-0.7, 0.25, 0, 1], "The browser snapshot remains untouched");
+  assert.equal(raw.buttons[0].pressed, true);
+}
+
+test("terminal input focus neutralizes sticks and buttons while preserving controller metadata", () => {
+  browser.document.body.innerHTML = '<section id="ros-terminal"><input></section>';
+  browser.document.querySelector("input")!.focus();
+  const raw = controller([0, 2]);
+  pads = [raw];
+  assertNeutralController(raw);
+  browser.document.querySelector("input")!.blur();
+  assert.equal(readStageGamepads()[0], raw, "Normal input resumes after focus leaves the terminal");
+});
+
+test("terminal palette neutralizes all controls and still releases consumed button masks", () => {
+  browser.document.body.innerHTML = '<div id="terminal-pad-palette"></div>';
+  const raw = controller([0, 2]);
+  pads = [raw];
+  consumeStageGamepadButtons();
+  assertNeutralController(raw);
+  pads = [controller([])];
+  readStageGamepads();
+  browser.document.body.replaceChildren();
+  pads = [controller([0, 2])];
+  assert.equal(
+    readStageGamepads()[0],
+    pads[0],
+    "Releasing buttons while captured clears old masks",
+  );
+});
+
+test("a dismissed UI consumes the full update before live axes become available again", () => {
+  const raw = controller([0]);
+  pads = [raw];
+  withStageInputSuppressed(true, () => assertNeutralController(raw));
+  assert.equal(readStageGamepads()[0], raw);
 });

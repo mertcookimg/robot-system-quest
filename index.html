@@ -5,6 +5,21 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f3f6fb" />
+    <script>
+      (() => {
+        let theme = "light";
+        try {
+          if (localStorage.getItem("robot_quest_theme_v1") === "dark") theme = "dark";
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+        document.querySelector('meta[name="color-scheme"]').content = theme;
+        document.querySelector('meta[name="theme-color"]').content =
+          theme === "dark" ? "#0f172a" : "#f3f6fb";
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Robot System Quest: Games and Lessons</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -43,6 +58,14 @@
       <div class="intro-bg"></div>
       <div class="intro-card">
         <div class="intro-language-row">
+          <div class="theme-switcher" data-theme-switcher role="group" aria-label="表示テーマ">
+            <button type="button" data-theme-option="light" aria-pressed="true">
+              <span aria-hidden="true">☀</span><span data-theme-label>ライト</span>
+            </button>
+            <button type="button" data-theme-option="dark" aria-pressed="false">
+              <span aria-hidden="true">☾</span><span data-theme-label>ダーク</span>
+            </button>
+          </div>
           <div
             id="intro-lang-toggle"
             class="language-switcher"
@@ -178,48 +201,33 @@
       </div>
     </div>
 
-    <header>
-      <div class="brand">
-        <span class="mark">◆</span>
-        <span class="title">Robot System Quest</span>
-        <a
-          id="brand-author"
-          class="brand-author"
-          href="https://mertcookimg.github.io/"
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Author / 著者ページを開く"
-        >
-          <span class="ba-by">Created by</span>
-          <strong class="ba-name">
-            <span class="ba-name-full">Masato Kobayashi</span>
-            <span class="ba-name-short">Masato</span>
-          </strong>
-          <span class="ba-arrow">↗</span>
-        </a>
-      </div>
-      <div class="header-actions">
-        <div class="hdr-group" role="group" aria-label="Navigation">
-          <button class="hdr-btn" id="home-toggle" title="ホーム / Home へ戻る">HOME</button>
-          <button class="hdr-btn" id="lesson-toggle" title="このステージのガイド / Stage guide">
-            STAGE GUIDE
-          </button>
-          <a
-            class="hdr-btn robotics-guide-link"
-            href="./guide/"
-            data-lang-link
-            aria-label="Open Robotics Learning Guide / ロボティクス学習ガイドを開く"
-            title="GamesとLessonsの学習サイト / Open Robotics Learning Guide"
-          >
-            <span>ROBOTICS LEARNING GUIDE</span>
-            <b aria-hidden="true">↗</b>
-          </a>
-          <button class="hdr-btn hdr-icon" id="help-toggle" title="操作ヘルプ / Controls help">
-            ?
-          </button>
+    <header class="app-header">
+      <div class="header-top">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">◆</span>
+          <div class="brand-copy">
+            <span class="title">Robot System Quest</span>
+            <a
+              id="brand-author"
+              class="brand-author"
+              href="https://mertcookimg.github.io/"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Author / 著者ページを開く"
+            >
+              <span class="ba-by">by</span><span class="ba-name">Masato Kobayashi</span>
+            </a>
+          </div>
         </div>
-        <span class="hdr-sep" aria-hidden="true"></span>
-        <div class="hdr-group" role="group" aria-label="Settings">
+        <div class="header-preferences" role="group" aria-label="表示と言語">
+          <div class="theme-switcher" data-theme-switcher role="group" aria-label="表示テーマ">
+            <button type="button" data-theme-option="light" aria-pressed="true">
+              <span aria-hidden="true">☀</span><span data-theme-label>ライト</span>
+            </button>
+            <button type="button" data-theme-option="dark" aria-pressed="false">
+              <span aria-hidden="true">☾</span><span data-theme-label>ダーク</span>
+            </button>
+          </div>
           <div
             class="language-switcher"
             id="lang-toggle"
@@ -227,11 +235,13 @@
             role="group"
             aria-label="Language / 言語"
           >
-            <span aria-hidden="true">🌏</span>
+            <svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3 12h18M12 3a18 18 0 0 1 0 18 18 18 0 0 1 0-18Z" />
+            </svg>
             <button type="button" data-lang="ja" lang="ja" aria-label="日本語" aria-pressed="true">
               JA
             </button>
-            <span aria-hidden="true">/</span>
             <button
               type="button"
               data-lang="en"
@@ -242,15 +252,69 @@
               EN
             </button>
           </div>
+        </div>
+      </div>
+      <div class="header-toolbar">
+        <nav class="header-nav" aria-label="画面移動">
+          <button class="hdr-btn" id="home-toggle" type="button" title="ホーム / Home へ戻る">
+            <svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z" /></svg
+            ><span data-header-label>ホーム</span>
+          </button>
+          <button
+            class="hdr-btn"
+            id="lesson-toggle"
+            type="button"
+            title="このステージのガイド / Stage guide"
+          >
+            <svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                d="M12 5v16M3 4h5a4 4 0 0 1 4 2 4 4 0 0 1 4-2h5v15h-5a5 5 0 0 0-4 2 5 5 0 0 0-4-2H3Z"
+              /></svg
+            ><span data-header-label>ステージガイド</span>
+          </button>
+          <a
+            class="hdr-btn robotics-guide-link"
+            href="./guide/"
+            data-lang-link
+            aria-label="Open Robotics Learning Guide / ロボティクス学習ガイドを開く"
+            title="GamesとLessonsの学習サイト / Open Robotics Learning Guide"
+            ><svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M4 4v16M8 4v16M12 4v16M16 4l5 15M3 20h10M15 5l4-1M19 20l4-1" /></svg
+            ><span data-header-label>学習ガイド</span></a
+          >
+          <button class="hdr-btn" id="help-toggle" type="button" title="操作ヘルプ / Controls help">
+            <svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 .6-1.5 1-1.5 2M12 16h.01" /></svg
+            ><span data-header-label>操作ヘルプ</span>
+          </button>
+        </nav>
+        <div class="header-tools" role="group" aria-label="プレイ設定">
           <button
             class="hdr-btn hdr-toggle"
             id="ghost-toggle"
+            type="button"
             title="ゴースト再生 ON/OFF / Ghost replay"
           >
-            GHOST
+            <svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M5 20V10a7 7 0 0 1 14 0v10l-3-2-4 2-4-2Z" />
+              <path d="M9 10h.01M15 10h.01M10 14h4" /></svg
+            ><span class="i18n-ja">ゴースト</span><span class="i18n-en">Ghost</span
+            ><span data-toggle-state>ON</span>
           </button>
-          <button class="hdr-btn hdr-toggle" id="audio-toggle" title="サウンド ON/OFF / Audio">
-            ON
+          <button
+            class="hdr-btn hdr-toggle"
+            id="audio-toggle"
+            type="button"
+            title="サウンド ON/OFF / Audio"
+          >
+            <svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M11 5 6 9H3v6h3l5 4Z" />
+              <path class="sound-waves" d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14" />
+              <path class="sound-slash" d="m16 9 5 6m0-6-5 6" /></svg
+            ><span class="i18n-ja">サウンド</span><span class="i18n-en">Sound</span
+            ><span data-toggle-state>ON</span>
           </button>
         </div>
       </div>
@@ -417,8 +481,8 @@
         <span class="mt-icon" aria-hidden="true">📚</span>
         <span class="mt-copy">
           <span class="mt-label">LESSON</span>
-          <span class="mt-sub i18n-ja">ROS 2レッスンを選ぶ</span>
-          <span class="mt-sub i18n-en">Choose a ROS 2 lesson</span>
+          <span class="mt-sub i18n-ja">レッスンを選ぶ</span>
+          <span class="mt-sub i18n-en">Choose a Lesson</span>
         </span>
         <span class="mt-open" aria-hidden="true">⌄</span>
       </button>

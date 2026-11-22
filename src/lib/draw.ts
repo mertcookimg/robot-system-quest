@@ -3,17 +3,11 @@
 
 // Common Canvas-2D drawing utilities shared by every stage.
 import { W, H, type Particle } from "../types";
-import { theme, withA } from "../core/theme";
+import { getTheme, theme, withA } from "../core/theme";
 import { reportCanvasHint, reportCanvasTimer } from "./canvas_readout";
 import { rosAngularFromCanvas } from "./control_math";
-
-const ACCENT = "#7dd3fc";
-const ACCENT_2 = "#c4b5fd";
-const FG_DIM = "#6e7a9c";
-// Fixed near-black used as a *contrast* color (e.g. text on an accent chip).
-// The canvas ground itself comes from the themeable theme.canvasBg.
-const BG_DARK = "#000000";
-const FG = "#eef2ff";
+import { stageColor } from "./stage_colors";
+import { wrapCanvasText } from "./canvas_text";
 
 /** Fill the whole canvas with the active theme's backdrop color. */
 export function clearBackground(ctx: CanvasRenderingContext2D, width = W, height = H) {
@@ -25,7 +19,7 @@ export function drawGrid(
   ctx: CanvasRenderingContext2D,
   width = W,
   height = H,
-  color = "rgba(35, 44, 77, 0.5)",
+  color = withA(theme.fgDim, 0.13),
 ) {
   ctx.strokeStyle = color;
   ctx.lineWidth = 1;
@@ -50,16 +44,18 @@ export function drawZone(
   label: string,
   animTime: number,
 ) {
+  color = stageColor(color);
+  const light = getTheme() === "light";
   const pulse = 0.7 + 0.3 * Math.sin(animTime * 3);
   ctx.save();
   // Double ring.
   ctx.strokeStyle = color;
-  ctx.lineWidth = 1.5;
-  ctx.globalAlpha = 0.85;
+  ctx.lineWidth = light ? 2.5 : 1.5;
+  ctx.globalAlpha = light ? 1 : 0.85;
   ctx.beginPath();
   ctx.arc(zone.x, zone.y, zone.r, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.globalAlpha = 0.4 * pulse;
+  ctx.globalAlpha = light ? 0.55 + 0.2 * pulse : 0.4 * pulse;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.arc(zone.x, zone.y, zone.r * (1.2 + 0.15 * pulse), 0, Math.PI * 2);
@@ -77,11 +73,18 @@ export function drawZone(
   ctx.arc(zone.x, zone.y, 2.5, 0, Math.PI * 2);
   ctx.fill();
   // Label.
-  ctx.font = "600 10px ui-monospace, monospace";
+  ctx.font = "700 12px ui-monospace, monospace";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = color;
-  ctx.fillText(label, zone.x, zone.y - zone.r - 10);
+  const halfLabel = ctx.measureText(label).width / 2;
+  const labelX = Math.max(
+    halfLabel + 6,
+    Math.min((ctx.canvas?.width || W) - halfLabel - 6, zone.x),
+  );
+  const above = zone.y - zone.r - 12;
+  const labelY = above >= 12 ? above : zone.y + zone.r + 14;
+  ctx.fillText(label, labelX, Math.min((ctx.canvas?.height || H) - 12, labelY));
   ctx.restore();
 }
 
@@ -179,11 +182,11 @@ export function drawGhost(
   // Flicker for a ghostly feel.
   const flicker = 0.6 + 0.1 * Math.sin(animTime * 8);
 
-  // Pixel-art ghost: outline only, in light purple.
+  // Pixel-art ghost: outline only, in purple.
   const px = (x: number, y: number, w: number, h: number) => ctx.fillRect(x, y, w, h);
 
   ctx.globalAlpha = 0.85 * flicker;
-  ctx.fillStyle = "#c4b5fd";
+  ctx.fillStyle = theme.accent2;
   // Silhouette outline.
   px(-6, -10, 13, 1);
   px(-6, 9, 13, 1);
@@ -224,7 +227,7 @@ export function drawTimer(ctx: CanvasRenderingContext2D, elapsed: number, best?:
   const y = 12;
 
   ctx.fillStyle = withA(theme.scrim, 0.85);
-  ctx.strokeStyle = "rgba(125, 211, 252, 0.3)";
+  ctx.strokeStyle = theme.line;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, 6);
@@ -232,13 +235,13 @@ export function drawTimer(ctx: CanvasRenderingContext2D, elapsed: number, best?:
   ctx.stroke();
 
   // TIME
-  ctx.fillStyle = ACCENT;
+  ctx.fillStyle = theme.accent;
   ctx.font = "600 12px ui-monospace, monospace";
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
   const timeY = best != null ? y + 12 : y + h / 2;
   ctx.fillText(`${elapsed.toFixed(2)}s`, x + w - 10, timeY);
-  ctx.fillStyle = FG_DIM;
+  ctx.fillStyle = theme.fgDim;
   ctx.font = "9px ui-monospace, monospace";
   ctx.textAlign = "left";
   ctx.fillText("TIME", x + 10, timeY + 1);
@@ -246,12 +249,12 @@ export function drawTimer(ctx: CanvasRenderingContext2D, elapsed: number, best?:
   // BEST
   if (best != null) {
     const bestY = y + 30;
-    ctx.fillStyle = "#fbbf24";
+    ctx.fillStyle = theme.warn;
     ctx.font = "600 11px ui-monospace, monospace";
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     ctx.fillText(`${best.toFixed(2)}s`, x + w - 10, bestY);
-    ctx.fillStyle = FG_DIM;
+    ctx.fillStyle = theme.fgDim;
     ctx.font = "9px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.fillText("BEST", x + 10, bestY + 1);
@@ -262,10 +265,13 @@ export function drawTimer(ctx: CanvasRenderingContext2D, elapsed: number, best?:
 export function drawHint(ctx: CanvasRenderingContext2D, text: string) {
   if (reportCanvasHint(ctx, text)) return;
   ctx.save();
-  ctx.fillStyle = FG_DIM;
-  ctx.font = "10px ui-monospace, monospace";
+  ctx.fillStyle = theme.fgDim;
+  ctx.font = "12px ui-monospace, monospace";
   ctx.textAlign = "left";
-  ctx.fillText(text, 14, H - 14);
+  ctx.textBaseline = "alphabetic";
+  const lines = wrapCanvasText(ctx, text, (ctx.canvas?.width || W) - 28);
+  const y = (ctx.canvas?.height || H) - 14 - (lines.length - 1) * 17;
+  lines.forEach((line, i) => ctx.fillText(line, 14, y + i * 17));
   ctx.restore();
 }
 
@@ -286,7 +292,7 @@ export function drawParticles(ctx: CanvasRenderingContext2D, particles: Particle
   for (const p of particles) {
     const t = 1 - p.age / p.life;
     ctx.globalAlpha = t;
-    ctx.fillStyle = p.color;
+    ctx.fillStyle = stageColor(p.color);
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size * t, 0, Math.PI * 2);
     ctx.fill();
@@ -339,12 +345,30 @@ export function fmtCanvasTwist(lin: number, canvasAng: number): string {
 
 // Export the palette for factory use.
 export const COLORS = {
-  ACCENT,
-  ACCENT_2,
-  FG_DIM,
-  BG_DARK,
-  FG,
-  OK: "#5eead4",
-  WARN: "#fbbf24",
-  DANGER: "#fb7185",
+  get ACCENT() {
+    return theme.accent;
+  },
+  get ACCENT_2() {
+    return theme.accent2;
+  },
+  get FG_DIM() {
+    return theme.fgDim;
+  },
+  // Image-output beds and physical outlines retain their dark value.
+  BG_DARK: "#172b4d",
+  get FG() {
+    return theme.fg;
+  },
+  get ON_ACCENT() {
+    return theme.onAccent;
+  },
+  get OK() {
+    return theme.ok;
+  },
+  get WARN() {
+    return theme.warn;
+  },
+  get DANGER() {
+    return theme.danger;
+  },
 };

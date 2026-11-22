@@ -17,16 +17,15 @@ export const JA: Record<string, string> = {
   "ui.toast.newrecord": "ベスト更新",
   "terminal.title": "ROS 2概念端末（シミュレーション）",
   "terminal.stage": "ステージ: {name}",
-  "terminal.hint": "↑/↓で履歴・helpで一覧・Esc / Bで画面へ戻る",
+  "terminal.hint": "↑/↓で履歴・helpで一覧",
   "terminal.command": "コマンド",
   "terminal.select": "コマンドを選択…",
   "terminal.inspect": "観察",
   "terminal.run": "▶ 実行",
-  "terminal.resume": "画面へ戻る",
   "terminal.input": "ROS 2コマンドを入力（helpで一覧）",
   "terminal.welcome": "Robot System Quest ROS 2概念端末（シミュレーション）",
   "terminal.guide":
-    "コマンドを選ぶか、直接入力してください。操作中は一時停止します。「画面へ戻る」・Esc・ゲームパッドBで再開します。",
+    "コマンドを選ぶか、直接入力してください。端末の操作中もステージは進み続けます。",
   "terminal.noMessages":
     "{topic} の保存ログはまだありません。Lessonで操作してから再実行してください。",
   "terminal.snapshot": "# 実行時点の保存ログ：最新{count}件。更新するにはコマンドを再実行します。",

@@ -14,6 +14,7 @@ import { getStages as getRegisteredStages, getStageModes } from "./core/stage_de
 
 import { ui } from "./core/dom";
 import { applyThemeVars } from "./core/theme";
+import { setupThemeSwitchers } from "./core/theme_switcher";
 import { setupAudio } from "./core/audio";
 import { setupGhostToggle } from "./core/ghost";
 import { setupToast } from "./core/toast";
@@ -77,11 +78,26 @@ setupTouchCalloutGuard();
 
 // 0. Apply the background theme tokens to :root before anything paints.
 applyThemeVars();
+setupThemeSwitchers();
 
 // 1. Set up language choices and refresh language-dependent links.
 function refreshLangLabel(): void {
   const lang = getLang();
-  ui.homeToggle.textContent = lang === "ja" ? "ホーム" : "HOME";
+  const headerLabel = (element: HTMLElement, ja: string, en: string): void => {
+    (element.querySelector<HTMLElement>("[data-header-label]") ?? element).textContent =
+      lang === "ja" ? ja : en;
+  };
+  headerLabel(ui.homeToggle, "ホーム", "Home");
+  headerLabel(ui.lessonToggle, "ステージガイド", "Stage guide");
+  headerLabel(ui.helpToggle, "操作ヘルプ", "Help");
+  const learningGuide = document.querySelector<HTMLElement>(".header-nav .robotics-guide-link");
+  if (learningGuide) headerLabel(learningGuide, "学習ガイド", "Learning guide");
+  for (const [selector, ja, en] of [
+    [".header-nav", "画面移動", "Navigation"],
+    [".header-preferences", "表示と言語", "Appearance and language"],
+    [".header-tools", "プレイ設定", "Play settings"],
+  ])
+    document.querySelector(selector)?.setAttribute("aria-label", lang === "ja" ? ja : en);
   ui.homeToggle.title = lang === "ja" ? "ホーム / 概要へ戻る" : "Back to Home overview";
   const authorLink = document.getElementById("intro-author-link") as HTMLAnchorElement | null;
   const authorUrl =

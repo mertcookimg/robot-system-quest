@@ -277,6 +277,45 @@ test("L21 reports actual data collection, completed fitting and three-course eva
   }
 });
 
+test("L21 recording and evaluation finish without taking terminal focus or scrolling", () => {
+  load("imitation_learning");
+  publishFromLesson("imitation_learning");
+  const panel = document.querySelector<HTMLElement>(".imitation-lab")!;
+  const scene = ui.canvas.parentElement!;
+  const outsideViewport = () => ({ top: -100, bottom: -20 }) as DOMRect;
+  const originalPanelRect = panel.getBoundingClientRect;
+  const originalSceneRect = scene.getBoundingClientRect;
+  const originalScroll = browser.HTMLElement.prototype.scrollIntoView;
+  let scrolls = 0;
+  panel.getBoundingClientRect = outsideViewport;
+  scene.getBoundingClientRect = outsideViewport;
+  browser.HTMLElement.prototype.scrollIntoView = () => scrolls++;
+  try {
+    ui.terminalInput.focus();
+    for (let i = 0; i < 180; i++) manager.getCurrent().update(0.1);
+    assert.match(monitor.recentMessages("/imitation/data").at(-1)!.msg, /recording_complete/);
+    assert.equal(document.activeElement, ui.terminalInput);
+    assert.equal(scrolls, 0);
+
+    click("imitation_learning", "train");
+    untilMessage("/imitation/training");
+    click("imitation_learning", "compare");
+    ui.terminalInput.focus();
+    scrolls = 0;
+    untilMessage("/imitation/evaluation", 500);
+    assert.match(
+      monitor.recentMessages("/imitation/evaluation").at(-1)!.msg,
+      /evaluation_complete/,
+    );
+    assert.equal(document.activeElement, ui.terminalInput);
+    assert.equal(scrolls, 0);
+  } finally {
+    panel.getBoundingClientRect = originalPanelRect;
+    scene.getBoundingClientRect = originalSceneRect;
+    browser.HTMLElement.prototype.scrollIntoView = originalScroll;
+  }
+});
+
 test("L21 completion retains usable review and Start over clears its recorded telemetry", () => {
   load("imitation_learning");
   publishFromLesson("imitation_learning");

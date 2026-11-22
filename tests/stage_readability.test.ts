@@ -92,7 +92,7 @@ before(async () => {
     server: { middlewareMode: true, watch: null, ws: false },
     optimizeDeps: { noDiscovery: true, include: [] },
   });
-  for (const id of ["object_detection", "behavior_tree", "tf_puzzle"]) {
+  for (const id of ["object_detection", "behavior_tree", "tf_puzzle", "image_processing"]) {
     factories.set(id, (await server.ssrLoadModule(`/src/stages/lesson/${id}.ts`)).default.build);
   }
   setLang = (await server.ssrLoadModule("/src/i18n/index.ts")).setLang;
@@ -232,4 +232,21 @@ test("TF controls retain labels, update values and localize their instructions",
   assert.match(panel.querySelector(".tf-puzzle-reminder")!.textContent!, /合わせよう/);
   current.reset();
   assert.equal(sliders[0].value, "0");
+});
+
+test("a long image-processing pipeline retains every block in flowing text and is cleaned up", () => {
+  const current = load("image_processing");
+  const addBlur = document.querySelector<HTMLButtonElement>('[data-add="gaussian_blur"]')!;
+  assert.ok(addBlur);
+  for (let i = 0; i < 12; i++) addBlur.click();
+  current.draw();
+  const summary = document.querySelector<HTMLElement>(".image-processing-pipeline")!;
+  assert.equal(summary.textContent!.match(/gaussian_blur\(/g)?.length, 13);
+  assert.match(summary.textContent!, /canny\(low=15, high=45\)/);
+  assert.equal(summary.style.whiteSpace, "pre-wrap");
+  assert.equal(summary.style.overflowWrap, "anywhere");
+  assert.ok(!document.getElementById("canvas-wrap")!.contains(summary));
+  current.dispose();
+  stage = undefined;
+  assert.equal(document.querySelector(".image-processing-pipeline"), null);
 });

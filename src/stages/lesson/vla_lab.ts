@@ -1,11 +1,16 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
+
+import { theme, themeColor, withA } from "../../core/theme";
+
+import { stageColor } from "../../lib/stage_colors";
 import type { GameContext, Stage } from "../../types";
 import { defineStage } from "../../core/stage_def";
 import { mountLabCompletion, mountLabWorkbench } from "../../lib/lab_completion";
 import { onLangChange, tx } from "../../i18n";
 import { clearBackground, drawRobotBody } from "../../lib/draw";
 import { registerOverlayPad, unregisterOverlayPad } from "../../lib/overlaypad";
+import { isStageInteractionBlocked } from "../../lib/input_guard";
 import {
   VLA_WIDTH,
   VLA_HEIGHT,
@@ -376,7 +381,8 @@ export function makeVlaLab(): Stage {
     lastRun = record;
     renderResults();
     refresh();
-    focus(!languageCompared ? "next-language" : !visionCompared ? "next-vision" : "finish");
+    if (!isStageInteractionBlocked())
+      focus(!languageCompared ? "next-language" : !visionCompared ? "next-vision" : "finish");
   }
   function onCompletionClose(event: Event): void {
     if (!cleared) return;
@@ -492,9 +498,9 @@ export function makeVlaLab(): Stage {
     if (completed) completeRun();
     else refresh();
   }
-  function canvasText(value: string, x: number, y: number, size = 22, color = "#eef2ff"): void {
+  function canvasText(value: string, x: number, y: number, size = 22, color = "#172b4d"): void {
     const c = g.ctx;
-    c.fillStyle = color;
+    c.fillStyle = stageColor(color);
     c.font = `600 ${size}px system-ui, sans-serif`;
     c.textAlign = "center";
     c.fillText(value, x, y);
@@ -507,28 +513,31 @@ export function makeVlaLab(): Stage {
       400,
       45,
       30,
-      instruction === "red" ? "#fca5a5" : "#93c5fd",
+      instruction === "red" ? "#b4233e" : "#075f93",
     );
     const cell = 64,
       left = 176,
       top = 83;
     for (let row = 0; row < VLA_HEIGHT; row++)
       for (let col = 0; col < VLA_WIDTH; col++) {
-        c.fillStyle = "#101b2e";
+        c.fillStyle = stageColor("#e8eff7");
         c.fillRect(left + col * cell + 1, top + row * cell + 1, cell - 2, cell - 2);
+        c.strokeStyle = themeColor("#8194ae", "#3b506d");
+        c.lineWidth = 1;
+        c.strokeRect(left + col * cell + 1, top + row * cell + 1, cell - 2, cell - 2);
       }
     for (const color of ["red", "blue"] as const) {
       const p = scene[color],
         x = left + (p.x + 0.5) * cell,
         y = top + (p.y + 0.5) * cell;
-      c.fillStyle = color === "red" ? "#b93745" : "#285bc7";
+      c.fillStyle = stageColor(color === "red" ? "#b93745" : "#285bc7");
       c.fillRect(x - 22, y - 22, 44, 44);
-      c.strokeStyle = color === instruction ? "#f8fafc" : "#60718f";
+      c.strokeStyle = stageColor(color === instruction ? "#172b4d" : "#60718f");
       c.lineWidth = color === instruction ? 3 : 1;
       c.strokeRect(x - 24, y - 24, 48, 48);
       canvasText(color === "red" ? "R" : "B", x, y + 8, 25, "#fff");
     }
-    c.strokeStyle = "#7dd3fc";
+    c.strokeStyle = stageColor("#075f93");
     c.lineWidth = 3;
     c.beginPath();
     path.forEach((p, i) => {
@@ -564,10 +573,10 @@ export function makeVlaLab(): Stage {
       400,
       482,
       18,
-      "#9aaecb",
+      "#425570",
     );
     if (paused) {
-      c.fillStyle = "rgba(5,12,25,.8)";
+      c.fillStyle = withA(theme.scrim, 0.8);
       c.fillRect(250, 206, 300, 65);
       canvasText(tx("一時停止中", "Paused"), 400, 249, 28);
     }
@@ -654,5 +663,5 @@ export default defineStage({
       en: "Choose Run to go to red, then try Change only the instruction.",
     },
   },
-  diagram: `<svg viewBox="0 0 420 100" role="img" aria-label="画像＋指示から動作を出す / Image plus instruction produces action"><g fill="#15243b" stroke="#7dd3fc"><rect x="5" y="15" width="115" height="65" rx="8"/><rect x="152" y="15" width="115" height="65" rx="8"/><rect x="300" y="15" width="115" height="65" rx="8"/></g><g fill="#e0f2fe" font-family="system-ui" font-size="13" text-anchor="middle"><text x="62" y="42">V · 画像</text><text x="62" y="64">Vision</text><text x="136" y="53">＋</text><text x="210" y="42">L · 指示</text><text x="210" y="64">Language</text><text x="284" y="53">→</text><text x="357" y="42">A · 動作</text><text x="357" y="64">Action</text></g></svg>`,
+  diagram: `<svg viewBox="0 0 420 100" role="img" aria-label="画像＋指示から動作を出す / Image plus instruction produces action"><g fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)"><rect x="5" y="15" width="115" height="65" rx="8"/><rect x="152" y="15" width="115" height="65" rx="8"/><rect x="300" y="15" width="115" height="65" rx="8"/></g><g fill="light-dark(#172b4d, #edf3ff)" font-family="system-ui" font-size="13" text-anchor="middle"><text x="62" y="42">V · 画像</text><text x="62" y="64">Vision</text><text x="136" y="53">＋</text><text x="210" y="42">L · 指示</text><text x="210" y="64">Language</text><text x="284" y="53">→</text><text x="357" y="42">A · 動作</text><text x="357" y="64">Action</text></g></svg>`,
 });

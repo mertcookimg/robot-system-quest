@@ -22,6 +22,7 @@ function makeContext(target: HTMLCanvasElement): CanvasRenderingContext2D {
       get(object, key) {
         if (key === "canvas") return object.canvas;
         if (key === "fillText") return (text: string) => canvasText.push(text);
+        if (key === "measureText") return (text: string) => ({ width: [...text].length * 7 });
         return () => {};
       },
     },
@@ -123,13 +124,15 @@ test("Guide and menu preview canvases cannot replace the live stage's readout", 
   assert.ok(canvasText.includes("30.00s"));
 });
 
-test("resizing preserves desktop drawing and restores a translated compact readout", () => {
+test("desktop instructions wrap in HTML while resizing moves only timing out of the canvas", () => {
   compact = false;
   drawing.drawHint(context, "Desktop hint");
   drawing.drawTimer(context, 1);
   readout.endCanvasReadoutFrame();
-  assert.equal(panel().hidden, true);
-  assert.ok(canvasText.includes("Desktop hint"));
+  assert.equal(panel().hidden, false);
+  assert.equal(panel().querySelector(".canvas-readout-hint")!.textContent, "Desktop hint");
+  assert.equal(panel().querySelector<HTMLElement>(".canvas-readout-time")!.hidden, true);
+  assert.equal(canvasText.includes("Desktop hint"), false);
   assert.ok(canvasText.includes("1.00s"));
 
   canvasText = [];
@@ -144,4 +147,18 @@ test("resizing preserves desktop drawing and restores a translated compact reado
   assert.match(panel().textContent!, /操作の説明/);
   assert.deepEqual(canvasText, []);
   assert.equal(document.querySelectorAll(".canvas-readout").length, 1);
+});
+
+test("long instructions remain complete outside the desktop scene without leaving empty space", () => {
+  compact = false;
+  const longHint =
+    "Follow the route, stop at the marked position, then adjust the heading. ".repeat(8);
+  drawing.drawHint(context, longHint);
+  readout.endCanvasReadoutFrame();
+  assert.equal(panel().querySelector(".canvas-readout-hint")!.textContent, longHint);
+  assert.deepEqual(canvasText, []);
+  readout.beginCanvasReadoutFrame();
+  drawing.drawTimer(context, 3);
+  readout.endCanvasReadoutFrame();
+  assert.equal(panel().hidden, true, "Desktop timing alone uses its existing canvas badge");
 });

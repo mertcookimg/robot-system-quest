@@ -194,8 +194,9 @@ Stage instances are reused across visits. Save the context before calling `reset
 `dispose()` safe even if the instance has not been initialized. Restore any changed canvas
 dimensions, layout, language subscriptions, and global listeners when leaving a stage.
 
-The shell pauses `update()` while a menu, lesson/help/completion dialog, or terminal owns input,
-and while the page is inactive. `draw()` can still run, so keep simulation changes in `update()`.
+The shell pauses `update()` while a menu or lesson/help/completion dialog is open,
+and while the page is inactive. Terminal controls and the command palette keep `update()`
+running with stage inputs neutral. `draw()` can still run while paused, so keep simulation changes in `update()`.
 Use `g.setTimeout()` for delayed stage actions; the shell cancels these callbacks on reset or
 stage change. Set your own `cleared` flag before calling `g.awardStars()` to avoid repeated awards.
 
@@ -444,7 +445,7 @@ physical controller drivers, so start `npm run dev` and verify:
 - Home, the stage picker, and Guide links open the intended Game or Lesson; next-stage navigation stays in the same mode.
 - Resetting and changing stages clears stale input, telemetry, terminal history, callbacks, and stage-specific UI without duplicating listeners.
 - Keyboard, gamepad, and applicable touch controls can complete the activity, including custom panels and editors.
-- Opening help, menus, or the terminal pauses the simulation; returning or refocusing the window does not replay a held action.
+- Help, menus, completion dialogs, and an inactive window pause the simulation. Terminal controls and the command palette keep it running with stage inputs neutral; releasing focus or refocusing the window does not replay a held action.
 - Declared topics and terminal observations match real stage interactions, including final results and player-mode changes.
 - Lesson briefings, Japanese display labels, Guide copy, diagrams, and animations explain the activity in both languages.
 - Instructions, controls, results, and completion actions remain visible at narrow and wide widths (for example 375, 768, and 1280 px).

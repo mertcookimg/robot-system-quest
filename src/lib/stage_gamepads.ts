@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { isStageInteractionBlocked } from "./input_guard";
+
 // Stage-local button edges must not replay a press already handled by a dialog.
 // Keep the mask until release, including across stage initialization and Retry.
 const consumed = new Map<number, { id: string; buttons: Set<number> }>();
@@ -34,12 +36,13 @@ export function consumeStageGamepadButtons(): void {
   }
 }
 
-/** Preserve controller axes/metadata; mask only buttons awaiting release. */
+/** Keep controller metadata while UI captures input and consume held UI buttons. */
 export function readStageGamepads(): (Gamepad | null)[] {
+  const blocked = isStageInteractionBlocked();
   return snapshot().map((pad) => {
     if (!pad) return null;
     const entry = consumed.get(pad.index);
-    if (!entry) return pad;
+    if (!blocked && !entry) return pad;
     return {
       ...pad,
       id: pad.id,
@@ -47,10 +50,12 @@ export function readStageGamepads(): (Gamepad | null)[] {
       connected: pad.connected,
       mapping: pad.mapping,
       timestamp: pad.timestamp,
-      axes: pad.axes,
+      axes: blocked ? pad.axes.map(() => 0) : pad.axes,
       vibrationActuator: pad.vibrationActuator,
       buttons: pad.buttons.map((button, index) =>
-        entry.buttons.has(index) ? { pressed: false, touched: false, value: 0 } : button,
+        blocked || entry?.buttons.has(index)
+          ? { pressed: false, touched: false, value: 0 }
+          : button,
       ),
     };
   });

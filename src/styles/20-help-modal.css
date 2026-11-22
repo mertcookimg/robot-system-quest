@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(var(--scrim-rgb), 0.85);
+  background: rgba(var(--backdrop-rgb), 0.28);
   backdrop-filter: blur(8px);
   opacity: 0;
   pointer-events: none;
@@ -25,8 +25,10 @@
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 30px 36px;
-  max-width: 540px;
-  max-height: calc(100vh - 48px);
+  width: min(540px, 100%);
+  min-width: 0;
+  max-height: calc(100dvh - 48px);
+  overflow-wrap: anywhere;
   overflow-y: auto;
   overscroll-behavior: contain;
   box-shadow: var(--shadow-soft);
@@ -40,7 +42,7 @@
 }
 .help-card h3 {
   margin: 22px 0 10px;
-  font-size: 12.5px;
+  font-size: 14px;
   color: var(--accent);
   font-family: var(--mono);
   letter-spacing: 2px;
@@ -48,8 +50,9 @@
 }
 .help-card table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: 14px;
 }
 .help-card td {
   padding: 7px 8px;
@@ -62,7 +65,7 @@
 .help-card ul {
   margin: 0;
   padding-left: 18px;
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.9;
   color: var(--fg-dim);
 }
@@ -73,7 +76,7 @@
 .help-card kbd {
   display: inline-block;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 14px;
   padding: 2px 7px;
   margin: 0 2px;
   border: 1px solid var(--line);
@@ -84,11 +87,33 @@
 }
 .help-card .help-note {
   margin: 16px 0 0;
-  font-size: 11.5px;
+  font-size: 14px;
   line-height: 1.65;
   color: var(--fg-dim);
 }
 .help-card button {
   margin-top: 22px;
   width: 100%;
+}
+
+@media (max-width: 480px) {
+  .help-modal {
+    padding: 12px;
+  }
+  .help-card {
+    padding: 20px 16px;
+    max-height: calc(100dvh - 24px);
+  }
+  .help-card tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    border-bottom: 1px solid var(--line-soft);
+    padding-block: 6px;
+  }
+  .help-card td,
+  .help-card td:first-child {
+    width: auto;
+    padding: 4px 0;
+    border: 0;
+  }
 }

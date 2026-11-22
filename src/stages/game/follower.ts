@@ -1,6 +1,10 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { themeColor, getTheme } from "../../core/theme";
+
+import { stageColor } from "../../lib/stage_colors";
+
 // follower: Follower — tail a leader robot via Subscribe + TF lookup.
 import { W, H, type Stage, type GameContext } from "../../types";
 import { defineStage } from "../../core/stage_def";
@@ -151,7 +155,7 @@ export function makeFollower(): Stage {
     if (inZoneTime >= REQUIRED_TIME) {
       cleared = true;
       particles.burst(robot.x, robot.y, COLORS.OK, 30);
-      particles.burst(leader.x, leader.y, "#fbbf24", 24);
+      particles.burst(leader.x, leader.y, "#925b00", 24);
       g.shake(0.6);
       g.setStatus(t("follower.status.complete"), "var(--ok)");
       const stars = elapsed < 12 ? 3 : elapsed < 16 ? 2 : 1;
@@ -190,8 +194,8 @@ export function makeFollower(): Stage {
 
     // Walls
     for (const wall of walls) {
-      ctx.fillStyle = "rgba(35, 44, 77, 0.75)";
-      ctx.strokeStyle = "rgba(110, 122, 156, 0.5)";
+      ctx.fillStyle = themeColor("#c5d2e3", stageColor("rgba(170, 188, 212, 0.75)"));
+      ctx.strokeStyle = themeColor("#586a82", stageColor("rgba(88, 106, 130, 0.5)"));
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.roundRect(wall.x, wall.y, wall.w, wall.h, 4);
@@ -208,8 +212,8 @@ export function makeFollower(): Stage {
 
     // Annular fill of the follow zone.
     ctx.save();
-    ctx.globalAlpha = 0.08;
-    ctx.fillStyle = ringColor;
+    ctx.globalAlpha = getTheme() === "light" ? 0.14 : 0.08;
+    ctx.fillStyle = stageColor(ringColor);
     ctx.beginPath();
     ctx.arc(leader.x, leader.y, MAX_DIST, 0, Math.PI * 2);
     ctx.arc(leader.x, leader.y, MIN_DIST, 0, Math.PI * 2, true);
@@ -218,8 +222,8 @@ export function makeFollower(): Stage {
 
     // Inner and outer rings of the zone.
     ctx.save();
-    ctx.strokeStyle = ringColor;
-    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = stageColor(ringColor);
+    ctx.globalAlpha = getTheme() === "light" ? 0.9 : 0.55;
     ctx.lineWidth = 1.5;
     ctx.setLineDash([5, 5]);
     ctx.beginPath();
@@ -235,8 +239,8 @@ export function makeFollower(): Stage {
     trail.draw(ctx, 0.55);
     // Connector line between robot and leader.
     ctx.save();
-    ctx.strokeStyle = ringColor;
-    ctx.globalAlpha = 0.4;
+    ctx.strokeStyle = stageColor(ringColor);
+    ctx.globalAlpha = getTheme() === "light" ? 0.8 : 0.4;
     ctx.lineWidth = 1;
     ctx.setLineDash([3, 5]);
     ctx.beginPath();
@@ -284,16 +288,16 @@ export function makeFollower(): Stage {
     ctx.save();
     ctx.rotate(-leaderTheta);
     ctx.globalAlpha = 0.18 * pulse;
-    ctx.strokeStyle = "#7dd3fc";
+    ctx.strokeStyle = stageColor("#7dd3fc");
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(0, 0, 16 + pulse * 4, 0, Math.PI * 2);
     ctx.stroke();
     ctx.globalAlpha = 1;
-    ctx.fillStyle = "rgba(125, 211, 252, 0.85)";
-    ctx.font = "700 7px ui-monospace, monospace";
+    ctx.fillStyle = themeColor("#075f93", stageColor("rgba(125, 211, 252, 0.85)"));
+    ctx.font = "700 10px ui-monospace, monospace";
     ctx.textAlign = "center";
-    ctx.fillText("LEADER", 0, -16);
+    ctx.fillText("LEADER", 0, -18);
     ctx.restore();
 
     // Breathing.
@@ -336,11 +340,11 @@ export function makeFollower(): Stage {
     const h = 6;
     const x = W / 2 - w / 2;
     const y = 22;
-    ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+    ctx.fillStyle = stageColor("rgba(0, 0, 0, 0.55)");
     ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
-    ctx.fillStyle = "#0a0e1f";
+    ctx.fillStyle = stageColor("#d8e2ef");
     ctx.fillRect(x, y, w, h);
-    ctx.fillStyle = inZone ? COLORS.OK : "rgba(94, 234, 212, 0.4)";
+    ctx.fillStyle = stageColor(inZone ? COLORS.OK : "rgba(8, 119, 100, 0.4)");
     ctx.fillRect(x, y, w * Math.min(1, frac), h);
     ctx.font = "600 9px ui-monospace, monospace";
     ctx.fillStyle = COLORS.FG_DIM;
@@ -428,21 +432,21 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="leader publishes target pose, follower subscribes">
   <defs>
     <marker id="ld-follower-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
   </defs>
-  <rect x="8" y="26" width="148" height="68" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="82" y="56" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="12" font-weight="700">leader</text>
-  <text x="82" y="78" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">Publisher</text>
-  <rect x="264" y="26" width="148" height="68" rx="8" fill="#181f3a" stroke="#c4b5fd" stroke-width="1.5"/>
-  <text x="338" y="56" text-anchor="middle" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="12" font-weight="700">follower</text>
-  <text x="338" y="78" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">Subscriber</text>
-  <line x1="156" y1="60" x2="262" y2="60" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-follower-arrow)"/>
-  <circle r="3.5" fill="#fbbf24">
+  <rect x="8" y="26" width="148" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="82" y="56" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">leader</text>
+  <text x="82" y="78" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">Publisher</text>
+  <rect x="264" y="26" width="148" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
+  <text x="338" y="56" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">follower</text>
+  <text x="338" y="78" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">Subscriber</text>
+  <line x1="156" y1="60" x2="262" y2="60" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-follower-arrow)"/>
+  <circle r="3.5" fill="light-dark(#925b00, #fbbf24)">
     <animateMotion dur="1.6s" repeatCount="indefinite" path="M 158 60 L 258 60"/>
   </circle>
-  <text x="210" y="46" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/target/pose</text>
-  <text x="210" y="80" text-anchor="middle" fill="#6e7a9c" font-family="ui-monospace, monospace" font-size="9">geometry_msgs/msg/Pose</text>
+  <text x="210" y="46" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/target/pose</text>
+  <text x="210" y="80" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="9">geometry_msgs/msg/Pose</text>
 </svg>
 `,
   lessonModal: {

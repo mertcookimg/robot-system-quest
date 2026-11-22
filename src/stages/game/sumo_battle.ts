@@ -1,10 +1,13 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+import { drawCanvasLabel } from "../../lib/canvas_text";
+
 // sumo_battle: Sumo Battle — push the rival robot out of the dohyo ring
 // while watching /odom to keep yourself inside.
 import { W, H, type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { theme, withA, getTheme, themeColor } from "../../core/theme";
 
 import {
   drawGrid,
@@ -318,7 +321,7 @@ export function makeSumoBattle(): Stage {
       if (pPower > ePower) pushes++;
       const mx = (robot.x + enemy.x) / 2,
         my = (robot.y + enemy.y) / 2;
-      particles.burst(mx, my, pPower >= ePower ? "#7dd3fc" : "#fb7185", 14, 200);
+      particles.burst(mx, my, pPower >= ePower ? "#075f93" : "#be2949", 14, 200);
       g.sfx.bump();
       g.shake(0.25);
     }
@@ -326,8 +329,8 @@ export function makeSumoBattle(): Stage {
 
   function win() {
     cleared = true;
-    particles.burst(enemy.x, enemy.y, "#fbbf24", 40, 280);
-    particles.burst(enemy.x, enemy.y, "#7dd3fc", 28);
+    particles.burst(enemy.x, enemy.y, "#925b00", 40, 280);
+    particles.burst(enemy.x, enemy.y, "#075f93", 28);
     g.sfx.victory();
     g.shake(0.6);
     if (mode2P) {
@@ -396,7 +399,7 @@ export function makeSumoBattle(): Stage {
     if (distFromCenter(robot) > RING.r) {
       cleared = true;
       if (mode2P) {
-        particles.burst(robot.x, robot.y, "#fb7185", 30, 200);
+        particles.burst(robot.x, robot.y, "#be2949", 30, 200);
         g.sfx.victory();
         g.shake(0.6);
         g.setStatus(t("sumo_battle.status.p2win"), "var(--ok)");
@@ -446,20 +449,20 @@ export function makeSumoBattle(): Stage {
   function drawRing(c: CanvasRenderingContext2D) {
     // Dohyo surface.
     c.save();
-    c.fillStyle = "rgba(30, 38, 70, 0.55)";
+    c.fillStyle = stageColor("rgba(209, 220, 235, 0.8)");
     c.beginPath();
     c.arc(RING.x, RING.y, RING.r, 0, Math.PI * 2);
     c.fill();
     // Tawara (straw bale) edge.
-    c.strokeStyle = "#b08d57";
+    c.strokeStyle = themeColor("#79531d", "#b08d57");
     c.lineWidth = 5;
     c.globalAlpha = 0.85;
     c.beginPath();
     c.arc(RING.x, RING.y, RING.r, 0, Math.PI * 2);
     c.stroke();
     // Inner guide ring.
-    c.globalAlpha = 0.25;
-    c.strokeStyle = "#7dd3fc";
+    c.globalAlpha = getTheme() === "light" ? 0.7 : 0.25;
+    c.strokeStyle = stageColor("#075f93");
     c.lineWidth = 1;
     c.setLineDash([6, 6]);
     c.beginPath();
@@ -468,7 +471,7 @@ export function makeSumoBattle(): Stage {
     c.setLineDash([]);
     // Shikiri starting lines.
     c.globalAlpha = 0.6;
-    c.strokeStyle = "#eef2ff";
+    c.strokeStyle = stageColor("#172b4d");
     c.lineWidth = 2;
     for (const sx of [RING.x - 40, RING.x + 40]) {
       c.beginPath();
@@ -485,7 +488,10 @@ export function makeSumoBattle(): Stage {
       c.save();
       c.strokeStyle = COLORS.DANGER;
       c.lineWidth = 6;
-      c.globalAlpha = 0.35 + 0.35 * Math.abs(Math.sin(animTime * 6));
+      c.globalAlpha =
+        getTheme() === "light"
+          ? 0.8 + 0.2 * Math.abs(Math.sin(animTime * 6))
+          : 0.35 + 0.35 * Math.abs(Math.sin(animTime * 6));
       c.beginPath();
       c.arc(RING.x, RING.y, RING.r, a - 0.5, a + 0.5);
       c.stroke();
@@ -498,23 +504,23 @@ export function makeSumoBattle(): Stage {
     c.save();
     c.translate(enemy.x, enemy.y);
     // Ground shadow.
-    c.fillStyle = "rgba(0, 0, 0, 0.32)";
+    c.fillStyle = stageColor("rgba(0, 0, 0, 0.32)");
     c.fillRect(-9, 14, 19, 1);
     c.rotate(enemy.theta);
     // Body.
-    c.fillStyle = flash ? "#7f1d1d" : "#3d1526";
-    c.strokeStyle = flash ? "#fecaca" : "#fb7185";
+    c.fillStyle = stageColor(flash ? "#7f1d1d" : "#3d1526");
+    c.strokeStyle = stageColor(flash ? "#fecaca" : "#be2949");
     c.lineWidth = 2;
     c.beginPath();
     c.roundRect(-11, -11, 22, 22, 5);
     c.fill();
     c.stroke();
     // Tires.
-    c.fillStyle = "#2d2540";
+    c.fillStyle = stageColor("#2d2540");
     c.fillRect(-4, -13, 8, 2);
     c.fillRect(-4, 11, 8, 2);
     // Forward ram spike.
-    c.fillStyle = "#fb7185";
+    c.fillStyle = stageColor("#be2949");
     c.beginPath();
     c.moveTo(11, -4);
     c.lineTo(17, 0);
@@ -522,7 +528,7 @@ export function makeSumoBattle(): Stage {
     c.closePath();
     c.fill();
     // Angry eyes.
-    c.fillStyle = "#fecaca";
+    c.fillStyle = stageColor("#fecaca");
     c.fillRect(2, -6, 4, 2);
     c.fillRect(2, 4, 4, 2);
     c.restore();
@@ -531,7 +537,7 @@ export function makeSumoBattle(): Stage {
       c.save();
       c.translate(enemy.x, enemy.y);
       c.rotate(enemy.theta);
-      c.fillStyle = "rgba(251, 113, 133, 0.7)";
+      c.fillStyle = stageColor("rgba(190, 41, 73, 0.7)");
       const len = 6 + 4 * Math.abs(Math.sin(animTime * 20));
       c.beginPath();
       c.moveTo(-12, -4);
@@ -544,10 +550,10 @@ export function makeSumoBattle(): Stage {
     // Telegraph mark above a winding-up rival.
     if (!mode2P && ai.state === "windup") {
       c.save();
-      c.fillStyle = "#fbbf24";
+      c.fillStyle = stageColor("#925b00");
       c.font = "700 14px ui-monospace, monospace";
       c.textAlign = "center";
-      c.fillText("!!", enemy.x, enemy.y - 24);
+      drawCanvasLabel(c, "!!", enemy.x, enemy.y - 24);
       c.restore();
     }
   }
@@ -560,26 +566,26 @@ export function makeSumoBattle(): Stage {
     fillColor: string,
   ) {
     const y = 12,
-      w = 96,
-      h = 22;
+      w = 120,
+      h = 40;
     c.save();
     c.fillStyle = withA(theme.scrim, 0.78);
-    c.strokeStyle = "rgba(125, 211, 252, 0.3)";
+    c.strokeStyle = stageColor("rgba(7, 95, 147, 0.3)");
     c.lineWidth = 1;
     c.beginPath();
     c.roundRect(x, y, w, h, 5);
     c.fill();
     c.stroke();
     c.fillStyle = COLORS.FG_DIM;
-    c.font = "600 8px ui-monospace, monospace";
+    c.font = "600 10px ui-monospace, monospace";
     c.textAlign = "left";
     c.textBaseline = "middle";
-    c.fillText(label, x + 8, y + h / 2);
-    const bw = 46;
-    c.fillStyle = "rgba(35, 44, 77, 0.9)";
-    c.fillRect(x + 42, y + 7, bw, 8);
-    c.fillStyle = value < 0.3 ? COLORS.WARN : fillColor;
-    c.fillRect(x + 42, y + 7, bw * value, 8);
+    c.fillText(label, x + 8, y + 12);
+    const bw = w - 16;
+    c.fillStyle = stageColor("rgba(170, 188, 212, 0.9)");
+    c.fillRect(x + 8, y + 25, bw, 8);
+    c.fillStyle = stageColor(value < 0.3 ? COLORS.WARN : fillColor);
+    c.fillRect(x + 8, y + 25, bw * value, 8);
     c.restore();
   }
 
@@ -588,9 +594,9 @@ export function makeSumoBattle(): Stage {
     clearBackground(c);
 
     const vg = c.createRadialGradient(RING.x, RING.y, 100, RING.x, RING.y, 600);
-    vg.addColorStop(0, "rgba(251, 191, 36, 0.04)");
-    vg.addColorStop(1, "rgba(0, 0, 0, 0)");
-    c.fillStyle = vg;
+    vg.addColorStop(0, stageColor("rgba(146, 91, 0, 0.04)"));
+    vg.addColorStop(1, stageColor("rgba(0, 0, 0, 0)"));
+    c.fillStyle = stageColor(vg);
     c.fillRect(0, 0, W, H);
 
     drawGrid(c);
@@ -608,7 +614,7 @@ export function makeSumoBattle(): Stage {
     drawRobotBody(c, bumpFlash, animTime);
     if (boosting) {
       // Boost exhaust behind the robot.
-      c.fillStyle = "rgba(125, 211, 252, 0.7)";
+      c.fillStyle = stageColor("rgba(7, 95, 147, 0.7)");
       const len = 6 + 4 * Math.abs(Math.sin(animTime * 20));
       c.beginPath();
       c.moveTo(-12, -4);
@@ -622,7 +628,8 @@ export function makeSumoBattle(): Stage {
     c.restore();
 
     drawBoostGauge(c, 12, mode2P ? "P1 BOOST" : "BOOST", stamina, COLORS.ACCENT);
-    if (mode2P) drawBoostGauge(c, W - 108, "P2 BOOST", staminaE, "#fb7185");
+    // Keep both players' gauges together; the top-right belongs to TIME/BEST.
+    if (mode2P) drawBoostGauge(c, 144, "P2 BOOST", staminaE, "#be2949");
     drawTimer(c, elapsed, g.getBestTime());
     drawHint(
       c,
@@ -719,21 +726,21 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="robot publishes /odom, sumo referee subscribes and judges ring out">
   <defs>
     <marker id="ld-sumo-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
   </defs>
-  <rect x="8" y="26" width="148" height="68" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="82" y="52" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="12" font-weight="700">robot_node</text>
-  <text x="82" y="72" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">wheel odometry</text>
-  <rect x="264" y="26" width="148" height="68" rx="8" fill="#181f3a" stroke="#fbbf24" stroke-width="1.5"/>
-  <text x="338" y="52" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="12" font-weight="700">sumo_referee</text>
-  <text x="338" y="72" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">dist &gt; 2.0m → OUT</text>
-  <line x1="156" y1="60" x2="262" y2="60" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-sumo-arrow)"/>
-  <circle r="3.5" fill="#fbbf24">
+  <rect x="8" y="26" width="148" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="82" y="52" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">robot_node</text>
+  <text x="82" y="72" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">wheel odometry</text>
+  <rect x="264" y="26" width="148" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <text x="338" y="52" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">sumo_referee</text>
+  <text x="338" y="72" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">dist &gt; 2.0m → OUT</text>
+  <line x1="156" y1="60" x2="262" y2="60" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-sumo-arrow)"/>
+  <circle r="3.5" fill="light-dark(#925b00, #fbbf24)">
     <animateMotion dur="1.6s" repeatCount="indefinite" path="M 158 60 L 258 60"/>
   </circle>
-  <text x="210" y="46" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/odom</text>
-  <text x="210" y="80" text-anchor="middle" fill="#6e7a9c" font-family="ui-monospace, monospace" font-size="9">nav_msgs/msg/Odometry</text>
+  <text x="210" y="46" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/odom</text>
+  <text x="210" y="80" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="9">nav_msgs/msg/Odometry</text>
 </svg>
 `,
   lessonModal: {

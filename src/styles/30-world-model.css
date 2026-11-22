@@ -3,7 +3,7 @@
 .world-workbench {
   position: relative;
   z-index: 1;
-  display: grid;
+  display: contents;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 8px;
@@ -15,6 +15,9 @@
 .world-workbench > .stage-controls-dock {
   width: 100%;
   min-width: 0;
+}
+.world-workbench > .canvas-wrap {
+  --scene-aspect: calc(8 / 3);
 }
 /* L24 keeps the same guide entry point without repeating its two task cards. */
 body:has(.world-workbench) .lesson-brief {
@@ -35,7 +38,7 @@ body:has(.world-workbench) .lesson-brief-steps {
 }
 body:has(.world-workbench) .lesson-brief-heading strong {
   font-size: 14px;
-  white-space: nowrap;
+  white-space: normal;
 }
 body:has(.world-workbench) .lesson-brief-guide {
   min-width: 44px;
@@ -43,24 +46,8 @@ body:has(.world-workbench) .lesson-brief-guide {
   padding: 7px 8px;
   font: 600 14px/1.3 var(--sans);
 }
-/* Portaled to body so canvas shake/overflow and the control dock cannot clip it. */
-#clear-overlay.world-completion-layer {
-  box-sizing: border-box;
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  padding: 16px;
-  border-radius: 0;
-}
-#clear-overlay.world-completion-layer .card {
-  box-sizing: border-box;
-  width: min(440px, 100%);
-  min-width: 0;
-  max-height: calc(100dvh - 32px);
-  padding: 24px;
-  overflow-y: auto;
-}
 .world-lab {
+  overflow-wrap: anywhere;
   box-sizing: border-box;
   container: world-lab / inline-size;
   width: min(800px, 100%);
@@ -109,7 +96,7 @@ body:has(.world-workbench) .lesson-brief-guide {
 .world-scope {
   margin-top: 4px !important;
   color: var(--fg-mid);
-  font-size: 12px;
+  font-size: 14px;
 }
 .world-next {
   margin-top: 8px;
@@ -149,8 +136,10 @@ body:has(.world-workbench) .lesson-brief-guide {
   background: color-mix(in srgb, var(--accent) 8%, var(--panel));
 }
 .world-button:disabled {
-  opacity: 0.5;
-  cursor: default;
+  background: var(--panel-2);
+  border-color: var(--line);
+  color: var(--fg-dim);
+  cursor: not-allowed;
 }
 .world-button:hover:not(:disabled) {
   border-color: var(--accent);
@@ -158,11 +147,12 @@ body:has(.world-workbench) .lesson-brief-guide {
 .world-primary {
   border-color: var(--ok);
   background: var(--ok);
-  color: var(--bg);
+  color: var(--on-accent);
 }
 .world-primary:hover:not(:disabled) {
+  color: var(--on-accent);
   border-color: var(--ok);
-  background: color-mix(in srgb, var(--ok) 88%, white);
+  background: color-mix(in srgb, var(--ok) 88%, black);
 }
 .world-lab button:focus-visible,
 .world-lab .opad-focus {
@@ -182,7 +172,7 @@ body:has(.world-workbench) .lesson-brief-guide {
   padding: 0 0 6px;
   color: var(--fg-mid);
   text-align: left;
-  font-size: 12px;
+  font-size: 14px;
 }
 .world-candidates th,
 .world-candidates td {
@@ -199,7 +189,7 @@ body:has(.world-workbench) .lesson-brief-guide {
 .world-candidates thead th {
   color: var(--fg-mid);
   background: color-mix(in srgb, var(--fg) 3%, var(--panel));
-  font-size: 12px;
+  font-size: 14px;
 }
 .world-candidates tbody th,
 .world-candidates tbody td {
@@ -216,7 +206,7 @@ body:has(.world-workbench) .lesson-brief-guide {
   color: var(--accent);
 }
 .world-candidates [data-actual] {
-  color: #f5c17a;
+  color: var(--warn);
 }
 .world-candidates [data-pick] {
   display: inline-block;
@@ -263,7 +253,7 @@ body:has(.world-workbench) .lesson-brief-guide {
   margin-top: 8px;
 }
 .world-utilities .world-button {
-  font-size: 13px;
+  font-size: 14px;
 }
 .world-choices {
   display: grid;
@@ -287,7 +277,7 @@ body:has(.world-workbench) .lesson-brief-guide {
   display: block;
   margin-top: 3px;
   color: var(--fg-mid);
-  font-size: 12px;
+  font-size: 14px;
 }
 .world-metrics {
   display: flex;
@@ -296,7 +286,7 @@ body:has(.world-workbench) .lesson-brief-guide {
 .world-metrics > p {
   flex: 1 1 0;
   min-width: 0;
-  font-size: 12px;
+  font-size: 16px;
 }
 .world-metrics strong {
   display: block;
@@ -306,7 +296,7 @@ body:has(.world-workbench) .lesson-brief-guide {
 }
 .world-error,
 .world-target-error {
-  font-size: 12px;
+  font-size: 14px;
 }
 @container world-lab (max-width:420px) {
   .world-heading h3 {
@@ -326,6 +316,7 @@ body:has(.world-workbench) .lesson-brief-guide {
 }
 @media (min-width: 900px) {
   .world-workbench {
+    display: grid;
     /* Give the scene spare width while keeping the controls readable. */
     grid-template-columns: minmax(0, 1fr) clamp(340px, 28vw, 380px);
     gap: 12px;

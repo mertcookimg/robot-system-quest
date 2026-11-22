@@ -1,0 +1,95 @@
+/* Copyright 2026 Masato Kobayashi */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* First-paint fallbacks shared by the app and Guide. Runtime values come
+   from core/theme.ts; the saved data-theme is set before styles load. */
+:root {
+  color-scheme: light;
+  --bg: #f3f6fb;
+  --bg-2: #eaf0f8;
+  --panel: #ffffff;
+  --panel-2: #edf3fb;
+  --canvas-bg: #f8fafc;
+  --term-bg: #f1f5fb;
+  --term-body-bg: #ffffff;
+  --scrim-rgb: 255, 255, 255;
+  --backdrop-rgb: 23, 43, 77;
+  --fg: #172b4d;
+  --fg-mid: #425570;
+  --fg-dim: #586a82;
+  --line: #7487a0;
+  --line-soft: #d8e2ef;
+  --line-bright: #7487a0;
+  --accent: #075f93;
+  --accent-deep: #075985;
+  --accent-2: #6d42b5;
+  --ok: #087764;
+  --warn: #925b00;
+  --danger: #be2949;
+  --on-accent: #ffffff;
+  --accent-rgb: 7, 95, 147;
+  --accent-2-rgb: 109, 66, 181;
+  --ok-rgb: 8, 119, 100;
+  --warn-rgb: 146, 91, 0;
+  --danger-rgb: 190, 41, 73;
+  --surface-rgb: 255, 255, 255;
+  --page-rgb: 243, 246, 251;
+  --fg-rgb: 23, 43, 77;
+  --shadow-rgb: 23, 43, 77;
+  --surface-top: #f8fbff;
+  --selection-bg: #cde5f5;
+  --blue: #1d4ea0;
+  --blue-rgb: 29, 78, 160;
+  --rose: #b02a62;
+  --rose-rgb: 176, 42, 98;
+  --shadow-soft: 0 4px 20px rgba(var(--shadow-rgb), 0.13);
+  --cyan: var(--accent);
+  --cyan-rgb: var(--accent-rgb);
+  --purple: var(--accent-2);
+  --purple-rgb: var(--accent-2-rgb);
+  --mint: var(--ok);
+  --yellow: var(--warn);
+  --muted: var(--fg-dim);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f172a;
+  --bg-2: #131f35;
+  --panel: #18243a;
+  --panel-2: #223149;
+  --canvas-bg: #111c30;
+  --term-bg: #131f35;
+  --term-body-bg: #111c30;
+  --scrim-rgb: 24, 36, 58;
+  --backdrop-rgb: 2, 6, 23;
+  --fg: #edf3ff;
+  --fg-mid: #c2cfe3;
+  --fg-dim: #a4b5cd;
+  --line: #7188a6;
+  --line-soft: #3b506d;
+  --line-bright: #7d96b8;
+  --accent: #7dd3fc;
+  --accent-deep: #38bdf8;
+  --accent-2: #c4b5fd;
+  --ok: #5eead4;
+  --warn: #fbbf24;
+  --danger: #fda4af;
+  --on-accent: #102035;
+  --accent-rgb: 125, 211, 252;
+  --accent-2-rgb: 196, 181, 253;
+  --ok-rgb: 94, 234, 212;
+  --warn-rgb: 251, 191, 36;
+  --danger-rgb: 253, 164, 175;
+  --surface-rgb: 24, 36, 58;
+  --page-rgb: 15, 23, 42;
+  --fg-rgb: 237, 243, 255;
+  --shadow-rgb: 0, 0, 0;
+  --surface-top: #152238;
+  --selection-bg: #25496c;
+  --blue: #93baff;
+  --blue-rgb: 147, 186, 255;
+  --rose: #f9a8d4;
+  --rose-rgb: 249, 168, 212;
+  --shadow-soft: 0 4px 20px rgba(var(--shadow-rgb), 0.25);
+}

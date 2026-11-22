@@ -27,6 +27,7 @@ export function show(stages: readonly Stage[]): void {
       </div>`;
     })
     .join("");
+  ui.allclearStars.scrollTop = 0;
   const total = totalStars(stages.map((s) => s.id));
   const starsLabel = getLang() === "ja" ? "スター" : "stars";
   ui.allclearStats.innerHTML =
@@ -44,6 +45,20 @@ export function hide(): void {
 }
 
 export function setupAllClear(onRestart: () => void): void {
+  ui.allclearScreen.addEventListener("keydown", (event) => {
+    if (
+      !isOpen() ||
+      !["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(event.key)
+    )
+      return;
+    event.preventDefault();
+    event.stopPropagation();
+    const results = ui.allclearStars;
+    const amount = event.key.startsWith("Page") ? Math.max(40, results.clientHeight * 0.8) : 40;
+    if (event.key === "Home") results.scrollTop = 0;
+    else if (event.key === "End") results.scrollTop = results.scrollHeight;
+    else results.scrollTop += event.key.endsWith("Up") ? -amount : amount;
+  });
   ui.allclearRestart.addEventListener("click", () => {
     sfx.click();
     hide();

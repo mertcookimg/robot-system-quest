@@ -463,33 +463,33 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="feedforward controller publishes a planned sequence of cmd_vel">
   <defs>
     <marker id="ld-feedforward_controller-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
   </defs>
   <!-- controller box with timeline inside -->
-  <rect x="8" y="14" width="200" height="92" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="108" y="32" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="12" font-weight="700">controller</text>
-  <text x="108" y="48" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">time-based plan (open loop)</text>
+  <rect x="8" y="14" width="200" height="92" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="108" y="32" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">controller</text>
+  <text x="108" y="48" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">time-based plan (open loop)</text>
   <!-- gantt-style timeline of cmd_vel blocks -->
-  <rect x="22" y="62" width="50" height="16" rx="2" fill="#7dd3fc"/>
-  <text x="47" y="74" text-anchor="middle" fill="#0c1124" font-family="ui-monospace, monospace" font-size="9" font-weight="700">t=d/v</text>
-  <rect x="74" y="62" width="28" height="16" rx="2" fill="#fbbf24"/>
-  <text x="88" y="74" text-anchor="middle" fill="#0c1124" font-family="ui-monospace, monospace" font-size="9" font-weight="700">t=θ/ω</text>
-  <rect x="104" y="62" width="80" height="16" rx="2" fill="#7dd3fc"/>
-  <text x="144" y="74" text-anchor="middle" fill="#0c1124" font-family="ui-monospace, monospace" font-size="9" font-weight="700">REPEAT × 3</text>
-  <text x="108" y="96" text-anchor="middle" fill="#6e7a9c" font-family="ui-monospace, monospace" font-size="9">linear / angular / duration</text>
+  <rect x="22" y="62" width="50" height="16" rx="2" fill="light-dark(#075f93, #7dd3fc)"/>
+  <text x="47" y="74" text-anchor="middle" fill="var(--on-accent)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">t=d/v</text>
+  <rect x="74" y="62" width="28" height="16" rx="2" fill="light-dark(#925b00, #fbbf24)"/>
+  <text x="88" y="74" text-anchor="middle" fill="var(--on-accent)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">t=θ/ω</text>
+  <rect x="104" y="62" width="80" height="16" rx="2" fill="light-dark(#075f93, #7dd3fc)"/>
+  <text x="144" y="74" text-anchor="middle" fill="var(--on-accent)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">REPEAT × 3</text>
+  <text x="108" y="96" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="9">linear / angular / duration</text>
   <!-- robot box -->
-  <rect x="280" y="36" width="132" height="48" rx="8" fill="#181f3a" stroke="#c4b5fd" stroke-width="1.5"/>
+  <rect x="280" y="36" width="132" height="48" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
   <g transform="translate(296,52)">
-    <rect x="0" y="0" width="22" height="16" rx="3" fill="none" stroke="#c4b5fd" stroke-width="1.5"/>
-    <circle cx="6" cy="7" r="1.6" fill="#c4b5fd"/>
-    <circle cx="16" cy="7" r="1.6" fill="#c4b5fd"/>
+    <rect x="0" y="0" width="22" height="16" rx="3" fill="none" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
+    <circle cx="6" cy="7" r="1.6" fill="light-dark(#6d42b5, #c4b5fd)"/>
+    <circle cx="16" cy="7" r="1.6" fill="light-dark(#6d42b5, #c4b5fd)"/>
   </g>
-  <text x="364" y="58" text-anchor="middle" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="12" font-weight="700">robot</text>
-  <text x="364" y="74" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">just follows</text>
+  <text x="364" y="58" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">robot</text>
+  <text x="364" y="74" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">just follows</text>
   <!-- arrow -->
-  <line x1="208" y1="60" x2="278" y2="60" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-feedforward_controller-arrow)"/>
-  <text x="243" y="54" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/cmd_vel</text>
+  <line x1="208" y1="60" x2="278" y2="60" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-feedforward_controller-arrow)"/>
+  <text x="243" y="54" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/cmd_vel</text>
 </svg>
 `,
   lessonModal: {

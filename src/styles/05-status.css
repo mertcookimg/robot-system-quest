@@ -4,11 +4,14 @@
 /* === Status === */
 #status {
   margin: 0;
-  font-size: 14.5px;
-  color: var(--fg-dim);
+  font-size: 16px;
+  color: var(--fg-mid);
   text-align: center;
   min-height: 1.4em;
-  font-weight: 400;
+  font-weight: 500;
+  line-height: 1.65;
+  width: min(800px, 100%);
+  overflow-wrap: anywhere;
   letter-spacing: 0.2px;
   transition: color 0.3s;
 }

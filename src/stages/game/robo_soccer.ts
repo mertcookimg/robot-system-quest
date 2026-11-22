@@ -1,13 +1,16 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+import { drawCanvasLabel } from "../../lib/canvas_text";
+
 // robo_soccer: Robo Soccer (3 vs 3)
 // 1 player + 2 friendly AI vs 3 opponent AI. Push the ball into the
 // opposing goal to score.
 // First to 3 wins. Multi-robot extension of the ROS 2 lesson: cmd_vel
 // teleop + /ball/pose subscribe.
 import { W, H, type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { theme, withA, getTheme, themeColor } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
 import {
@@ -428,7 +431,7 @@ export function makeRoboSoccer(): Stage {
         ball.vx = (ndx / nlen) * 130;
         ball.vy = (ndy / nlen) * 130;
         ballStillT = 0;
-        particles.burst(ball.x, ball.y, "#9aa6c8", 8, 80);
+        particles.burst(ball.x, ball.y, "#425570", 8, 80);
       }
     } else {
       ballStillT = 0;
@@ -751,7 +754,7 @@ export function makeRoboSoccer(): Stage {
         fy = Math.sin(ang);
       ball.vx += fx * KICK_VEL;
       ball.vy += fy * KICK_VEL;
-      particles.burst(ball.x, ball.y, "#fbbf24", 14, 240);
+      particles.burst(ball.x, ball.y, "#925b00", 14, 240);
       g.sfx.deliver();
       g.shake(0.4);
     } else if (Math.abs(along) > 30) {
@@ -765,7 +768,7 @@ export function makeRoboSoccer(): Stage {
     else scoreO++;
     lastScorer = scorer;
     goalFlash = 1.4;
-    particles.burst(ball.x, ball.y, scorer === "P" ? "#7dd3fc" : "#fb7185", 36, 280);
+    particles.burst(ball.x, ball.y, scorer === "P" ? "#075f93" : "#be2949", 36, 280);
     g.sfx.victory();
     g.shake(0.7);
     g.publish("/goal/scored", `team:${scorer} score:P${scoreP}-O${scoreO}`);
@@ -821,8 +824,8 @@ export function makeRoboSoccer(): Stage {
     clearBackground(c);
 
     drawPitch(c);
-    drawGoal(c, FIELD.x - GOAL_W, GOAL_Y, "#7dd3fc", mode2P ? "P2 TARGET" : "DEFEND");
-    drawGoal(c, FIELD.x + FIELD.w, GOAL_Y, "#fb7185", mode2P ? "P1 TARGET" : "TARGET");
+    drawGoal(c, FIELD.x - GOAL_W, GOAL_Y, "#075f93", mode2P ? "P2 TARGET" : "DEFEND");
+    drawGoal(c, FIELD.x + FIELD.w, GOAL_Y, "#be2949", mode2P ? "P1 TARGET" : "TARGET");
     drawShotGuide(c, bots[0], "P1");
     if (mode2P) drawShotGuide(c, bots[3], "P2");
 
@@ -831,7 +834,7 @@ export function makeRoboSoccer(): Stage {
 
     for (let i = 0; i < bots.length; i++) {
       const b = bots[i];
-      const color = b.team === "P" ? "#7dd3fc" : "#fb7185";
+      const color = b.team === "P" ? "#075f93" : "#be2949";
       const isHuman = i === 0 || (mode2P && i === 3);
       const label = mode2P && i === 3 ? "P2" : b.label;
       drawRobot(c, b, color, label, isHuman);
@@ -842,16 +845,16 @@ export function makeRoboSoccer(): Stage {
     if (goalFlash > 0) {
       c.save();
       c.globalAlpha = goalFlash * 0.55;
-      c.fillStyle = lastScorer === "P" ? "#7dd3fc" : "#fb7185";
+      c.fillStyle = stageColor(lastScorer === "P" ? "#075f93" : "#be2949");
       c.fillRect(0, 0, W, H);
       c.restore();
-      c.fillStyle = "#fff";
+      c.fillStyle = stageColor("#fff");
       c.textAlign = "center";
       c.font = "700 56px ui-monospace, monospace";
       c.fillText("GOAL!", W / 2, H / 2 + 20);
     }
     if (kickoffT > 0 && !cleared) {
-      c.fillStyle = "rgba(255,255,255,0.85)";
+      c.fillStyle = stageColor("rgba(23,43,77,0.95)");
       c.font = "700 44px ui-monospace, monospace";
       c.textAlign = "center";
       c.fillText("READY", W / 2, FIELD.y + FIELD.h / 2 - 20);
@@ -869,14 +872,14 @@ export function makeRoboSoccer(): Stage {
   function drawPitch(c: CanvasRenderingContext2D) {
     // Stadium shell and animated LED boards.
     const stadium = c.createLinearGradient(0, FIELD.y - 48, 0, FIELD.y + FIELD.h + 35);
-    stadium.addColorStop(0, "#10243d");
-    stadium.addColorStop(0.5, "#071521");
-    stadium.addColorStop(1, "#10243d");
-    c.fillStyle = stadium;
+    stadium.addColorStop(0, stageColor("#dce8f5"));
+    stadium.addColorStop(0.5, stageColor("#f1f6fb"));
+    stadium.addColorStop(1, stageColor("#dce8f5"));
+    c.fillStyle = stageColor(stadium);
     c.fillRect(0, FIELD.y - 36, W, FIELD.h + 72);
     for (let x = 8; x < W; x += 22) {
       const teamColor = (Math.floor(x / 22) + Math.floor(elapsed * 3)) % 5 === 0;
-      c.fillStyle = teamColor ? "#fbbf24" : x < W / 2 ? "#7dd3fc" : "#fb7185";
+      c.fillStyle = stageColor(teamColor ? "#925b00" : x < W / 2 ? "#075f93" : "#be2949");
       c.globalAlpha = teamColor ? 0.8 : 0.34;
       c.fillRect(x, FIELD.y - 28, 10, 4);
       c.fillRect(W - x, FIELD.y + FIELD.h + 24, 10, 4);
@@ -884,18 +887,18 @@ export function makeRoboSoccer(): Stage {
     c.globalAlpha = 1;
 
     const turf = c.createLinearGradient(FIELD.x, FIELD.y, FIELD.x + FIELD.w, FIELD.y);
-    turf.addColorStop(0, "#12533c");
-    turf.addColorStop(0.5, "#176447");
-    turf.addColorStop(1, "#12533c");
-    c.fillStyle = turf;
+    turf.addColorStop(0, stageColor("#cfebdb"));
+    turf.addColorStop(0.5, stageColor("#def1e5"));
+    turf.addColorStop(1, stageColor("#cfebdb"));
+    c.fillStyle = stageColor(turf);
     c.fillRect(FIELD.x, FIELD.y, FIELD.w, FIELD.h);
 
-    c.fillStyle = "rgba(255,255,255,0.035)";
+    c.fillStyle = stageColor("rgba(255,255,255,0.035)");
     const stripes = 12;
     for (let i = 0; i < stripes; i += 2) {
       c.fillRect(FIELD.x + (FIELD.w / stripes) * i, FIELD.y, FIELD.w / stripes, FIELD.h);
     }
-    c.strokeStyle = "rgba(255,255,255,0.72)";
+    c.strokeStyle = stageColor("rgba(47,107,82,0.8)");
     c.lineWidth = 2;
     c.strokeRect(FIELD.x, FIELD.y, FIELD.w, FIELD.h);
     const cx = FIELD.x + FIELD.w / 2;
@@ -908,9 +911,9 @@ export function makeRoboSoccer(): Stage {
     c.stroke();
     c.beginPath();
     c.arc(cx, FIELD.y + FIELD.h / 2, 3, 0, Math.PI * 2);
-    c.fillStyle = "rgba(255,255,255,0.55)";
+    c.fillStyle = stageColor("rgba(47,107,82,0.7)");
     c.fill();
-    c.strokeStyle = "rgba(255,255,255,0.46)";
+    c.strokeStyle = stageColor("rgba(47,107,82,0.65)");
     const penaltyH = 220;
     const goalAreaH = GOAL_H + 34;
     c.strokeRect(FIELD.x, FIELD.y + (FIELD.h - penaltyH) / 2, 86, penaltyH);
@@ -918,7 +921,7 @@ export function makeRoboSoccer(): Stage {
     c.strokeRect(FIELD.x, FIELD.y + (FIELD.h - goalAreaH) / 2, 36, goalAreaH);
     c.strokeRect(FIELD.x + FIELD.w - 36, FIELD.y + (FIELD.h - goalAreaH) / 2, 36, goalAreaH);
 
-    c.fillStyle = "rgba(255,255,255,0.75)";
+    c.fillStyle = stageColor("rgba(47,107,82,0.8)");
     c.beginPath();
     c.arc(FIELD.x + 62, FIELD.y + FIELD.h / 2, 2.5, 0, Math.PI * 2);
     c.arc(FIELD.x + FIELD.w - 62, FIELD.y + FIELD.h / 2, 2.5, 0, Math.PI * 2);
@@ -948,13 +951,13 @@ export function makeRoboSoccer(): Stage {
     const depth = 22;
     const backX = left ? gx - depth : gx + GOAL_W;
     const glow = 0.18 + (Math.sin(elapsed * 4) + 1) * 0.05;
-    c.shadowColor = color;
+    c.shadowColor = stageColor(color);
     c.shadowBlur = label === "TARGET" || label === "P1 TARGET" ? 18 : 8;
-    c.fillStyle = color;
+    c.fillStyle = stageColor(color);
     c.globalAlpha = glow;
     c.fillRect(left ? backX : gx, gy, GOAL_W + depth, GOAL_H);
     c.globalAlpha = 1;
-    c.strokeStyle = color;
+    c.strokeStyle = stageColor(color);
     c.lineWidth = 3;
     c.strokeRect(gx, gy, GOAL_W, GOAL_H);
     c.lineWidth = 1;
@@ -975,7 +978,7 @@ export function makeRoboSoccer(): Stage {
     }
     c.shadowBlur = 0;
     c.globalAlpha = 0.9;
-    c.fillStyle = color;
+    c.fillStyle = stageColor(color);
     c.font = "800 8px ui-monospace, monospace";
     c.textAlign = left ? "left" : "right";
     c.fillText(label, left ? FIELD.x + 8 : FIELD.x + FIELD.w - 8, gy - 8);
@@ -989,9 +992,9 @@ export function makeRoboSoccer(): Stage {
     const targetY = GOAL_Y + GOAL_H / 2;
     const armed = bot.team === "P" ? kickRequestT > 0 : kickRequestT2 > 0;
     c.save();
-    c.strokeStyle = armed ? "#fbbf24" : bot.team === "P" ? "#7dd3fc" : "#fb7185";
-    c.fillStyle = c.strokeStyle;
-    c.globalAlpha = armed ? 0.85 : 0.32;
+    c.strokeStyle = stageColor(armed ? "#925b00" : bot.team === "P" ? "#075f93" : "#be2949");
+    c.fillStyle = stageColor(c.strokeStyle);
+    c.globalAlpha = getTheme() === "light" ? (armed ? 1 : 0.8) : armed ? 0.85 : 0.32;
     c.lineWidth = armed ? 2 : 1;
     c.setLineDash([6, 7]);
     c.beginPath();
@@ -1005,7 +1008,9 @@ export function makeRoboSoccer(): Stage {
     c.globalAlpha = 0.85;
     c.font = "800 8px ui-monospace, monospace";
     c.textAlign = "center";
-    c.fillText(armed ? `${label} SHOT LOCK` : "SHOT RANGE", ball.x, ball.y - 29);
+    drawCanvasLabel(c, armed ? `${label} SHOT LOCK` : "SHOT RANGE", ball.x, ball.y - 29, {
+      bounds: FIELD,
+    });
     c.restore();
   }
 
@@ -1013,7 +1018,7 @@ export function makeRoboSoccer(): Stage {
     c.save();
     for (const point of ball.trail) {
       c.globalAlpha = Math.max(0, point.life / 0.24) * 0.42;
-      c.fillStyle = "#fef3c7";
+      c.fillStyle = themeColor("#925b00", "#fef3c7");
       c.beginPath();
       c.arc(point.x, point.y, BALL_R * (point.life / 0.24), 0, Math.PI * 2);
       c.fill();
@@ -1022,19 +1027,19 @@ export function makeRoboSoccer(): Stage {
 
     c.save();
     c.translate(ball.x, ball.y);
-    c.fillStyle = "rgba(0,0,0,0.4)";
+    c.fillStyle = stageColor("rgba(0,0,0,0.4)");
     c.beginPath();
     c.arc(0, 2, BALL_R, 0, Math.PI * 2);
     c.fill();
-    c.fillStyle = "#fef3c7";
-    c.strokeStyle = "rgba(0,0,0,0.6)";
+    c.fillStyle = stageColor("#fef3c7");
+    c.strokeStyle = stageColor("rgba(0,0,0,0.6)");
     c.lineWidth = 1.5;
     c.beginPath();
     c.arc(0, 0, BALL_R, 0, Math.PI * 2);
     c.fill();
     c.stroke();
     const rot = elapsed * 4 + Math.atan2(ball.vy, ball.vx);
-    c.fillStyle = "#0c1124";
+    c.fillStyle = "#172b4d";
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2 + rot;
       c.beginPath();
@@ -1070,7 +1075,7 @@ export function makeRoboSoccer(): Stage {
 
     // Team ring (field-aligned marker for readability; doesn't rotate).
     c.save();
-    c.strokeStyle = color;
+    c.strokeStyle = stageColor(color);
     c.lineWidth = isHuman ? 2.5 : 1.8;
     c.beginPath();
     c.arc(b.x, b.y, ROBOT_R, 0, Math.PI * 2);
@@ -1079,11 +1084,11 @@ export function makeRoboSoccer(): Stage {
 
     // Label (field-aligned, not rotated).
     c.save();
-    c.fillStyle = color;
+    c.fillStyle = stageColor(color);
     c.textAlign = "center";
     c.textBaseline = "alphabetic";
     c.font = (isHuman ? "700 10px " : "700 8px ") + "ui-monospace, monospace";
-    c.fillText(label, b.x, b.y - ROBOT_R - 4);
+    drawCanvasLabel(c, label, b.x, b.y - ROBOT_R - 4, { bounds: FIELD });
 
     // Role marker (defender = triangle, mid = bar, forward = none).
     if (!isHuman) {
@@ -1107,26 +1112,26 @@ export function makeRoboSoccer(): Stage {
       sy = 12;
     c.save();
     c.fillStyle = withA(theme.scrim, 0.9);
-    c.strokeStyle = "rgba(255,255,255,0.3)";
+    c.strokeStyle = stageColor("rgba(88,106,130,0.5)");
     c.lineWidth = 1;
     c.fillRect(sx, sy, sw, sh);
     c.strokeRect(sx, sy, sw, sh);
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.font = "700 11px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText(mode2P ? "P1 TEAM" : "YOU TEAM", sx + 50, sy + 16);
     c.font = "700 24px ui-monospace, monospace";
     c.fillText(String(scoreP), sx + 50, sy + 38);
-    c.fillStyle = "#fb7185";
+    c.fillStyle = stageColor("#be2949");
     c.font = "700 11px ui-monospace, monospace";
     c.fillText(mode2P ? "P2 TEAM" : "AI TEAM", sx + sw - 50, sy + 16);
     c.font = "700 24px ui-monospace, monospace";
     c.fillText(String(scoreO), sx + sw - 50, sy + 38);
-    c.fillStyle = "#9aa6c8";
+    c.fillStyle = stageColor("#425570");
     c.font = "700 10px ui-monospace, monospace";
     c.fillText("FIRST TO " + TARGET_SCORE, sx + sw / 2, sy + 18);
     c.font = "700 16px ui-monospace, monospace";
-    c.fillStyle = "#eef2ff";
+    c.fillStyle = theme.fg;
     c.fillText(`${scoreP} : ${scoreO}`, sx + sw / 2, sy + 38);
     c.restore();
   }
@@ -1222,39 +1227,39 @@ export default defineStage({
   diagram: `
 <svg viewBox="0 0 420 120" role="img" aria-label="two robots fight for a ball, each pushing toward opposite goals">
   <!-- pitch -->
-  <rect x="20" y="14" width="380" height="92" rx="6" fill="rgba(15,50,36,0.6)" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>
-  <line x1="210" y1="14" x2="210" y2="106" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
-  <circle cx="210" cy="60" r="22" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
-  <circle cx="210" cy="60" r="2" fill="rgba(255,255,255,0.6)"/>
+  <rect x="20" y="14" width="380" height="92" rx="6" fill="light-dark(rgba(207,235,219,0.8), rgba(18, 83, 60, 0.8))" stroke="light-dark(rgba(47,107,82,0.75), rgba(220, 239, 229, 0.75))" stroke-width="1.5"/>
+  <line x1="210" y1="14" x2="210" y2="106" stroke="light-dark(rgba(47,107,82,0.65), rgba(220, 239, 229, 0.65))" stroke-width="1"/>
+  <circle cx="210" cy="60" r="22" fill="none" stroke="light-dark(rgba(47,107,82,0.65), rgba(220, 239, 229, 0.65))" stroke-width="1"/>
+  <circle cx="210" cy="60" r="2" fill="light-dark(rgba(47,107,82,0.7), rgba(220, 239, 229, 0.7))"/>
   <!-- left goal (AI defends) -->
-  <rect x="14" y="44" width="8" height="32" fill="rgba(125,211,252,0.18)" stroke="#7dd3fc" stroke-width="1.5"/>
+  <rect x="14" y="44" width="8" height="32" fill="light-dark(rgba(7, 95, 147,0.18), rgba(125, 211, 252, 0.18))" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
   <!-- right goal (player defends) -->
-  <rect x="398" y="44" width="8" height="32" fill="rgba(251,113,133,0.18)" stroke="#fb7185" stroke-width="1.5"/>
+  <rect x="398" y="44" width="8" height="32" fill="light-dark(rgba(190, 41, 73,0.18), rgba(253, 164, 175, 0.18))" stroke="light-dark(#be2949, #fda4af)" stroke-width="1.5"/>
   <!-- ball -->
   <circle cx="200" cy="60" r="6" fill="#fef3c7" stroke="rgba(0,0,0,0.6)" stroke-width="1"/>
-  <circle cx="198" cy="59" r="1" fill="#0c1124"/>
-  <circle cx="201" cy="62" r="1" fill="#0c1124"/>
+  <circle cx="198" cy="59" r="1" fill="light-dark(#172b4d, #edf3ff)"/>
+  <circle cx="201" cy="62" r="1" fill="light-dark(#172b4d, #edf3ff)"/>
   <!-- player robot (cyan) -->
-  <circle cx="160" cy="60" r="11" fill="#0c1124" stroke="#7dd3fc" stroke-width="2.5"/>
-  <polygon points="170,60 165,56 165,64" fill="#7dd3fc"/>
-  <text x="160" y="38" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="10" font-weight="700">YOU</text>
+  <circle cx="160" cy="60" r="11" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="2.5"/>
+  <polygon points="170,60 165,56 165,64" fill="light-dark(#075f93, #7dd3fc)"/>
+  <text x="160" y="38" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">YOU</text>
   <!-- AI robot (pink), facing left -->
-  <circle cx="270" cy="60" r="11" fill="#0c1124" stroke="#fb7185" stroke-width="2.5"/>
-  <polygon points="260,60 265,56 265,64" fill="#fb7185"/>
-  <text x="270" y="38" text-anchor="middle" fill="#fb7185" font-family="ui-monospace, monospace" font-size="10" font-weight="700">AI</text>
+  <circle cx="270" cy="60" r="11" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#be2949, #fda4af)" stroke-width="2.5"/>
+  <polygon points="260,60 265,56 265,64" fill="light-dark(#be2949, #fda4af)"/>
+  <text x="270" y="38" text-anchor="middle" fill="light-dark(#be2949, #fda4af)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">AI</text>
   <!-- attack arrows -->
   <defs>
     <marker id="ld-soccer-arrow-p" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-      <polygon points="0 0, 9 3.5, 0 7" fill="#7dd3fc"/>
+      <polygon points="0 0, 9 3.5, 0 7" fill="light-dark(#075f93, #7dd3fc)"/>
     </marker>
     <marker id="ld-soccer-arrow-o" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-      <polygon points="0 0, 9 3.5, 0 7" fill="#fb7185"/>
+      <polygon points="0 0, 9 3.5, 0 7" fill="light-dark(#be2949, #fda4af)"/>
     </marker>
   </defs>
-  <line x1="210" y1="98" x2="394" y2="98" stroke="#7dd3fc" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.85" marker-end="url(#ld-soccer-arrow-p)"/>
-  <text x="304" y="92" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9">YOU attack →</text>
-  <line x1="210" y1="22" x2="26" y2="22" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.85" marker-end="url(#ld-soccer-arrow-o)"/>
-  <text x="118" y="32" text-anchor="middle" fill="#fb7185" font-family="ui-monospace, monospace" font-size="9">← AI attack</text>
+  <line x1="210" y1="98" x2="394" y2="98" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.85" marker-end="url(#ld-soccer-arrow-p)"/>
+  <text x="304" y="92" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9">YOU attack →</text>
+  <line x1="210" y1="22" x2="26" y2="22" stroke="light-dark(#be2949, #fda4af)" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.85" marker-end="url(#ld-soccer-arrow-o)"/>
+  <text x="118" y="32" text-anchor="middle" fill="light-dark(#be2949, #fda4af)" font-family="ui-monospace, monospace" font-size="9">← AI attack</text>
 </svg>
 `,
   lessonModal: {

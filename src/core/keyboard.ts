@@ -51,9 +51,14 @@ export function setupKeyboard(deps: Deps): void {
         intro.stepTab(e.shiftKey ? -1 : +1);
         return;
       }
-      // Language buttons and links retain their native activation behavior.
+      // Settings buttons and links retain their native activation behavior.
       if (ownsNativeKey(e)) return;
-      if ((e.target as Element | null)?.closest?.("[data-language-switcher], a[href]")) return;
+      if (
+        (e.target as Element | null)?.closest?.(
+          "[data-language-switcher], [data-theme-switcher], a[href]",
+        )
+      )
+        return;
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         intro.stepFocus(-1);

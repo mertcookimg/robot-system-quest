@@ -15,6 +15,7 @@ It visualizes concepts such as publishers, subscribers, services, actions, feedf
 - **ROBOTICS LEARNING GUIDE** — Bilingual explanations of what to try and observe in each game and lesson
 - **Keyboard / Gamepad / Touch** — Keyboard and gamepad support across all stages, plus controls designed for touch devices
 - **Japanese / English** — Switch the interface language at any time
+- **Light / Dark** — Choose either theme on Home, in the app, or in the Guide. The saved choice follows you between pages without restarting a stage.
 - **Client-side only** — Runs without a backend
 
 > This project is a simplified simulation for learning ROS 2 concepts. It does not communicate with physical ROS 2 nodes or sensors.
@@ -103,13 +104,19 @@ Most stages share the controls below. In block editors and puzzles, follow the o
 | Select a stage | On-screen GAME / LESSON controls | `Select` |
 | Simulated ROS 2 commands | Terminal at the bottom of the screen | Press `L3` to open the command palette |
 | Confirm / close | `Enter` / `Space` / `Esc` | `A` / `B` |
-| Return from the terminal | `Esc` or **Back to stage** | `B`; `L3` also closes the command palette |
+| Release terminal input focus | `Esc` | `B`; `L3` also closes the command palette |
 
 Gamepad API button numbers and names may differ by browser, operating system, and controller.
 
-Menus, help, completion dialogs and terminal interaction pause the simulation. Returning to
-the stage resumes it; leaving the window releases held inputs. On small screens, shared
-canvas hints and timing appear as readable, wrapping text below the scene.
+Menus, help and completion dialogs pause the simulation. Terminal controls and the command
+palette keep the simulation, timers and topic messages running while capturing player input.
+Leaving the window pauses the simulation and releases held inputs. Shared instructions appear
+as readable, wrapping text below the scene at every screen size. On small screens, timing
+also moves below the scene.
+
+The Game / Lesson scene follows page scrolling at every screen size. It scales with the
+window height to leave room for parameter controls; long scene instructions scroll inside
+their own readout. Wide learning-lab layouts keep the scene beside their settings.
 
 In the stage picker, use arrow keys or `Tab` / `Shift+Tab` to move focus and `Enter` / `Space`
 to confirm the focused control. Clicking the other GAME / LESSON tab switches the open list;
@@ -133,8 +140,9 @@ actions in the terminal. The guide, command selector and gamepad palette use the
 definitions. Player-dependent graphs follow the current one-player or two-player mode.
 Use `ros2 topic list -t`, `ros2 node list`, `ros2 topic info <topic>` or
 `ros2 topic echo <topic>` in the terminal, command selector, or gamepad palette.
-When finished, use **Back to stage**, `Esc`, or gamepad `B` to return focus and control to the
-robot without resetting it. `L3` toggles the gamepad command palette.
+The simulation keeps running while you inspect the terminal; keyboard and gamepad stage
+controls stay neutral. Use `Esc` or gamepad `B` to release terminal input focus when needed.
+`L3` toggles the gamepad command palette.
 
 L21–L24 expose their actual lesson events through `std_msgs/msg/String` diagnostic topics:
 
@@ -237,13 +245,13 @@ npm run build
 ```
 
 Tests cover model behavior, simulated ROS messages, goal completion, failure recovery, input
-ownership, menu focus, terminal return controls, and DOM state during reset, language changes,
+ownership, menu focus, live terminal inspection, and DOM state during reset, language changes,
 and stage disposal. Catalog checks verify both generated catalogs, and loading tests exercise
 on-demand stage initialization. These tests do not validate rendered canvas pixels or physical
 controller drivers.
 
 For UI changes, also check the production preview in a browser at phone, tablet, and desktop
-widths (for example 375, 768, and 1280 px). Exercise stage selection, help, terminal return,
+widths (for example 375, 768, and 1280 px). Exercise stage selection, help, live terminal inspection,
 completion, retry, and switching between Game and Lesson with keyboard, touch, and available
 gamepads. Check both Japanese and English.
 

@@ -13,7 +13,7 @@
   text-decoration: none;
 }
 .hero-video-link > span:first-child {
-  font-size: 10px;
+  font-size: 14px;
 }
 .hero-video-link:hover {
   color: var(--fg);
@@ -21,7 +21,8 @@
 
 .lesson-videos-section {
   background:
-    radial-gradient(ellipse at 15% 30%, rgba(var(--purple-rgb), 0.065), transparent 45rem), #090b10;
+    radial-gradient(ellipse at 15% 30%, rgba(var(--purple-rgb), 0.065), transparent 45rem),
+    var(--panel-2);
 }
 .lesson-video-heading {
   max-width: 800px;
@@ -39,8 +40,8 @@
 }
 .lesson-video-heading > p:last-child {
   margin: 0;
-  color: #a9b5c6;
-  font-size: 15px;
+  color: var(--fg-mid);
+  font-size: 16px;
   line-height: 1.8;
 }
 .lesson-video-layout {
@@ -55,10 +56,10 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border: 1px solid #39405b;
+  border: 1px solid var(--line);
   border-radius: 12px;
-  background: #030507;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  background: var(--panel);
+  box-shadow: 0 18px 40px rgba(var(--shadow-rgb), 0.08);
   scroll-margin-top: 100px;
 }
 .lesson-video-player iframe,
@@ -73,8 +74,8 @@
 .lesson-video-poster {
   padding: 0;
   overflow: hidden;
-  color: #fff;
-  background: #080b12;
+  color: #ffffff;
+  background: var(--panel-2);
   cursor: pointer;
 }
 .lesson-video-poster::after {
@@ -102,7 +103,7 @@
   transform: translate(-50%, -50%);
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 50%;
-  color: #171120;
+  color: var(--on-accent);
   background: var(--purple);
   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
   font-size: 23px;
@@ -136,12 +137,12 @@
   border-radius: 5px;
   color: var(--purple);
   background: rgba(var(--purple-rgb), 0.06);
-  font: 700 11px/1.2 var(--mono);
+  font: 700 14px/1.2 var(--mono);
 }
 .lesson-video-info > p {
   margin: 0 0 17px;
-  color: #b1bdcc;
-  font-size: 14px;
+  color: var(--fg-mid);
+  font-size: 16px;
   line-height: 1.8;
 }
 .lesson-video-editions {
@@ -155,7 +156,7 @@
   padding: 9px 17px;
   border: 1px solid var(--line-bright);
   border-radius: 6px;
-  color: #c3cddb;
+  color: var(--fg-mid);
   background: var(--panel-2);
   font-size: 14px;
   font-weight: 700;
@@ -163,7 +164,7 @@
 }
 .lesson-video-editions button[aria-pressed="true"] {
   border-color: var(--purple);
-  color: #171120;
+  color: var(--on-accent);
   background: var(--purple);
 }
 .lesson-video-editions button:hover {
@@ -171,8 +172,8 @@
 }
 .lesson-video-info .lesson-video-format {
   margin-bottom: 10px;
-  color: #a4b0c1;
-  font-size: 13px;
+  color: var(--fg-mid);
+  font-size: 14px;
   line-height: 1.7;
 }
 .lesson-video-youtube {
@@ -205,9 +206,9 @@
   padding: 13px 15px;
   border-left: 2px solid var(--purple);
   border-radius: 0 6px 6px 0;
-  color: #c5cddd;
+  color: var(--fg-mid);
   background: rgba(var(--purple-rgb), 0.055);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.8;
 }
 .lesson-video-tip strong {
@@ -218,7 +219,7 @@
   margin-top: 28px;
   border: 1px solid var(--line-bright);
   border-radius: 10px;
-  background: rgba(13, 16, 22, 0.65);
+  background: rgba(var(--surface-rgb), 0.95);
 }
 .lesson-video-chapters > summary {
   padding: 18px 22px;
@@ -256,7 +257,7 @@
   padding: 11px 12px;
   border: 1px solid transparent;
   border-radius: 6px;
-  color: #c4cddb;
+  color: var(--fg-mid);
   background: transparent;
   text-align: left;
   cursor: pointer;
@@ -269,7 +270,7 @@
 }
 .video-chapter-number {
   color: var(--purple);
-  font: 700 11px/1.4 var(--mono);
+  font: 700 14px/1.4 var(--mono);
 }
 .video-chapter-name {
   font-size: 14px;
@@ -277,13 +278,13 @@
   overflow-wrap: anywhere;
 }
 .lesson-video-chapter time {
-  color: #a8b7c9;
-  font: 12px/1.4 var(--mono);
+  color: var(--fg-mid);
+  font: 14px/1.4 var(--mono);
   white-space: nowrap;
 }
 .video-chapter-play {
   color: var(--purple);
-  font-size: 10px;
+  font-size: 14px;
 }
 .stage-video-link,
 .dialog-video-link {
@@ -293,7 +294,7 @@
   gap: 10px;
   min-height: 40px;
   color: var(--purple);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   font-weight: 650;
   text-decoration: none;
@@ -371,6 +372,6 @@
     right: 14px;
     bottom: 12px;
     left: 14px;
-    font-size: 13px;
+    font-size: 14px;
   }
 }

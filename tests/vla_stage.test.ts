@@ -169,6 +169,21 @@ function guidedComparison(): void {
   run();
 }
 
+test("a run finishes without taking focus from terminal inspection", () => {
+  const terminal = document.createElement("section");
+  terminal.id = "ros-terminal";
+  terminal.innerHTML = '<input aria-label="Terminal command">';
+  document.body.append(terminal);
+  const command = terminal.querySelector("input")!;
+  click("run");
+  command.focus();
+  frames(70);
+  assert.equal(visible(button("stop")), false);
+  assert.equal(visible(element("results")), true);
+  assert.match(element("records").textContent!, /Go to red.*Red box.*✓/);
+  assert.equal(document.activeElement, command);
+});
+
 test("initial V pixels and A prediction match the frozen model without starting a run", () => {
   assertInput(VLA_SCENES[0], "red");
   assert.equal(visible(button("run")), true);

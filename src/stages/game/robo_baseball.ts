@@ -1,6 +1,10 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { theme, withA, getTheme, themeColor } from "../../core/theme";
+
+import { stageColor } from "../../lib/stage_colors";
+
 // robo_baseball: a ten-pitch timing and aim challenge.
 // Move the batting reticle onto the incoming pitch, then swing at the plate.
 // The simulated vision node publishes a predicted crossing point for each pitch.
@@ -128,8 +132,11 @@ export function makeRoboBaseball(): Stage {
         Math.min(ZONE.y + ZONE.h + 34, ((event.clientY - rect.top) / rect.height) * H),
       );
     };
-    onPointerMove = (event) => updatePointerAim(event);
+    onPointerMove = (event) => {
+      if (!isStageInteractionBlocked()) updatePointerAim(event);
+    };
     onPointerDown = (event) => {
+      if (isStageInteractionBlocked()) return;
       event.preventDefault();
       updatePointerAim(event);
       pointerSwingPending = true;
@@ -215,7 +222,7 @@ export function makeRoboBaseball(): Stage {
     fly.vx = -(310 + power * 300);
     fly.vy = -(230 + power * 210) + (aimY - pitch.targetY) * 2;
     fly.trail.length = 0;
-    particles.burst(fly.x, fly.y, quality > 0.86 ? "#fbbf24" : "#7dd3fc", 24, 260);
+    particles.burst(fly.x, fly.y, quality > 0.86 ? "#925b00" : "#075f93", 24, 260);
   }
 
   function swing(): void {
@@ -285,6 +292,7 @@ export function makeRoboBaseball(): Stage {
   }
 
   function update(dt: number): void {
+    if (isStageInteractionBlocked()) clearPendingSwing();
     animTime += dt;
     particles.update(dt);
     updateFlyBall(dt);
@@ -339,22 +347,22 @@ export function makeRoboBaseball(): Stage {
   function drawFieldPerspective(c: CanvasRenderingContext2D): void {
     clearBackground(c);
     const sky = c.createLinearGradient(0, 0, 0, 260);
-    sky.addColorStop(0, "#071126");
-    sky.addColorStop(0.7, "#173452");
-    sky.addColorStop(1, "#31536a");
-    c.fillStyle = sky;
+    sky.addColorStop(0, stageColor("#dcecf9"));
+    sky.addColorStop(0.7, stageColor("#dfeef9"));
+    sky.addColorStop(1, stageColor("#f1f7fb"));
+    c.fillStyle = stageColor(sky);
     c.fillRect(0, 0, W, 270);
 
-    // Soft night glow above the stadium roof.
+    // Soft daylight above the stadium roof.
     const glow = c.createRadialGradient(400, 80, 10, 400, 80, 360);
-    glow.addColorStop(0, "rgba(125, 211, 252, 0.16)");
-    glow.addColorStop(1, "rgba(125, 211, 252, 0)");
-    c.fillStyle = glow;
+    glow.addColorStop(0, stageColor("rgba(7, 95, 147, 0.16)"));
+    glow.addColorStop(1, stageColor("rgba(7, 95, 147, 0)"));
+    c.fillStyle = stageColor(glow);
     c.fillRect(0, 0, W, 260);
 
     // Proper floodlight towers with visible trusses.
     for (const x of [55, 745]) {
-      c.strokeStyle = "#94a3b8";
+      c.strokeStyle = stageColor("#586a82");
       c.lineWidth = 4;
       c.beginPath();
       c.moveTo(x - 7, 205);
@@ -362,7 +370,7 @@ export function makeRoboBaseball(): Stage {
       c.moveTo(x + 7, 205);
       c.lineTo(x + 2, 48);
       c.stroke();
-      c.strokeStyle = "rgba(148, 163, 184, 0.45)";
+      c.strokeStyle = stageColor("rgba(148, 163, 184, 0.45)");
       c.lineWidth = 1;
       for (let y = 70; y < 190; y += 24) {
         c.beginPath();
@@ -372,20 +380,20 @@ export function makeRoboBaseball(): Stage {
         c.lineTo(x - 5, y + 12);
         c.stroke();
       }
-      c.fillStyle = "rgba(219, 234, 254, 0.12)";
+      c.fillStyle = stageColor("rgba(219, 234, 254, 0.12)");
       c.beginPath();
       c.moveTo(x - 54, 45);
       c.lineTo(x + 54, 45);
       c.lineTo(x + 145, 285);
       c.lineTo(x - 145, 285);
       c.fill();
-      c.fillStyle = "#1e293b";
+      c.fillStyle = stageColor("#1e293b");
       c.beginPath();
       c.roundRect(x - 49, 27, 98, 25, 4);
       c.fill();
       for (let i = 0; i < 5; i++) {
-        c.fillStyle = "#e0f2fe";
-        c.shadowColor = "#bae6fd";
+        c.fillStyle = stageColor("#172b4d");
+        c.shadowColor = stageColor("#bae6fd");
         c.shadowBlur = 12;
         c.fillRect(x - 40 + i * 18, 33, 12, 12);
       }
@@ -393,7 +401,7 @@ export function makeRoboBaseball(): Stage {
     }
 
     // Upper deck, fascia and a central electronic scoreboard.
-    c.fillStyle = "#0f172a";
+    c.fillStyle = stageColor("#c5d3e4");
     c.beginPath();
     c.moveTo(0, 188);
     c.quadraticCurveTo(400, 145, 800, 188);
@@ -401,10 +409,10 @@ export function makeRoboBaseball(): Stage {
     c.lineTo(0, 275);
     c.closePath();
     c.fill();
-    c.strokeStyle = "#334155";
+    c.strokeStyle = stageColor("#334155");
     c.lineWidth = 3;
     c.stroke();
-    c.fillStyle = "#111c38";
+    c.fillStyle = stageColor("#dce5f2");
     c.beginPath();
     c.moveTo(0, 214);
     c.quadraticCurveTo(400, 178, 800, 214);
@@ -414,37 +422,37 @@ export function makeRoboBaseball(): Stage {
     c.fill();
 
     // Crowd rows follow the curve instead of forming a flat pixel strip.
-    const crowdColors = ["#7dd3fc", "#fbbf24", "#f472b6", "#c4b5fd", "#e2e8f0"];
+    const crowdColors = ["#075f93", "#925b00", "#b22c7a", "#6d42b5", "#172b4d"];
     for (let row = 0; row < 4; row++) {
       for (let x = 8 + (row % 2) * 7; x < W; x += 18) {
         const curveY = 215 + row * 13 - 22 * (1 - Math.pow((x - 400) / 400, 2));
-        c.fillStyle = crowdColors[((x / 2 + row) % crowdColors.length) | 0];
+        c.fillStyle = stageColor(crowdColors[((x / 2 + row) % crowdColors.length) | 0]);
         c.beginPath();
         c.arc(x, curveY, 2.2, 0, Math.PI * 2);
         c.fill();
       }
     }
 
-    c.fillStyle = "#050914";
+    c.fillStyle = stageColor("#f8fafc");
     c.beginPath();
     c.roundRect(296, 166, 208, 66, 6);
     c.fill();
-    c.strokeStyle = "#7dd3fc";
+    c.strokeStyle = stageColor("#075f93");
     c.lineWidth = 1.5;
     c.stroke();
-    c.fillStyle = "#94a3b8";
+    c.fillStyle = stageColor("#586a82");
     c.font = "700 7px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("ROBOT LEAGUE // VISION ARENA", 400, 181);
-    c.fillStyle = "#fbbf24";
+    c.fillStyle = stageColor("#925b00");
     c.font = "900 18px ui-monospace, monospace";
     c.fillText("R-BALL STADIUM", 400, 203);
-    c.fillStyle = "#5eead4";
+    c.fillStyle = stageColor("#087764");
     c.font = "700 8px ui-monospace, monospace";
     c.fillText("HOME  0 0 0   •   GUEST  0 0 0", 400, 219);
 
     // Padded outfield wall with distance marks.
-    c.fillStyle = "#123d42";
+    c.fillStyle = stageColor("#b8dbd5");
     c.beginPath();
     c.moveTo(0, 265);
     c.quadraticCurveTo(400, 228, 800, 265);
@@ -452,17 +460,17 @@ export function makeRoboBaseball(): Stage {
     c.lineTo(0, 322);
     c.closePath();
     c.fill();
-    c.strokeStyle = "#5eead4";
+    c.strokeStyle = stageColor("#087764");
     c.lineWidth = 2;
     c.stroke();
     for (let x = 0; x <= W; x += 80) {
-      c.strokeStyle = "rgba(94, 234, 212, 0.2)";
+      c.strokeStyle = stageColor("rgba(8, 119, 100, 0.2)");
       c.beginPath();
       c.moveTo(x, 263);
       c.lineTo(x, 322);
       c.stroke();
     }
-    c.fillStyle = "#a7f3d0";
+    c.fillStyle = stageColor("#28664c");
     c.font = "700 8px ui-monospace, monospace";
     c.fillText("325", 86, 289);
     c.fillText("400", 400, 272);
@@ -470,12 +478,12 @@ export function makeRoboBaseball(): Stage {
 
     // Layered turf with mowing stripes creates depth.
     const grass = c.createLinearGradient(0, 300, 0, H);
-    grass.addColorStop(0, "#247346");
-    grass.addColorStop(1, "#0b3b27");
-    c.fillStyle = grass;
+    grass.addColorStop(0, stageColor("#a5d5b5"));
+    grass.addColorStop(1, stageColor("#87bd9c"));
+    c.fillStyle = stageColor(grass);
     c.fillRect(0, 305, W, H - 305);
     for (let i = -2; i < 9; i++) {
-      c.fillStyle = i % 2 ? "rgba(110, 231, 183, 0.055)" : "rgba(0, 0, 0, 0.05)";
+      c.fillStyle = stageColor(i % 2 ? "rgba(110, 231, 183, 0.055)" : "rgba(0, 0, 0, 0.05)");
       c.beginPath();
       c.moveTo(400, 305);
       c.lineTo(i * 130, H);
@@ -485,7 +493,7 @@ export function makeRoboBaseball(): Stage {
     }
 
     // Infield dirt follows the actual diamond instead of a single triangle.
-    c.fillStyle = "#a87348";
+    c.fillStyle = stageColor("#a87348");
     c.beginPath();
     c.moveTo(400, 315);
     c.lineTo(682, 430);
@@ -493,7 +501,7 @@ export function makeRoboBaseball(): Stage {
     c.lineTo(118, 430);
     c.closePath();
     c.fill();
-    c.fillStyle = "#155c38";
+    c.fillStyle = stageColor("#a5d5b5");
     c.beginPath();
     c.moveTo(400, 340);
     c.lineTo(622, 428);
@@ -503,11 +511,11 @@ export function makeRoboBaseball(): Stage {
     c.fill();
 
     // Pitching lane, mound, batter's circle and crisp chalk.
-    c.fillStyle = "#aa754c";
+    c.fillStyle = stageColor("#aa754c");
     c.beginPath();
     c.ellipse(198, 326, 52, 17, 0, 0, Math.PI * 2);
     c.fill();
-    c.strokeStyle = "rgba(255,255,255,0.8)";
+    c.strokeStyle = themeColor("#425570", "rgba(255,255,255,0.8)");
     c.lineWidth = 2;
     c.beginPath();
     c.moveTo(642, 421);
@@ -517,7 +525,7 @@ export function makeRoboBaseball(): Stage {
     c.lineTo(400, 493);
     c.lineTo(158, 421);
     c.stroke();
-    c.fillStyle = "#f8fafc";
+    c.fillStyle = stageColor("#f8fafc");
     c.fillRect(188, 323, 20, 3);
     for (const [x, y] of [
       [400, 315],
@@ -527,16 +535,16 @@ export function makeRoboBaseball(): Stage {
       c.save();
       c.translate(x, y);
       c.rotate(Math.PI / 4);
-      c.fillStyle = "#f8fafc";
+      c.fillStyle = stageColor("#f8fafc");
       c.fillRect(-6, -6, 12, 12);
       c.restore();
     }
 
     // Home plate and batter's box.
-    c.strokeStyle = "rgba(255,255,255,0.8)";
+    c.strokeStyle = themeColor("#425570", "rgba(255,255,255,0.8)");
     c.lineWidth = 1.5;
     c.strokeRect(671, 339, 91, 91);
-    c.fillStyle = "#f8fafc";
+    c.fillStyle = stageColor("#f8fafc");
     c.beginPath();
     c.moveTo(642, 411);
     c.lineTo(652, 415);
@@ -549,7 +557,7 @@ export function makeRoboBaseball(): Stage {
     // Ceiling-mounted stereo camera tracking the ball.
     c.save();
     c.translate(410, 126);
-    c.strokeStyle = "rgba(125, 211, 252, 0.28)";
+    c.strokeStyle = stageColor("rgba(7, 95, 147, 0.28)");
     c.lineWidth = 1;
     c.setLineDash([4, 5]);
     c.beginPath();
@@ -559,24 +567,24 @@ export function makeRoboBaseball(): Stage {
     c.lineTo(RELEASE_X, 250);
     c.stroke();
     c.setLineDash([]);
-    c.fillStyle = "#111827";
-    c.strokeStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#cad6e5");
+    c.strokeStyle = stageColor("#075f93");
     c.lineWidth = 2;
     c.beginPath();
     c.roundRect(-31, -13, 62, 26, 7);
     c.fill();
     c.stroke();
     for (const x of [-17, 17]) {
-      c.fillStyle = "#020617";
+      c.fillStyle = stageColor("#020617");
       c.beginPath();
       c.arc(x, 0, 8, 0, Math.PI * 2);
       c.fill();
-      c.strokeStyle = "#5eead4";
+      c.strokeStyle = stageColor("#087764");
       c.beginPath();
       c.arc(x, 0, 4 + Math.sin(animTime * 4) * 0.7, 0, Math.PI * 2);
       c.stroke();
     }
-    c.fillStyle = "#5eead4";
+    c.fillStyle = stageColor("#087764");
     c.fillRect(-2, -3, 4, 6);
     c.font = "700 8px ui-monospace, monospace";
     c.textAlign = "center";
@@ -593,19 +601,19 @@ export function makeRoboBaseball(): Stage {
 
     // Flat 2D side-view: every gameplay element shares the same picture plane.
     const sky = c.createLinearGradient(0, 0, 0, 250);
-    sky.addColorStop(0, "#071126");
-    sky.addColorStop(0.65, "#18324f");
-    sky.addColorStop(1, "#31566d");
-    c.fillStyle = sky;
+    sky.addColorStop(0, stageColor("#dcecf9"));
+    sky.addColorStop(0.65, stageColor("#dfedf8"));
+    sky.addColorStop(1, stageColor("#f1f7fb"));
+    c.fillStyle = stageColor(sky);
     c.fillRect(0, 0, W, 260);
 
-    // Moon glow and a few restrained stars.
+    // Soft daylight and small highlights.
     const moonGlow = c.createRadialGradient(400, 68, 4, 400, 68, 180);
-    moonGlow.addColorStop(0, "rgba(186, 230, 253, 0.18)");
-    moonGlow.addColorStop(1, "rgba(186, 230, 253, 0)");
-    c.fillStyle = moonGlow;
+    moonGlow.addColorStop(0, stageColor("rgba(186, 230, 253, 0.18)"));
+    moonGlow.addColorStop(1, stageColor("rgba(186, 230, 253, 0)"));
+    c.fillStyle = stageColor(moonGlow);
     c.fillRect(190, 0, 420, 220);
-    c.fillStyle = "rgba(224, 242, 254, 0.7)";
+    c.fillStyle = stageColor("rgba(224, 242, 254, 0.7)");
     for (const [x, y, r] of [
       [128, 65, 1],
       [244, 102, 1.3],
@@ -620,13 +628,13 @@ export function makeRoboBaseball(): Stage {
 
     // Symmetrical floodlights frame the 2D playfield.
     for (const x of [52, 748]) {
-      c.strokeStyle = "#64748b";
+      c.strokeStyle = stageColor("#64748b");
       c.lineWidth = 5;
       c.beginPath();
       c.moveTo(x, 265);
       c.lineTo(x, 55);
       c.stroke();
-      c.strokeStyle = "rgba(148, 163, 184, 0.45)";
+      c.strokeStyle = stageColor("rgba(148, 163, 184, 0.45)");
       c.lineWidth = 1;
       for (let y = 82; y < 245; y += 25) {
         c.beginPath();
@@ -636,18 +644,18 @@ export function makeRoboBaseball(): Stage {
         c.lineTo(x - 4, y + 13);
         c.stroke();
       }
-      c.fillStyle = "#111827";
+      c.fillStyle = stageColor("#cad6e5");
       c.beginPath();
       c.roundRect(x - 43, 35, 86, 28, 4);
       c.fill();
       for (let i = 0; i < 4; i++) {
-        c.fillStyle = "#e0f2fe";
-        c.shadowColor = "#bae6fd";
+        c.fillStyle = stageColor("#172b4d");
+        c.shadowColor = stageColor("#bae6fd");
         c.shadowBlur = 12;
         c.fillRect(x - 34 + i * 18, 42, 12, 13);
       }
       c.shadowBlur = 0;
-      c.fillStyle = "rgba(219, 234, 254, 0.08)";
+      c.fillStyle = stageColor("rgba(219, 234, 254, 0.08)");
       c.beginPath();
       c.moveTo(x - 39, 62);
       c.lineTo(x + 39, 62);
@@ -658,66 +666,66 @@ export function makeRoboBaseball(): Stage {
     }
 
     // Grandstand roof and three horizontal seating tiers.
-    c.fillStyle = "#0a1020";
+    c.fillStyle = stageColor("#c5d3e4");
     c.fillRect(0, 166, W, 18);
-    c.strokeStyle = "#334155";
+    c.strokeStyle = stageColor("#334155");
     c.lineWidth = 2;
     c.beginPath();
     c.moveTo(0, 166);
     c.lineTo(W, 166);
     c.stroke();
-    const tierColors = ["#111b34", "#16213d", "#1a2747"];
+    const tierColors = ["#dce6f2", "#d0ddea", "#c3d3e3"];
     for (let tier = 0; tier < 3; tier++) {
       const y = 184 + tier * 34;
-      c.fillStyle = tierColors[tier];
+      c.fillStyle = stageColor(tierColors[tier]);
       c.fillRect(0, y, W, 34);
-      c.fillStyle = "rgba(125, 211, 252, 0.1)";
+      c.fillStyle = stageColor("rgba(7, 95, 147, 0.1)");
       c.fillRect(0, y + 31, W, 3);
     }
 
     // Crowd dots are aligned to seats, reinforcing the deliberately flat style.
-    const crowd = ["#7dd3fc", "#fbbf24", "#f472b6", "#c4b5fd", "#e2e8f0"];
+    const crowd = ["#075f93", "#925b00", "#b22c7a", "#6d42b5", "#172b4d"];
     for (let row = 0; row < 6; row++) {
       for (let x = 8 + (row % 2) * 6; x < W; x += 17) {
-        c.fillStyle = crowd[(x + row * 3) % crowd.length];
+        c.fillStyle = stageColor(crowd[(x + row * 3) % crowd.length]);
         c.fillRect(x, 192 + row * 15, 4, 4);
       }
     }
 
     // Scoreboard sits behind play without competing with the game HUD.
-    c.fillStyle = "#030712";
+    c.fillStyle = stageColor("#f1f5fb");
     c.beginPath();
     c.roundRect(310, 179, 180, 68, 6);
     c.fill();
-    c.strokeStyle = "#7dd3fc";
+    c.strokeStyle = stageColor("#075f93");
     c.lineWidth = 1.5;
     c.stroke();
-    c.fillStyle = "#94a3b8";
+    c.fillStyle = stageColor("#586a82");
     c.font = "700 7px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("ROBOT LEAGUE", 400, 193);
-    c.fillStyle = "#fbbf24";
+    c.fillStyle = stageColor("#925b00");
     c.font = "900 17px ui-monospace, monospace";
     c.fillText("R-BALL", 400, 214);
-    c.fillStyle = "#5eead4";
+    c.fillStyle = stageColor("#087764");
     c.font = "700 8px ui-monospace, monospace";
     c.fillText("H  0 0 0   •   G  0 0 0", 400, 232);
 
     // Flat padded outfield wall, including seams and distance signs.
-    c.fillStyle = "#0d4845";
+    c.fillStyle = stageColor("#c2e1d9");
     c.fillRect(0, 286, W, 64);
-    c.fillStyle = "#0f5b50";
+    c.fillStyle = stageColor("#a8d3c5");
     c.fillRect(0, 286, W, 8);
-    c.fillStyle = "#5eead4";
+    c.fillStyle = stageColor("#087764");
     c.fillRect(0, 347, W, 3);
     for (let x = 0; x <= W; x += 80) {
-      c.strokeStyle = "rgba(167, 243, 208, 0.22)";
+      c.strokeStyle = stageColor("rgba(167, 243, 208, 0.22)");
       c.beginPath();
       c.moveTo(x, 286);
       c.lineTo(x, 350);
       c.stroke();
     }
-    c.fillStyle = "#a7f3d0";
+    c.fillStyle = stageColor("#28664c");
     c.font = "800 9px ui-monospace, monospace";
     c.fillText("325", 102, 320);
     c.fillText("400", 400, 320);
@@ -725,34 +733,36 @@ export function makeRoboBaseball(): Stage {
 
     // Horizontal field layers replace the pseudo-3D diamond.
     const turf = c.createLinearGradient(0, 350, 0, H);
-    turf.addColorStop(0, "#237346");
-    turf.addColorStop(1, "#0d422b");
-    c.fillStyle = turf;
+    turf.addColorStop(0, stageColor("#b0ddbf"));
+    turf.addColorStop(1, stageColor("#8bc59f"));
+    c.fillStyle = stageColor(turf);
     c.fillRect(0, 350, W, H - 350);
     for (let y = 350; y < H; y += 24) {
-      c.fillStyle = (y / 24) % 2 < 1 ? "rgba(110, 231, 183, 0.045)" : "rgba(0,0,0,0.035)";
+      c.fillStyle = stageColor(
+        (y / 24) % 2 < 1 ? "rgba(110, 231, 183, 0.045)" : "rgba(0,0,0,0.035)",
+      );
       c.fillRect(0, y, W, 24);
     }
 
     // Clay track, mound and batter's box all sit on one horizontal baseline.
-    c.fillStyle = "#9f704b";
+    c.fillStyle = stageColor("#d5ad8a");
     c.fillRect(0, 414, W, 86);
-    c.fillStyle = "#b98557";
+    c.fillStyle = stageColor("#e1c4a6");
     c.beginPath();
     c.ellipse(RELEASE_X, 414, 59, 17, 0, 0, Math.PI * 2);
     c.fill();
     c.beginPath();
     c.ellipse(650, 418, 97, 23, 0, 0, Math.PI * 2);
     c.fill();
-    c.strokeStyle = "rgba(255,255,255,0.82)";
+    c.strokeStyle = themeColor("#425570", "rgba(255,255,255,0.82)");
     c.lineWidth = 2;
     c.beginPath();
     c.moveTo(0, 414);
     c.lineTo(W, 414);
     c.stroke();
-    c.fillStyle = "#f8fafc";
+    c.fillStyle = stageColor("#f8fafc");
     c.fillRect(RELEASE_X - 11, 407, 22, 4);
-    c.strokeStyle = "rgba(255,255,255,0.72)";
+    c.strokeStyle = themeColor("#425570", "rgba(255,255,255,0.72)");
     c.strokeRect(665, 340, 96, 78);
     c.beginPath();
     c.moveTo(638, 407);
@@ -766,7 +776,7 @@ export function makeRoboBaseball(): Stage {
     // Stereo vision bar is part of the stadium infrastructure.
     c.save();
     c.translate(410, 128);
-    c.strokeStyle = "rgba(125, 211, 252, 0.24)";
+    c.strokeStyle = stageColor("rgba(7, 95, 147, 0.24)");
     c.lineWidth = 1;
     c.setLineDash([4, 5]);
     c.beginPath();
@@ -776,24 +786,24 @@ export function makeRoboBaseball(): Stage {
     c.lineTo(RELEASE_X, 340);
     c.stroke();
     c.setLineDash([]);
-    c.fillStyle = "#111827";
-    c.strokeStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#cad6e5");
+    c.strokeStyle = stageColor("#075f93");
     c.lineWidth = 2;
     c.beginPath();
     c.roundRect(-31, -13, 62, 26, 7);
     c.fill();
     c.stroke();
     for (const x of [-17, 17]) {
-      c.fillStyle = "#020617";
+      c.fillStyle = stageColor("#020617");
       c.beginPath();
       c.arc(x, 0, 8, 0, Math.PI * 2);
       c.fill();
-      c.strokeStyle = "#5eead4";
+      c.strokeStyle = stageColor("#087764");
       c.beginPath();
       c.arc(x, 0, 4 + Math.sin(animTime * 4) * 0.7, 0, Math.PI * 2);
       c.stroke();
     }
-    c.fillStyle = "#5eead4";
+    c.fillStyle = stageColor("#087764");
     c.fillRect(-2, -3, 4, 6);
     c.font = "700 8px ui-monospace, monospace";
     c.textAlign = "center";
@@ -805,7 +815,7 @@ export function makeRoboBaseball(): Stage {
     const windup = phase === "pitch" ? Math.sin(Math.min(1, pitch.progress * 2) * Math.PI) : 0;
     c.save();
     c.translate(RELEASE_X, 382);
-    c.fillStyle = "rgba(0,0,0,0.25)";
+    c.fillStyle = stageColor("rgba(0,0,0,0.25)");
     c.beginPath();
     c.ellipse(0, 24, 30, 8, 0, 0, Math.PI * 2);
     c.fill();
@@ -818,7 +828,7 @@ export function makeRoboBaseball(): Stage {
     // A small pop-out pitching arm is the only baseball-specific attachment.
     const handX = 33 + windup * 17;
     const handY = -5 - windup * 25;
-    c.strokeStyle = "#e8d5c4";
+    c.strokeStyle = stageColor("#e8d5c4");
     c.lineWidth = 8;
     c.lineCap = "round";
     c.beginPath();
@@ -826,15 +836,15 @@ export function makeRoboBaseball(): Stage {
     c.lineTo(27, -13);
     c.lineTo(handX, handY);
     c.stroke();
-    c.fillStyle = "#2d2540";
+    c.fillStyle = stageColor("#2d2540");
     c.beginPath();
     c.arc(27, -13, 5, 0, Math.PI * 2);
     c.fill();
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.beginPath();
     c.arc(handX, handY, 5, 0, Math.PI * 2);
     c.fill();
-    c.fillStyle = "#eef2ff";
+    c.fillStyle = stageColor("#172b4d");
     c.font = "800 7px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("P-01", 0, 39);
@@ -851,12 +861,12 @@ export function makeRoboBaseball(): Stage {
     c.translate(714, 382 + crouch);
 
     // Wide wheel stance reads like a batter setting its base.
-    c.fillStyle = "#2d2540";
+    c.fillStyle = stageColor("#2d2540");
     c.beginPath();
     c.roundRect(-38, 20, 22, 8, 3);
     c.roundRect(17, 20, 22, 8, 3);
     c.fill();
-    c.strokeStyle = "#7dd3fc";
+    c.strokeStyle = stageColor("#075f93");
     c.lineWidth = 2;
     c.beginPath();
     c.moveTo(-34, 28);
@@ -882,7 +892,7 @@ export function makeRoboBaseball(): Stage {
           [-7, -27],
           [26, -14],
         ];
-    c.strokeStyle = "#e8d5c4";
+    c.strokeStyle = stageColor("#e8d5c4");
     c.lineWidth = 8;
     c.lineCap = "round";
     c.beginPath();
@@ -894,16 +904,16 @@ export function makeRoboBaseball(): Stage {
     c.lineTo(grip.x + 3, grip.y + 3);
     c.stroke();
     for (const [x, y] of elbows) {
-      c.fillStyle = "#2d2540";
+      c.fillStyle = stageColor("#2d2540");
       c.beginPath();
       c.arc(x, y, 4, 0, Math.PI * 2);
       c.fill();
-      c.fillStyle = "#7dd3fc";
+      c.fillStyle = stageColor("#075f93");
       c.beginPath();
       c.arc(x, y, 2, 0, Math.PI * 2);
       c.fill();
     }
-    c.fillStyle = "#fef3e8";
+    c.fillStyle = stageColor("#fef3e8");
     c.beginPath();
     c.arc(grip.x, grip.y, 5, 0, Math.PI * 2);
     c.fill();
@@ -912,17 +922,17 @@ export function makeRoboBaseball(): Stage {
     c.translate(grip.x, grip.y);
     c.rotate(batAngle);
     const batGradient = c.createLinearGradient(0, 0, 92, 0);
-    batGradient.addColorStop(0, "#475569");
-    batGradient.addColorStop(0.7, "#fbbf24");
-    batGradient.addColorStop(1, "#fef3c7");
-    c.strokeStyle = batGradient;
+    batGradient.addColorStop(0, stageColor("#475569"));
+    batGradient.addColorStop(0.7, stageColor("#925b00"));
+    batGradient.addColorStop(1, stageColor("#fef3c7"));
+    c.strokeStyle = stageColor(batGradient);
     c.lineCap = "round";
     c.lineWidth = 9;
     c.beginPath();
     c.moveTo(-4, 0);
     c.lineTo(92, 0);
     c.stroke();
-    c.strokeStyle = "rgba(255,255,255,0.65)";
+    c.strokeStyle = stageColor("rgba(255,255,255,0.65)");
     c.lineWidth = 1.5;
     c.beginPath();
     c.moveTo(24, -3);
@@ -932,7 +942,7 @@ export function makeRoboBaseball(): Stage {
 
     c.save();
     c.translate(714, 382 + crouch);
-    c.fillStyle = "#eef2ff";
+    c.fillStyle = stageColor("#172b4d");
     c.font = "800 7px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("B-09", 0, 41);
@@ -953,8 +963,11 @@ export function makeRoboBaseball(): Stage {
     // The predictor exposes where the tracked pitch should cross the plate.
     if (phase === "pitch") {
       const ball = pitchPosition();
-      const lockPulse = 0.55 + Math.sin(animTime * 8) * 0.2;
-      c.strokeStyle = `rgba(94, 234, 212, ${lockPulse})`;
+      const lockPulse =
+        getTheme() === "light"
+          ? 0.9 + Math.sin(animTime * 8) * 0.1
+          : 0.55 + Math.sin(animTime * 8) * 0.2;
+      c.strokeStyle = stageColor(`rgba(8, 119, 100, ${lockPulse})`);
       c.lineWidth = 1.5;
       c.setLineDash([4, 6]);
       c.beginPath();
@@ -962,7 +975,7 @@ export function makeRoboBaseball(): Stage {
       c.lineTo(pitch.targetX, pitch.targetY);
       c.stroke();
       c.setLineDash([]);
-      c.strokeStyle = "#5eead4";
+      c.strokeStyle = stageColor("#087764");
       c.lineWidth = 2;
       const r = 11;
       c.beginPath();
@@ -979,11 +992,11 @@ export function makeRoboBaseball(): Stage {
       c.lineTo(pitch.targetX + r, pitch.targetY + r);
       c.lineTo(pitch.targetX + r, pitch.targetY + r / 2);
       c.stroke();
-      c.fillStyle = "#5eead4";
+      c.fillStyle = stageColor("#087764");
       c.font = "700 7px ui-monospace, monospace";
       c.textAlign = "left";
       c.fillText("PREDICT", pitch.targetX + 14, pitch.targetY - 8);
-      c.fillStyle = "rgba(94, 234, 212, 0.7)";
+      c.fillStyle = themeColor("#087764", stageColor("rgba(8, 119, 100, 0.7)"));
       c.fillText(
         `${Math.round(pitch.targetX)},${Math.round(pitch.targetY)}`,
         pitch.targetX + 14,
@@ -991,12 +1004,12 @@ export function makeRoboBaseball(): Stage {
       );
     }
 
-    c.strokeStyle = "rgba(125, 211, 252, 0.72)";
+    c.strokeStyle = stageColor("rgba(7, 95, 147, 0.72)");
     c.lineWidth = 2;
     c.setLineDash([6, 5]);
     c.strokeRect(ZONE.x, ZONE.y, ZONE.w, ZONE.h);
     c.setLineDash([]);
-    c.strokeStyle = "rgba(125, 211, 252, 0.18)";
+    c.strokeStyle = withA(theme.accent, getTheme() === "light" ? 0.65 : 0.18);
     c.lineWidth = 1;
     for (let i = 1; i < 3; i++) {
       c.beginPath();
@@ -1010,7 +1023,7 @@ export function makeRoboBaseball(): Stage {
     const pulse = 1 + Math.sin(animTime * 6) * 0.12;
     c.translate(aimX, aimY);
     c.scale(pulse, pulse);
-    c.strokeStyle = "#fbbf24";
+    c.strokeStyle = stageColor("#925b00");
     c.lineWidth = 2.5;
     c.beginPath();
     c.arc(0, 0, 17, 0, Math.PI * 2);
@@ -1022,6 +1035,13 @@ export function makeRoboBaseball(): Stage {
     c.lineTo(0, -8);
     c.moveTo(0, 8);
     c.lineTo(0, 25);
+    if (getTheme() === "light") {
+      c.strokeStyle = theme.panel;
+      c.lineWidth = 5.5;
+      c.stroke();
+      c.strokeStyle = theme.warn;
+      c.lineWidth = 2.5;
+    }
     c.stroke();
     c.restore();
   }
@@ -1030,14 +1050,19 @@ export function makeRoboBaseball(): Stage {
     if (phase === "pitch") {
       const b = pitchPosition();
       c.save();
-      c.shadowColor = "#ffffff";
+      c.shadowColor = stageColor("#ffffff");
       c.shadowBlur = 10;
-      c.fillStyle = "#ffffff";
+      c.fillStyle = stageColor("#ffffff");
       c.beginPath();
       c.arc(b.x, b.y, b.r, 0, Math.PI * 2);
       c.fill();
       c.shadowBlur = 0;
-      c.strokeStyle = "#ef4444";
+      if (getTheme() === "light") {
+        c.strokeStyle = "#425570";
+        c.lineWidth = 2;
+        c.stroke();
+      }
+      c.strokeStyle = stageColor("#ef4444");
       c.lineWidth = 1.5;
       c.beginPath();
       c.arc(b.x - b.r * 0.22, b.y, b.r * 0.62, -1.2, 1.2);
@@ -1048,75 +1073,81 @@ export function makeRoboBaseball(): Stage {
       c.save();
       for (let i = 0; i < fly.trail.length; i++) {
         c.globalAlpha = ((i + 1) / fly.trail.length) * 0.32;
-        c.fillStyle = "#fbbf24";
+        c.fillStyle = stageColor("#925b00");
         c.beginPath();
         c.arc(fly.trail[i].x, fly.trail[i].y, 3 + i * 0.15, 0, Math.PI * 2);
         c.fill();
       }
       c.globalAlpha = 1;
-      c.shadowColor = "#fbbf24";
+      c.shadowColor = stageColor("#925b00");
       c.shadowBlur = 15;
-      c.fillStyle = "#ffffff";
+      c.fillStyle = stageColor("#ffffff");
       c.beginPath();
       c.arc(fly.x, fly.y, 8, 0, Math.PI * 2);
       c.fill();
+      if (getTheme() === "light") {
+        c.shadowBlur = 0;
+        c.strokeStyle = "#425570";
+        c.lineWidth = 2;
+        c.stroke();
+      }
       c.restore();
     }
   }
 
   function drawHud(c: CanvasRenderingContext2D): void {
     c.save();
-    c.fillStyle = "rgba(3, 7, 18, 0.82)";
-    c.strokeStyle = "rgba(125, 211,252,0.28)";
+    c.fillStyle = withA(theme.scrim, 0.82);
+    c.strokeStyle = stageColor("rgba(7, 95, 147,0.28)");
     c.lineWidth = 1;
     c.beginPath();
     c.roundRect(18, 16, 286, 64, 10);
     c.fill();
     c.stroke();
-    c.fillStyle = "#fbbf24";
+    c.fillStyle = stageColor("#925b00");
     c.font = "800 20px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText(`${score.toString().padStart(5, "0")} PTS`, 34, 44);
-    c.fillStyle = "#eef2ff";
+    c.fillStyle = stageColor("#172b4d");
     c.font = "700 12px ui-monospace, monospace";
     c.fillText(`PITCH ${Math.min(pitchNumber, TOTAL_PITCHES)}/${TOTAL_PITCHES}`, 34, 65);
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.fillText(`HR ${homers}`, 150, 65);
-    c.fillStyle = combo > 1 ? "#f472b6" : "#94a3b8";
+    c.fillStyle = stageColor(combo > 1 ? "#b22c7a" : "#586a82");
     c.fillText(`COMBO x${combo}`, 208, 65);
 
     // Robot diagnostics: makes the batting system feel active even between pitches.
-    c.fillStyle = "rgba(3, 7, 18, 0.78)";
-    c.strokeStyle = "rgba(94, 234, 212, 0.35)";
+    c.fillStyle = withA(theme.scrim, 0.78);
+    c.strokeStyle = stageColor("rgba(8, 119, 100, 0.35)");
     c.beginPath();
     c.roundRect(W - 178, 16, 160, 54, 9);
     c.fill();
     c.stroke();
     const locked = phase === "pitch";
-    c.fillStyle = locked ? "#5eead4" : "#64748b";
+    c.fillStyle = stageColor(locked ? "#087764" : "#64748b");
     c.beginPath();
     c.arc(W - 160, 34, 4, 0, Math.PI * 2);
     c.fill();
     c.font = "700 9px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText(locked ? "VISION // TRACKING" : "VISION // STANDBY", W - 149, 37);
-    c.fillStyle = "#94a3b8";
+    c.fillStyle = stageColor("#586a82");
     c.font = "700 8px ui-monospace, monospace";
     c.fillText("B-09  SERVO", W - 162, 55);
-    c.fillStyle = "rgba(125, 211,252,0.18)";
+    c.fillStyle = stageColor("rgba(7, 95, 147,0.18)");
     c.fillRect(W - 89, 49, 56, 7);
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.fillRect(W - 89, 49, 49 + Math.sin(animTime * 3) * 3, 7);
 
     if (resultText) {
-      const color = result === "homer" ? "#fbbf24" : result === "hit" ? "#7dd3fc" : "#eef2ff";
+      const color = result === "homer" ? "#925b00" : result === "hit" ? "#075f93" : "#172b4d";
       const size = result === "homer" ? 42 : 28;
-      c.fillStyle = "rgba(3, 7, 18, 0.72)";
+      c.fillStyle = withA(theme.scrim, 0.72);
       c.fillRect(0, 92, W, 58);
-      c.fillStyle = color;
+      c.fillStyle = stageColor(color);
       c.font = `900 ${size}px ui-monospace, monospace`;
       c.textAlign = "center";
-      c.shadowColor = color;
+      c.shadowColor = stageColor(color);
       c.shadowBlur = result === "homer" ? 20 : 8;
       c.fillText(resultText, W / 2, 132);
     }
@@ -1124,6 +1155,8 @@ export function makeRoboBaseball(): Stage {
   }
 
   function draw(): void {
+    // Dialogs can pause update(), but queued clicks must still be discarded.
+    if (isStageInteractionBlocked()) clearPendingSwing();
     const c = g.ctx;
     drawField(c);
     drawPitcher(c);
@@ -1133,7 +1166,7 @@ export function makeRoboBaseball(): Stage {
     particles.draw(c);
     drawHud(c);
     if (flash > 0) {
-      c.fillStyle = `rgba(251, 191, 36, ${flash * 0.38})`;
+      c.fillStyle = stageColor(`rgba(146, 91, 0, ${flash * 0.38})`);
       c.fillRect(0, 0, W, H);
     }
     drawHint(c, t("robo_baseball.hint"));
@@ -1199,21 +1232,21 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="camera predicts the pitch crossing point and sends it to the robot batter">
   <defs>
     <marker id="baseball-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#7dd3fc"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#075f93, #7dd3fc)"/>
     </marker>
   </defs>
-  <rect x="8" y="25" width="112" height="70" rx="8" fill="#181f3a" stroke="#c4b5fd" stroke-width="1.5"/>
-  <text x="64" y="52" text-anchor="middle" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="11" font-weight="700">ball_camera</text>
-  <text x="64" y="72" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">trajectory</text>
-  <rect x="300" y="25" width="112" height="70" rx="8" fill="#181f3a" stroke="#fbbf24" stroke-width="1.5"/>
-  <text x="356" y="52" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">robot_batter</text>
-  <text x="356" y="72" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">aim + swing</text>
-  <line x1="120" y1="60" x2="298" y2="60" stroke="#7dd3fc" stroke-width="2" marker-end="url(#baseball-arrow)"/>
+  <rect x="8" y="25" width="112" height="70" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
+  <text x="64" y="52" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">ball_camera</text>
+  <text x="64" y="72" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">trajectory</text>
+  <rect x="300" y="25" width="112" height="70" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <text x="356" y="52" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">robot_batter</text>
+  <text x="356" y="72" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">aim + swing</text>
+  <line x1="120" y1="60" x2="298" y2="60" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="2" marker-end="url(#baseball-arrow)"/>
   <circle r="4" fill="#ffffff" stroke="#ef4444">
     <animateMotion dur="1.3s" repeatCount="indefinite" path="M 126 60 L 290 60"/>
   </circle>
-  <text x="210" y="45" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="10" font-weight="700">/pitch/trajectory</text>
-  <text x="210" y="82" text-anchor="middle" fill="#6e7a9c" font-family="ui-monospace, monospace" font-size="8">predicted crossing point</text>
+  <text x="210" y="45" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">/pitch/trajectory</text>
+  <text x="210" y="82" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="8">predicted crossing point</text>
 </svg>
 `,
   lessonModal: {

@@ -1,6 +1,9 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+import { theme, themeColor } from "../../core/theme";
+
 // feedforward_mission: Feedforward Mission
 // No keyboard control: arrange blocks, fill in numeric parameters, RUN.
 // Same "feedforward control = scripted cmd_vel publishing" model as
@@ -281,7 +284,7 @@ export function makeFeedforwardMission(): Stage {
       bumpFlash = 1;
       const blockNum = runIdx + 1;
       g.shake(0.4);
-      particles.burst(robot.x, robot.y, "#fb7185", 22, 220);
+      particles.burst(robot.x, robot.y, "#be2949", 22, 220);
       programFinished(false, `collision at block ${blockNum} — reset`);
       // Reset position only — keep the program editable.
       robot.x = START.x;
@@ -350,28 +353,28 @@ export function makeFeedforwardMission(): Stage {
 
     // Walls.
     for (const wall of walls) {
-      c.fillStyle = "rgba(35, 44, 77, 0.75)";
-      c.strokeStyle = "rgba(110, 122, 156, 0.5)";
-      c.lineWidth = 1;
+      c.fillStyle = themeColor("#aabcd4", stageColor("rgba(170, 188, 212, 0.75)"));
+      c.strokeStyle = themeColor(theme.fgDim, stageColor("rgba(88, 106, 130, 0.5)"));
+      c.lineWidth = 1.5;
       c.beginPath();
       c.roundRect(wall.x, wall.y, wall.w, wall.h, 4);
       c.fill();
       c.stroke();
     }
 
-    drawZone(c, GOAL, "#5eead4", "GOAL", elapsed);
+    drawZone(c, GOAL, "#087764", "GOAL", elapsed);
 
     // Start marker.
     c.save();
-    c.strokeStyle = "rgba(125, 211, 252, 0.45)";
-    c.lineWidth = 1;
+    c.strokeStyle = themeColor(theme.accent, stageColor("rgba(7, 95, 147, 0.45)"));
+    c.lineWidth = 1.5;
     c.setLineDash([4, 4]);
     c.beginPath();
     c.arc(START.x, START.y, 18, 0, Math.PI * 2);
     c.stroke();
     c.setLineDash([]);
-    c.fillStyle = "rgba(125, 211, 252, 0.7)";
-    c.font = "700 9px ui-monospace, monospace";
+    c.fillStyle = theme.accent;
+    c.font = "700 12px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("START", START.x, START.y - 24);
     c.restore();
@@ -472,34 +475,34 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="feedforward sequence of cmd_vel must navigate a wall to GOAL">
   <defs>
     <marker id="ld-feedforward_mission-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
   </defs>
   <!-- timeline (controller plan) -->
-  <rect x="8" y="14" width="200" height="92" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="108" y="32" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="12" font-weight="700">controller</text>
-  <text x="108" y="48" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">plan to dodge a wall</text>
-  <rect x="22" y="62" width="38" height="16" rx="2" fill="#7dd3fc"/>
-  <text x="41" y="74" text-anchor="middle" fill="#0c1124" font-family="ui-monospace, monospace" font-size="9" font-weight="700">→</text>
-  <rect x="62" y="62" width="22" height="16" rx="2" fill="#fbbf24"/>
-  <text x="73" y="74" text-anchor="middle" fill="#0c1124" font-family="ui-monospace, monospace" font-size="9" font-weight="700">↻</text>
-  <rect x="86" y="62" width="46" height="16" rx="2" fill="#7dd3fc"/>
-  <text x="109" y="74" text-anchor="middle" fill="#0c1124" font-family="ui-monospace, monospace" font-size="9" font-weight="700">→</text>
-  <rect x="134" y="62" width="22" height="16" rx="2" fill="#fbbf24"/>
-  <text x="145" y="74" text-anchor="middle" fill="#0c1124" font-family="ui-monospace, monospace" font-size="9" font-weight="700">↻</text>
-  <rect x="158" y="62" width="32" height="16" rx="2" fill="#7dd3fc"/>
-  <text x="174" y="74" text-anchor="middle" fill="#0c1124" font-family="ui-monospace, monospace" font-size="9" font-weight="700">→</text>
-  <text x="108" y="96" text-anchor="middle" fill="#6e7a9c" font-family="ui-monospace, monospace" font-size="9">cmd_vel sequence</text>
+  <rect x="8" y="14" width="200" height="92" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="108" y="32" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">controller</text>
+  <text x="108" y="48" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">plan to dodge a wall</text>
+  <rect x="22" y="62" width="38" height="16" rx="2" fill="light-dark(#075f93, #7dd3fc)"/>
+  <text x="41" y="74" text-anchor="middle" fill="var(--on-accent)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">→</text>
+  <rect x="62" y="62" width="22" height="16" rx="2" fill="light-dark(#925b00, #fbbf24)"/>
+  <text x="73" y="74" text-anchor="middle" fill="var(--on-accent)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">↻</text>
+  <rect x="86" y="62" width="46" height="16" rx="2" fill="light-dark(#075f93, #7dd3fc)"/>
+  <text x="109" y="74" text-anchor="middle" fill="var(--on-accent)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">→</text>
+  <rect x="134" y="62" width="22" height="16" rx="2" fill="light-dark(#925b00, #fbbf24)"/>
+  <text x="145" y="74" text-anchor="middle" fill="var(--on-accent)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">↻</text>
+  <rect x="158" y="62" width="32" height="16" rx="2" fill="light-dark(#075f93, #7dd3fc)"/>
+  <text x="174" y="74" text-anchor="middle" fill="var(--on-accent)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">→</text>
+  <text x="108" y="96" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="9">cmd_vel sequence</text>
   <!-- mini map: robot, wall, goal -->
-  <rect x="240" y="20" width="172" height="84" rx="6" fill="#0c1124" stroke="#232c4d"/>
-  <rect x="320" y="32" width="14" height="62" fill="#3a4366" stroke="#6e7a9c" stroke-width="0.5"/>
-  <rect x="252" y="74" width="20" height="16" rx="2" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <circle cx="257" cy="80" r="1.5" fill="#7dd3fc"/>
-  <circle cx="267" cy="80" r="1.5" fill="#7dd3fc"/>
-  <path d="M 262 76 Q 290 36 314 36 Q 322 36 322 50 Q 322 74 380 74" fill="none" stroke="#5eead4" stroke-width="1.5" stroke-dasharray="3 2"/>
-  <line x1="382" y1="76" x2="382" y2="44" stroke="#fbbf24" stroke-width="1.5"/>
-  <polygon points="382,44 398,52 382,58" fill="#fb7185"/>
-  <text x="326" y="100" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">wall + GOAL</text>
+  <rect x="240" y="20" width="172" height="84" rx="6" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#b8c8dc, #627895)"/>
+  <rect x="320" y="32" width="14" height="62" fill="light-dark(#8298b4, #4a6080)" stroke="light-dark(#586a82, #a4b5cd)" stroke-width="0.5"/>
+  <rect x="252" y="74" width="20" height="16" rx="2" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <circle cx="257" cy="80" r="1.5" fill="light-dark(#075f93, #7dd3fc)"/>
+  <circle cx="267" cy="80" r="1.5" fill="light-dark(#075f93, #7dd3fc)"/>
+  <path d="M 262 76 Q 290 36 314 36 Q 322 36 322 50 Q 322 74 380 74" fill="none" stroke="light-dark(#087764, #5eead4)" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <line x1="382" y1="76" x2="382" y2="44" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <polygon points="382,44 398,52 382,58" fill="light-dark(#be2949, #fda4af)"/>
+  <text x="326" y="100" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">wall + GOAL</text>
 </svg>
 `,
   lessonModal: {

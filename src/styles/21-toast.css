@@ -14,12 +14,13 @@
   max-width: calc(100vw - 24px);
 }
 .toast {
+  overflow-wrap: anywhere;
   padding: 12px 18px;
   background: var(--panel);
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
   border-radius: 8px;
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--fg);
   box-shadow: var(--shadow-soft);
   min-width: 240px;
@@ -43,7 +44,7 @@
 .toast .toast-title {
   font-weight: 700;
   color: var(--accent);
-  font-size: 12px;
+  font-size: 14px;
   font-family: var(--mono);
   letter-spacing: 2px;
   margin-bottom: 4px;

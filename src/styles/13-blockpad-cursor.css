@@ -7,12 +7,12 @@
   100% {
     box-shadow:
       0 0 0 2px var(--warn),
-      0 0 14px rgba(251, 191, 36, 0.45);
+      0 0 14px rgba(var(--warn-rgb), 0.45);
   }
   50% {
     box-shadow:
       0 0 0 2px var(--warn),
-      0 0 22px rgba(251, 191, 36, 0.85);
+      0 0 22px rgba(var(--warn-rgb), 0.85);
   }
 }
 @keyframes bp-edit-pulse {
@@ -20,14 +20,14 @@
   100% {
     box-shadow:
       0 0 0 2px var(--danger),
-      0 0 14px rgba(251, 113, 133, 0.55);
-    background: rgba(251, 113, 133, 0.18);
+      0 0 14px rgba(var(--danger-rgb), 0.55);
+    background: rgba(var(--danger-rgb), 0.18);
   }
   50% {
     box-shadow:
       0 0 0 2px var(--danger),
-      0 0 24px rgba(251, 113, 133, 0.95);
-    background: rgba(251, 113, 133, 0.32);
+      0 0 24px rgba(var(--danger-rgb), 0.95);
+    background: rgba(var(--danger-rgb), 0.32);
   }
 }
 .be-palette-block.bp-focus,
@@ -42,7 +42,7 @@
   outline: none;
 }
 .be-block.bp-focus {
-  background: rgba(251, 191, 36, 0.06);
+  background: rgba(var(--warn-rgb), 0.06);
 }
 .be-block input[type="number"].bp-editing {
   border-color: var(--danger) !important;

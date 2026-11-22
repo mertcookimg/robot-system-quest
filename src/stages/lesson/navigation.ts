@@ -1,6 +1,9 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+import { getTheme, theme, themeColor, withA } from "../../core/theme";
+
 // navigation: Nav2 Goal
 // Reproduces RViz2's "2D Nav Goal".
 // Click+drag the map to publish goal_pose → A* computes /plan → robot
@@ -240,7 +243,7 @@ export function makeNav2Goal(): Stage {
     }
     isFollowing = true;
     g.setStatus(t("navigation.status.navigating", { info: lastPlanInfo }), "var(--ok)");
-    particles.burst(gp.x, gp.y, "#5eead4", 16, 180);
+    particles.burst(gp.x, gp.y, "#087764", 16, 180);
     g.sfx.click();
   }
 
@@ -533,7 +536,7 @@ export function makeNav2Goal(): Stage {
       // On collision reset; re-planning happens on the next click.
       bumpFlash = 1;
       g.shake(0.4);
-      particles.burst(robot.x, robot.y, "#fb7185", 20, 220);
+      particles.burst(robot.x, robot.y, "#be2949", 20, 220);
       isFollowing = false;
       g.sfx.bump();
       g.setStatus(t("navigation.status.collision"), "var(--danger)");
@@ -578,9 +581,9 @@ export function makeNav2Goal(): Stage {
 
     // Walls.
     for (const wall of walls) {
-      c.fillStyle = "rgba(35, 44, 77, 0.75)";
-      c.strokeStyle = "rgba(110, 122, 156, 0.5)";
-      c.lineWidth = 1;
+      c.fillStyle = stageColor("rgba(170, 188, 212, 0.75)");
+      c.strokeStyle = themeColor("#586a82", "rgba(164, 181, 205, 0.5)");
+      c.lineWidth = 1.5;
       c.beginPath();
       c.roundRect(wall.x, wall.y, wall.w, wall.h, 4);
       c.fill();
@@ -589,15 +592,15 @@ export function makeNav2Goal(): Stage {
 
     // Start marker.
     c.save();
-    c.strokeStyle = "rgba(125, 211, 252, 0.45)";
-    c.lineWidth = 1;
+    c.strokeStyle = themeColor("#075f93", "rgba(125, 211, 252, 0.45)");
+    c.lineWidth = 1.5;
     c.setLineDash([4, 4]);
     c.beginPath();
     c.arc(START.x, START.y, 18, 0, Math.PI * 2);
     c.stroke();
     c.setLineDash([]);
-    c.fillStyle = "rgba(125, 211, 252, 0.65)";
-    c.font = "700 9px ui-monospace, monospace";
+    c.fillStyle = theme.accent;
+    c.font = "700 11px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("START", START.x, START.y - 24);
     c.restore();
@@ -605,7 +608,7 @@ export function makeNav2Goal(): Stage {
     // Plan (polyline + waypoints).
     if (plan.length > 1) {
       c.save();
-      c.strokeStyle = "rgba(125, 211, 252, 0.85)";
+      c.strokeStyle = stageColor("rgba(7, 95, 147, 0.85)");
       c.lineWidth = 2;
       c.setLineDash([8, 5]);
       c.beginPath();
@@ -614,7 +617,7 @@ export function makeNav2Goal(): Stage {
       c.stroke();
       c.setLineDash([]);
       // Waypoint.
-      c.fillStyle = "#7dd3fc";
+      c.fillStyle = stageColor("#075f93");
       for (const p of plan) {
         c.beginPath();
         c.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
@@ -630,20 +633,20 @@ export function makeNav2Goal(): Stage {
         dragStart.x,
         dragStart.y,
         Math.atan2(dragCurrent.y - dragStart.y, dragCurrent.x - dragStart.x),
-        "rgba(94, 234, 212, 0.85)",
+        "rgba(8, 119, 100, 0.85)",
       );
     }
 
     // Committed goal arrow.
     if (goal) {
-      drawGoalArrow(c, goal.x, goal.y, goal.theta, "#5eead4");
+      drawGoalArrow(c, goal.x, goal.y, goal.theta, "#087764");
     }
 
     // Trail.
     for (let i = 1; i < trail.length; i++) {
       const a = i / trail.length;
-      c.strokeStyle = `rgba(196, 181, 253, ${a * 0.65})`;
-      c.lineWidth = 1.5;
+      c.strokeStyle = withA(theme.accent2, getTheme() === "light" ? 0.45 + a * 0.45 : a * 0.65);
+      c.lineWidth = 2;
       c.beginPath();
       c.moveTo(trail[i - 1].x, trail[i - 1].y);
       c.lineTo(trail[i].x, trail[i].y);
@@ -662,7 +665,7 @@ export function makeNav2Goal(): Stage {
     c.restore();
 
     if (goal) {
-      drawZone(c, { x: goal.x, y: goal.y, r: REACH_TOL + 4 }, "#5eead4", "GOAL", elapsed);
+      drawZone(c, { x: goal.x, y: goal.y, r: REACH_TOL + 4 }, "#087764", "GOAL", elapsed);
     }
 
     drawTimer(c, elapsed, g.getBestTime());
@@ -680,14 +683,14 @@ export function makeNav2Goal(): Stage {
     c.translate(x, y);
     c.rotate(yaw);
     // Shaft.
-    c.strokeStyle = color;
+    c.strokeStyle = stageColor(color);
     c.lineWidth = 2.5;
     c.beginPath();
     c.moveTo(0, 0);
     c.lineTo(28, 0);
     c.stroke();
     // Arrowhead.
-    c.fillStyle = color;
+    c.fillStyle = stageColor(color);
     c.beginPath();
     c.moveTo(28, 0);
     c.lineTo(20, -6);
@@ -778,9 +781,9 @@ export default defineStage({
   diagram: `
 <svg viewBox="0 0 420 120" role="img" aria-label="click on map sets a goal, A* plans a path, robot follows">
   <!-- map -->
-  <rect x="6" y="6" width="408" height="108" rx="8" fill="#0c1124" stroke="#232c4d"/>
+  <rect x="6" y="6" width="408" height="108" rx="8" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#b8c8dc, #627895)"/>
   <!-- grid -->
-  <g stroke="#181f3a" stroke-width="0.5" opacity="0.6">
+  <g stroke="light-dark(#8194ae, #223149)" stroke-width="0.75" opacity="0.6">
     <line x1="6" y1="34" x2="414" y2="34"/>
     <line x1="6" y1="62" x2="414" y2="62"/>
     <line x1="6" y1="90" x2="414" y2="90"/>
@@ -789,36 +792,36 @@ export default defineStage({
     <line x1="300" y1="6" x2="300" y2="114"/>
   </g>
   <!-- walls -->
-  <rect x="170" y="20" width="14" height="50" fill="#3a4366" stroke="#6e7a9c" stroke-width="0.5"/>
-  <rect x="240" y="56" width="14" height="50" fill="#3a4366" stroke="#6e7a9c" stroke-width="0.5"/>
+  <rect x="170" y="20" width="14" height="50" fill="light-dark(#8298b4, #4a6080)" stroke="light-dark(#586a82, #a4b5cd)" stroke-width="0.5"/>
+  <rect x="240" y="56" width="14" height="50" fill="light-dark(#8298b4, #4a6080)" stroke="light-dark(#586a82, #a4b5cd)" stroke-width="0.5"/>
   <!-- planned path -->
-  <path d="M 60 80 Q 130 30 210 30 T 360 60" fill="none" stroke="#5eead4" stroke-width="2" stroke-dasharray="4 3"/>
+  <path d="M 60 80 Q 130 30 210 30 T 360 60" fill="none" stroke="light-dark(#087764, #5eead4)" stroke-width="2" stroke-dasharray="4 3"/>
   <!-- waypoints -->
-  <circle cx="100" cy="50" r="2" fill="#5eead4"/>
-  <circle cx="170" cy="34" r="2" fill="#5eead4"/>
-  <circle cx="270" cy="34" r="2" fill="#5eead4"/>
-  <circle cx="330" cy="48" r="2" fill="#5eead4"/>
+  <circle cx="100" cy="50" r="2" fill="light-dark(#087764, #5eead4)"/>
+  <circle cx="170" cy="34" r="2" fill="light-dark(#087764, #5eead4)"/>
+  <circle cx="270" cy="34" r="2" fill="light-dark(#087764, #5eead4)"/>
+  <circle cx="330" cy="48" r="2" fill="light-dark(#087764, #5eead4)"/>
   <!-- robot at start -->
-  <rect x="50" y="72" width="20" height="16" rx="2" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <circle cx="55" cy="78" r="1.5" fill="#7dd3fc"/>
-  <circle cx="65" cy="78" r="1.5" fill="#7dd3fc"/>
-  <text x="60" y="100" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9">start</text>
+  <rect x="50" y="72" width="20" height="16" rx="2" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <circle cx="55" cy="78" r="1.5" fill="light-dark(#075f93, #7dd3fc)"/>
+  <circle cx="65" cy="78" r="1.5" fill="light-dark(#075f93, #7dd3fc)"/>
+  <text x="60" y="100" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9">start</text>
   <!-- moving dot animating along path -->
-  <circle r="3.5" fill="#fbbf24">
+  <circle r="3.5" fill="light-dark(#925b00, #fbbf24)">
     <animateMotion dur="3s" repeatCount="indefinite" path="M 60 80 Q 130 30 210 30 T 360 60"/>
   </circle>
   <!-- goal flag -->
-  <line x1="360" y1="60" x2="360" y2="34" stroke="#fbbf24" stroke-width="2"/>
-  <polygon points="360,34 380,42 360,50" fill="#fb7185" stroke="#fff" stroke-width="0.5"/>
-  <text x="360" y="100" text-anchor="middle" fill="#fb7185" font-family="ui-monospace, monospace" font-size="9">goal</text>
+  <line x1="360" y1="60" x2="360" y2="34" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2"/>
+  <polygon points="360,34 380,42 360,50" fill="light-dark(#be2949, #fda4af)" stroke="#fff" stroke-width="0.5"/>
+  <text x="360" y="100" text-anchor="middle" fill="light-dark(#be2949, #fda4af)" font-family="ui-monospace, monospace" font-size="9">goal</text>
   <!-- click cursor on goal -->
-  <g transform="translate(376, 28)" stroke="#fbbf24" stroke-width="1.5" fill="none">
+  <g transform="translate(376, 28)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5" fill="none">
     <line x1="-7" y1="0" x2="7" y2="0"/>
     <line x1="0" y1="-7" x2="0" y2="7"/>
     <circle cx="0" cy="0" r="3"/>
   </g>
   <!-- annotation -->
-  <text x="210" y="106" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">click + drag → A* → /cmd_vel</text>
+  <text x="210" y="106" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">click + drag → A* → /cmd_vel</text>
 </svg>
 `,
   lessonModal: {

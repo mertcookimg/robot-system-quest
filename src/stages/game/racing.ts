@@ -1,12 +1,14 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+
 // racing: Racing
 // Lap race: 3 laps to win, 2 AI opponents.
 // ROS 2 hook: Nav2 / FollowPath Action — autonomously following a
 // pre-planned path.
 import { W, H, type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { theme, withA, getTheme, themeColor } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
 import { drawTimer, drawHint, fmtCanvasTwist, COLORS } from "../../lib/draw";
@@ -142,12 +144,12 @@ export function makeGrandPrix(): Stage {
     recentProgressSamples = [];
     twoPlayer.resetEdges();
 
-    player = makeRacer("YOU", true, "#fef3e8", "#2d2540", "#7dd3fc");
+    player = makeRacer("YOU", true, "#fef3e8", "#2d2540", "#075f93");
     if (mode2P) {
       // RED slot is taken over by P2; recolor to amber so P2 reads as "human".
       opp1 = makeRacer("P2", false, "#fcd34d", "#7c2d12", "#fff7ed", true);
     } else {
-      opp1 = makeRacer("RED", false, "#fb7185", "#7f1d1d", "#fcd34d");
+      opp1 = makeRacer("RED", false, "#be2949", "#7f1d1d", "#fcd34d");
     }
     opp2 = makeRacer("LIME", false, "#a3e635", "#3f6212", "#fef3e8");
 
@@ -385,7 +387,7 @@ export function makeGrandPrix(): Stage {
           vy: Math.sin(r.theta + Math.PI) * 80 + (Math.random() - 0.5) * 30,
           life: 0.35,
           age: 0,
-          color: Math.random() < 0.5 ? "#fbbf24" : "#fb7185",
+          color: Math.random() < 0.5 ? "#925b00" : "#be2949",
           size: 2.5 + Math.random() * 2,
         });
       }
@@ -563,10 +565,10 @@ export function makeGrandPrix(): Stage {
     const ctx = g.ctx;
 
     // Grass (offroad).
-    ctx.fillStyle = "#0a1428";
+    ctx.fillStyle = stageColor("#e7eff8");
     ctx.fillRect(0, 0, W, H);
     // Dotted grass texture.
-    ctx.fillStyle = "rgba(94, 234, 212, 0.05)";
+    ctx.fillStyle = stageColor("rgba(8, 119, 100, 0.05)");
     for (let i = 0; i < 80; i++) {
       const seed = i * 7919;
       const x = (seed * 1.3) % W;
@@ -620,7 +622,7 @@ export function makeGrandPrix(): Stage {
     }
 
     // road fill
-    ctx.fillStyle = "#3a3a52";
+    ctx.fillStyle = stageColor("#cad6e5");
     ctx.beginPath();
     ctx.moveTo(left[0].x, left[0].y);
     for (let i = 1; i < N_WP; i++) ctx.lineTo(left[i].x, left[i].y);
@@ -629,7 +631,7 @@ export function makeGrandPrix(): Stage {
     ctx.fill();
 
     // Curbs (1px lines on each side).
-    ctx.strokeStyle = "#fef3e8";
+    ctx.strokeStyle = stageColor("#637892");
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(left[0].x, left[0].y);
@@ -644,7 +646,7 @@ export function makeGrandPrix(): Stage {
 
     // Center line (yellow dashed).
     ctx.save();
-    ctx.strokeStyle = "#fbbf24";
+    ctx.strokeStyle = stageColor("#925b00");
     ctx.lineWidth = 1.5;
     ctx.setLineDash([10, 14]);
     ctx.beginPath();
@@ -671,7 +673,7 @@ export function makeGrandPrix(): Stage {
     for (let c = 0; c < cols; c++) {
       for (let r = 0; r < 3; r++) {
         const black = (c + r) % 2 === 0;
-        ctx.fillStyle = black ? "#0c0c1a" : "#fef3e8";
+        ctx.fillStyle = black ? "#172b4d" : "#ffffff";
         ctx.fillRect(-2 + r * 2, -ROAD_HALF + c * chSize, 2, chSize);
       }
     }
@@ -681,7 +683,7 @@ export function makeGrandPrix(): Stage {
   function drawCheckpoints(ctx: CanvasRenderingContext2D) {
     // Waypoints (AI guides, drawn subtly).
     ctx.save();
-    ctx.fillStyle = "rgba(125, 211, 252, 0.10)";
+    ctx.fillStyle = stageColor("rgba(7, 95, 147, 0.10)");
     for (let i = 0; i < N_WP; i++) {
       ctx.beginPath();
       ctx.arc(waypoints[i].x, waypoints[i].y, 2, 0, Math.PI * 2);
@@ -701,13 +703,14 @@ export function makeGrandPrix(): Stage {
       // Base circle (semi-transparent).
       const baseAlpha = isPassed ? 0.12 : isNext ? 0.18 : 0.08;
       ctx.globalAlpha = baseAlpha;
-      ctx.fillStyle = isPassed ? "#5eead4" : "#fbbf24";
+      ctx.fillStyle = stageColor(isPassed ? "#087764" : "#925b00");
       ctx.beginPath();
       ctx.arc(cp.x, cp.y, 18, 0, Math.PI * 2);
       ctx.fill();
       // Outline.
-      ctx.globalAlpha = isPassed ? 0.55 : isNext ? 0.85 : 0.4;
-      ctx.strokeStyle = isPassed ? "#5eead4" : "#fbbf24";
+      ctx.globalAlpha =
+        getTheme() === "light" ? (isNext ? 1 : 0.85) : isPassed ? 0.55 : isNext ? 0.85 : 0.4;
+      ctx.strokeStyle = stageColor(isPassed ? "#087764" : "#925b00");
       ctx.lineWidth = isNext ? 2 : 1.2;
       if (isNext) ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -716,7 +719,7 @@ export function makeGrandPrix(): Stage {
       ctx.setLineDash([]);
       // Label.
       ctx.globalAlpha = 1;
-      ctx.fillStyle = isPassed ? "#5eead4" : "#fbbf24";
+      ctx.fillStyle = stageColor(isPassed ? "#087764" : "#925b00");
       ctx.font = "700 9px ui-monospace, monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -742,18 +745,22 @@ export function makeGrandPrix(): Stage {
     ctx.restore();
     // Name tag.
     ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,0.55)";
-    ctx.fillRect(r.x - 16, r.y - 26, 32, 11);
-    ctx.fillStyle = r.bodyColor;
     ctx.font = "700 8px ui-monospace, monospace";
+    const tagW = Math.max(32, ctx.measureText(r.name).width + 10);
+    const tagX = Math.max(4, Math.min(W - tagW - 4, r.x - tagW / 2));
+    const tagY = r.y < 32 ? r.y + 18 : r.y - 26;
+    ctx.fillStyle = themeColor("rgba(255,255,255,0.96)", "rgba(0,0,0,0.55)");
+    ctx.fillRect(tagX, tagY, tagW, 13);
+    ctx.fillStyle = themeColor(r.outline, stageColor(r.bodyColor));
     ctx.textAlign = "center";
-    ctx.fillText(r.name, r.x, r.y - 18);
+    ctx.textBaseline = "middle";
+    ctx.fillText(r.name, tagX + tagW / 2, tagY + 6.5);
     ctx.restore();
   }
 
   function drawCarBody(ctx: CanvasRenderingContext2D, r: Racer, t: number) {
     const px = (x: number, y: number, w: number, h: number, c: string) => {
-      ctx.fillStyle = c;
+      ctx.fillStyle = stageColor(c);
       ctx.fillRect(x, y, w, h);
     };
     const bob = Math.round(Math.sin((t + (r.isPlayer ? 0 : 1.7)) * 1.6));
@@ -804,7 +811,7 @@ export function makeGrandPrix(): Stage {
     // Top-left: LAP.
     ctx.save();
     ctx.fillStyle = withA(theme.scrim, 0.85);
-    ctx.strokeStyle = "rgba(125, 211, 252, 0.35)";
+    ctx.strokeStyle = stageColor("rgba(7, 95, 147, 0.35)");
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(12, 12, 110, 42, 6);
@@ -827,7 +834,7 @@ export function makeGrandPrix(): Stage {
     const posW = 120;
     const posX = (W - posW) / 2;
     ctx.fillStyle = withA(theme.scrim, 0.85);
-    ctx.strokeStyle = "rgba(125, 211, 252, 0.35)";
+    ctx.strokeStyle = stageColor("rgba(7, 95, 147, 0.35)");
     ctx.beginPath();
     ctx.roundRect(posX, 12, posW, 42, 6);
     ctx.fill();
@@ -836,7 +843,7 @@ export function makeGrandPrix(): Stage {
     ctx.font = "9px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.fillText("POSITION", posX + 10, 24);
-    ctx.fillStyle = pos === 1 ? "#fbbf24" : COLORS.ACCENT;
+    ctx.fillStyle = stageColor(pos === 1 ? "#925b00" : COLORS.ACCENT);
     ctx.font = "700 22px ui-monospace, monospace";
     ctx.textAlign = "right";
     ctx.fillText(`${posLabel(pos)}/${racers.length}`, posX + posW - 10, 46);
@@ -851,10 +858,13 @@ export function makeGrandPrix(): Stage {
     // Final-lap announcement.
     if (player.lap === TOTAL_LAPS - 1 && raceState === "racing") {
       ctx.save();
-      ctx.fillStyle = `rgba(251, 191, 36, ${0.6 + 0.3 * Math.sin(elapsed * 6)})`;
+      ctx.fillStyle = themeColor(
+        theme.warn,
+        stageColor(`rgba(146, 91, 0, ${0.6 + 0.3 * Math.sin(elapsed * 6)})`),
+      );
       ctx.font = "700 11px ui-monospace, monospace";
       ctx.textAlign = "center";
-      ctx.fillText("★ FINAL LAP ★", W / 2, 30);
+      ctx.fillText("★ FINAL LAP ★", W / 2, 74);
       ctx.restore();
     }
 
@@ -862,11 +872,13 @@ export function makeGrandPrix(): Stage {
     if (lapWarningT > 0) {
       ctx.save();
       const a = Math.min(1, lapWarningT * 1.5);
-      ctx.fillStyle = `rgba(251, 113, 133, ${0.85 * a})`;
+      ctx.fillStyle = withA(theme.scrim, 0.96);
+      ctx.fillRect(W / 2 - 202, H / 2 + 42, 404, 46);
+      ctx.fillStyle = themeColor(theme.danger, stageColor(`rgba(190, 41, 73, ${0.85 * a})`));
       ctx.font = "700 14px ui-monospace, monospace";
       ctx.textAlign = "center";
       ctx.fillText("LAP NOT COUNTED — missed a checkpoint", W / 2, H / 2 + 60);
-      ctx.fillStyle = `rgba(251, 113, 133, ${0.5 * a})`;
+      ctx.fillStyle = themeColor(theme.danger, stageColor(`rgba(190, 41, 73, ${0.5 * a})`));
       ctx.font = "10px ui-monospace, monospace";
       ctx.fillText("CP1→CP2→CP3 を順番に通過する必要があります", W / 2, H / 2 + 78);
       ctx.restore();
@@ -876,7 +888,7 @@ export function makeGrandPrix(): Stage {
     if (raceState === "racing" && isWrongWay()) {
       ctx.save();
       const blink = 0.5 + 0.5 * Math.sin(elapsed * 8);
-      ctx.fillStyle = `rgba(251, 113, 133, ${0.7 + 0.3 * blink})`;
+      ctx.fillStyle = stageColor(`rgba(190, 41, 73, ${0.7 + 0.3 * blink})`);
       ctx.font = "700 16px ui-monospace, monospace";
       ctx.textAlign = "center";
       ctx.fillText("⚠  WRONG WAY  ⚠", W / 2, H / 2 - 60);
@@ -907,15 +919,17 @@ export function makeGrandPrix(): Stage {
       h = 8,
       x = 18;
     ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillStyle = stageColor("rgba(0,0,0,0.6)");
     ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
-    ctx.fillStyle = "#0a0e1f";
+    ctx.fillStyle = stageColor("#d8e2ef");
     ctx.fillRect(x, y, w, h);
     const frac = racer.boostMeter / BOOST_MAX;
-    ctx.fillStyle = racer.boosting ? "#fbbf24" : "#fb7185";
+    ctx.fillStyle = stageColor(racer.boosting ? "#925b00" : "#be2949");
     ctx.fillRect(x, y, w * frac, h);
     ctx.font = "600 9px ui-monospace, monospace";
     ctx.fillStyle = COLORS.FG_DIM;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
     ctx.fillText(`${label}  ${Math.round(frac * 100)}%`, x, y - 4);
     ctx.restore();
   }
@@ -935,7 +949,7 @@ export function makeGrandPrix(): Stage {
     const x = W - 130,
       y = 70;
     ctx.fillStyle = withA(theme.scrim, 0.78);
-    ctx.strokeStyle = "rgba(125,211,252,0.2)";
+    ctx.strokeStyle = stageColor("rgba(7, 95, 147,0.2)");
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(x, y, 118, h, 6);
@@ -947,12 +961,12 @@ export function makeGrandPrix(): Stage {
     ctx.fillText("RANKING", x + 8, y + 12);
     ranked.forEach((rr, i) => {
       const ry = y + 22 + i * 18;
-      ctx.fillStyle = rr.bodyColor;
+      ctx.fillStyle = stageColor(rr.bodyColor);
       ctx.fillRect(x + 8, ry, 6, 6);
-      ctx.fillStyle = rr.isPlayer ? COLORS.ACCENT : COLORS.FG_DIM;
+      ctx.fillStyle = stageColor(rr.isPlayer ? COLORS.ACCENT : COLORS.FG_DIM);
       ctx.font = "700 10px ui-monospace, monospace";
       ctx.fillText(`P${i + 1}`, x + 20, ry + 6);
-      ctx.fillStyle = rr.isPlayer ? COLORS.FG : COLORS.FG_DIM;
+      ctx.fillStyle = stageColor(rr.isPlayer ? COLORS.FG : COLORS.FG_DIM);
       ctx.font = "10px ui-monospace, monospace";
       ctx.fillText(rr.name, x + 42, ry + 6);
       ctx.fillStyle = COLORS.FG_DIM;
@@ -976,7 +990,7 @@ export function makeGrandPrix(): Stage {
       color = COLORS.WARN;
     } else if (remaining > 0.5) {
       text = "1";
-      color = "#fb7185";
+      color = "#be2949";
     }
 
     // Last 0.5s: GO! appears.
@@ -990,11 +1004,11 @@ export function makeGrandPrix(): Stage {
     const scale = text === "GO!" ? 1 + (1 - Math.min(1, phase * 2)) * 1.5 : 1 + phase * 0.3;
     ctx.scale(scale, scale);
     ctx.globalAlpha = text === "GO!" ? Math.max(0, 1 - phase * 0.6) : 0.85 + phase * 0.15;
-    ctx.fillStyle = color;
+    ctx.fillStyle = stageColor(color);
     ctx.font = "700 96px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.shadowColor = color;
+    ctx.shadowColor = stageColor(color);
     ctx.shadowBlur = 30;
     ctx.fillText(text, 0, 0);
     ctx.restore();
@@ -1114,27 +1128,27 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="action client sends goal, server streams feedback and result">
   <defs>
     <marker id="ld-racing-arrow-goal" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
     <marker id="ld-racing-arrow-fb" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#fbbf24"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#925b00, #fbbf24)"/>
     </marker>
     <marker id="ld-racing-arrow-res" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#fb7185"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#be2949, #fda4af)"/>
     </marker>
   </defs>
-  <rect x="8" y="22" width="138" height="76" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="77" y="52" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="12" font-weight="700">race_client</text>
-  <text x="77" y="74" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">Action Client</text>
-  <rect x="274" y="22" width="138" height="76" rx="8" fill="#181f3a" stroke="#c4b5fd" stroke-width="1.5"/>
-  <text x="343" y="52" text-anchor="middle" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="12" font-weight="700">FollowPath</text>
-  <text x="343" y="74" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">Action Server</text>
-  <line x1="146" y1="38" x2="272" y2="38" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-racing-arrow-goal)"/>
-  <text x="209" y="32" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Goal</text>
-  <line x1="272" y1="60" x2="146" y2="60" stroke="#fbbf24" stroke-width="2" marker-end="url(#ld-racing-arrow-fb)"/>
-  <text x="209" y="55" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Feedback (cont.)</text>
-  <line x1="272" y1="86" x2="146" y2="86" stroke="#fb7185" stroke-width="2" marker-end="url(#ld-racing-arrow-res)"/>
-  <text x="209" y="80" text-anchor="middle" fill="#fb7185" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Result</text>
+  <rect x="8" y="22" width="138" height="76" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="77" y="52" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">race_client</text>
+  <text x="77" y="74" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">Action Client</text>
+  <rect x="274" y="22" width="138" height="76" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
+  <text x="343" y="52" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">FollowPath</text>
+  <text x="343" y="74" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">Action Server</text>
+  <line x1="146" y1="38" x2="272" y2="38" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-racing-arrow-goal)"/>
+  <text x="209" y="32" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Goal</text>
+  <line x1="272" y1="60" x2="146" y2="60" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2" marker-end="url(#ld-racing-arrow-fb)"/>
+  <text x="209" y="55" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Feedback (cont.)</text>
+  <line x1="272" y1="86" x2="146" y2="86" stroke="light-dark(#be2949, #fda4af)" stroke-width="2" marker-end="url(#ld-racing-arrow-res)"/>
+  <text x="209" y="80" text-anchor="middle" fill="light-dark(#be2949, #fda4af)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">Result</text>
 </svg>
 `,
   lessonModal: {

@@ -18,11 +18,12 @@
 }
 .panel-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 9px 14px;
   border-bottom: 1px solid var(--line-soft);
-  font-size: 13.5px;
+  font-size: 14px;
 }
 .panel-head .dot {
   width: 6px;
@@ -36,9 +37,11 @@
   letter-spacing: 0.2px;
 }
 .panel-head .hint {
+  min-width: 0;
+  overflow-wrap: anywhere;
   margin-left: auto;
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 14px;
   color: var(--fg-dim);
   font-weight: 400;
   letter-spacing: 0.3px;
@@ -47,12 +50,13 @@
 #info,
 #topic {
   font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: 14px;
   color: var(--fg);
   margin: 0;
   padding: 12px 14px;
-  background: rgba(3, 6, 13, 0.6);
+  background: var(--panel);
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   min-height: 120px;
   max-height: 180px;
   overflow-y: auto;
@@ -71,6 +75,6 @@
   #topic {
     min-height: 96px;
     max-height: 150px;
-    font-size: 11.5px;
+    font-size: 14px;
   }
 }

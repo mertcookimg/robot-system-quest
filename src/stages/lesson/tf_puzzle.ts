@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { cssStageColor, stageColor } from "../../lib/stage_colors";
+
 // tf_puzzle: TF Frame Puzzle
 // The LiDAR is physically mounted offset from the robot center.
 // The player must guess the base_link → laser TF (tx, ty, yaw) via sliders.
@@ -8,7 +10,7 @@
 // scan points snap to the walls.
 // Clear when ≥95% of rays match a wall.
 import { type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { theme, themeColor, withA } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
 import { registerOverlayPad, unregisterOverlayPad } from "../../lib/overlaypad";
@@ -145,8 +147,8 @@ export function makeTfPuzzle(): Stage {
     panel.className = "stage-tool-panel tf-puzzle-panel";
     panel.style.cssText =
       "width:min(800px, 100%); margin:10px auto 0; padding:10px 14px; background:rgba(var(--scrim-rgb), 0.92);" +
-      "border:1px solid rgba(125,211,252,0.5); border-radius:8px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;" +
-      "font-family:ui-monospace,monospace; font-size:14px; color:#eef2ff;";
+      "border:1px solid light-dark(rgba(7, 95, 147,0.5), rgba(125, 211, 252, 0.5)); border-radius:8px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;" +
+      "font-family:ui-monospace,monospace; font-size:14px; color:light-dark(#172b4d, #edf3ff);";
 
     const make = (
       key: keyof TFParams,
@@ -160,10 +162,10 @@ export function makeTfPuzzle(): Stage {
       wrap.className = "tf-puzzle-control";
       wrap.dataset.opadRow = "1";
       wrap.style.cssText =
-        "display:flex; align-items:center; gap:6px; color:#9aa6c8; padding:4px 6px;";
+        "display:flex; align-items:center; gap:6px; color:light-dark(#425570, #c2cfe3); padding:4px 6px;";
       const txt = document.createElement("span");
       txt.textContent = label;
-      txt.style.color = "#7dd3fc";
+      txt.style.color = cssStageColor("#075f93");
       txt.style.fontWeight = "700";
       const inp = document.createElement("input");
       inp.className = "tf-puzzle-slider";
@@ -172,11 +174,12 @@ export function makeTfPuzzle(): Stage {
       inp.max = String(max);
       inp.step = String(step);
       inp.value = String(playerTF[key]);
-      inp.style.cssText = "width:110px; min-height:44px; accent-color:#7dd3fc;";
+      inp.style.cssText =
+        "width:110px; min-height:44px; accent-color:light-dark(#075f93, #7dd3fc);";
       const val = document.createElement("span");
       val.className = "slider-val";
       val.textContent = `${playerTF[key]} ${unit}`;
-      val.style.cssText = "min-width:48px; color:#eef2ff; font-weight:700;";
+      val.style.cssText = "min-width:48px; color:light-dark(#172b4d, #edf3ff); font-weight:700;";
       inp.addEventListener("input", () => {
         playerTF[key] = parseFloat(inp.value);
         val.textContent = `${playerTF[key]} ${unit}`;
@@ -192,7 +195,8 @@ export function makeTfPuzzle(): Stage {
 
     const reminder = document.createElement("span");
     reminder.className = "tf-puzzle-reminder";
-    reminder.style.cssText = "color:#9aa6c8; font-size:14px; line-height:1.5; flex-basis:100%;";
+    reminder.style.cssText =
+      "color:light-dark(#425570, #c2cfe3); font-size:14px; line-height:1.5; flex-basis:100%;";
     const localize = () => {
       reminder.textContent = tx(
         "base_link → laser を合わせよう / R リセット。🎮 方向キーで選択 · Aで編集 · 編集中は方向キーで調整",
@@ -320,7 +324,7 @@ export function makeTfPuzzle(): Stage {
 
     if (score >= TARGET_MATCH) {
       cleared = true;
-      particles.burst(ROBOT_POS.x, ROBOT_POS.y, "#5eead4", 36, 240);
+      particles.burst(ROBOT_POS.x, ROBOT_POS.y, "#087764", 36, 240);
       g.shake(0.5);
       g.setStatus(t("tf_puzzle.status.complete"), "var(--ok)");
       const stars = elapsed < 30 ? 3 : elapsed < 60 ? 2 : 1;
@@ -352,15 +356,15 @@ export function makeTfPuzzle(): Stage {
     // World background
     ctx.fillStyle = withA(theme.scrim, 0.6);
     ctx.fillRect(WORLD_X, WORLD_Y, WORLD_W, WORLD_H);
-    ctx.strokeStyle = "rgba(125,211,252,0.3)";
+    ctx.strokeStyle = themeColor(theme.fgDim, stageColor("rgba(7, 95, 147,0.3)"));
     ctx.lineWidth = 1;
     ctx.strokeRect(WORLD_X, WORLD_Y, WORLD_W, WORLD_H);
 
     // Walls (truth)
     for (const w of walls) {
-      ctx.fillStyle = "#3a4366";
+      ctx.fillStyle = stageColor("#8298b4");
       ctx.fillRect(w.x, w.y, w.w, w.h);
-      ctx.strokeStyle = "rgba(110,122,156,0.6)";
+      ctx.strokeStyle = themeColor(theme.fgDim, stageColor("rgba(88, 106, 130,0.6)"));
       ctx.strokeRect(w.x + 0.5, w.y + 0.5, w.w - 1, w.h - 1);
     }
 
@@ -382,12 +386,21 @@ export function makeTfPuzzle(): Stage {
   }
 
   function drawReconstructedHits(ctx: CanvasRenderingContext2D) {
+    ctx.save();
+    // A surface-colored rim separates scan hits from the wall underneath.
+    ctx.strokeStyle = theme.canvasBg;
+    ctx.lineWidth = 1.5;
     for (const r of lastScan) {
-      ctx.fillStyle = r.matched ? "rgba(94,234,212,0.88)" : "rgba(251,113,133,0.88)";
+      ctx.fillStyle = themeColor(
+        r.matched ? theme.ok : theme.danger,
+        stageColor(r.matched ? "rgba(8, 119, 100,0.88)" : "rgba(190, 41, 73,0.88)"),
+      );
       ctx.beginPath();
       ctx.arc(r.recX, r.recY, 2.6, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.fill();
     }
+    ctx.restore();
   }
 
   function drawRobot(ctx: CanvasRenderingContext2D) {
@@ -404,20 +417,20 @@ export function makeTfPuzzle(): Stage {
     ctx.translate(TRUE_MOUNT.tx, TRUE_MOUNT.ty);
     ctx.rotate(truYawRad);
     // halo
-    ctx.fillStyle = "rgba(125,211,252,0.25)";
+    ctx.fillStyle = stageColor("rgba(7, 95, 147,0.25)");
     ctx.beginPath();
     ctx.arc(0, 0, 8, 0, Math.PI * 2);
     ctx.fill();
     // body
-    ctx.fillStyle = "#7dd3fc";
-    ctx.strokeStyle = "#0c1124";
+    ctx.fillStyle = stageColor("#075f93");
+    ctx.strokeStyle = stageColor("#f1f5fb");
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(0, 0, 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
     // forward arrow
-    ctx.strokeStyle = "#7dd3fc";
+    ctx.strokeStyle = stageColor("#075f93");
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(0, 0);
@@ -430,7 +443,7 @@ export function makeTfPuzzle(): Stage {
     ctx.save();
     ctx.translate(playerTF.tx, playerTF.ty);
     ctx.rotate(plYawRad);
-    ctx.strokeStyle = "rgba(196,181,253,0.85)";
+    ctx.strokeStyle = stageColor("rgba(109, 66, 181,0.85)");
     ctx.lineWidth = 1.6;
     ctx.setLineDash([2, 2]);
     ctx.beginPath();
@@ -448,9 +461,9 @@ export function makeTfPuzzle(): Stage {
     // Labels
     ctx.font = "9px ui-monospace, monospace";
     ctx.textAlign = "left";
-    ctx.fillStyle = "#7dd3fc";
+    ctx.fillStyle = stageColor("#075f93");
     ctx.fillText("● truth (physical mount)", ROBOT_POS.x + 24, ROBOT_POS.y - 18);
-    ctx.fillStyle = "#c4b5fd";
+    ctx.fillStyle = stageColor("#6d42b5");
     ctx.fillText("◌ your TF (sliders)", ROBOT_POS.x + 24, ROBOT_POS.y - 6);
   }
 
@@ -461,11 +474,11 @@ export function makeTfPuzzle(): Stage {
       ph = 196;
     ctx.save();
     ctx.fillStyle = withA(theme.scrim, 0.85);
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.strokeStyle = themeColor(theme.fgDim, "rgba(255,255,255,0.25)");
     ctx.fillRect(px - 6, py - 22, pw + 12, ph);
     ctx.strokeRect(px - 6, py - 22, pw + 12, ph);
 
-    ctx.fillStyle = "#7dd3fc";
+    ctx.fillStyle = stageColor("#075f93");
     ctx.font = "700 11px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.fillText("TF TREE", px, py - 6);
@@ -477,12 +490,14 @@ export function makeTfPuzzle(): Stage {
       { name: "laser", y: py + 134, hi: true },
     ];
     for (const f of frames) {
-      ctx.fillStyle = f.hi ? "#fbbf24" : "#1f2a4a";
+      ctx.fillStyle = stageColor(f.hi ? "#925b00" : "#e4edf8");
       ctx.fillRect(px + 30, f.y - 11, 120, 22);
-      ctx.strokeStyle = f.hi ? "#fbbf24" : "rgba(125,211,252,0.4)";
+      ctx.strokeStyle = f.hi
+        ? theme.warn
+        : themeColor(theme.accent, stageColor("rgba(7, 95, 147,0.4)"));
       ctx.lineWidth = 1;
       ctx.strokeRect(px + 30, f.y - 11, 120, 22);
-      ctx.fillStyle = f.hi ? "#0c1124" : "#eef2ff";
+      ctx.fillStyle = stageColor(f.hi ? "#f1f5fb" : "#172b4d");
       ctx.font = "700 10px ui-monospace, monospace";
       ctx.textAlign = "center";
       ctx.fillText(f.name, px + 90, f.y + 4);
@@ -493,13 +508,15 @@ export function makeTfPuzzle(): Stage {
       const yFrom = frames[i].y + 11;
       const yTo = frames[i + 1].y - 11;
       const isTarget = i === frames.length - 2;
-      ctx.strokeStyle = isTarget ? "#fbbf24" : "rgba(125,211,252,0.6)";
+      ctx.strokeStyle = isTarget
+        ? theme.warn
+        : themeColor(theme.accent, stageColor("rgba(7, 95, 147,0.6)"));
       ctx.beginPath();
       ctx.moveTo(px + 90, yFrom);
       ctx.lineTo(px + 90, yTo);
       ctx.stroke();
       // arrowhead
-      ctx.fillStyle = isTarget ? "#fbbf24" : "rgba(125,211,252,0.6)";
+      ctx.fillStyle = ctx.strokeStyle;
       ctx.beginPath();
       ctx.moveTo(px + 90, yTo);
       ctx.lineTo(px + 86, yTo - 5);
@@ -507,7 +524,7 @@ export function makeTfPuzzle(): Stage {
       ctx.fill();
     }
     // current TF values next to the highlighted arrow
-    ctx.fillStyle = "#fbbf24";
+    ctx.fillStyle = stageColor("#925b00");
     ctx.font = "700 9px ui-monospace, monospace";
     ctx.textAlign = "left";
     const midY = (frames[2].y + frames[3].y) / 2;
@@ -525,11 +542,11 @@ export function makeTfPuzzle(): Stage {
       ph = 154;
     ctx.save();
     ctx.fillStyle = withA(theme.scrim, 0.85);
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.strokeStyle = themeColor(theme.fgDim, "rgba(255,255,255,0.25)");
     ctx.fillRect(px - 6, py - 22, pw + 12, ph);
     ctx.strokeRect(px - 6, py - 22, pw + 12, ph);
 
-    ctx.fillStyle = "#7dd3fc";
+    ctx.fillStyle = stageColor("#075f93");
     ctx.font = "700 11px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.fillText("SCAN ALIGNMENT", px, py - 6);
@@ -540,37 +557,39 @@ export function makeTfPuzzle(): Stage {
     // bar
     ctx.fillStyle = withA(theme.scrim, 0.85);
     ctx.fillRect(px, py + 6, pw - 12, 14);
-    ctx.fillStyle = score >= TARGET_MATCH ? "#5eead4" : score >= 0.6 ? "#fbbf24" : "#fb7185";
+    ctx.fillStyle = stageColor(
+      score >= TARGET_MATCH ? "#087764" : score >= 0.6 ? "#925b00" : "#be2949",
+    );
     ctx.fillRect(px, py + 6, (pw - 12) * score, 14);
-    ctx.strokeStyle = "rgba(125,211,252,0.5)";
+    ctx.strokeStyle = themeColor(theme.accent, stageColor("rgba(7, 95, 147,0.5)"));
     ctx.strokeRect(px, py + 6, pw - 12, 14);
-    ctx.fillStyle = "#eef2ff";
+    ctx.fillStyle = stageColor("#172b4d");
     ctx.font = "700 22px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.fillText(`${(score * 100).toFixed(0)}%`, px, py + 50);
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.font = "9px ui-monospace, monospace";
     ctx.fillText(`target: ${(TARGET_MATCH * 100).toFixed(0)}%`, px + 76, py + 50);
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.font = "9px ui-monospace, monospace";
     ctx.fillText(`${matched} / ${total} rays on wall`, px, py + 66);
 
     // legend
-    ctx.fillStyle = "#5eead4";
+    ctx.fillStyle = stageColor("#087764");
     ctx.beginPath();
     ctx.arc(px + 4, py + 92, 3, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.fillText("matched", px + 14, py + 95);
-    ctx.fillStyle = "#fb7185";
+    ctx.fillStyle = stageColor("#be2949");
     ctx.beginPath();
     ctx.arc(px + 84, py + 92, 3, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.fillText("scattered", px + 94, py + 95);
 
     // status
-    ctx.fillStyle = cleared ? "#5eead4" : "#7dd3fc";
+    ctx.fillStyle = stageColor(cleared ? "#087764" : "#075f93");
     ctx.font = "700 11px ui-monospace, monospace";
     ctx.fillText(cleared ? "✓ TF locked" : "adjust sliders", px, py + 116);
     ctx.restore();
@@ -648,53 +667,53 @@ export default defineStage({
 <svg viewBox="0 0 420 130" role="img" aria-label="set the base_link to laser TF correctly so scan points snap onto walls">
   <defs>
     <marker id="ld-tf-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-      <polygon points="0 0, 9 3.5, 0 7" fill="rgba(125,211,252,0.7)"/>
+      <polygon points="0 0, 9 3.5, 0 7" fill="light-dark(#075f93, rgba(125, 211, 252, 0.7))"/>
     </marker>
     <marker id="ld-tf-arrow-hi" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-      <polygon points="0 0, 9 3.5, 0 7" fill="#fbbf24"/>
+      <polygon points="0 0, 9 3.5, 0 7" fill="light-dark(#925b00, #fbbf24)"/>
     </marker>
   </defs>
   <!-- Left: TF tree -->
   <g font-family="ui-monospace, monospace" text-anchor="middle">
-    <text x="20" y="18" fill="#7dd3fc" font-size="9" font-weight="700" text-anchor="start">TF TREE</text>
-    <rect x="20" y="26" width="80" height="18" rx="3" fill="#1f2a4a" stroke="rgba(125,211,252,0.4)"/>
-    <text x="60" y="38" fill="#eef2ff" font-size="9" font-weight="700">map</text>
-    <line x1="60" y1="44" x2="60" y2="52" stroke="rgba(125,211,252,0.6)" stroke-width="1.4" marker-end="url(#ld-tf-arrow)"/>
-    <rect x="20" y="54" width="80" height="18" rx="3" fill="#1f2a4a" stroke="rgba(125,211,252,0.4)"/>
-    <text x="60" y="66" fill="#eef2ff" font-size="9" font-weight="700">odom</text>
-    <line x1="60" y1="72" x2="60" y2="80" stroke="rgba(125,211,252,0.6)" stroke-width="1.4" marker-end="url(#ld-tf-arrow)"/>
-    <rect x="20" y="82" width="80" height="18" rx="3" fill="#1f2a4a" stroke="rgba(125,211,252,0.4)"/>
-    <text x="60" y="94" fill="#eef2ff" font-size="9" font-weight="700">base_link</text>
-    <line x1="60" y1="100" x2="60" y2="110" stroke="#fbbf24" stroke-width="2" marker-end="url(#ld-tf-arrow-hi)"/>
-    <rect x="20" y="112" width="80" height="14" rx="3" fill="#fbbf24"/>
-    <text x="60" y="122" fill="#0c1124" font-size="9" font-weight="700">laser</text>
+    <text x="20" y="18" fill="light-dark(#075f93, #7dd3fc)" font-size="9" font-weight="700" text-anchor="start">TF TREE</text>
+    <rect x="20" y="26" width="80" height="18" rx="3" fill="light-dark(#e4edf8, #293c5d)" stroke="light-dark(#075f93, rgba(125, 211, 252, 0.4))"/>
+    <text x="60" y="38" fill="light-dark(#172b4d, #edf3ff)" font-size="9" font-weight="700">map</text>
+    <line x1="60" y1="44" x2="60" y2="52" stroke="light-dark(#075f93, rgba(125, 211, 252, 0.6))" stroke-width="1.4" marker-end="url(#ld-tf-arrow)"/>
+    <rect x="20" y="54" width="80" height="18" rx="3" fill="light-dark(#e4edf8, #293c5d)" stroke="light-dark(#075f93, rgba(125, 211, 252, 0.4))"/>
+    <text x="60" y="66" fill="light-dark(#172b4d, #edf3ff)" font-size="9" font-weight="700">odom</text>
+    <line x1="60" y1="72" x2="60" y2="80" stroke="light-dark(#075f93, rgba(125, 211, 252, 0.6))" stroke-width="1.4" marker-end="url(#ld-tf-arrow)"/>
+    <rect x="20" y="82" width="80" height="18" rx="3" fill="light-dark(#e4edf8, #293c5d)" stroke="light-dark(#075f93, rgba(125, 211, 252, 0.4))"/>
+    <text x="60" y="94" fill="light-dark(#172b4d, #edf3ff)" font-size="9" font-weight="700">base_link</text>
+    <line x1="60" y1="100" x2="60" y2="110" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2" marker-end="url(#ld-tf-arrow-hi)"/>
+    <rect x="20" y="112" width="80" height="14" rx="3" fill="light-dark(#925b00, #fbbf24)"/>
+    <text x="60" y="122" fill="var(--on-accent)" font-size="9" font-weight="700">laser</text>
   </g>
   <!-- Middle label: tx / ty / yaw -->
   <g font-family="ui-monospace, monospace">
-    <text x="116" y="100" fill="#fbbf24" font-size="9" font-weight="700">tx</text>
-    <text x="116" y="110" fill="#fbbf24" font-size="9" font-weight="700">ty</text>
-    <text x="116" y="120" fill="#fbbf24" font-size="9" font-weight="700">yaw</text>
-    <text x="148" y="115" fill="#9aa6c8" font-size="8">tune ↑</text>
+    <text x="116" y="100" fill="light-dark(#925b00, #fbbf24)" font-size="9" font-weight="700">tx</text>
+    <text x="116" y="110" fill="light-dark(#925b00, #fbbf24)" font-size="9" font-weight="700">ty</text>
+    <text x="116" y="120" fill="light-dark(#925b00, #fbbf24)" font-size="9" font-weight="700">yaw</text>
+    <text x="148" y="115" fill="light-dark(#425570, #c2cfe3)" font-size="8">tune ↑</text>
   </g>
   <!-- Right: robot top-down with sensor mount + scattered scan points -->
   <g>
-    <rect x="218" y="18" width="190" height="100" rx="6" fill="rgba(8, 12, 28, 0.6)" stroke="rgba(125,211,252,0.3)"/>
-    <rect x="232" y="32" width="14" height="38" fill="#3a4366"/>
-    <rect x="232" y="32" width="80" height="14" fill="#3a4366"/>
-    <rect x="380" y="32" width="14" height="74" fill="#3a4366"/>
-    <rect x="280" y="92" width="100" height="14" fill="#3a4366"/>
+    <rect x="218" y="18" width="190" height="100" rx="6" fill="rgba(var(--scrim-rgb), 0.6)" stroke="light-dark(#586a82, rgba(125, 211, 252, 0.3))"/>
+    <rect x="232" y="32" width="14" height="38" fill="light-dark(#8298b4, #4a6080)"/>
+    <rect x="232" y="32" width="80" height="14" fill="light-dark(#8298b4, #4a6080)"/>
+    <rect x="380" y="32" width="14" height="74" fill="light-dark(#8298b4, #4a6080)"/>
+    <rect x="280" y="92" width="100" height="14" fill="light-dark(#8298b4, #4a6080)"/>
     <!-- robot body -->
-    <circle cx="305" cy="68" r="14" fill="#0c1124" stroke="#fbbf24" stroke-width="2"/>
-    <polygon points="318,68 313,64 313,72" fill="#fbbf24"/>
+    <circle cx="305" cy="68" r="14" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2"/>
+    <polygon points="318,68 313,64 313,72" fill="light-dark(#925b00, #fbbf24)"/>
     <!-- LiDAR truth (cyan, halo) -->
-    <circle cx="316" cy="72" r="6" fill="rgba(125,211,252,0.25)"/>
-    <circle cx="316" cy="72" r="3" fill="#7dd3fc" stroke="#0c1124" stroke-width="0.8"/>
-    <line x1="316" y1="72" x2="324" y2="69" stroke="#7dd3fc" stroke-width="1.4"/>
+    <circle cx="316" cy="72" r="6" fill="light-dark(rgba(7, 95, 147,0.25), rgba(125, 211, 252, 0.25))"/>
+    <circle cx="316" cy="72" r="3" fill="light-dark(#075f93, #7dd3fc)" stroke="light-dark(#f1f5fb, #131f35)" stroke-width="0.8"/>
+    <line x1="316" y1="72" x2="324" y2="69" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.4"/>
     <!-- Player's TF guess (offset, dashed purple) -->
-    <circle cx="308" cy="64" r="4" fill="none" stroke="#c4b5fd" stroke-width="1.4" stroke-dasharray="2 2"/>
-    <line x1="308" y1="64" x2="316" y2="62" stroke="#c4b5fd" stroke-width="1.2" stroke-dasharray="2 2"/>
+    <circle cx="308" cy="64" r="4" fill="none" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.4" stroke-dasharray="2 2"/>
+    <line x1="308" y1="64" x2="316" y2="62" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.2" stroke-dasharray="2 2"/>
     <!-- matched scan dots on walls -->
-    <g fill="#5eead4">
+    <g fill="light-dark(#087764, #5eead4)" stroke="var(--canvas-bg)" stroke-width="1.5" paint-order="stroke">
       <circle cx="245" cy="38" r="1.7"/>
       <circle cx="295" cy="38" r="1.7"/>
       <circle cx="386" cy="58" r="1.7"/>
@@ -702,13 +721,13 @@ export default defineStage({
       <circle cx="320" cy="98" r="1.7"/>
     </g>
     <!-- scattered scan dots in the open -->
-    <g fill="#fb7185">
+    <g fill="light-dark(#be2949, #fda4af)">
       <circle cx="278" cy="50" r="1.7"/>
       <circle cx="358" cy="68" r="1.7"/>
       <circle cx="290" cy="80" r="1.7"/>
       <circle cx="340" cy="56" r="1.7"/>
     </g>
-    <text x="313" y="14" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="8">overlay your TF onto the cyan LiDAR</text>
+    <text x="313" y="14" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="8">overlay your TF onto the cyan LiDAR</text>
   </g>
 </svg>
 `,

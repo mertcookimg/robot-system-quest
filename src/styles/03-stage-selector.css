@@ -12,7 +12,7 @@ body.stage-menu-open .stage-selector {
   z-index: 102;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 9px;
+  gap: 12px;
   width: min(1060px, calc(100vw - 40px));
   max-height: calc(100dvh - 116px);
   padding: 0 14px 14px;
@@ -20,15 +20,14 @@ body.stage-menu-open .stage-selector {
   overscroll-behavior: contain;
   transform: translateX(-50%);
   background:
-    linear-gradient(180deg, rgba(125, 211, 252, 0.055), transparent 110px),
-    color-mix(in srgb, var(--panel) 98%, #101a31);
-  border: 1px solid rgba(125, 211, 252, 0.6);
+    linear-gradient(180deg, rgba(var(--accent-rgb), 0.055), transparent 110px), var(--panel);
+  border: 1px solid rgba(var(--accent-rgb), 0.6);
   border-radius: 18px;
   box-shadow:
-    0 0 0 1px rgba(125, 211, 252, 0.14),
-    0 28px 80px rgba(0, 0, 0, 0.72);
+    0 0 0 1px rgba(var(--accent-rgb), 0.14),
+    0 28px 80px rgba(var(--shadow-rgb), 0.27);
   animation: stage-popup-in 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.1);
-  scrollbar-color: rgba(125, 211, 252, 0.35) transparent;
+  scrollbar-color: rgba(var(--accent-rgb), 0.35) transparent;
 }
 @keyframes stage-popup-in {
   from {
@@ -65,7 +64,7 @@ body.stage-menu-open .stage-selector {
 .stage-menu-kicker {
   grid-column: 1;
   color: var(--accent);
-  font: 800 9px/1 var(--mono);
+  font: 800 12px/1 var(--mono);
   letter-spacing: 0.16em;
 }
 .stage-menu-count {
@@ -76,7 +75,7 @@ body.stage-menu-open .stage-selector {
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--fg-mid);
-  font: 700 10px/1 var(--mono);
+  font: 700 12px/1 var(--mono);
 }
 .stage-menu-close {
   grid-column: 3;
@@ -102,8 +101,8 @@ body.stage-menu-open .stage-selector {
   align-content: start;
   gap: 8px;
   min-width: 0;
-  min-height: 174px;
-  padding: 8px;
+  min-height: 220px;
+  padding: 12px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -123,14 +122,14 @@ body.stage-menu-open .stage-selector {
   border-color: var(--accent);
   background: var(--panel-2);
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 12px 24px rgba(var(--shadow-rgb), 0.11);
 }
 .stage-pill.active {
   border-color: var(--warn);
-  background: linear-gradient(145deg, rgba(251, 191, 36, 0.1), var(--panel-2));
+  background: linear-gradient(145deg, rgba(var(--warn-rgb), 0.1), var(--panel-2));
   box-shadow:
-    inset 0 0 0 1px rgba(251, 191, 36, 0.42),
-    0 0 18px rgba(251, 191, 36, 0.08);
+    inset 0 0 0 1px rgba(var(--warn-rgb), 0.42),
+    0 0 18px rgba(var(--warn-rgb), 0.08);
 }
 
 .stage-card-preview {
@@ -138,9 +137,9 @@ body.stage-menu-open .stage-selector {
   width: 100%;
   height: 92px;
   overflow: hidden;
-  border: 1px solid rgba(125, 211, 252, 0.2);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
   border-radius: 9px;
-  background: #070a0e;
+  background: var(--canvas-bg);
 }
 .stage-card-preview .card-demo {
   display: block;
@@ -156,12 +155,12 @@ body.stage-menu-open .stage-selector {
   width: 28px;
   height: 28px;
   place-items: center;
-  border: 1px solid rgba(125, 211, 252, 0.38);
+  border: 1px solid rgba(var(--accent-rgb), 0.38);
   border-radius: 7px;
-  background: rgba(3, 7, 14, 0.82);
+  background: rgba(var(--scrim-rgb), 0.94);
   color: var(--accent);
   font: 800 14px/1 var(--mono);
-  text-shadow: 0 0 8px rgba(125, 211, 252, 0.6);
+  text-shadow: none;
   backdrop-filter: blur(4px);
 }
 .stage-pill-meta {
@@ -172,7 +171,7 @@ body.stage-menu-open .stage-selector {
 }
 .stage-pill .num {
   color: var(--accent);
-  font: 800 9px/1 var(--mono);
+  font: 800 12px/1 var(--mono);
   letter-spacing: 0.08em;
 }
 .stage-pill .info {
@@ -182,23 +181,19 @@ body.stage-menu-open .stage-selector {
   gap: 5px;
 }
 .stage-pill .name {
-  display: -webkit-box;
-  overflow: hidden;
+  display: block;
+  overflow-wrap: anywhere;
   color: var(--fg);
   font-size: 15px;
   font-weight: 750;
-  line-height: 1.2;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  line-height: 1.4;
 }
 .stage-pill .lesson {
-  display: -webkit-box;
+  display: block;
   min-height: 0;
-  overflow: hidden;
+  overflow-wrap: anywhere;
   color: var(--fg-dim);
-  font: 500 8px/1.35 var(--mono);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  font: 500 14px/1.35 var(--mono);
 }
 .stage-pill .lesson:empty {
   display: none;
@@ -206,16 +201,16 @@ body.stage-menu-open .stage-selector {
 .stage-pill .multiplayer-badge {
   width: fit-content;
   padding: 3px 7px;
-  border: 1px solid rgba(94, 234, 212, 0.45);
+  border: 1px solid rgba(var(--ok-rgb), 0.45);
   border-radius: 999px;
-  background: rgba(94, 234, 212, 0.1);
+  background: rgba(var(--ok-rgb), 0.1);
   color: var(--ok);
-  font: 800 7px/1.1 var(--mono);
+  font: 800 12px/1.1 var(--mono);
   white-space: nowrap;
 }
 .stage-pill .ministar {
   color: var(--line);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 1px;
   white-space: nowrap;
 }
@@ -226,7 +221,7 @@ body.stage-menu-open .stage-selector {
   border-color: var(--warn);
   box-shadow:
     0 0 0 2px var(--warn),
-    0 0 18px rgba(251, 191, 36, 0.4);
+    0 0 18px rgba(var(--warn-rgb), 0.4);
 }
 .mode-tab.gp-focus {
   box-shadow: 0 0 0 2px var(--warn);
@@ -269,13 +264,13 @@ body.stage-menu-open .stage-selector {
     font-size: 16px;
   }
   .stage-menu-count {
-    font-size: 9px;
+    font-size: 12px;
   }
   .stage-pill {
     grid-template-rows: 72px auto auto;
     gap: 6px;
-    min-height: 148px;
-    padding: 6px;
+    min-height: 210px;
+    padding: 9px;
   }
   .stage-card-preview {
     height: 72px;
@@ -284,23 +279,23 @@ body.stage-menu-open .stage-selector {
     gap: 3px;
   }
   .stage-pill .name {
-    font-size: 12px;
+    font-size: 14px;
   }
   .stage-pill .lesson {
-    font-size: 7px;
+    font-size: 14px;
   }
   .stage-pill .multiplayer-badge {
     padding: 2px 5px;
-    font-size: 6px;
+    font-size: 12px;
   }
   .stage-pill .ministar {
-    font-size: 8px;
+    font-size: 12px;
   }
   .stage-card-icon {
     top: 5px;
     right: 5px;
     width: 24px;
     height: 24px;
-    font-size: 12px;
+    font-size: 14px;
   }
 }

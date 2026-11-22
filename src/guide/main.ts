@@ -5,6 +5,7 @@ import { getDiagram, getLessonNumbers, getStageModes, getStages } from "./stages
 import { startDemo, stopDemo } from "../core/lesson_demo";
 import { getLang, withLang } from "../i18n";
 import { setupLanguageSwitchers } from "../i18n/language_switcher";
+import { setupThemeSwitchers } from "../core/theme_switcher";
 import type { StageMeta } from "../types";
 import { cardPreviewFor, guideCopyFor } from "./content";
 import { setupCardDemos } from "./card_demos";
@@ -22,6 +23,7 @@ import {
 
 setupAnalytics();
 localizeStaticGuide();
+setupThemeSwitchers();
 const stages = getStages();
 const modes = getStageModes();
 const lessonNumbers = getLessonNumbers();

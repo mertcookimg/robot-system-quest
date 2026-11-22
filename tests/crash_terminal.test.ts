@@ -222,8 +222,10 @@ for (const id of ["terminal-input", "terminal-command-select", "terminal-command
     test(`${id}: closing the palette with ${closeButton === 1 ? "B" : "L3"} restores pad controls`, () => {
       document.getElementById(id)!.focus();
       assert.equal(guard.isStageInteractionBlocked(), true);
+      assert.equal(guard.isStageSimulationPaused(), false);
       poll([10]);
       assert.equal(terminal.isPadPaletteOpen(), true);
+      assert.equal(guard.isStageSimulationPaused(), false);
       poll();
       poll([closeButton]);
       assert.equal(terminal.isPadPaletteOpen(), false);
@@ -238,7 +240,8 @@ for (const id of ["terminal-input", "terminal-command-select", "terminal-command
   }
 }
 
-test("Escape, B and the return button leave every terminal control without resetting", () => {
+test("Escape and B leave every terminal control without resetting or needing a return button", () => {
+  assert.equal(document.getElementById("terminal-resume"), null);
   for (const id of ["terminal-input", "terminal-command-select", "terminal-command-run"]) {
     const control = document.getElementById(id)!;
     control.focus();
@@ -247,9 +250,6 @@ test("Escape, B and the return button leave every terminal control without reset
     control.focus();
     poll();
     poll([1]);
-    assert.ok(document.activeElement === ui.canvas);
-    control.focus();
-    document.getElementById("terminal-resume")!.click();
     assert.ok(document.activeElement === ui.canvas);
   }
   assert.equal(resets, 0);

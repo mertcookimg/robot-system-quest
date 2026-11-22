@@ -1,12 +1,15 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+
 // lidar_explorer: LiDAR Explorer (Hard)
 // Reveal a dark map with the LiDAR, visit 3 data-collection points,
 // then head to the goal.
 // Wall hits or running out of battery = game over.
 import { W, H, type Stage, type GameContext } from "../../types";
 import { defineStage } from "../../core/stage_def";
+import { theme, withA, themeColor, getTheme } from "../../core/theme";
 import {
   drawZone,
   drawRobotBody,
@@ -313,8 +316,8 @@ export function makeLidarExplorer(): Stage {
     // Draw only cells hit by the current scan; do not leave explored areas revealed.
     for (const key of visibleNow) {
       const [c, r] = key.split(",").map(Number);
-      ctx.fillStyle = "rgba(60, 78, 130, 0.32)";
-      ctx.strokeStyle = "rgba(78, 96, 148, 0.4)";
+      ctx.fillStyle = themeColor("#edf3fb", "rgba(60, 78, 130, 0.32)");
+      ctx.strokeStyle = themeColor("#93a7c1", "rgba(78, 96, 148, 0.4)");
       ctx.lineWidth = 1;
       ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
       ctx.strokeRect(c * TILE, r * TILE, TILE, TILE);
@@ -322,10 +325,10 @@ export function makeLidarExplorer(): Stage {
 
     ctx.save();
     const grd = ctx.createRadialGradient(robot.x, robot.y, 10, robot.x, robot.y, MAX_DIST);
-    grd.addColorStop(0, "rgba(56, 189, 248, 0.18)");
-    grd.addColorStop(0.6, "rgba(56, 189, 248, 0.06)");
-    grd.addColorStop(1, "rgba(56, 189, 248, 0)");
-    ctx.fillStyle = grd;
+    grd.addColorStop(0, stageColor("rgba(7, 89, 133, 0.18)"));
+    grd.addColorStop(0.6, stageColor("rgba(7, 89, 133, 0.06)"));
+    grd.addColorStop(1, stageColor("rgba(7, 89, 133, 0)"));
+    ctx.fillStyle = stageColor(grd);
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
 
@@ -342,14 +345,14 @@ export function makeLidarExplorer(): Stage {
     }
     for (const key of visible) {
       const [c, r] = key.split(",").map(Number);
-      ctx.fillStyle = "rgba(120, 152, 210, 0.55)";
-      ctx.strokeStyle = "#56b6e8";
+      ctx.fillStyle = themeColor("#8fa7c6", "rgba(120, 152, 210, 0.55)");
+      ctx.strokeStyle = themeColor("#075985", "#56b6e8");
       ctx.lineWidth = 1.5;
       ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
       ctx.strokeRect(c * TILE, r * TILE, TILE, TILE);
     }
 
-    ctx.strokeStyle = "rgba(56, 189, 248, 0.10)";
+    ctx.strokeStyle = withA(theme.accentDeep, getTheme() === "light" ? 0.4 : 0.1);
     ctx.lineWidth = 1;
     for (const ray of lastScan) {
       ctx.beginPath();
@@ -362,7 +365,7 @@ export function makeLidarExplorer(): Stage {
     }
     for (const ray of lastScan) {
       if (!ray.hit) continue;
-      ctx.fillStyle = "#7dd3fc";
+      ctx.fillStyle = stageColor("#075f93");
       ctx.beginPath();
       ctx.arc(
         robot.x + Math.cos(ray.angle) * ray.dist,
@@ -383,11 +386,11 @@ export function makeLidarExplorer(): Stage {
       const got = collected.has(dp.id);
       if (got) {
         ctx.save();
-        ctx.globalAlpha = 0.35;
-        drawDataPoint(ctx, dpx, dpy, dp.id, "#5eead4", elapsed, true);
+        ctx.globalAlpha = getTheme() === "light" ? 0.8 : 0.35;
+        drawDataPoint(ctx, dpx, dpy, dp.id, "#087764", elapsed, true);
         ctx.restore();
       } else if (visiblePoint) {
-        drawDataPoint(ctx, dpx, dpy, dp.id, "#fbbf24", elapsed, false);
+        drawDataPoint(ctx, dpx, dpy, dp.id, "#925b00", elapsed, false);
       }
     }
 
@@ -397,7 +400,7 @@ export function makeLidarExplorer(): Stage {
     const dgy = robot.y - gy;
     const goalNear = dgx * dgx + dgy * dgy < (MAX_DIST * 1.1) ** 2;
     if (goalNear) {
-      const color = collected.size === 3 ? "#5eead4" : "#6e7a9c";
+      const color = collected.size === 3 ? "#087764" : "#586a82";
       const label = collected.size === 3 ? "GOAL" : "LOCKED";
       drawZone(ctx, { x: gx, y: gy, r: 22 }, color, label, elapsed);
     }
@@ -430,14 +433,14 @@ export function makeLidarExplorer(): Stage {
     const h = 22;
     const x = W - w - 12;
     const y = H - h - 30;
-    ctx.fillStyle = "rgba(196, 181, 253, 0.18)";
-    ctx.strokeStyle = "rgba(196, 181, 253, 0.5)";
+    ctx.fillStyle = stageColor("rgba(109, 66, 181, 0.18)");
+    ctx.strokeStyle = stageColor("rgba(109, 66, 181, 0.5)");
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(x, y, w, h, 5);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "#c4b5fd";
+    ctx.fillStyle = stageColor("#6d42b5");
     ctx.font = "600 10px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
@@ -527,7 +530,7 @@ function drawDataPoint(
   const pulse = collected ? 1 : 0.85 + 0.15 * Math.sin(t * 4);
   ctx.save();
   ctx.translate(x, y);
-  ctx.strokeStyle = color;
+  ctx.strokeStyle = stageColor(color);
   ctx.lineWidth = 2;
   ctx.globalAlpha = 0.85;
   const r = 16 * pulse;
@@ -535,12 +538,12 @@ function drawDataPoint(
   ctx.arc(0, 0, r, 0, Math.PI * 2);
   ctx.stroke();
   ctx.globalAlpha = 0.2;
-  ctx.fillStyle = color;
+  ctx.fillStyle = stageColor(color);
   ctx.beginPath();
   ctx.arc(0, 0, 12, 0, Math.PI * 2);
   ctx.fill();
   ctx.globalAlpha = 1;
-  ctx.fillStyle = color;
+  ctx.fillStyle = stageColor(color);
   ctx.font = "bold 11px ui-monospace, monospace";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -552,15 +555,15 @@ function drawDataPoint(
 
 function drawProgressHUD(ctx: CanvasRenderingContext2D, collected: Set<string>, battery: number) {
   ctx.save();
-  ctx.fillStyle = "rgba(8, 14, 28, 0.85)";
-  ctx.strokeStyle = "rgba(56, 189, 248, 0.4)";
+  ctx.fillStyle = withA(theme.scrim, 0.85);
+  ctx.strokeStyle = stageColor("rgba(7, 89, 133, 0.4)");
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect(12, 12, 200, 56, 6);
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = "#7a89ad";
+  ctx.fillStyle = stageColor("#586a82");
   ctx.font = "10px ui-monospace, monospace";
   ctx.textAlign = "left";
   ctx.fillText("DATA", 22, 26);
@@ -569,18 +572,18 @@ function drawProgressHUD(ctx: CanvasRenderingContext2D, collected: Set<string>, 
     const got = collected.has(id);
     const cx = 70 + i * 22;
     const cy = 23;
-    ctx.fillStyle = got ? "#5eead4" : "rgba(122, 137, 173, 0.3)";
+    ctx.fillStyle = stageColor(got ? "#087764" : "rgba(88, 106, 130, 0.3)");
     ctx.beginPath();
     ctx.arc(cx, cy, 7, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = got ? COLORS.BG_DARK : "#7a89ad";
+    ctx.fillStyle = got ? COLORS.ON_ACCENT : themeColor("#172b4d", stageColor("#586a82"));
     ctx.font = "bold 9px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(id, cx, cy + 0.5);
   }
 
-  ctx.fillStyle = "#7a89ad";
+  ctx.fillStyle = stageColor("#586a82");
   ctx.font = "10px ui-monospace, monospace";
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
@@ -589,15 +592,17 @@ function drawProgressHUD(ctx: CanvasRenderingContext2D, collected: Set<string>, 
   const barY = 41;
   const barW = 130;
   const barH = 10;
-  ctx.fillStyle = "rgba(122, 137, 173, 0.2)";
+  ctx.fillStyle = stageColor("rgba(88, 106, 130, 0.2)");
   ctx.fillRect(barX, barY, barW, barH);
   const pct = Math.max(0, battery) / 100;
-  const battColor = battery > 50 ? "#5eead4" : battery > 20 ? "#fbbf24" : "#fb7185";
-  ctx.fillStyle = battColor;
+  const battColor = battery > 50 ? "#087764" : battery > 20 ? "#925b00" : "#be2949";
+  ctx.fillStyle = stageColor(battColor);
   ctx.fillRect(barX, barY, barW * pct, barH);
-  ctx.strokeStyle = "rgba(56, 189, 248, 0.3)";
+  ctx.strokeStyle = stageColor("rgba(7, 89, 133, 0.3)");
   ctx.strokeRect(barX, barY, barW, barH);
-  ctx.fillStyle = battColor;
+  ctx.fillStyle = theme.panel;
+  ctx.fillRect(barX + barW - 36, barY - 1, 35, barH + 2);
+  ctx.fillStyle = stageColor(battColor);
   ctx.font = "bold 9px ui-monospace, monospace";
   ctx.textAlign = "right";
   ctx.fillText(`${battery.toFixed(0)}%`, barX + barW - 4, barY + 8);
@@ -611,21 +616,21 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="lidar publishes /scan to robot subscriber">
   <defs>
     <marker id="ld-lidar_explorer-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
   </defs>
-  <rect x="8" y="26" width="148" height="68" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="82" y="56" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="12" font-weight="700">lidar_sensor</text>
-  <text x="82" y="78" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">Publisher</text>
-  <rect x="264" y="26" width="148" height="68" rx="8" fill="#181f3a" stroke="#c4b5fd" stroke-width="1.5"/>
-  <text x="338" y="56" text-anchor="middle" fill="#c4b5fd" font-family="ui-monospace, monospace" font-size="12" font-weight="700">robot_node</text>
-  <text x="338" y="78" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="10">Subscriber</text>
-  <line x1="156" y1="60" x2="262" y2="60" stroke="#5eead4" stroke-width="2" marker-end="url(#ld-lidar_explorer-arrow)"/>
-  <circle r="3.5" fill="#fbbf24">
+  <rect x="8" y="26" width="148" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="82" y="56" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">lidar_sensor</text>
+  <text x="82" y="78" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">Publisher</text>
+  <rect x="264" y="26" width="148" height="68" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#6d42b5, #c4b5fd)" stroke-width="1.5"/>
+  <text x="338" y="56" text-anchor="middle" fill="light-dark(#6d42b5, #c4b5fd)" font-family="ui-monospace, monospace" font-size="12" font-weight="700">robot_node</text>
+  <text x="338" y="78" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="10">Subscriber</text>
+  <line x1="156" y1="60" x2="262" y2="60" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#ld-lidar_explorer-arrow)"/>
+  <circle r="3.5" fill="light-dark(#925b00, #fbbf24)">
     <animateMotion dur="1.6s" repeatCount="indefinite" path="M 158 60 L 258 60"/>
   </circle>
-  <text x="210" y="46" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/scan</text>
-  <text x="210" y="80" text-anchor="middle" fill="#6e7a9c" font-family="ui-monospace, monospace" font-size="9">sensor_msgs/msg/LaserScan</text>
+  <text x="210" y="46" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">/scan</text>
+  <text x="210" y="80" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="9">sensor_msgs/msg/LaserScan</text>
 </svg>
 `,
   lessonModal: {

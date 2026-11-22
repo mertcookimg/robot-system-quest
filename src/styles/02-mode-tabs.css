@@ -37,17 +37,17 @@
 }
 .mode-tab:hover {
   background: var(--panel-2);
-  border-color: rgba(125, 211, 252, 0.28);
+  border-color: rgba(var(--accent-rgb), 0.28);
   color: var(--fg-mid);
   transform: translateY(-1px);
 }
 .mode-tab.active {
-  background: linear-gradient(135deg, rgba(125, 211, 252, 0.16), var(--panel-2));
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.16), var(--panel-2));
   border-color: var(--accent);
   color: var(--fg);
   box-shadow:
-    inset 0 0 0 1px rgba(125, 211, 252, 0.16),
-    0 5px 18px rgba(125, 211, 252, 0.1);
+    inset 0 0 0 1px rgba(var(--accent-rgb), 0.16),
+    0 5px 18px rgba(var(--accent-rgb), 0.1);
 }
 .mt-icon {
   display: grid;
@@ -60,8 +60,8 @@
   font-size: 16px;
 }
 .mode-tab.active .mt-icon {
-  border-color: rgba(125, 211, 252, 0.55);
-  background: rgba(125, 211, 252, 0.12);
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.12);
 }
 .mt-copy {
   display: flex;
@@ -71,7 +71,7 @@
 }
 .mode-tab .mt-label {
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.16em;
   color: var(--accent);
@@ -79,7 +79,7 @@
 .mode-tab .mt-sub {
   overflow: hidden;
   color: var(--fg-dim);
-  font-size: 11px;
+  font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -114,7 +114,7 @@ body.stage-menu-open .mode-tab.active .mt-open {
     font-size: 14px;
   }
   .mode-tab .mt-label {
-    font-size: 11px;
+    font-size: 14px;
     letter-spacing: 0.1em;
   }
   .mode-tab .mt-sub {

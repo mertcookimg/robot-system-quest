@@ -1,7 +1,9 @@
 ﻿// Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
-import { theme, withA } from "../core/theme";
+import { stageColor } from "./stage_colors";
+
+import { getTheme, theme, withA } from "../core/theme";
 import { tx } from "../i18n";
 import { clearBackground, drawGrid, drawRobotBody } from "./draw";
 import type { ImitationCounts } from "./imitation_data";
@@ -37,10 +39,10 @@ export interface ImitationTextOptions {
   mono?: boolean;
 }
 
-const FG = "#eef2ff";
-const MUTED = "#9aa6c8";
-const ACCENT = "#7dd3fc";
-const OK = "#5eead4";
+const FG = "#172b4d";
+const MUTED = "#425570";
+const ACCENT = "#075f93";
+const OK = "#087764";
 const LINE = withA(MUTED, 0.24);
 
 /** For text drawn in the shared canvas's unscaled 800×500 coordinate space. */
@@ -94,7 +96,7 @@ export function drawImitationText(
   c.font = `${options.weight ?? 500} ${size}px ${options.mono ? 'ui-monospace, "Cascadia Mono", monospace' : "system-ui, sans-serif"}`;
   c.textAlign = options.align ?? "left";
   c.textBaseline = "alphabetic";
-  c.fillStyle = options.color ?? FG;
+  c.fillStyle = stageColor(options.color ?? FG);
   const lines = wrapText(c, value, width);
   if (options.maxLines !== undefined && lines.length > options.maxLines) {
     lines.length = Math.max(1, options.maxLines);
@@ -114,10 +116,10 @@ function line(
   y1: number,
   x2: number,
   y2: number,
-  color = LINE,
+  color = getTheme() === "light" ? theme.line : LINE,
   width = 1,
 ): void {
-  c.strokeStyle = color;
+  c.strokeStyle = stageColor(color);
   c.lineWidth = width;
   c.beginPath();
   c.moveTo(x1, y1);
@@ -127,7 +129,7 @@ function line(
 
 function arrow(c: CanvasRenderingContext2D, x1: number, y: number, x2: number): void {
   line(c, x1, y, x2, y, ACCENT, 2);
-  c.strokeStyle = ACCENT;
+  c.strokeStyle = stageColor(ACCENT);
   c.lineWidth = 2;
   c.beginPath();
   c.moveTo(x2 - 10, y - 8);
@@ -165,7 +167,7 @@ function observationDiagram(
   const robotX = left + (right - left) * 0.35;
   const robotY = centerY + (Math.abs(offset) < 0.005 ? 0 : offset > 0 ? -30 : 30);
   c.setLineDash([5, 7]);
-  line(c, left, centerY, right, centerY, withA(MUTED, 0.5));
+  line(c, left, centerY, right, centerY, withA(theme.fgMid, getTheme() === "light" ? 0.8 : 0.5));
   c.setLineDash([]);
   drawImitationText(c, tx("中央", "Center"), right, centerY - 15, {
     size: 16,
@@ -184,7 +186,7 @@ function observationDiagram(
     const direction = velocity > 0 ? 1 : -1;
     const tip = robotY + direction * 28;
     line(c, x, robotY, x, tip, ACCENT, 3);
-    c.strokeStyle = ACCENT;
+    c.strokeStyle = stageColor(ACCENT);
     c.lineWidth = 3;
     c.beginPath();
     c.moveTo(x - 8, tip - direction * 8);
@@ -204,12 +206,20 @@ function actionBar(
   color: string,
 ): void {
   c.lineCap = "round";
-  line(c, center - halfWidth, y, center + halfWidth, y, LINE, 4);
+  line(
+    c,
+    center - halfWidth,
+    y,
+    center + halfWidth,
+    y,
+    getTheme() === "light" ? theme.line : LINE,
+    4,
+  );
   line(c, center, y - 11, center, y + 11, withA(MUTED, 0.65));
   if (value !== undefined && Number.isFinite(value)) {
     const end = center + value * halfWidth;
     line(c, center, y, end, y, color, 8);
-    c.fillStyle = color;
+    c.fillStyle = stageColor(color);
     c.beginPath();
     c.arc(end, y, 5, 0, Math.PI * 2);
     c.fill();
@@ -234,7 +244,7 @@ function drawReady(c: CanvasRenderingContext2D): void {
   c.strokeStyle = withA(theme.floor, 0.75);
   c.lineWidth = 88;
   c.stroke();
-  c.strokeStyle = withA(ACCENT, 0.7);
+  c.strokeStyle = stageColor(withA(ACCENT, 0.7));
   c.lineWidth = 2;
   c.setLineDash([9, 10]);
   c.stroke();
@@ -246,8 +256,8 @@ function drawReady(c: CanvasRenderingContext2D): void {
   drawRobotBody(c);
   c.restore();
   for (const radius of [25, 35]) {
-    c.strokeStyle = withA(OK, radius === 25 ? 0.8 : 0.35);
-    c.lineWidth = 1.5;
+    c.strokeStyle = withA(theme.ok, radius === 25 ? 1 : getTheme() === "light" ? 0.75 : 0.35);
+    c.lineWidth = radius === 25 ? 2.5 : 1.5;
     c.beginPath();
     c.arc(740, laneCenter(740, 0), radius, 0, Math.PI * 2);
     c.stroke();

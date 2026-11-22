@@ -1,6 +1,11 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { theme, withA, getTheme, themeColor } from "../../core/theme";
+
+import { stageColor } from "../../lib/stage_colors";
+import { drawCanvasLabel } from "../../lib/canvas_text";
+
 // robo_tennis: one-player tennis against AI or local two-player tennis.
 // The ball has height, gravity, bounces and net collisions; the tracker
 // publishes its 3D pose while the player moves and times racket swings.
@@ -334,7 +339,7 @@ export function makeRoboTennis(): Stage {
       won ? "var(--ok)" : "var(--warn)",
     );
     if (won) {
-      particles.burst(player.x, player.y, "#5eead4", 42, 280);
+      particles.burst(player.x, player.y, "#087764", 42, 280);
       g.sfx.victory();
     }
     g.awardStars(
@@ -407,10 +412,10 @@ export function makeRoboTennis(): Stage {
     ball.vy = 0;
     ball.vz = 0;
     if (winner === "player") {
-      particles.burst(ball.x, ball.y - ball.z, "#5eead4", 24, 220);
+      particles.burst(ball.x, ball.y - ball.z, "#087764", 24, 220);
       g.sfx.deliver();
     } else {
-      particles.burst(ball.x, ball.y - ball.z, "#fb7185", 18, 180);
+      particles.burst(ball.x, ball.y - ball.z, "#be2949", 18, 180);
       g.sfx.bump();
     }
     g.setStatus(pointText, winner === "player" ? "var(--ok)" : "var(--warn)");
@@ -461,7 +466,7 @@ export function makeRoboTennis(): Stage {
     robot.swing = 0;
     rallyHits++;
     bestRally = Math.max(bestRally, rallyHits);
-    particles.burst(ball.x, ball.y - ball.z, side === "player" ? "#7dd3fc" : "#f472b6", 12, 145);
+    particles.burst(ball.x, ball.y - ball.z, side === "player" ? "#075f93" : "#b22c7a", 12, 145);
     g.sfx.pickup();
     g.publish(
       "/racket/swing",
@@ -536,7 +541,7 @@ export function makeRoboTennis(): Stage {
       ball.x = ai.x - 25;
       rallyHits++;
       bestRally = Math.max(bestRally, rallyHits);
-      particles.burst(ball.x, ball.y - ball.z, "#f472b6", 10, 130);
+      particles.burst(ball.x, ball.y - ball.z, "#b22c7a", 10, 130);
       g.sfx.pickup();
       g.publish("/racket/swing", 'data: "side=ai quality=0.82"');
     }
@@ -634,6 +639,9 @@ export function makeRoboTennis(): Stage {
   }
 
   function update(dt: number): void {
+    // Terminal input capture keeps simulation updates running, so discard queued
+    // pointer actions before they can be consumed by this frame.
+    if (isStageInteractionBlocked()) clearPendingPointerAction();
     if (twoPlayer.pollToggleEdge()) setMode2P(!mode2P);
     animTime += dt;
     particles.update(dt);
@@ -718,18 +726,18 @@ export function makeRoboTennis(): Stage {
   function drawCourt(c: CanvasRenderingContext2D): void {
     clearBackground(c);
     const bg = c.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, "#071126");
-    bg.addColorStop(1, "#102a35");
-    c.fillStyle = bg;
+    bg.addColorStop(0, stageColor("#dcecf9"));
+    bg.addColorStop(1, stageColor("#edf6f4"));
+    c.fillStyle = stageColor(bg);
     c.fillRect(0, 0, W, H);
 
     // Arena glow.
-    c.fillStyle = "rgba(125, 211, 252, 0.05)";
+    c.fillStyle = stageColor("rgba(7, 95, 147, 0.05)");
     for (let x = 20; x < W; x += 40) c.fillRect(x, 0, 1, H);
     for (let y = 20; y < H; y += 40) c.fillRect(0, y, W, 1);
 
-    c.fillStyle = "#176b61";
-    c.strokeStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#cce7df");
+    c.strokeStyle = stageColor("#075f93");
     c.lineWidth = 3;
     c.beginPath();
     c.roundRect(COURT.x, COURT.y, COURT.w, COURT.h, 8);
@@ -738,9 +746,9 @@ export function makeRoboTennis(): Stage {
 
     // Regulation-style tennis markings: doubles alleys, singles court,
     // service lines and a center service line only between those lines.
-    c.fillStyle = "rgba(5, 46, 42, 0.28)";
+    c.fillStyle = stageColor("rgba(56, 117, 98, 0.08)");
     c.fillRect(NET_X, COURT.y, COURT.w / 2, COURT.h);
-    c.strokeStyle = "rgba(255,255,255,0.88)";
+    c.strokeStyle = stageColor("rgba(39,100,78,0.8)");
     c.lineWidth = 2;
     const singlesTop = COURT.y + SINGLES_INSET;
     const singlesBottom = COURT.y + COURT.h - SINGLES_INSET;
@@ -753,7 +761,7 @@ export function makeRoboTennis(): Stage {
       const targetW = SERVICE_DEPTH;
       const targetY = targetTop ? singlesTop : COURT.y + COURT.h / 2;
       const targetH = COURT.h / 2 - SINGLES_INSET;
-      c.fillStyle = "rgba(250, 204, 21, 0.16)";
+      c.fillStyle = themeColor("rgba(146, 91, 0, 0.2)", "rgba(250, 204, 21, 0.16)");
       c.fillRect(targetX, targetY, targetW, targetH);
 
       if (phase === "ready") {
@@ -768,7 +776,7 @@ export function makeRoboTennis(): Stage {
           SINGLES_INSET,
           SERVICE_DEPTH,
         );
-        c.strokeStyle = validAim ? "#fde047" : "#fb7185";
+        c.strokeStyle = stageColor(validAim ? "#925b00" : "#be2949");
         c.lineWidth = 2;
         c.beginPath();
         c.arc(aimX, serveTargetY, 10, 0, Math.PI * 2);
@@ -780,7 +788,7 @@ export function makeRoboTennis(): Stage {
       }
     }
 
-    c.strokeStyle = "rgba(255,255,255,0.88)";
+    c.strokeStyle = stageColor("rgba(39,100,78,0.8)");
     c.lineWidth = 2;
     c.beginPath();
     c.moveTo(COURT.x, singlesTop);
@@ -803,11 +811,11 @@ export function makeRoboTennis(): Stage {
     c.stroke();
 
     // Net shadow, posts and mesh.
-    c.fillStyle = "rgba(0,0,0,0.2)";
+    c.fillStyle = stageColor("rgba(0,0,0,0.2)");
     c.fillRect(NET_X + 5, COURT.y - 8, 12, COURT.h + 16);
-    c.fillStyle = "#dbeafe";
+    c.fillStyle = stageColor("#dbeafe");
     c.fillRect(NET_X - 3, COURT.y - 12, 6, COURT.h + 24);
-    c.strokeStyle = "rgba(15, 23, 42, 0.65)";
+    c.strokeStyle = stageColor("rgba(15, 23, 42, 0.65)");
     c.lineWidth = 1;
     for (let y = COURT.y; y <= COURT.y + COURT.h; y += 10) {
       c.beginPath();
@@ -815,7 +823,7 @@ export function makeRoboTennis(): Stage {
       c.lineTo(NET_X + 3, y + 5);
       c.stroke();
     }
-    c.fillStyle = "#fbbf24";
+    c.fillStyle = stageColor("#925b00");
     c.beginPath();
     c.arc(NET_X, COURT.y - 12, 6, 0, Math.PI * 2);
     c.arc(NET_X, COURT.y + COURT.h + 12, 6, 0, Math.PI * 2);
@@ -845,18 +853,18 @@ export function makeRoboTennis(): Stage {
     c.save();
     c.translate(handX, handY);
     c.rotate(angle);
-    c.strokeStyle = side === "player" ? "#fbbf24" : "#f472b6";
+    c.strokeStyle = stageColor(side === "player" ? "#925b00" : "#b22c7a");
     c.lineWidth = 4;
     c.beginPath();
     c.moveTo(0, 0);
     c.lineTo(28, 0);
     c.stroke();
-    c.strokeStyle = "#eef2ff";
+    c.strokeStyle = stageColor("#172b4d");
     c.lineWidth = 3;
     c.beginPath();
     c.ellipse(39, 0, 13, 18, 0, 0, Math.PI * 2);
     c.stroke();
-    c.strokeStyle = "rgba(238,242,255,0.4)";
+    c.strokeStyle = stageColor("rgba(88,106,130,0.6)");
     c.lineWidth = 1;
     c.beginPath();
     c.moveTo(28, 0);
@@ -866,10 +874,12 @@ export function makeRoboTennis(): Stage {
     c.stroke();
     c.restore();
 
-    c.fillStyle = side === "player" ? "#7dd3fc" : "#f472b6";
+    c.fillStyle = stageColor(side === "player" ? "#075f93" : "#b22c7a");
     c.font = "800 8px ui-monospace, monospace";
     c.textAlign = "center";
-    c.fillText(
+    c.textBaseline = "alphabetic";
+    drawCanvasLabel(
+      c,
       side === "player" ? (mode2P ? "P1" : "YOU") : mode2P ? "P2" : "AI",
       robot.x,
       robot.y + 34,
@@ -880,26 +890,31 @@ export function makeRoboTennis(): Stage {
     c.save();
     for (let i = 0; i < ball.trail.length; i++) {
       const p = ball.trail[i];
-      c.globalAlpha = ((i + 1) / ball.trail.length) * 0.22;
-      c.fillStyle = "#fef08a";
+      c.globalAlpha = ((i + 1) / ball.trail.length) * (getTheme() === "light" ? 0.65 : 0.22);
+      c.fillStyle = themeColor("#5f7a14", "#fef08a");
       c.beginPath();
       c.arc(p.x, p.y - p.z * 0.42, 2 + i * 0.08, 0, Math.PI * 2);
       c.fill();
     }
     c.globalAlpha = 1;
-    c.fillStyle = `rgba(0,0,0,${Math.max(0.08, 0.3 - ball.z / 500)})`;
+    c.fillStyle = stageColor(`rgba(0,0,0,${Math.max(0.08, 0.3 - ball.z / 500)})`);
     c.beginPath();
     c.ellipse(ball.x, ball.y + 6, 10 + ball.z * 0.025, 5, 0, 0, Math.PI * 2);
     c.fill();
     const screenY = ball.y - ball.z * 0.42;
-    c.shadowColor = "#fef08a";
+    c.shadowColor = stageColor("#fef08a");
     c.shadowBlur = 12;
-    c.fillStyle = "#d9f99d";
+    c.fillStyle = stageColor("#d9f99d");
     c.beginPath();
     c.arc(ball.x, screenY, 7, 0, Math.PI * 2);
     c.fill();
     c.shadowBlur = 0;
-    c.strokeStyle = "#65a30d";
+    if (getTheme() === "light") {
+      c.strokeStyle = "#425c0a";
+      c.lineWidth = 2;
+      c.stroke();
+    }
+    c.strokeStyle = stageColor("#65a30d");
     c.lineWidth = 1.2;
     c.beginPath();
     c.arc(ball.x - 2, screenY, 4, -1.2, 1.2);
@@ -909,45 +924,45 @@ export function makeRoboTennis(): Stage {
 
   function drawHud(c: CanvasRenderingContext2D): void {
     c.save();
-    c.fillStyle = "rgba(3, 7, 18, 0.86)";
-    c.strokeStyle = "rgba(125, 211, 252, 0.4)";
+    c.fillStyle = withA(theme.scrim, 0.86);
+    c.strokeStyle = stageColor("rgba(7, 95, 147, 0.4)");
     c.lineWidth = 1;
     c.beginPath();
     c.roundRect(18, 14, 350, 58, 10);
     c.fill();
     c.stroke();
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.font = "900 17px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText(`${mode2P ? "P1" : "YOU"}  G${scorePlayer}  ${pointDisplay("player")}`, 34, 39);
-    c.fillStyle = "#94a3b8";
+    c.fillStyle = stageColor("#586a82");
     c.fillText("—", 174, 39);
-    c.fillStyle = "#f472b6";
+    c.fillStyle = stageColor("#b22c7a");
     c.fillText(`${pointDisplay("ai")}  G${scoreAi}  ${mode2P ? "P2" : "AI"}`, 202, 39);
-    c.fillStyle = "#eef2ff";
+    c.fillStyle = stageColor("#172b4d");
     c.font = "700 9px ui-monospace, monospace";
     c.fillText("BEST OF 3 GAMES", 34, 58);
-    c.fillStyle = "#5eead4";
+    c.fillStyle = stageColor("#087764");
     c.fillText(`RALLY ${rallyHits}`, 264, 58);
 
-    c.fillStyle = "rgba(3, 7, 18, 0.82)";
+    c.fillStyle = withA(theme.scrim, 0.82);
     c.beginPath();
     c.roundRect(W - 174, 14, 156, 43, 9);
     c.fill();
     c.stroke();
-    c.fillStyle = "#5eead4";
+    c.fillStyle = stageColor("#087764");
     c.font = "700 8px ui-monospace, monospace";
     c.fillText("● BALL TRACKING", W - 160, 32);
-    c.fillStyle = "#94a3b8";
+    c.fillStyle = stageColor("#586a82");
     c.fillText(`Z ${(ball.z / 100).toFixed(2)}m`, W - 160, 47);
 
     if (phase === "point" && pointText) {
-      c.fillStyle = "rgba(3, 7, 18, 0.8)";
+      c.fillStyle = withA(theme.scrim, 0.8);
       c.fillRect(0, H / 2 - 31, W, 62);
-      c.fillStyle = pointWinner === "player" ? "#5eead4" : "#fb7185";
+      c.fillStyle = stageColor(pointWinner === "player" ? "#087764" : "#be2949");
       c.font = "900 28px ui-monospace, monospace";
       c.textAlign = "center";
-      c.shadowColor = c.fillStyle;
+      c.shadowColor = stageColor(c.fillStyle);
       c.shadowBlur = 12;
       c.fillText(pointText, W / 2, H / 2 + 9);
     }
@@ -1037,21 +1052,21 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="ball tracker publishes a 3D pose to two tennis robots">
   <defs>
     <marker id="tennis-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
   </defs>
-  <rect x="8" y="25" width="116" height="70" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="66" y="51" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="11" font-weight="700">ball_tracker</text>
-  <text x="66" y="72" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">x / y / z</text>
-  <rect x="296" y="25" width="116" height="70" rx="8" fill="#181f3a" stroke="#fbbf24" stroke-width="1.5"/>
-  <text x="354" y="51" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">tennis robots</text>
-  <text x="354" y="72" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">move + swing</text>
-  <line x1="124" y1="60" x2="294" y2="60" stroke="#5eead4" stroke-width="2" marker-end="url(#tennis-arrow)"/>
-  <circle r="4" fill="#d9f99d" stroke="#65a30d">
+  <rect x="8" y="25" width="116" height="70" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="66" y="51" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">ball_tracker</text>
+  <text x="66" y="72" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">x / y / z</text>
+  <rect x="296" y="25" width="116" height="70" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <text x="354" y="51" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">tennis robots</text>
+  <text x="354" y="72" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">move + swing</text>
+  <line x1="124" y1="60" x2="294" y2="60" stroke="light-dark(#087764, #5eead4)" stroke-width="2" marker-end="url(#tennis-arrow)"/>
+  <circle r="4" fill="#d9f99d" stroke="light-dark(#425c0a, #65a30d)" stroke-width="1.5">
     <animateMotion dur="1.25s" repeatCount="indefinite" path="M 130 60 Q 210 15 288 60"/>
   </circle>
-  <text x="210" y="45" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="10" font-weight="700">/tennis/ball/pose</text>
-  <text x="210" y="82" text-anchor="middle" fill="#6e7a9c" font-family="ui-monospace, monospace" font-size="8">geometry_msgs/PointStamped</text>
+  <text x="210" y="45" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">/tennis/ball/pose</text>
+  <text x="210" y="82" text-anchor="middle" fill="light-dark(#586a82, #a4b5cd)" font-family="ui-monospace, monospace" font-size="8">geometry_msgs/PointStamped</text>
 </svg>
 `,
   lessonModal: {

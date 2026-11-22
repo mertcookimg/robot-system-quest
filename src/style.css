@@ -2,6 +2,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 /* Component-split entry. Each rule lives in src/styles/. */
+@import "./styles/theme-tokens.css";
+@import "./styles/theme-switcher.css";
 @import "./styles/00-base.css";
 @import "./styles/01-header.css";
 @import "./styles/02-mode-tabs.css";

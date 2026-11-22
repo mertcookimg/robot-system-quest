@@ -17,16 +17,15 @@ export const EN: Record<string, string> = {
   "ui.toast.newrecord": "NEW RECORD",
   "terminal.title": "ROS 2 CONCEPT TERMINAL · simulated",
   "terminal.stage": "stage: {name}",
-  "terminal.hint": "↑/↓ history · help for commands · Esc / B to return",
+  "terminal.hint": "↑/↓ history · help for commands",
   "terminal.command": "COMMAND",
   "terminal.select": "Select a command…",
   "terminal.inspect": "INSPECT",
   "terminal.run": "▶ RUN",
-  "terminal.resume": "Back to stage",
   "terminal.input": "Enter a ROS 2 command (try help)",
   "terminal.welcome": "ROS 2 concepts (simulated) · Robot System Quest Terminal",
   "terminal.guide":
-    'Select a command or type one. The stage pauses while using the terminal. Choose "Back to stage", press Esc, or press gamepad B to resume.',
+    "Select a command or type one. The stage keeps running while you use the terminal.",
   "terminal.noMessages":
     "No recorded messages on {topic} yet. Operate the lesson, then run this command again.",
   "terminal.snapshot":

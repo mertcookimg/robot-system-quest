@@ -1,13 +1,16 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+import { drawCanvasLabel } from "../../lib/canvas_text";
+
 // tag_chase: a game of tag
 // 1P: player runs; 2 AI taggers chase. Survive 60s to win.
 // 2P: P1 runs, P2 chases. Tagger wins by tagging within 30s; runner wins by surviving.
 // ROS 2 hook: multi-robot pursuit — each agent publishes /<name>/pose on a
 // shared topic, opponents subscribe to compute reactive control.
 import { W, H, type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { theme, withA, getTheme, themeColor } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
 import {
@@ -221,14 +224,14 @@ export function makeTagChase(): Stage {
 
     timeLeft = mode2P ? ROUND_TIME_2P : ROUND_TIME_1P;
 
-    runner = makeBody("P1", true, true, false, "#7dd3fc", "#1e3a5f");
+    runner = makeBody("P1", true, true, false, "#075f93", "#dce8f5");
     const rs = findSpawnSpot(ARENA.x + 90, ARENA.y + ARENA.h / 2);
     runner.x = rs.x;
     runner.y = rs.y;
     runner.theta = 0;
 
     if (mode2P) {
-      const p2 = makeBody("P2", false, true, true, "#fb7185", "#7f1d1d");
+      const p2 = makeBody("P2", false, true, true, "#be2949", "#7f1d1d");
       const ps = findSpawnSpot(ARENA.x + ARENA.w - 90, ARENA.y + ARENA.h / 2);
       p2.x = ps.x;
       p2.y = ps.y;
@@ -242,9 +245,9 @@ export function makeTagChase(): Stage {
         const isFlanker = i < params.flankCount;
         const colors =
           i === 0
-            ? { body: "#fb7185", outline: "#7f1d1d" }
+            ? { body: "#be2949", outline: "#7f1d1d" }
             : i === 1
-              ? { body: "#fbbf24", outline: "#7c2d12" }
+              ? { body: "#925b00", outline: "#7c2d12" }
               : { body: "#a3e635", outline: "#3f6212" };
         const ai = makeBody(
           `AI${i + 1}`,
@@ -510,16 +513,16 @@ export function makeTagChase(): Stage {
   function applyPickup(b: Body, item: Item) {
     if (item.kind === "dash") {
       b.dashT = Math.max(b.dashT, DASH_DURATION);
-      particles.burst(b.x, b.y, "#5eead4", 14, 180);
+      particles.burst(b.x, b.y, "#087764", 14, 180);
     } else {
       // PULSE: role-aware effect.
       if (b.isRunner) {
         // Drop a stun mine at the runner's current spot.
         mines.push({ x: b.x, y: b.y, age: 0 });
-        particles.burst(b.x, b.y, "#fbbf24", 14, 180);
+        particles.burst(b.x, b.y, "#925b00", 14, 180);
       } else {
         b.reachT = Math.max(b.reachT, REACH_DURATION);
-        particles.burst(b.x, b.y, "#fb7185", 14, 180);
+        particles.burst(b.x, b.y, "#be2949", 14, 180);
       }
     }
     g.sfx.pickup();
@@ -599,7 +602,7 @@ export function makeTagChase(): Stage {
         if (b.stunT > 0) continue;
         if (Math.hypot(b.x - m.x, b.y - m.y) < ROBOT_R + MINE_R) {
           b.stunT = STUN_DURATION;
-          particles.burst(m.x, m.y, "#fbbf24", 22, 230);
+          particles.burst(m.x, m.y, "#925b00", 22, 230);
           g.sfx.bump();
           g.shake(0.4);
           mines.splice(i, 1);
@@ -626,7 +629,7 @@ export function makeTagChase(): Stage {
       cleared = true;
       const tagger = bots[taggerIdx];
       particles.burst(tagger.x, tagger.y, tagger.bodyColor, 26, 220);
-      particles.burst(runner.x, runner.y, "#fb7185", 30, 180);
+      particles.burst(runner.x, runner.y, "#be2949", 30, 180);
       g.shake(0.6);
 
       if (mode2P) {
@@ -761,13 +764,13 @@ export function makeTagChase(): Stage {
   }
 
   function drawArena(c: CanvasRenderingContext2D) {
-    c.fillStyle = "rgba(15, 30, 56, 0.55)";
+    c.fillStyle = stageColor("rgba(232, 239, 247, 0.55)");
     c.fillRect(ARENA.x, ARENA.y, ARENA.w, ARENA.h);
-    c.strokeStyle = "rgba(125, 211, 252, 0.4)";
+    c.strokeStyle = stageColor("rgba(7, 95, 147, 0.4)");
     c.lineWidth = 2;
     c.strokeRect(ARENA.x, ARENA.y, ARENA.w, ARENA.h);
     // Subtle grid for orientation.
-    c.strokeStyle = "rgba(125, 211, 252, 0.06)";
+    c.strokeStyle = stageColor("rgba(7, 95, 147, 0.06)");
     c.lineWidth = 1;
     for (let x = ARENA.x; x <= ARENA.x + ARENA.w; x += 40) {
       c.beginPath();
@@ -785,9 +788,9 @@ export function makeTagChase(): Stage {
 
   function drawObstacles(c: CanvasRenderingContext2D) {
     for (const o of OBSTACLES) {
-      c.fillStyle = "rgba(94, 110, 160, 0.85)";
+      c.fillStyle = stageColor("rgba(94, 110, 160, 0.85)");
       c.fillRect(o.x, o.y, o.w, o.h);
-      c.strokeStyle = "rgba(180, 200, 240, 0.5)";
+      c.strokeStyle = stageColor("rgba(180, 200, 240, 0.5)");
       c.lineWidth = 1;
       c.strokeRect(o.x + 0.5, o.y + 0.5, o.w - 1, o.h - 1);
       // Diagonal hatch.
@@ -795,7 +798,7 @@ export function makeTagChase(): Stage {
       c.beginPath();
       c.rect(o.x, o.y, o.w, o.h);
       c.clip();
-      c.strokeStyle = "rgba(180, 200, 240, 0.18)";
+      c.strokeStyle = stageColor("rgba(180, 200, 240, 0.18)");
       const step = 8;
       for (let i = -o.h; i < o.w + o.h; i += step) {
         c.beginPath();
@@ -810,21 +813,21 @@ export function makeTagChase(): Stage {
   function drawItems(c: CanvasRenderingContext2D) {
     for (const it of items) {
       const pulse = 0.4 + 0.6 * Math.abs(Math.sin(it.age * 3));
-      const color = it.kind === "dash" ? "#5eead4" : "#fbbf24";
+      const color = it.kind === "dash" ? "#087764" : "#925b00";
       const glyph = it.kind === "dash" ? "⚡" : "✦";
 
       c.save();
       // Glow halo.
       c.globalAlpha = 0.18 + 0.25 * pulse;
-      c.fillStyle = color;
+      c.fillStyle = stageColor(color);
       c.beginPath();
       c.arc(it.x, it.y, ITEM_R + 4 + pulse * 3, 0, Math.PI * 2);
       c.fill();
 
       // Body.
       c.globalAlpha = 1;
-      c.fillStyle = "#0c1124";
-      c.strokeStyle = color;
+      c.fillStyle = stageColor("#f1f5fb");
+      c.strokeStyle = stageColor(color);
       c.lineWidth = 2;
       c.beginPath();
       c.arc(it.x, it.y, ITEM_R, 0, Math.PI * 2);
@@ -832,7 +835,7 @@ export function makeTagChase(): Stage {
       c.stroke();
 
       // Glyph.
-      c.fillStyle = color;
+      c.fillStyle = stageColor(color);
       c.font = "700 14px ui-monospace, monospace";
       c.textAlign = "center";
       c.textBaseline = "middle";
@@ -851,13 +854,13 @@ export function makeTagChase(): Stage {
 
       c.save();
       c.globalAlpha = 0.15 + 0.3 * pulse * lifeFrac;
-      c.fillStyle = "#fbbf24";
+      c.fillStyle = stageColor("#925b00");
       c.beginPath();
       c.arc(m.x, m.y, MINE_R + 3 + pulse * 2, 0, Math.PI * 2);
       c.fill();
 
-      c.globalAlpha = 0.8 * lifeFrac;
-      c.strokeStyle = "#fbbf24";
+      c.globalAlpha = getTheme() === "light" ? 0.65 + 0.35 * lifeFrac : 0.8 * lifeFrac;
+      c.strokeStyle = stageColor("#925b00");
       c.setLineDash([3, 3]);
       c.lineWidth = 1.5;
       c.beginPath();
@@ -866,8 +869,8 @@ export function makeTagChase(): Stage {
       c.setLineDash([]);
 
       // Cross marker.
-      c.globalAlpha = lifeFrac;
-      c.strokeStyle = "#fb7185";
+      c.globalAlpha = getTheme() === "light" ? 0.7 + 0.3 * lifeFrac : lifeFrac;
+      c.strokeStyle = stageColor("#be2949");
       c.lineWidth = 2;
       c.beginPath();
       c.moveTo(m.x - 4, m.y);
@@ -888,8 +891,8 @@ export function makeTagChase(): Stage {
       const d = Math.hypot(runner.x - tb.x, runner.y - tb.y);
       // Closer = redder + more opaque.
       const tnorm = Math.max(0, Math.min(1, (220 - d) / 220));
-      c.globalAlpha = 0.18 + 0.45 * tnorm;
-      c.strokeStyle = "#fb7185";
+      c.globalAlpha = getTheme() === "light" ? 0.55 + 0.4 * tnorm : 0.18 + 0.45 * tnorm;
+      c.strokeStyle = stageColor("#be2949");
       c.beginPath();
       c.moveTo(tb.x, tb.y);
       c.lineTo(runner.x, runner.y);
@@ -904,8 +907,11 @@ export function makeTagChase(): Stage {
     // Buff: extended-reach circle (taggers only).
     if (b.reachT > 0 && !b.isRunner) {
       c.save();
-      c.globalAlpha = 0.18 + 0.18 * Math.abs(Math.sin(elapsed * 5));
-      c.strokeStyle = "#fb7185";
+      c.globalAlpha =
+        getTheme() === "light"
+          ? 0.8 + 0.2 * Math.abs(Math.sin(elapsed * 5))
+          : 0.18 + 0.18 * Math.abs(Math.sin(elapsed * 5));
+      c.strokeStyle = stageColor("#be2949");
       c.lineWidth = 1.5;
       c.setLineDash([4, 4]);
       c.beginPath();
@@ -918,8 +924,8 @@ export function makeTagChase(): Stage {
     // Buff: dash trail (motion lines behind heading).
     if (b.dashT > 0 && Math.abs(b.v) > 1) {
       c.save();
-      const tailColor = b.isRunner ? "#5eead4" : "#fb7185";
-      c.strokeStyle = tailColor;
+      const tailColor = b.isRunner ? "#087764" : "#be2949";
+      c.strokeStyle = stageColor(tailColor);
       c.lineWidth = 2;
       for (let k = 0; k < 4; k++) {
         const off = (k + 1) * 6;
@@ -944,7 +950,7 @@ export function makeTagChase(): Stage {
 
     // Outer ring + role indicator.
     c.save();
-    c.strokeStyle = b.bodyColor;
+    c.strokeStyle = stageColor(b.bodyColor);
     c.lineWidth = b.isHuman ? 2.5 : 1.8;
     c.beginPath();
     c.arc(b.x, b.y, ROBOT_R, 0, Math.PI * 2);
@@ -954,7 +960,7 @@ export function makeTagChase(): Stage {
     if (b.isRunner) {
       const pulse = 0.4 + 0.4 * Math.abs(Math.sin(elapsed * 3));
       c.globalAlpha = pulse * 0.45;
-      c.strokeStyle = "#7dd3fc";
+      c.strokeStyle = stageColor("#075f93");
       c.lineWidth = 1.5;
       c.beginPath();
       c.arc(b.x, b.y, ROBOT_R + 5 + pulse * 3, 0, Math.PI * 2);
@@ -962,7 +968,7 @@ export function makeTagChase(): Stage {
       c.globalAlpha = 1;
     } else {
       // Tagger: small triangle indicating heading.
-      c.fillStyle = b.bodyColor;
+      c.fillStyle = stageColor(b.bodyColor);
       const tx = b.x + Math.cos(b.theta) * (ROBOT_R + 2);
       const ty = b.y + Math.sin(b.theta) * (ROBOT_R + 2);
       const px = -Math.sin(b.theta),
@@ -981,7 +987,7 @@ export function makeTagChase(): Stage {
       c.save();
       c.translate(b.x, b.y - ROBOT_R - 12);
       c.rotate(elapsed * 6);
-      c.strokeStyle = "#fbbf24";
+      c.strokeStyle = stageColor("#925b00");
       c.lineWidth = 2;
       c.beginPath();
       c.moveTo(-5, -5);
@@ -994,18 +1000,19 @@ export function makeTagChase(): Stage {
 
     // Label above head.
     c.save();
-    c.fillStyle = b.bodyColor;
+    c.fillStyle = stageColor(b.bodyColor);
     c.font = (b.isHuman ? "700 10px " : "700 8px ") + "ui-monospace, monospace";
     c.textAlign = "center";
-    c.fillText(b.label, b.x, b.y - ROBOT_R - 5);
+    c.textBaseline = "alphabetic";
+    drawCanvasLabel(c, b.label, b.x, b.y - ROBOT_R - 5);
     if (b.isRunner) {
-      c.fillStyle = "rgba(125,211,252,0.55)";
+      c.fillStyle = themeColor("#075f93", stageColor("rgba(7, 95, 147,0.55)"));
       c.font = "8px ui-monospace, monospace";
-      c.fillText(t("tag_chase.label.runner"), b.x, b.y + ROBOT_R + 11);
+      drawCanvasLabel(c, t("tag_chase.label.runner"), b.x, b.y + ROBOT_R + 11);
     } else {
-      c.fillStyle = "rgba(251,113,133,0.55)";
+      c.fillStyle = themeColor("#be2949", stageColor("rgba(190, 41, 73,0.55)"));
       c.font = "8px ui-monospace, monospace";
-      c.fillText(t("tag_chase.label.tagger"), b.x, b.y + ROBOT_R + 11);
+      drawCanvasLabel(c, t("tag_chase.label.tagger"), b.x, b.y + ROBOT_R + 11);
     }
     c.restore();
   }
@@ -1019,15 +1026,15 @@ export function makeTagChase(): Stage {
       by = 18;
     c.save();
     c.fillStyle = withA(theme.scrim, 0.9);
-    c.strokeStyle = "rgba(125,211,252,0.4)";
+    c.strokeStyle = stageColor("rgba(7, 95, 147,0.4)");
     c.lineWidth = 1;
     c.fillRect(bx - 2, by - 2, barW + 4, barH + 4);
     c.strokeRect(bx - 2, by - 2, barW + 4, barH + 4);
-    c.fillStyle = "#0a0e1f";
+    c.fillStyle = stageColor("#d8e2ef");
     c.fillRect(bx, by, barW, barH);
     // Fill: green → amber → red as time runs out.
-    const col = frac > 0.6 ? "#5eead4" : frac > 0.25 ? "#fbbf24" : "#fb7185";
-    c.fillStyle = col;
+    const col = frac > 0.6 ? "#087764" : frac > 0.25 ? "#925b00" : "#be2949";
+    c.fillStyle = stageColor(col);
     c.fillRect(bx, by, barW * frac, barH);
     c.fillStyle = COLORS.FG;
     c.font = "700 11px ui-monospace, monospace";
@@ -1035,7 +1042,7 @@ export function makeTagChase(): Stage {
     c.fillText(
       `${t("tag_chase.label.survive")}  ${timeLeft.toFixed(1)} / ${total.toFixed(0)} s`,
       W / 2,
-      by + barH / 2 + 4,
+      by + barH + 17,
     );
     c.restore();
   }
@@ -1049,7 +1056,7 @@ export function makeTagChase(): Stage {
       color = COLORS.WARN;
     } else if (remaining > 0.5) {
       text = "SET";
-      color = "#fbbf24";
+      color = "#925b00";
     }
 
     const phase = text === "GO!" ? Math.min(1, (0.5 - remaining) / 0.5) : 1 - (remaining % 1);
@@ -1059,11 +1066,11 @@ export function makeTagChase(): Stage {
     const scale = text === "GO!" ? 1 + (1 - Math.min(1, phase * 2)) * 1.5 : 1 + phase * 0.25;
     c.scale(scale, scale);
     c.globalAlpha = text === "GO!" ? Math.max(0, 1 - phase * 0.6) : 0.85 + phase * 0.15;
-    c.fillStyle = color;
+    c.fillStyle = stageColor(color);
     c.font = "700 88px ui-monospace, monospace";
     c.textAlign = "center";
     c.textBaseline = "middle";
-    c.shadowColor = color;
+    c.shadowColor = stageColor(color);
     c.shadowBlur = 30;
     c.fillText(text, 0, 0);
     c.restore();
@@ -1152,31 +1159,31 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="runner publishes pose, two taggers subscribe and chase">
   <defs>
     <marker id="ld-tag-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#fb7185"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#be2949, #fda4af)"/>
     </marker>
     <marker id="ld-tag-pose" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#7dd3fc"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#075f93, #7dd3fc)"/>
     </marker>
   </defs>
   <!-- runner box -->
-  <rect x="20" y="44" width="120" height="34" rx="6" fill="#0c1124" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="80" y="60" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="11" font-weight="700">runner</text>
-  <text x="80" y="73" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">pub /runner/pose</text>
+  <rect x="20" y="44" width="120" height="34" rx="6" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="80" y="60" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">runner</text>
+  <text x="80" y="73" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">pub /runner/pose</text>
   <!-- tagger1 box -->
-  <rect x="280" y="14" width="120" height="34" rx="6" fill="#0c1124" stroke="#fb7185" stroke-width="1.5"/>
-  <text x="340" y="30" text-anchor="middle" fill="#fb7185" font-family="ui-monospace, monospace" font-size="11" font-weight="700">tagger1</text>
-  <text x="340" y="43" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">sub → cmd_vel</text>
+  <rect x="280" y="14" width="120" height="34" rx="6" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#be2949, #fda4af)" stroke-width="1.5"/>
+  <text x="340" y="30" text-anchor="middle" fill="light-dark(#be2949, #fda4af)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">tagger1</text>
+  <text x="340" y="43" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">sub → cmd_vel</text>
   <!-- tagger2 box -->
-  <rect x="280" y="74" width="120" height="34" rx="6" fill="#0c1124" stroke="#fbbf24" stroke-width="1.5"/>
-  <text x="340" y="90" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">tagger2</text>
-  <text x="340" y="103" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">sub → cmd_vel</text>
+  <rect x="280" y="74" width="120" height="34" rx="6" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <text x="340" y="90" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">tagger2</text>
+  <text x="340" y="103" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">sub → cmd_vel</text>
   <!-- pose lines (cyan) -->
-  <line x1="140" y1="55" x2="278" y2="30" stroke="#7dd3fc" stroke-width="1.5" marker-end="url(#ld-tag-pose)"/>
-  <line x1="140" y1="65" x2="278" y2="90" stroke="#7dd3fc" stroke-width="1.5" marker-end="url(#ld-tag-pose)"/>
-  <text x="200" y="38" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9">/runner/pose</text>
+  <line x1="140" y1="55" x2="278" y2="30" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5" marker-end="url(#ld-tag-pose)"/>
+  <line x1="140" y1="65" x2="278" y2="90" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5" marker-end="url(#ld-tag-pose)"/>
+  <text x="200" y="38" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9">/runner/pose</text>
   <!-- chase arrows (pink, dashed) -->
-  <line x1="278" y1="40" x2="146" y2="55" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.7" marker-end="url(#ld-tag-arrow)"/>
-  <line x1="278" y1="92" x2="146" y2="65" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.7" marker-end="url(#ld-tag-arrow)"/>
+  <line x1="278" y1="40" x2="146" y2="55" stroke="light-dark(#be2949, #fda4af)" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.7" marker-end="url(#ld-tag-arrow)"/>
+  <line x1="278" y1="92" x2="146" y2="65" stroke="light-dark(#be2949, #fda4af)" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.7" marker-end="url(#ld-tag-arrow)"/>
 </svg>
 `,
   lessonModal: {

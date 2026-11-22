@@ -14,6 +14,7 @@ let browser: Window;
 let server: ViteDevServer;
 let input: typeof import("../src/core/input");
 let twoPlayer: typeof import("../src/lib/two_player");
+let stageGamepads: typeof import("../src/lib/stage_gamepads");
 let nav: typeof import("../src/lib/navpad");
 let arm: typeof import("../src/lib/armpad");
 let help: typeof import("../src/core/help");
@@ -32,9 +33,11 @@ let makePubsub: (typeof import("../src/stages/lesson/pubsub_builder"))["makePubs
 let pageHidden = false;
 let pads: Array<Gamepad | null> = [];
 let updates = 0;
+let elapsed = 0;
 let draws = 0;
 let actions = 0;
 let forwardFrames = 0;
+let rawInputFrames = 0;
 let nexts = 0;
 let restarts = 0;
 let allClears = 0;
@@ -102,6 +105,9 @@ before(async () => {
   ui = (await server.ssrLoadModule("/src/core/dom.ts")).ui;
   input = (await server.ssrLoadModule("/src/core/input.ts")) as typeof input;
   twoPlayer = (await server.ssrLoadModule("/src/lib/two_player.ts")) as typeof twoPlayer;
+  stageGamepads = (await server.ssrLoadModule(
+    "/src/lib/stage_gamepads.ts",
+  )) as typeof stageGamepads;
   nav = (await server.ssrLoadModule("/src/lib/navpad.ts")) as typeof nav;
   arm = (await server.ssrLoadModule("/src/lib/armpad.ts")) as typeof arm;
   help = (await server.ssrLoadModule("/src/core/help.ts")) as typeof help;
@@ -130,11 +136,21 @@ before(async () => {
     init() {},
     reset() {},
     dispose() {},
-    update() {
+    update(dt) {
       updates++;
+      elapsed += dt;
       const direct = twoPlayer.pollP1();
       if (direct.actionEdge) actions++;
       if (direct.fwd) forwardFrames++;
+      if (
+        stageGamepads
+          .readStageGamepads()
+          .some(
+            (pad) =>
+              pad && (pad.axes.some(Boolean) || pad.buttons.some((button) => button.pressed)),
+          )
+      )
+        rawInputFrames++;
     },
     draw() {
       draws++;
@@ -143,7 +159,10 @@ before(async () => {
   manager.setStages([current]);
   manager.buildGameContext(ui.canvas, {} as CanvasRenderingContext2D);
   menu.setupStageMenu({ getCurrentStageId: () => current.id, loadStage() {} });
-  terminal.setupTerminal({ getConcept: () => current.ros2, getStageName: () => current.name });
+  terminal.setupTerminal({
+    getConcept: () => manager.getCurrent().ros2,
+    getStageName: () => manager.getCurrent().name,
+  });
   clear.setupClearOverlay({
     onRestart() {
       restarts++;
@@ -200,9 +219,11 @@ beforeEach(() => {
   input.syncKeys();
   void manager.loadStage(current.id);
   updates =
+    elapsed =
     draws =
     actions =
     forwardFrames =
+    rawInputFrames =
     nexts =
     restarts =
     allClears =
@@ -284,7 +305,11 @@ function loadActualStage(
   }) as unknown as CanvasRenderingContext2D;
   const publications: string[] = [];
   const game = manager.buildGameContext(ui.canvas, context);
-  game.publish = (topic) => publications.push(topic);
+  const publish = game.publish;
+  game.publish = (topic, message) => {
+    publications.push(topic);
+    publish(topic, message);
+  };
   manager.setStages([current, stage]);
   manager.loadStage(stage.id);
   actualStage = stage;
@@ -348,6 +373,31 @@ test("an unrecorded 2P result keeps P1's best time and stars untouched", async (
   assert.equal(progress.loadProgress()[current.id]?.stars, 3);
 });
 
+test("long completion results escape the canvas clip, scroll by keyboard and restore their DOM slot", () => {
+  const originalNodes = [...ui.canvasWrap.childNodes];
+  const deps = { current, stages: [current], onRenderSelector() {} };
+  const stats = Array.from({ length: 30 }, (_, i) => `Result ${i}: <b>complete</b>`).join("<br>");
+  clear.show(3, stats, deps, { record: false });
+  assert.equal(ui.clearOverlay.parentElement, document.body);
+  assert.equal(ui.clearStats.querySelectorAll("b").length, 30);
+  assert.equal(document.activeElement, ui.nextBtn);
+  const down = key("PageDown", "keydown", ui.nextBtn);
+  assert.equal(down.defaultPrevented, true);
+  assert.ok(ui.clearStats.scrollTop > 0, "Results can be read without moving the action focus");
+  assert.equal(document.activeElement, ui.nextBtn);
+  key("Home", "keydown", ui.nextBtn);
+  assert.equal(ui.clearStats.scrollTop, 0);
+  ui.clearStats.scrollTop = 120;
+  clear.close();
+  assert.deepEqual([...ui.canvasWrap.childNodes], originalNodes);
+  clear.show(1, "Another result", deps, { record: false });
+  assert.equal(ui.clearStats.scrollTop, 0, "A new result opens at its beginning");
+  ui.nextBtn.click();
+  assert.equal(clear.isOpen(), false);
+  assert.equal(nexts, 1);
+  assert.deepEqual([...ui.canvasWrap.childNodes], originalNodes);
+});
+
 test("only the clear that first completes every stage leads to the all-clear screen", async () => {
   const progress = (await server.ssrLoadModule(
     "/src/core/progress.ts",
@@ -368,6 +418,23 @@ test("only the clear that first completes every stage leads to the all-clear scr
   ui.nextBtn.click();
   assert.equal(allClears, 1);
   assert.equal(nexts, 1);
+});
+
+test("all-clear lets keyboard users read all 38 results and resets its scroll on reopening", async () => {
+  const allclear = await server.ssrLoadModule("/src/core/allclear.ts");
+  allclear.setupAllClear(() => {});
+  const stages = Array.from({ length: 38 }, (_, i) => ({ ...current, id: `review-${i}` }));
+  allclear.show(stages);
+  ui.allclearRestart.focus();
+  assert.equal(ui.allclearStars.children.length, 38);
+  const down = key("PageDown", "keydown", ui.allclearRestart);
+  assert.equal(down.defaultPrevented, true);
+  assert.ok(ui.allclearStars.scrollTop > 0);
+  assert.equal(document.activeElement, ui.allclearRestart);
+  allclear.hide();
+  allclear.show(stages);
+  assert.equal(ui.allclearStars.scrollTop, 0);
+  allclear.hide();
 });
 
 test("holding R resets once instead of on every auto-repeat", () => {
@@ -465,20 +532,10 @@ test("blur and hidden documents release shared keys and both direct-player key s
   }
 });
 
-test("help, stage menu, terminal palette and terminal focus pause updates while drawing continues", () => {
+test("help and stage menu pause updates while drawing continues", () => {
   const cases = [
     { name: "help", open: () => help.open(), close: () => help.close() },
     { name: "stage menu", open: () => menu.openMenu(), close: () => menu.closeMenu() },
-    {
-      name: "palette",
-      open: () => terminal.openPadPalette(),
-      close: () => terminal.closePadPalette(),
-    },
-    {
-      name: "terminal input",
-      open: () => ui.terminalInput.focus(),
-      close: () => ui.canvas.focus(),
-    },
   ];
   for (const item of cases) {
     pads = [];
@@ -506,6 +563,78 @@ test("help, stage menu, terminal palette and terminal focus pause updates while 
   }
 });
 
+test("terminal input, command controls and palette keep time running while capturing player input", (t) => {
+  let now = performance.now();
+  t.mock.method(performance, "now", () => now);
+  const cases = [
+    ...["terminal-input", "terminal-command-select", "terminal-command-run"].map((id) => ({
+      name: id,
+      open: () => document.getElementById(id)!.focus(),
+    })),
+    { name: "palette", open: () => terminal.openPadPalette() },
+  ];
+  for (const item of cases) {
+    item.open();
+    const target = document.activeElement!;
+    for (const value of ["w", "a", "s", "d"]) key(value, "keydown", target);
+    ui.terminalInput.value = "ros2 topic list";
+    key("Enter", "keydown", target);
+    if (item.name === "terminal-command-run") (target as HTMLButtonElement).click();
+    const controller = pad([0, 12], [0, -1, 1, 0]);
+    const before = updates;
+    const timeBefore = elapsed;
+    const drawnBefore = draws;
+    now += 50;
+    frame();
+    assert.equal(updates, before + 1, `${item.name} must keep the lesson updating`);
+    assert.ok(elapsed > timeBefore, `${item.name} must keep lesson time advancing`);
+    assert.ok(draws > drawnBefore, `${item.name} must keep rendering`);
+    assert.equal(actions, 0, `${item.name} must consume Enter and gamepad A`);
+    assert.equal(forwardFrames, 0, `${item.name} must capture WASD and gamepad movement`);
+    assert.equal(
+      rawInputFrames,
+      0,
+      `${item.name} must also neutralize raw gamepad axes and buttons`,
+    );
+    assert.equal(input.getKeys().size, 0);
+    assert.equal(twoPlayer.pollP1().fwd, false);
+    arm.poll();
+    assert.equal(arm.rightStickX(), 0);
+    assert.equal(arm.buttonEdge(0), false);
+    nav.activateNavpad();
+    nav.pollNavpad(controller);
+    assert.equal(canvasDowns, 0);
+    nav.deactivateNavpad();
+    for (const value of ["w", "a", "s", "d", "Enter"]) key(value, "keyup", target);
+    pads = [];
+    terminal.closePadPalette();
+    ui.canvas.focus();
+  }
+});
+
+for (const closeButton of [1, 10]) {
+  test(`closing the terminal with ${closeButton === 1 ? "B" : "L3"} keeps updates live and consumes the frame's input`, () => {
+    terminal.openPadPalette();
+    pad();
+    frame();
+    const before = updates;
+    pad([closeButton, 0, 12], [0, -1, 1, 0]);
+    frame();
+    assert.equal(terminal.isPadPaletteOpen(), false);
+    assert.ok(document.activeElement === ui.canvas);
+    assert.equal(updates, before + 1, "Closing the palette must not skip a simulation tick");
+    assert.equal(actions, 0, "A pressed while dismissing the terminal belongs to the terminal");
+    assert.equal(forwardFrames, 0, "Raw gamepad axes must stay neutral for the dismissal frame");
+    assert.equal(rawInputFrames, 0, "Direct gamepad readers must also consume the dismissal frame");
+    pad();
+    frame();
+    pad([0], [0, -1, 0, 0]);
+    frame();
+    assert.equal(actions, 1, "A fresh action must reach the stage after dismissal");
+    assert.equal(forwardFrames, 1, "Fresh movement must reach the stage after dismissal");
+  });
+}
+
 test("A used for terminal commands does not also trigger a game action and fresh presses resume", () => {
   terminal.openPadPalette();
   pad();
@@ -513,7 +642,7 @@ test("A used for terminal commands does not also trigger a game action and fresh
   const before = ui.terminalBody.querySelectorAll(".tline-cmd").length;
   pad([0]);
   frame();
-  assert.equal(updates, 0);
+  assert.equal(updates, 2, "Terminal commands must leave simulation updates running");
   assert.equal(actions, 0);
   assert.equal(ui.terminalBody.querySelectorAll(".tline-cmd").length, before + 1);
   assert.equal(twoPlayer.pollP1().actionEdge, false);
@@ -528,6 +657,65 @@ test("A used for terminal commands does not also trigger a game action and fresh
   pad([0]);
   frame();
   assert.equal(actions, 1, "A fresh controller press must still reach the stage");
+});
+
+test("Feedforward keeps moving and publishing current odometry while the terminal is in use", async (t) => {
+  const { makeFeedforwardController } = await server.ssrLoadModule(
+    "/src/stages/lesson/feedforward_controller.ts",
+  );
+  const topics = (await server.ssrLoadModule(
+    "/src/core/topic_monitor.ts",
+  )) as typeof import("../src/core/topic_monitor");
+  let now = performance.now();
+  t.mock.method(performance, "now", () => now);
+  const lesson = makeFeedforwardController() as Stage;
+  loadActualStage(lesson);
+  (document.getElementById("be-run") as HTMLButtonElement).click();
+  const advance = () => {
+    for (let index = 0; index < 4; index++) {
+      now += 50;
+      frame();
+    }
+  };
+  const currentOdometry = () => topics.recentMessages("/robot/odom", 1)[0];
+
+  ui.terminalInput.focus();
+  advance();
+  const first = currentOdometry();
+  assert.ok(first, "The running lesson must publish odometry with terminal input focused");
+  assert.match(ui.info.textContent ?? "", /mode:\s+running/);
+
+  const select = document.getElementById("terminal-command-select") as HTMLSelectElement;
+  select.focus();
+  select.value = "ros2 topic echo /robot/odom";
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+  advance();
+  const second = currentOdometry();
+  assert.ok(second.ts > first.ts, "Selecting an inspection command must keep topics live");
+  assert.notEqual(
+    second.msg,
+    first.msg,
+    "Autonomous motion must continue while selecting a command",
+  );
+
+  const run = document.getElementById("terminal-command-run") as HTMLButtonElement;
+  run.focus();
+  advance();
+  const third = currentOdometry();
+  assert.ok(third.ts > second.ts, "The Run control must not pause the lesson");
+  assert.notEqual(third.msg, second.msg);
+  run.click();
+  assert.ok(
+    ui.terminalBody.textContent?.includes(third.msg),
+    "Terminal echo must show odometry from the still-running lesson",
+  );
+
+  terminal.openPadPalette();
+  advance();
+  const fourth = currentOdometry();
+  assert.ok(fourth.ts > third.ts, "The gamepad palette must keep topics live");
+  assert.notEqual(fourth.msg, third.msg, "The robot must keep moving while inspecting via gamepad");
+  assert.match(ui.info.textContent ?? "", /t:\s+0\.80\s*\/\s*1\.00 s/);
 });
 
 test("a visible Help dialog owns A while raw players, arm and Navigation remain idle", () => {
@@ -648,7 +836,7 @@ test("UI dismissal and stage reinitialization consume controller actions before 
   assert.equal(arm.buttonEdge(0), true, "Fresh arm commands remain usable after reinitialization");
 });
 
-test("Tennis pointer movement respects terminal, modal and inactive-page pauses", () => {
+test("Tennis pointer movement respects terminal capture, modals and inactive pages", () => {
   const tennis = makeTennis();
   const positions: number[][] = [];
   loadActualStage(tennis, { translate: (x, y) => positions.push([x, y]) });
@@ -700,7 +888,7 @@ test("Tennis pointer movement respects terminal, modal and inactive-page pauses"
   assert.deepEqual(playerPosition(), [260, 180], "Fresh pointer movement must work after resuming");
 });
 
-test("Tennis discards paused pointer actions and clicks queued before a pause", () => {
+test("Tennis discards pointer actions during terminal capture and other interruptions", () => {
   const tennis = makeTennis();
   loadActualStage(tennis);
   const click = () =>
@@ -761,6 +949,55 @@ test("Tennis discards paused pointer actions and clicks queued before a pause", 
         "A fresh click must serve after resuming",
       );
     }
+  }
+});
+
+test("Baseball keeps pitching while terminal capture discards queued and new pointer swings", (t) => {
+  let now = performance.now();
+  t.mock.method(performance, "now", () => now);
+  const baseball = makeBaseball();
+  const publications = loadActualStage(baseball);
+  const click = () =>
+    ui.canvas.dispatchEvent(
+      new browser.PointerEvent("pointerdown", {
+        pointerType: "touch",
+        clientX: 600,
+        clientY: 250,
+      }),
+    );
+  const count = (topic: string) => publications.filter((value) => value === topic).length;
+
+  for (const queuedBeforeFocus of [false, true]) {
+    baseball.reset();
+    ui.canvas.focus();
+    baseball.update(0.8); // Ready -> pitch, so a stale swing would publish /bat/swing.
+    const swingsBefore = count("/bat/swing");
+    const pitchesBefore = count("/pitch/trajectory");
+    if (queuedBeforeFocus) click();
+    ui.terminalInput.focus();
+    if (!queuedBeforeFocus) click();
+    key("e", "keydown", ui.terminalInput);
+    key("e", "keyup", ui.terminalInput);
+    for (let index = 0; index < 4; index++) {
+      now += 50;
+      frame();
+    }
+    assert.ok(
+      count("/pitch/trajectory") > pitchesBefore,
+      "Terminal focus must keep the actual pitch simulation and topics advancing",
+    );
+    assert.equal(
+      count("/bat/swing"),
+      swingsBefore,
+      queuedBeforeFocus
+        ? "A queued swing must be discarded on focus"
+        : "Terminal input must not swing",
+    );
+    ui.canvas.focus();
+    click();
+    now += 50;
+    frame();
+    assert.equal(count("/bat/swing"), swingsBefore + 1, "A fresh canvas click must still swing");
   }
 });
 

@@ -1,6 +1,9 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+import { theme } from "../../core/theme";
+
 // object_detection: Simulated OBJ Detection
 // Same teleop base as edge_detection (Camera + Teleop).
 // No real ML: bbox / class / confidence are synthesized from ground-truth
@@ -512,38 +515,48 @@ export function makeObjectDetection(): Stage {
     c.save();
     mission.drawRightPanelFrame(c);
 
-    c.fillStyle = "#7dd3fc";
+    c.fillStyle = stageColor("#075f93");
     c.font = "700 16px ui-monospace, monospace";
     c.textAlign = "left";
     c.fillText("CAMERA + DETECTOR", x0, 22);
 
     // INPUT camera image.
     c.drawImage(mission.camCanvas, x0, 32);
-    c.strokeStyle = "rgba(35,44,77,0.9)";
+    c.strokeStyle = theme.fgDim;
     c.strokeRect(x0 - 1, 31, IMG_W + 2, IMG_H + 2);
 
+    // Keep partially visible detections inside the image, away from the title.
+    c.save();
+    c.beginPath();
+    c.rect(x0, 32, IMG_W, IMG_H);
+    c.clip();
     // Draw bboxes on the camera image.
     for (const [index, d] of detections.entries()) {
-      const col = d.color || "#7dd3fc";
+      const col = d.color || "#075f93";
       c.save();
       c.strokeStyle = col;
       c.lineWidth = d.isReal ? 1.6 : 1;
       c.globalAlpha = d.isReal ? 0.95 : 0.7;
+      c.setLineDash(d.isReal ? [] : [3, 2]);
       c.strokeRect(x0 + d.bbox.x, 32 + d.bbox.y, d.bbox.w, d.bbox.h);
+      c.setLineDash([]);
       // Match each box to the unscaled HTML result, without tiny repeated text.
       const label = String(index + 1);
       c.font = "700 16px ui-monospace, monospace";
       const tw = c.measureText(label).width;
-      c.globalAlpha = d.isReal ? 0.85 : 0.55;
+      const labelX = Math.max(x0, Math.min(x0 + IMG_W - tw - 8, x0 + d.bbox.x));
+      const labelY = Math.max(32, Math.min(32 + IMG_H - 19, 32 + d.bbox.y - 19));
+      c.globalAlpha = 1;
       c.fillStyle = col;
-      c.fillRect(x0 + d.bbox.x, 32 + d.bbox.y - 19, tw + 8, 19);
+      c.fillRect(labelX, labelY, tw + 8, 19);
       c.fillStyle = COLORS.BG_DARK;
       c.globalAlpha = 1;
       c.textAlign = "left";
-      c.fillText(label, x0 + d.bbox.x + 4, 32 + d.bbox.y - 3);
+      c.fillText(label, labelX + 4, labelY + 16);
       c.restore();
     }
 
+    c.restore();
     c.restore();
   }
 
@@ -618,34 +631,34 @@ export default defineStage({
   diagram: `
 <svg viewBox="0 0 420 120" role="img" aria-label="Example confidence scores and threshold; confidence filter accepts detections at or above the threshold">
   <!-- camera image -->
-  <rect x="14" y="14" width="190" height="88" rx="4" fill="#0c1124" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="22" y="100" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9">/image_raw</text>
+  <rect x="14" y="14" width="190" height="88" rx="4" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="22" y="100" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9">/image_raw</text>
   <!-- mock objects in image -->
-  <circle cx="58" cy="58" r="14" fill="#fbbf24" opacity="0.85"/>
-  <rect x="108" y="38" width="22" height="38" fill="#5eead4" opacity="0.85"/>
-  <circle cx="170" cy="62" r="11" fill="#c4b5fd" opacity="0.85"/>
+  <circle cx="58" cy="58" r="14" fill="light-dark(#925b00, #fbbf24)" opacity="0.85"/>
+  <rect x="108" y="38" width="22" height="38" fill="light-dark(#087764, #5eead4)" opacity="0.85"/>
+  <circle cx="170" cy="62" r="11" fill="light-dark(#6d42b5, #c4b5fd)" opacity="0.85"/>
   <!-- bounding boxes (detector output) -->
-  <rect x="40" y="42" width="38" height="32" fill="none" stroke="#5eead4" stroke-width="1.5" stroke-dasharray="3 2"/>
-  <rect x="40" y="32" width="44" height="11" fill="#5eead4"/>
-  <text x="42" y="40" fill="#0c1124" font-family="ui-monospace, monospace" font-size="8" font-weight="700">ball 0.92</text>
-  <rect x="100" y="32" width="38" height="50" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3 2"/>
-  <rect x="100" y="22" width="42" height="11" fill="#fbbf24"/>
-  <text x="102" y="30" fill="#0c1124" font-family="ui-monospace, monospace" font-size="8" font-weight="700">box 0.55</text>
-  <rect x="155" y="48" width="32" height="30" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="3 2"/>
-  <rect x="155" y="38" width="38" height="11" fill="#fb7185"/>
-  <text x="157" y="46" fill="#0c1124" font-family="ui-monospace, monospace" font-size="8" font-weight="700">cone 0.42</text>
+  <rect x="40" y="42" width="38" height="32" fill="none" stroke="light-dark(#087764, #5eead4)" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <rect x="40" y="32" width="44" height="11" fill="light-dark(#087764, #5eead4)"/>
+  <text x="42" y="40" fill="var(--on-accent)" font-family="ui-monospace, monospace" font-size="8" font-weight="700">ball 0.92</text>
+  <rect x="100" y="32" width="38" height="50" fill="none" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <rect x="100" y="22" width="42" height="11" fill="light-dark(#925b00, #fbbf24)"/>
+  <text x="102" y="30" fill="var(--on-accent)" font-family="ui-monospace, monospace" font-size="8" font-weight="700">box 0.55</text>
+  <rect x="155" y="48" width="32" height="30" fill="none" stroke="light-dark(#be2949, #fda4af)" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <rect x="155" y="38" width="38" height="11" fill="light-dark(#be2949, #fda4af)"/>
+  <text x="157" y="46" fill="var(--on-accent)" font-family="ui-monospace, monospace" font-size="8" font-weight="700">cone 0.42</text>
   <!-- threshold bar (right) -->
-  <rect x="226" y="20" width="180" height="78" rx="6" fill="#181f3a" stroke="#fbbf24" stroke-width="1.5"/>
-  <text x="316" y="38" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="11" font-weight="700">conf_filter</text>
-  <rect x="240" y="56" width="152" height="12" rx="2" fill="#0c1124"/>
-  <rect x="240" y="56" width="76" height="12" rx="2" fill="#5eead4" opacity="0.4"/>
-  <rect x="316" y="56" width="76" height="12" rx="2" fill="#5eead4"/>
-  <line x1="316" y1="50" x2="316" y2="74" stroke="#fbbf24" stroke-width="2"/>
-  <text x="316" y="48" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="9">thr=0.5</text>
-  <text x="240" y="84" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">0.0</text>
-  <text x="394" y="84" text-anchor="end" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">1.0</text>
-  <text x="316" y="94" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="9">conf ≥ thr → accept</text>
-  <text x="210" y="113" text-anchor="middle" fill="#9aa6c8" font-family="system-ui, sans-serif" font-size="8">数値は例 / EXAMPLE VALUES</text>
+  <rect x="226" y="20" width="180" height="78" rx="6" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <text x="316" y="38" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">conf_filter</text>
+  <rect x="240" y="56" width="152" height="12" rx="2" fill="light-dark(#f1f5fb, #131f35)"/>
+  <rect x="240" y="56" width="76" height="12" rx="2" fill="light-dark(#087764, #5eead4)" opacity="0.4"/>
+  <rect x="316" y="56" width="76" height="12" rx="2" fill="light-dark(#087764, #5eead4)"/>
+  <line x1="316" y1="50" x2="316" y2="74" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2"/>
+  <text x="316" y="48" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="9">thr=0.5</text>
+  <text x="240" y="84" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">0.0</text>
+  <text x="394" y="84" text-anchor="end" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">1.0</text>
+  <text x="316" y="94" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="9">conf ≥ thr → accept</text>
+  <text x="210" y="113" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="system-ui, sans-serif" font-size="8">数値は例 / EXAMPLE VALUES</text>
 </svg>
 `,
   lessonModal: {

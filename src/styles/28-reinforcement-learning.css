@@ -1,6 +1,7 @@
 /* Copyright 2026 Masato Kobayashi */
 /* SPDX-License-Identifier: Apache-2.0 */
 .reinforcement-lab {
+  overflow-wrap: anywhere;
   box-sizing: border-box;
   position: relative;
   width: min(800px, 100%);
@@ -10,7 +11,7 @@
   border-radius: 10px;
   background: var(--panel);
   color: var(--fg);
-  font: 13px/1.65 var(--sans);
+  font: 14px/1.65 var(--sans);
   text-align: left;
 }
 .reinforcement-lab [hidden] {
@@ -46,12 +47,12 @@
 .rl-choice span {
   margin-top: 4px;
   color: var(--fg-mid);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
 }
 .rl-live {
   margin-top: 10px;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--fg-mid);
 }
 [data-rl="details"] > p + p {
@@ -94,6 +95,8 @@
 }
 .rl-button,
 .reinforcement-lab select {
+  min-width: 0;
+  max-width: 100%;
   min-height: 44px;
   padding: 8px 12px;
   border: 1px solid var(--line);
@@ -101,7 +104,7 @@
   background: var(--panel);
   color: var(--fg);
   cursor: pointer;
-  font: 600 13px/1.5 var(--sans);
+  font: 600 14px/1.5 var(--sans);
 }
 .rl-button:hover:not(:disabled),
 .rl-button[aria-pressed="true"] {
@@ -113,16 +116,19 @@
 }
 .rl-primary {
   background: var(--ok);
-  color: var(--bg);
+  color: var(--on-accent);
   border-color: var(--ok);
 }
 .rl-primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--ok) 85%, white);
+  color: var(--on-accent);
+  background: color-mix(in srgb, var(--ok) 85%, black);
   border-color: var(--ok);
 }
 .rl-button:disabled {
-  opacity: 0.5;
-  cursor: default;
+  background: var(--panel-2);
+  border-color: var(--line);
+  color: var(--fg-dim);
+  cursor: not-allowed;
 }
 .rl-button:focus-visible,
 .reinforcement-lab select:focus-visible,
@@ -202,7 +208,7 @@
 .rl-input-help {
   margin-top: 12px !important;
   color: var(--fg-mid);
-  font-size: 12px;
+  font-size: 14px;
 }
 @media (max-width: 520px) {
   .reinforcement-lab {

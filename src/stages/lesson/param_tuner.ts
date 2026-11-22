@@ -1,6 +1,9 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+import { theme, themeColor } from "../../core/theme";
+
 // param_tuner: Param Tuner
 // A fixed waypoint-following controller drives a slalom course; the user
 // tunes its ROS 2 parameters (max_speed / turn_gain / accel) — even while
@@ -299,7 +302,7 @@ export function makeParamTuner(): Stage {
     if (collide(nx, ny)) {
       bumpFlash = 1;
       g.shake(0.4);
-      particles.burst(robot.x, robot.y, "#fb7185", 22, 220);
+      particles.burst(robot.x, robot.y, "#be2949", 22, 220);
       isRunning = false;
       v = 0;
       ctrlV = 0;
@@ -329,7 +332,7 @@ export function makeParamTuner(): Stage {
         reachGoal(b);
         return;
       }
-      particles.burst(wp.x, wp.y, "#7dd3fc", 14, 160);
+      particles.burst(wp.x, wp.y, "#075f93", 14, 160);
       g.sfx.pickup();
       wpIdx++;
     }
@@ -348,18 +351,18 @@ export function makeParamTuner(): Stage {
 
   function drawCone(c: CanvasRenderingContext2D, cone: { x: number; y: number; r: number }) {
     c.save();
-    c.fillStyle = "rgba(217, 119, 6, 0.85)";
-    c.strokeStyle = "#7c4a03";
+    c.fillStyle = stageColor("rgba(217, 119, 6, 0.85)");
+    c.strokeStyle = stageColor("#7c4a03");
     c.lineWidth = 1;
     c.beginPath();
     c.arc(cone.x, cone.y, cone.r, 0, Math.PI * 2);
     c.fill();
     c.stroke();
-    c.fillStyle = "#fef3e8";
+    c.fillStyle = stageColor("#fef3e8");
     c.beginPath();
     c.arc(cone.x, cone.y, cone.r * 0.55, 0, Math.PI * 2);
     c.fill();
-    c.fillStyle = "#d97706";
+    c.fillStyle = stageColor("#d97706");
     c.beginPath();
     c.arc(cone.x, cone.y, cone.r * 0.25, 0, Math.PI * 2);
     c.fill();
@@ -373,8 +376,8 @@ export function makeParamTuner(): Stage {
 
     // Planned route (dashed) through all waypoints.
     c.save();
-    c.strokeStyle = "rgba(125, 211, 252, 0.22)";
-    c.lineWidth = 1;
+    c.strokeStyle = themeColor(theme.fgDim, stageColor("rgba(7, 95, 147, 0.22)"));
+    c.lineWidth = 1.5;
     c.setLineDash([5, 7]);
     c.beginPath();
     c.moveTo(START.x, START.y);
@@ -389,42 +392,37 @@ export function makeParamTuner(): Stage {
       const active = isRunning && i === wpIdx;
       const done = i < wpIdx;
       c.save();
-      c.strokeStyle = done
-        ? "rgba(94, 234, 212, 0.5)"
-        : active
-          ? "#7dd3fc"
-          : "rgba(125, 211, 252, 0.4)";
-      c.lineWidth = active ? 2 : 1;
+      c.strokeStyle = themeColor(
+        done ? theme.ok : active ? theme.accent : theme.fgDim,
+        stageColor(done ? "rgba(8, 119, 100, 0.5)" : active ? "#075f93" : "rgba(7, 95, 147, 0.4)"),
+      );
+      c.lineWidth = active ? 2.5 : 1.5;
       c.beginPath();
       c.arc(wp.x, wp.y, WP_R * 0.6, 0, Math.PI * 2);
       c.stroke();
-      c.fillStyle = done
-        ? "rgba(94, 234, 212, 0.7)"
-        : active
-          ? "#7dd3fc"
-          : "rgba(125, 211, 252, 0.55)";
-      c.font = "700 10px ui-monospace, monospace";
+      c.fillStyle = done ? theme.ok : active ? theme.accent : theme.fgDim;
+      c.font = "700 12px ui-monospace, monospace";
       c.textAlign = "center";
       c.textBaseline = "middle";
       c.fillText(String(i + 1), wp.x, wp.y);
       c.restore();
     }
     const goal = WAYPOINTS[WAYPOINTS.length - 1];
-    drawZone(c, { x: goal.x, y: goal.y, r: GOAL_R }, "#5eead4", "GOAL", elapsed);
+    drawZone(c, { x: goal.x, y: goal.y, r: GOAL_R }, "#087764", "GOAL", elapsed);
 
     for (const cone of cones) drawCone(c, cone);
 
     // Start marker.
     c.save();
-    c.strokeStyle = "rgba(125, 211, 252, 0.45)";
-    c.lineWidth = 1;
+    c.strokeStyle = themeColor(theme.accent, stageColor("rgba(7, 95, 147, 0.45)"));
+    c.lineWidth = 1.5;
     c.setLineDash([4, 4]);
     c.beginPath();
     c.arc(START.x, START.y, 18, 0, Math.PI * 2);
     c.stroke();
     c.setLineDash([]);
-    c.fillStyle = "rgba(125, 211, 252, 0.65)";
-    c.font = "700 9px ui-monospace, monospace";
+    c.fillStyle = theme.accent;
+    c.font = "700 12px ui-monospace, monospace";
     c.textAlign = "center";
     c.fillText("START", START.x, START.y - 24);
     c.restore();
@@ -551,26 +549,26 @@ export default defineStage({
 <svg viewBox="0 0 420 120" role="img" aria-label="ros2 param set reconfigures the waypoint_driver node at runtime">
   <defs>
     <marker id="ld-param-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#fbbf24"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#925b00, #fbbf24)"/>
     </marker>
     <marker id="ld-param-arrow2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#5eead4"/>
+      <polygon points="0 0, 10 4, 0 8" fill="light-dark(#087764, #5eead4)"/>
     </marker>
   </defs>
-  <rect x="8" y="16" width="150" height="88" rx="8" fill="#0b0f1e" stroke="#fbbf24" stroke-width="1.5"/>
-  <text x="83" y="38" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="10" font-weight="700">$ ros2 param set</text>
-  <text x="83" y="56" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">/waypoint_driver</text>
-  <text x="83" y="74" text-anchor="middle" fill="#eef2ff" font-family="ui-monospace, monospace" font-size="9">max_speed 0.6</text>
-  <rect x="240" y="16" width="172" height="88" rx="8" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-  <text x="326" y="36" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="11" font-weight="700">waypoint_driver</text>
-  <text x="326" y="56" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">max_speed: 0.4 → 0.6</text>
-  <text x="326" y="72" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">turn_gain: 2.0</text>
-  <text x="326" y="92" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="9">running — no rebuild!</text>
-  <line x1="158" y1="48" x2="238" y2="48" stroke="#fbbf24" stroke-width="2" marker-end="url(#ld-param-arrow)"/>
-  <text x="198" y="38" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="9">set_parameters</text>
-  <line x1="238" y1="78" x2="158" y2="78" stroke="#5eead4" stroke-width="1.5" marker-end="url(#ld-param-arrow2)"/>
-  <text x="198" y="94" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="9">/parameter_events</text>
-  <circle r="3.5" fill="#fbbf24">
+  <rect x="8" y="16" width="150" height="88" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="1.5"/>
+  <text x="83" y="38" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">$ ros2 param set</text>
+  <text x="83" y="56" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">/waypoint_driver</text>
+  <text x="83" y="74" text-anchor="middle" fill="light-dark(#172b4d, #edf3ff)" font-family="ui-monospace, monospace" font-size="9">max_speed 0.6</text>
+  <rect x="240" y="16" width="172" height="88" rx="8" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+  <text x="326" y="36" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="11" font-weight="700">waypoint_driver</text>
+  <text x="326" y="56" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">max_speed: 0.4 → 0.6</text>
+  <text x="326" y="72" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">turn_gain: 2.0</text>
+  <text x="326" y="92" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="9">running — no rebuild!</text>
+  <line x1="158" y1="48" x2="238" y2="48" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2" marker-end="url(#ld-param-arrow)"/>
+  <text x="198" y="38" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="9">set_parameters</text>
+  <line x1="238" y1="78" x2="158" y2="78" stroke="light-dark(#087764, #5eead4)" stroke-width="1.5" marker-end="url(#ld-param-arrow2)"/>
+  <text x="198" y="94" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="9">/parameter_events</text>
+  <circle r="3.5" fill="light-dark(#925b00, #fbbf24)">
     <animateMotion dur="1.6s" repeatCount="indefinite" path="M 160 48 L 234 48"/>
   </circle>
 </svg>

@@ -1,11 +1,16 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
+
+import { theme, themeColor, withA } from "../../core/theme";
+
+import { stageColor } from "../../lib/stage_colors";
 import type { GameContext, Stage } from "../../types";
 import { defineStage } from "../../core/stage_def";
 import { mountLabCompletion, mountLabWorkbench } from "../../lib/lab_completion";
 import { onLangChange, tx } from "../../i18n";
 import { clearBackground, drawRobotBody } from "../../lib/draw";
 import { registerOverlayPad, unregisterOverlayPad } from "../../lib/overlaypad";
+import { isStageInteractionBlocked } from "../../lib/input_guard";
 import {
   RL_WIDTH,
   RL_HEIGHT,
@@ -737,7 +742,7 @@ export function makeReinforcementLearning(): Stage {
           renderEvidence();
           renderResults();
           refresh();
-          focusAction("compare");
+          if (!isStageInteractionBlocked()) focusAction("compare");
         }
       } else if (mode === "compare" && comparison && clock >= PREVIEW_STEP_SECONDS / speed) {
         const steps = Math.floor(clock / (PREVIEW_STEP_SECONDS / speed));
@@ -746,7 +751,7 @@ export function makeReinforcementLearning(): Stage {
         if (frame >= previewLength()) {
           endPreview();
           refresh();
-          focusAction("finish");
+          if (!isStageInteractionBlocked()) focusAction("finish");
         }
       }
     }
@@ -763,9 +768,9 @@ export function makeReinforcementLearning(): Stage {
       }
     }
   }
-  function text(value: string, x: number, y: number, size = 20, color = "#eef2ff"): void {
+  function text(value: string, x: number, y: number, size = 20, color = "#172b4d"): void {
     const c = g.ctx;
-    c.fillStyle = color;
+    c.fillStyle = stageColor(color);
     c.font = `600 ${size}px system-ui, sans-serif`;
     c.textAlign = "center";
     c.fillText(value, x, y);
@@ -783,40 +788,45 @@ export function makeReinforcementLearning(): Stage {
     for (let row = 0; row < RL_HEIGHT; row++)
       for (let col = 0; col < RL_WIDTH; col++) {
         const p = { x: col, y: row };
-        c.fillStyle = RL_WALLS.some((w) => same(w, p))
-          ? "#475569"
-          : same(p, RL_GOAL)
-            ? "#135a46"
-            : same(p, RL_BONUS)
-              ? "#70511b"
-              : "#142339";
+        c.fillStyle = stageColor(
+          RL_WALLS.some((w) => same(w, p))
+            ? "#475569"
+            : same(p, RL_GOAL)
+              ? "#cbe9df"
+              : same(p, RL_BONUS)
+                ? "#f6e5be"
+                : "#e8eff7",
+        );
         c.fillRect(x + col * cell + 1, y + row * cell + 1, cell - 2, cell - 2);
+        c.strokeStyle = themeColor("#8194ae", "#3b506d");
+        c.lineWidth = 1;
+        c.strokeRect(x + col * cell + 1, y + row * cell + 1, cell - 2, cell - 2);
         if (same(p, RL_GOAL)) {
           const gx = x + (col + 0.34) * cell,
             gy = y + (row + 0.22) * cell;
-          c.strokeStyle = "#a7f3d0";
+          c.strokeStyle = stageColor("#28664c");
           c.lineWidth = 3;
           c.beginPath();
           c.moveTo(gx, gy);
           c.lineTo(gx, gy + cell * 0.56);
           c.stroke();
-          c.fillStyle = "#5eead4";
+          c.fillStyle = stageColor("#087764");
           c.beginPath();
           c.moveTo(gx, gy);
           c.lineTo(gx + cell * 0.4, gy + cell * 0.15);
           c.lineTo(gx, gy + cell * 0.3);
           c.fill();
         } else if (same(p, RL_BONUS))
-          text("★", x + (col + 0.5) * cell, y + (row + 0.66) * cell, cell * 0.48, "#fbbf24");
+          text("★", x + (col + 0.5) * cell, y + (row + 0.66) * cell, cell * 0.48, "#925b00");
         else if (policy && !RL_WALLS.some((w) => same(w, p))) {
           const arrow = { up: "↑", right: "→", down: "↓", left: "←" }[policy(p)];
-          text(arrow, x + (col + 0.5) * cell, y + (row + 0.65) * cell, cell * 0.36, "#657e9a");
+          text(arrow, x + (col + 0.5) * cell, y + (row + 0.65) * cell, cell * 0.36, "#586a82");
         }
       }
     const position = Math.min(Math.floor(at), run?.steps ?? 0);
     const path = run?.path.slice(0, position + 1) ?? [RL_STARTS[0]];
     if (path.length) {
-      c.strokeStyle = color;
+      c.strokeStyle = stageColor(color);
       c.lineWidth = 3;
       c.beginPath();
       path.forEach((p, i) => {
@@ -849,7 +859,7 @@ export function makeReinforcementLearning(): Stage {
       text(tx(`同じ開始地点 ${trial + 1} / 3`, `Same start ${trial + 1} / 3`), 400, 47, 25);
       [0, 1].forEach((i) => {
         const x = 35 + i * 395;
-        text(label(i), x + 168, 94, 23, i ? "#7dd3fc" : "#c4b5fd");
+        text(label(i), x + 168, 94, 23, i ? "#075f93" : "#6d42b5");
         board(
           x,
           120,
@@ -859,7 +869,7 @@ export function makeReinforcementLearning(): Stage {
             previewLength(),
             frame + (mode === "compare" && !paused ? (clock * speed) / PREVIEW_STEP_SECONDS : 0),
           ),
-          i ? "#7dd3fc" : "#c4b5fd",
+          i ? "#075f93" : "#6d42b5",
           details ? comparison!.models[i] : undefined,
         );
         const run = comparison!.runs[i][trial];
@@ -870,10 +880,10 @@ export function makeReinforcementLearning(): Stage {
             x + 168,
             429,
             22,
-            run.success ? "#5eead4" : "#fbbf24",
+            run.success ? "#087764" : "#925b00",
           );
         else if (mode === "idle")
-          text(tx("続きは省略", "Rest omitted"), x + 168, 429, 22, "#fbbf24");
+          text(tx("続きは省略", "Rest omitted"), x + 168, 429, 22, "#925b00");
       });
       text(
         tx(
@@ -894,7 +904,7 @@ export function makeReinforcementLearning(): Stage {
         27,
       );
       const sample = trainer?.lastEpisode ?? current?.lastRun ?? undefined;
-      board(204, 92, 56, sample, sample?.steps ?? 0, "#7dd3fc");
+      board(204, 92, 56, sample, sample?.steps ?? 0, "#075f93");
       text(
         mode === "training"
           ? tx(
@@ -918,9 +928,9 @@ export function makeReinforcementLearning(): Stage {
       );
     }
     if (paused) {
-      c.fillStyle = "rgba(5,12,25,.75)";
+      c.fillStyle = withA(theme.scrim, 0.75);
       c.fillRect(240, 205, 320, 68);
-      text(tx("一時停止中", "Paused"), 400, 249, 28, "#fff");
+      text(tx("一時停止中", "Paused"), 400, 249, 28, "#172b4d");
     }
   }
   return {
@@ -1012,5 +1022,5 @@ export default defineStage({
       en: "Press Learn (about 2 sec), then Watch the robots.",
     },
   },
-  diagram: `<svg viewBox="0 0 420 100" role="img" aria-label="ごほうびを選ぶ、学習する、動きを見る / Choose reward, learn, watch"><g fill="#15243b" stroke="#7dd3fc"><rect x="5" y="15" width="115" height="65" rx="8"/><rect x="152" y="15" width="115" height="65" rx="8"/><rect x="300" y="15" width="115" height="65" rx="8"/></g><g fill="#e0f2fe" font-family="system-ui" font-size="12" text-anchor="middle"><text x="62" y="43">① ごほうび</text><text x="62" y="64">Reward +10</text><text x="136" y="53">→</text><text x="210" y="43">② 学習する</text><text x="210" y="64">Learn · ~2 sec</text><text x="284" y="53">→</text><text x="357" y="43">③ 動きを見る</text><text x="357" y="64">Watch the robot</text></g></svg>`,
+  diagram: `<svg viewBox="0 0 420 100" role="img" aria-label="ごほうびを選ぶ、学習する、動きを見る / Choose reward, learn, watch"><g fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)"><rect x="5" y="15" width="115" height="65" rx="8"/><rect x="152" y="15" width="115" height="65" rx="8"/><rect x="300" y="15" width="115" height="65" rx="8"/></g><g fill="light-dark(#172b4d, #edf3ff)" font-family="system-ui" font-size="12" text-anchor="middle"><text x="62" y="43">① ごほうび</text><text x="62" y="64">Reward +10</text><text x="136" y="53">→</text><text x="210" y="43">② 学習する</text><text x="210" y="64">Learn · ~2 sec</text><text x="284" y="53">→</text><text x="357" y="43">③ 動きを見る</text><text x="357" y="64">Watch the robot</text></g></svg>`,
 });

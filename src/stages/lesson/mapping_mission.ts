@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { stageColor } from "../../lib/stage_colors";
+
 // mapping_mission: Mapping Mission (Teleop SLAM)
 // Sequel to LiDAR Avoidance: drive with WASD teleop and fill in the
 // occupancy grid.
@@ -9,7 +11,7 @@
 // Clear by covering 100% of explorable cells (reachable free + adjacent
 // walls) within 120 seconds.
 import { type Stage, type GameContext } from "../../types";
-import { theme, withA } from "../../core/theme";
+import { theme, themeColor, withA } from "../../core/theme";
 
 import { defineStage } from "../../core/stage_def";
 import {
@@ -325,7 +327,7 @@ export function makeMappingMission(): Stage {
       cleared = true;
       cmd.v = 0;
       cmd.w = 0;
-      particles.burst(robot.x, robot.y, "#5eead4", 36, 240);
+      particles.burst(robot.x, robot.y, "#087764", 36, 240);
       g.shake(0.5);
       g.setStatus(t("mapping_mission.status.complete"), "var(--ok)");
       const stars = elapsed < 70 ? 3 : elapsed < 100 ? 2 : 1;
@@ -404,18 +406,18 @@ export function makeMappingMission(): Stage {
         const lit = litMap[idx] === 1;
         const seen = seenMap[idx] !== 0;
         if (!seen) {
-          ctx.fillStyle = "#02050b";
+          ctx.fillStyle = themeColor("#8194ae", "#111e32");
           ctx.fillRect(x, y, TILE, TILE);
           continue;
         }
         if (isW) {
-          ctx.fillStyle = lit ? "#3a4366" : "#1d2336";
+          ctx.fillStyle = themeColor(lit ? "#425570" : "#586a82", lit ? "#4a6080" : "#43536e");
           ctx.fillRect(x, y, TILE, TILE);
-          ctx.strokeStyle = lit ? "rgba(110,122,156,0.7)" : "rgba(110,122,156,0.28)";
+          ctx.strokeStyle = stageColor(lit ? "rgba(88, 106, 130,0.7)" : "rgba(88, 106, 130,0.28)");
           ctx.lineWidth = 1;
           ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
         } else {
-          ctx.fillStyle = lit ? "#0d1426" : "#070b16";
+          ctx.fillStyle = themeColor(lit ? "#ffffff" : "#edf3fb", "#223149");
           ctx.fillRect(x, y, TILE, TILE);
         }
       }
@@ -428,14 +430,17 @@ export function makeMappingMission(): Stage {
     for (const ray of lastScan) {
       const ex = robot.x + Math.cos(ray.angle) * ray.dist;
       const ey = robot.y + Math.sin(ray.angle) * ray.dist;
-      ctx.strokeStyle = ray.hit ? "rgba(125,211,252,0.32)" : "rgba(125,211,252,0.12)";
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = themeColor(
+        ray.hit ? "rgba(7, 95, 147,0.8)" : "rgba(7, 95, 147,0.5)",
+        ray.hit ? "rgba(125, 211, 252,0.32)" : "rgba(125, 211, 252,0.12)",
+      );
+      ctx.lineWidth = 1.25;
       ctx.beginPath();
       ctx.moveTo(robot.x, robot.y);
       ctx.lineTo(ex, ey);
       ctx.stroke();
       if (ray.hit) {
-        ctx.fillStyle = "#7dd3fc";
+        ctx.fillStyle = stageColor("#075f93");
         ctx.beginPath();
         ctx.arc(ex, ey, 1.4, 0, Math.PI * 2);
         ctx.fill();
@@ -447,15 +452,15 @@ export function makeMappingMission(): Stage {
   function drawMiniMap(ctx: CanvasRenderingContext2D) {
     ctx.save();
     ctx.fillStyle = withA(theme.scrim, 0.85);
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.strokeStyle = themeColor("#637892", "rgba(255,255,255,0.25)");
     ctx.lineWidth = 1;
     ctx.fillRect(MINI_X - 6, MINI_Y - 22, MINI_W + 12, MINI_H + 30);
     ctx.strokeRect(MINI_X - 6, MINI_Y - 22, MINI_W + 12, MINI_H + 30);
-    ctx.fillStyle = "#7dd3fc";
+    ctx.fillStyle = stageColor("#075f93");
     ctx.font = "700 11px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.fillText("OCCUPANCY GRID", MINI_X, MINI_Y - 8);
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.font = "9px ui-monospace, monospace";
     ctx.textAlign = "right";
     ctx.fillText("/map", MINI_X + MINI_W, MINI_Y - 8);
@@ -465,27 +470,27 @@ export function makeMappingMission(): Stage {
         const seen = seenMap[idx];
         const x = MINI_X + c * MINI_TW;
         const y = MINI_Y + r * MINI_TH;
-        if (seen === 0) ctx.fillStyle = "#0a0e1a";
-        else if (seen === 1) ctx.fillStyle = "#c4b5fd";
-        else ctx.fillStyle = "#1f2a4a";
+        if (seen === 0) ctx.fillStyle = themeColor("#8194ae", "#3b506d");
+        else if (seen === 1) ctx.fillStyle = stageColor("#6d42b5");
+        else ctx.fillStyle = themeColor("#ffffff", "#293c5d");
         ctx.fillRect(x, y, MINI_TW + 0.5, MINI_TH + 0.5);
       }
     }
     {
       const cx = MINI_X + (robot.x / TILE) * MINI_TW;
       const cy = MINI_Y + ((robot.y - WORLD_Y) / TILE) * MINI_TH;
-      ctx.fillStyle = "#fbbf24";
+      ctx.fillStyle = stageColor("#925b00");
       ctx.beginPath();
       ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "#fbbf24";
+      ctx.strokeStyle = stageColor("#925b00");
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.lineTo(cx + Math.cos(robot.theta) * 6, cy + Math.sin(robot.theta) * 6);
       ctx.stroke();
     }
-    ctx.strokeStyle = "rgba(125,211,252,0.55)";
+    ctx.strokeStyle = stageColor("rgba(7, 95, 147,0.55)");
     ctx.lineWidth = 1;
     ctx.strokeRect(MINI_X, MINI_Y, MINI_W, MINI_H);
     ctx.restore();
@@ -498,33 +503,33 @@ export function makeMappingMission(): Stage {
     const py = MINI_Y + MINI_H + 16;
     ctx.save();
     ctx.fillStyle = withA(theme.scrim, 0.85);
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.strokeStyle = themeColor("#637892", "rgba(255,255,255,0.25)");
     ctx.lineWidth = 1;
     ctx.fillRect(px, py, MINI_W + 12, 156);
     ctx.strokeRect(px, py, MINI_W + 12, 156);
-    ctx.fillStyle = "#7dd3fc";
+    ctx.fillStyle = stageColor("#075f93");
     ctx.font = "700 11px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.fillText("MAP COVERAGE", px + 8, py + 18);
     ctx.fillStyle = withA(theme.scrim, 0.85);
     ctx.fillRect(px + 8, py + 28, MINI_W - 4, 14);
-    ctx.fillStyle = "#7dd3fc";
+    ctx.fillStyle = stageColor("#075f93");
     ctx.fillRect(px + 8, py + 28, (MINI_W - 4) * cov, 14);
-    ctx.strokeStyle = "rgba(125,211,252,0.5)";
+    ctx.strokeStyle = stageColor("rgba(7, 95, 147,0.5)");
     ctx.strokeRect(px + 8, py + 28, MINI_W - 4, 14);
-    ctx.fillStyle = "#eef2ff";
+    ctx.fillStyle = stageColor("#172b4d");
     ctx.font = "700 16px ui-monospace, monospace";
     ctx.fillText(`${(cov * 100).toFixed(0)}%`, px + 8, py + 64);
-    ctx.fillStyle = "#9aa6c8";
+    ctx.fillStyle = stageColor("#425570");
     ctx.font = "9px ui-monospace, monospace";
     ctx.fillText(`target: 100% (${explorableCount} cells)`, px + 70, py + 64);
-    ctx.fillStyle = "#fbbf24";
+    ctx.fillStyle = stageColor("#925b00");
     ctx.font = "700 11px ui-monospace, monospace";
     ctx.fillText("TIME", px + 8, py + 92);
-    ctx.fillStyle = "#eef2ff";
+    ctx.fillStyle = stageColor("#172b4d");
     ctx.font = "700 16px ui-monospace, monospace";
     ctx.fillText(`${elapsed.toFixed(1)} / ${TIME_LIMIT}s`, px + 8, py + 116);
-    ctx.fillStyle = cleared ? "#5eead4" : timedOut ? "#fb7185" : "#7dd3fc";
+    ctx.fillStyle = stageColor(cleared ? "#087764" : timedOut ? "#be2949" : "#075f93");
     ctx.font = "700 11px ui-monospace, monospace";
     const status = cleared
       ? "✓ MAP COMPLETE"
@@ -599,34 +604,34 @@ export default defineStage({
 <svg viewBox="0 0 420 130" role="img" aria-label="player teleops the robot with WASD; LiDAR scans build the occupancy grid in real time">
   <defs>
     <marker id="ld-mm2-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-      <polygon points="0 0, 9 3.5, 0 7" fill="#5eead4"/>
+      <polygon points="0 0, 9 3.5, 0 7" fill="light-dark(#087764, #5eead4)"/>
     </marker>
     <radialGradient id="ld-mm2-cone" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.32"/>
-      <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0"/>
+      <stop offset="0%" stop-color="light-dark(#075f93, #7dd3fc)" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="light-dark(#075f93, #7dd3fc)" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <!-- WASD pad (left) -->
   <g transform="translate(28, 50)">
-    <rect x="-22" y="-22" width="74" height="62" rx="6" fill="#181f3a" stroke="#7dd3fc" stroke-width="1.5"/>
-    <rect x="0"   y="-12" width="14" height="14" rx="2" fill="#0c1124" stroke="#7dd3fc" stroke-width="1"/>
-    <text x="7" y="-2" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9" font-weight="700">W</text>
-    <rect x="-16" y="6"  width="14" height="14" rx="2" fill="#0c1124" stroke="#7dd3fc" stroke-width="1"/>
-    <text x="-9" y="16" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9" font-weight="700">A</text>
-    <rect x="0"   y="6"  width="14" height="14" rx="2" fill="#0c1124" stroke="#7dd3fc" stroke-width="1"/>
-    <text x="7" y="16" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9" font-weight="700">S</text>
-    <rect x="16"  y="6"  width="14" height="14" rx="2" fill="#0c1124" stroke="#7dd3fc" stroke-width="1"/>
-    <text x="23" y="16" text-anchor="middle" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9" font-weight="700">D</text>
-    <text x="14" y="34" text-anchor="middle" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="9">teleop</text>
+    <rect x="-22" y="-22" width="74" height="62" rx="6" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1.5"/>
+    <rect x="0"   y="-12" width="14" height="14" rx="2" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1"/>
+    <text x="7" y="-2" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">W</text>
+    <rect x="-16" y="6"  width="14" height="14" rx="2" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1"/>
+    <text x="-9" y="16" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">A</text>
+    <rect x="0"   y="6"  width="14" height="14" rx="2" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1"/>
+    <text x="7" y="16" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">S</text>
+    <rect x="16"  y="6"  width="14" height="14" rx="2" fill="light-dark(#f1f5fb, #131f35)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1"/>
+    <text x="23" y="16" text-anchor="middle" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">D</text>
+    <text x="14" y="34" text-anchor="middle" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="9">teleop</text>
   </g>
   <!-- /cmd_vel arrow to robot -->
-  <line x1="84" y1="60" x2="118" y2="60" stroke="#5eead4" stroke-width="1.6" marker-end="url(#ld-mm2-arrow)"/>
-  <text x="100" y="54" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="9" font-weight="700">/cmd_vel</text>
+  <line x1="84" y1="60" x2="118" y2="60" stroke="light-dark(#087764, #5eead4)" stroke-width="1.6" marker-end="url(#ld-mm2-arrow)"/>
+  <text x="100" y="54" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">/cmd_vel</text>
   <!-- Robot + LiDAR cone (middle) -->
   <g transform="translate(150, 60)">
     <circle cx="0" cy="0" r="34" fill="url(#ld-mm2-cone)"/>
     <!-- rays -->
-    <g stroke="#7dd3fc" stroke-width="0.8" opacity="0.7">
+    <g stroke="light-dark(#075f93, #7dd3fc)" stroke-width="0.8" opacity="0.7">
       <line x1="0" y1="0" x2="-30" y2="-12"/>
       <line x1="0" y1="0" x2="-22" y2="-22"/>
       <line x1="0" y1="0" x2="0" y2="-32"/>
@@ -638,38 +643,38 @@ export default defineStage({
       <line x1="0" y1="0" x2="-32" y2="8"/>
     </g>
     <!-- robot body -->
-    <rect x="-9" y="-7" width="18" height="14" rx="2" fill="#181f3a" stroke="#fbbf24" stroke-width="2"/>
-    <circle cx="-4" cy="0" r="1.5" fill="#fbbf24"/>
-    <circle cx="4"  cy="0" r="1.5" fill="#fbbf24"/>
+    <rect x="-9" y="-7" width="18" height="14" rx="2" fill="light-dark(#edf3fb, #223149)" stroke="light-dark(#925b00, #fbbf24)" stroke-width="2"/>
+    <circle cx="-4" cy="0" r="1.5" fill="light-dark(#925b00, #fbbf24)"/>
+    <circle cx="4"  cy="0" r="1.5" fill="light-dark(#925b00, #fbbf24)"/>
   </g>
-  <text x="150" y="106" text-anchor="middle" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="9">robot + LiDAR</text>
+  <text x="150" y="106" text-anchor="middle" fill="light-dark(#925b00, #fbbf24)" font-family="ui-monospace, monospace" font-size="9">robot + LiDAR</text>
   <!-- /scan arrow to map builder -->
-  <line x1="186" y1="60" x2="220" y2="60" stroke="#5eead4" stroke-width="1.6" marker-end="url(#ld-mm2-arrow)"/>
-  <text x="203" y="54" text-anchor="middle" fill="#5eead4" font-family="ui-monospace, monospace" font-size="9" font-weight="700">/scan</text>
+  <line x1="186" y1="60" x2="220" y2="60" stroke="light-dark(#087764, #5eead4)" stroke-width="1.6" marker-end="url(#ld-mm2-arrow)"/>
+  <text x="203" y="54" text-anchor="middle" fill="light-dark(#087764, #5eead4)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">/scan</text>
   <!-- Occupancy grid (right) -->
   <g>
-    <rect x="226" y="20" width="186" height="86" rx="6" fill="#0a0e1a" stroke="#7dd3fc" stroke-width="1"/>
-    <text x="234" y="34" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="9" font-weight="700">OCCUPANCY GRID (/map)</text>
+    <rect x="226" y="20" width="186" height="86" rx="6" fill="light-dark(#d8e2ef, #3b506d)" stroke="light-dark(#075f93, #7dd3fc)" stroke-width="1"/>
+    <text x="234" y="34" fill="light-dark(#075f93, #7dd3fc)" font-family="ui-monospace, monospace" font-size="9" font-weight="700">OCCUPANCY GRID (/map)</text>
     <!-- known free -->
     <g>
-      <rect x="232" y="42" width="22" height="14" fill="#1f2a4a"/>
-      <rect x="256" y="42" width="22" height="14" fill="#1f2a4a"/>
-      <rect x="280" y="42" width="22" height="14" fill="#1f2a4a"/>
-      <rect x="232" y="60" width="22" height="14" fill="#1f2a4a"/>
-      <rect x="280" y="60" width="22" height="14" fill="#1f2a4a"/>
-      <rect x="232" y="78" width="22" height="14" fill="#1f2a4a"/>
-      <rect x="256" y="78" width="22" height="14" fill="#1f2a4a"/>
+      <rect x="232" y="42" width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+      <rect x="256" y="42" width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+      <rect x="280" y="42" width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+      <rect x="232" y="60" width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+      <rect x="280" y="60" width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+      <rect x="232" y="78" width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
+      <rect x="256" y="78" width="22" height="14" fill="light-dark(#ffffff, #293c5d)"/>
       <!-- walls -->
-      <rect x="256" y="60" width="22" height="14" fill="#c4b5fd"/>
-      <rect x="304" y="42" width="22" height="14" fill="#c4b5fd"/>
-      <rect x="280" y="78" width="22" height="14" fill="#c4b5fd"/>
+      <rect x="256" y="60" width="22" height="14" fill="light-dark(#6d42b5, #c4b5fd)"/>
+      <rect x="304" y="42" width="22" height="14" fill="light-dark(#6d42b5, #c4b5fd)"/>
+      <rect x="280" y="78" width="22" height="14" fill="light-dark(#6d42b5, #c4b5fd)"/>
       <!-- unknown -->
-      <rect x="304" y="60" width="106" height="32" fill="#0a0e1a"/>
-      <rect x="328" y="42" width="84"  height="14" fill="#0a0e1a"/>
+      <rect x="304" y="60" width="106" height="32" fill="light-dark(#8194ae, #3b506d)"/>
+      <rect x="328" y="42" width="84"  height="14" fill="light-dark(#8194ae, #3b506d)"/>
     </g>
     <!-- robot blip -->
-    <circle cx="244" cy="68" r="2.2" fill="#fbbf24"/>
-    <text x="408" y="103" text-anchor="end" fill="#9aa6c8" font-family="ui-monospace, monospace" font-size="8">map grows where you drive</text>
+    <circle cx="244" cy="68" r="2.2" fill="light-dark(#925b00, #fbbf24)"/>
+    <text x="408" y="103" text-anchor="end" fill="light-dark(#425570, #c2cfe3)" font-family="ui-monospace, monospace" font-size="8">map grows where you drive</text>
   </g>
 </svg>
 `,

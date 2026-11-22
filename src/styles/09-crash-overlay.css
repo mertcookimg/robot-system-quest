@@ -11,10 +11,13 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  padding: 12px;
+  text-align: center;
+  overflow-wrap: anywhere;
   border-radius: var(--radius);
   opacity: 0;
   pointer-events: none;
-  background: rgba(251, 113, 133, 0.08);
+  background: rgba(var(--danger-rgb), 0.08);
   backdrop-filter: blur(2px);
   transition: opacity 0.18s ease;
 }
@@ -26,19 +29,19 @@
 }
 @keyframes crashImpact {
   0% {
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(var(--surface-rgb), 0.85);
   }
   100% {
-    background: rgba(251, 113, 133, 0.1);
+    background: rgba(var(--danger-rgb), 0.1);
   }
 }
 @keyframes crashFlash {
   0%,
   100% {
-    background: rgba(251, 113, 133, 0.1);
+    background: rgba(var(--danger-rgb), 0.1);
   }
   50% {
-    background: rgba(251, 113, 133, 0.34);
+    background: rgba(var(--danger-rgb), 0.34);
   }
 }
 .crash-text {
@@ -46,14 +49,12 @@
   font-weight: 800;
   color: var(--danger);
   letter-spacing: 12px;
-  text-shadow:
-    0 0 30px rgba(251, 113, 133, 0.55),
-    0 0 60px rgba(251, 113, 133, 0.25);
+  text-shadow: none;
   font-family: var(--mono);
   animation: crashPop 0.35s cubic-bezier(0.2, 1.4, 0.3, 1.2) backwards;
 }
 .crash-sub {
-  font-size: 12.5px;
+  font-size: 14px;
   color: var(--fg-dim);
   font-family: var(--mono);
   letter-spacing: 3px;
@@ -74,15 +75,16 @@
 }
 
 .clear-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 20; /* above the stage-overlay panel (z-index 5) */
-  background: rgba(var(--scrim-rgb), 0.88);
+  z-index: 80;
+  padding: 16px;
+  background: rgba(var(--backdrop-rgb), 0.28);
   backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius);
+  border-radius: 0;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.35s ease;
@@ -93,14 +95,38 @@
 }
 
 .card {
+  display: flex;
+  flex-direction: column;
+  width: min(480px, 100%);
+  min-width: 0;
+  min-height: 0;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 32px 44px 28px;
+  padding: 24px;
   text-align: center;
-  min-width: 360px;
   box-shadow: var(--shadow-soft);
   animation: pop 0.4s cubic-bezier(0.2, 1, 0.3, 1.1);
+}
+.card > :not(.stats) {
+  flex-shrink: 0;
+}
+.card .stats {
+  min-height: min(72px, 25dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-inline: 4px;
+}
+.card .actions button {
+  min-height: 44px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 @keyframes pop {
   from {
@@ -114,7 +140,7 @@
 }
 .card-eyebrow {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 3px;
   color: var(--accent);
@@ -158,7 +184,7 @@
 }
 .stats {
   font-family: var(--mono);
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--fg-dim);
   margin-bottom: 18px;
   line-height: 1.9;
@@ -174,16 +200,12 @@
   }
   .crash-sub {
     max-width: 90%;
-    font-size: 10px;
+    font-size: 14px;
     letter-spacing: 0.12em;
     text-align: center;
   }
   .card {
-    width: calc(100% - 18px);
-    min-width: 0;
-    max-height: calc(100% - 18px);
     padding: 18px 14px;
-    overflow-y: auto;
   }
   .card-title {
     margin-bottom: 12px;
@@ -196,7 +218,26 @@
   }
   .stats {
     margin-bottom: 12px;
-    font-size: 11px;
+    font-size: 14px;
     line-height: 1.55;
+  }
+}
+
+@media (max-height: 540px) {
+  .card {
+    padding: 14px 18px;
+  }
+  .card-title {
+    margin-bottom: 6px;
+    font-size: 20px;
+  }
+  .card .stars {
+    font-size: 26px;
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .card .stats {
+    margin-bottom: 10px;
+    line-height: 1.5;
   }
 }

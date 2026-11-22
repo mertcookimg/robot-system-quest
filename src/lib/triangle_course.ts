@@ -1,6 +1,10 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { getTheme, theme, withA } from "../core/theme";
+
+import { stageColor } from "./stage_colors";
+
 import type { GameContext } from "../types";
 import { tx } from "../i18n";
 
@@ -39,7 +43,7 @@ export function drawTriangleCourse(ctx: CanvasRenderingContext2D): void {
 
   ctx.save();
   ctx.lineJoin = "round";
-  ctx.strokeStyle = "rgba(94, 234, 212, 0.38)";
+  ctx.strokeStyle = withA(theme.ok, getTheme() === "light" ? 0.72 : 0.38);
   ctx.lineWidth = 8;
   ctx.setLineDash([10, 8]);
   ctx.beginPath();
@@ -49,7 +53,7 @@ export function drawTriangleCourse(ctx: CanvasRenderingContext2D): void {
   ctx.closePath();
   ctx.stroke();
 
-  ctx.strokeStyle = "rgba(125, 211, 252, 0.8)";
+  ctx.strokeStyle = stageColor("rgba(7, 95, 147, 0.8)");
   ctx.lineWidth = 1.5;
   ctx.setLineDash([5, 5]);
   ctx.stroke();
@@ -58,21 +62,21 @@ export function drawTriangleCourse(ctx: CanvasRenderingContext2D): void {
   for (const vertex of TRIANGLE_VERTICES) {
     ctx.beginPath();
     ctx.arc(vertex.x, vertex.y, vertex.label === "START" ? 9 : 7, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(7, 10, 16, 0.95)";
+    ctx.fillStyle = withA(theme.scrim, 0.95);
     ctx.fill();
-    ctx.strokeStyle = vertex.label === "START" ? "#fbbf24" : "#5eead4";
+    ctx.strokeStyle = stageColor(vertex.label === "START" ? "#925b00" : "#087764");
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.fillStyle = vertex.label === "START" ? "#fbbf24" : "#9ff4dd";
-    ctx.font = "700 10px ui-monospace, monospace";
+    ctx.fillStyle = stageColor(vertex.label === "START" ? "#925b00" : "#087764");
+    ctx.font = "700 12px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.fillText(vertex.label, vertex.x, vertex.y - 16);
   }
 
-  ctx.fillStyle = "rgba(154, 166, 200, 0.8)";
-  ctx.font = "700 10px ui-monospace, monospace";
+  ctx.fillStyle = theme.fgMid;
+  ctx.font = "700 12px ui-monospace, monospace";
   ctx.fillText(`${TRIANGLE_SIDE_M.toFixed(1)} m`, (a.x + b.x) / 2, a.y + 25);
-  ctx.fillStyle = "rgba(251, 191, 36, 0.85)";
+  ctx.fillStyle = theme.warn;
   ctx.fillText("TURN 120°", b.x + 48, b.y - 20);
   ctx.restore();
 }

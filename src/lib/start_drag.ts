@@ -1,6 +1,8 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
+import { cssStageColor, stageColor } from "./stage_colors";
+
 // Helper that makes a START marker movable by both mouse dragging and the
 // controller's MOVE-START mode. Intended for free-form experiment stages such
 // as feedforward_controller and feedback_controller.
@@ -151,9 +153,9 @@ export function setupStartDrag(
     toggleBtn.title = moveMode
       ? (opts.titleOn ?? "もう一度押す or 🎮 LT で確定。WASD / 矢印 / パッドで動かす")
       : (opts.titleOff ?? "START位置を動かす（🎮 LTでも切り替え）");
-    toggleBtn.style.background = moveMode ? "rgba(251,191,36,0.20)" : "";
-    toggleBtn.style.borderColor = moveMode ? "var(--warn)" : "";
-    toggleBtn.style.color = moveMode ? "var(--warn)" : "";
+    toggleBtn.style.background = cssStageColor(moveMode ? "rgba(146, 91, 0,0.20)" : "");
+    toggleBtn.style.borderColor = cssStageColor(moveMode ? "var(--warn)" : "");
+    toggleBtn.style.color = cssStageColor(moveMode ? "var(--warn)" : "");
   }
   function toggle() {
     moveMode = !moveMode;
@@ -189,9 +191,9 @@ export function setupStartDrag(
     draw(ctx: CanvasRenderingContext2D) {
       const hot = (hover || dragging || moveMode) && !isRunning();
       ctx.save();
-      const stroke = hot ? "rgba(251, 191, 36, 0.95)" : "rgba(125, 211, 252, 0.55)";
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = hot ? 2 : 1;
+      const stroke = hot ? "#925b00" : "#075f93";
+      ctx.strokeStyle = stageColor(stroke);
+      ctx.lineWidth = hot ? 2.5 : 1.5;
       ctx.setLineDash(hot ? [] : [4, 4]);
       ctx.beginPath();
       ctx.arc(start.x, start.y, drawR, 0, Math.PI * 2);
@@ -207,12 +209,18 @@ export function setupStartDrag(
       ctx.lineTo(start.x + 7, start.y - 4);
       ctx.lineTo(start.x + 7, start.y + 4);
       ctx.closePath();
-      ctx.fillStyle = stroke;
+      ctx.fillStyle = stageColor(stroke);
       ctx.fill();
-      ctx.fillStyle = hot ? "#fbbf24" : "rgba(125, 211, 252, 0.65)";
-      ctx.font = "700 9px ui-monospace, monospace";
+      ctx.fillStyle = stageColor(hot ? "#925b00" : "#075f93");
+      ctx.font = "700 11px ui-monospace, monospace";
       ctx.textAlign = "center";
-      ctx.fillText(hot ? "START · drag OK · →" : "START · → · drag to move", start.x, start.y - 24);
+      ctx.textBaseline = "middle";
+      const label = hot ? "START · drag OK · →" : "START · → · drag to move";
+      const halfLabel = ctx.measureText(label).width / 2;
+      const labelX = Math.max(halfLabel + 6, Math.min(g.canvas.width - halfLabel - 6, start.x));
+      const above = start.y - drawR - 14;
+      const labelY = above >= 12 ? above : start.y + drawR + 14;
+      ctx.fillText(label, labelX, Math.min(g.canvas.height - 12, labelY));
       ctx.restore();
     },
     isDragging() {

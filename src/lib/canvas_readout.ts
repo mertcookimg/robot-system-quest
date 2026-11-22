@@ -1,8 +1,9 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
-// Keep essential scene text readable when the logical 800px canvas is scaled
-// down. Capture only the live stage canvas, never the Guide's preview canvases.
+// Keep instructions readable, wrapping and zoomable outside the canvas at
+// every size. Compact layouts also move timing here. Capture only the live
+// stage canvas, never the Guide's preview canvases.
 import { tx } from "../i18n";
 
 let canvas: HTMLCanvasElement | null = null;
@@ -34,11 +35,11 @@ export function beginCanvasReadoutFrame(): void {
   timer = null;
 }
 
-/** True means the compact HTML readout replaces this canvas text. */
+/** True means wrapping HTML instructions replace this canvas text. */
 export function reportCanvasHint(ctx: CanvasRenderingContext2D, text: string): boolean {
   if (!canvas || ctx.canvas !== canvas) return false;
   hint = text;
-  return compact?.matches ?? false;
+  return true;
 }
 
 /** True means the compact HTML readout replaces this canvas timer. */
@@ -59,14 +60,16 @@ function setText(element: HTMLElement, text: string): void {
 
 export function endCanvasReadoutFrame(): void {
   if (!panel || !hintElement || !timerElement) return;
-  if (!compact?.matches || (!hint && !timer)) {
+  const showTimer = !!compact?.matches && timer !== null;
+  if (!hint && !showTimer) {
     clearCanvasReadout();
     return;
   }
   // No live region: a running timer must not continuously interrupt speech.
-  const timeText = timer
-    ? `${tx("時間", "Time")} ${timer.elapsed.toFixed(1)} s${timer.best == null ? "" : ` · ${tx("ベスト", "Best")} ${timer.best.toFixed(2)} s`}`
-    : "";
+  const timeText =
+    showTimer && timer
+      ? `${tx("時間", "Time")} ${timer.elapsed.toFixed(1)} s${timer.best == null ? "" : ` · ${tx("ベスト", "Best")} ${timer.best.toFixed(2)} s`}`
+      : "";
   setText(timerElement, timeText);
   setText(hintElement, hint);
   panel.hidden = false;

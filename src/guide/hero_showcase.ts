@@ -1,14 +1,10 @@
 // Copyright 2026 Masato Kobayashi
 // SPDX-License-Identifier: Apache-2.0
 
-import { drawRobotBody } from "../lib/draw";
+import { COLORS as C, drawRobotBody } from "../lib/draw";
+import { theme, themeColor, withA, onThemeChange } from "../core/theme";
 
 type Point = { x: number; y: number };
-
-const CYAN = "#70d7f7";
-const PURPLE = "#c3b7fb";
-const MINT = "#65e6c4";
-const YELLOW = "#f5c763";
 
 const scenes = [
   { title: "DELIVERY // NAVIGATION", log: "/cmd_vel → delivery_robot" },
@@ -18,9 +14,9 @@ const scenes = [
 ] as const;
 
 function grid(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-  ctx.fillStyle = "#070b11";
+  ctx.fillStyle = theme.canvasBg;
   ctx.fillRect(0, 0, w, h);
-  ctx.strokeStyle = "rgba(112,215,247,.055)";
+  ctx.strokeStyle = withA(theme.accent, 0.055);
   ctx.lineWidth = 1;
   for (let x = 0; x <= w; x += 28) {
     ctx.beginPath();
@@ -41,11 +37,11 @@ function label(
   text: string,
   x: number,
   y: number,
-  color = "rgba(237,242,247,.7)",
+  color = withA(theme.fgMid, 1),
   align: CanvasTextAlign = "left",
 ): void {
   ctx.fillStyle = color;
-  ctx.font = '700 10px "Cascadia Mono", ui-monospace, monospace';
+  ctx.font = '700 12px "Cascadia Mono", ui-monospace, monospace';
   ctx.textAlign = align;
   ctx.fillText(text, x, y);
 }
@@ -100,8 +96,8 @@ function delivery(ctx: CanvasRenderingContext2D, w: number, h: number, t: number
     { x: w * 0.55, y: 105, width: 22, height: 116 },
   ];
   shelves.forEach((shelf) => {
-    ctx.fillStyle = "rgba(62,76,108,.6)";
-    ctx.strokeStyle = "rgba(112,215,247,.24)";
+    ctx.fillStyle = withA(theme.line, 0.6);
+    ctx.strokeStyle = withA(theme.accent, 0.24);
     ctx.beginPath();
     ctx.roundRect(shelf.x, shelf.y, shelf.width, shelf.height, 4);
     ctx.fill();
@@ -116,22 +112,22 @@ function delivery(ctx: CanvasRenderingContext2D, w: number, h: number, t: number
     { x: w * 0.69, y: h * 0.26 },
     { x: w - 72, y: 70 },
   ];
-  ctx.strokeStyle = "rgba(112,215,247,.22)";
+  ctx.strokeStyle = withA(theme.accent, 0.22);
   ctx.setLineDash([6, 6]);
   ctx.beginPath();
   ctx.moveTo(route[0].x, route[0].y);
   route.slice(1).forEach((p) => ctx.lineTo(p.x, p.y));
   ctx.stroke();
   ctx.setLineDash([]);
-  const p = polyline(ctx, route, (t * 0.16) % 1, "rgba(112,215,247,.72)");
-  robot(ctx, p.x, p.y, p.angle, CYAN, t);
-  ctx.fillStyle = "rgba(101,230,196,.1)";
-  ctx.strokeStyle = MINT;
+  const p = polyline(ctx, route, (t * 0.16) % 1, withA(theme.accent, 0.72));
+  robot(ctx, p.x, p.y, p.angle, C.ACCENT, t);
+  ctx.fillStyle = withA(theme.ok, 0.1);
+  ctx.strokeStyle = C.OK;
   ctx.beginPath();
   ctx.arc(route.at(-1)!.x, route.at(-1)!.y, 24, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  label(ctx, "DELIVERY GOAL", route.at(-1)!.x, route.at(-1)!.y - 32, MINT, "center");
+  label(ctx, "DELIVERY GOAL", route.at(-1)!.x, route.at(-1)!.y - 32, C.OK, "center");
 }
 
 function explorer(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
@@ -141,8 +137,8 @@ function explorer(ctx: CanvasRenderingContext2D, w: number, h: number, t: number
     { x: w * 0.78, y: h * 0.24, r: 18 },
   ];
   obstacles.forEach((o) => {
-    ctx.fillStyle = "rgba(62,76,108,.65)";
-    ctx.strokeStyle = "rgba(122,167,255,.34)";
+    ctx.fillStyle = withA(theme.line, 0.65);
+    ctx.strokeStyle = withA(themeColor("#1d4ea0", "#7aa7ff"), 0.34);
     ctx.beginPath();
     ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
     ctx.fill();
@@ -165,32 +161,32 @@ function explorer(ctx: CanvasRenderingContext2D, w: number, h: number, t: number
     { x: w * 0.2, y: h * 0.63 },
     { x: 65, y: h - 48 },
   ];
-  ctx.strokeStyle = "rgba(101,230,196,.2)";
+  ctx.strokeStyle = withA(theme.ok, 0.2);
   ctx.setLineDash([5, 5]);
   ctx.beginPath();
   ctx.moveTo(route[0].x, route[0].y);
   route.slice(1).forEach((point) => ctx.lineTo(point.x, point.y));
   ctx.stroke();
   ctx.setLineDash([]);
-  const { x, y, angle } = polyline(ctx, route, (t * 0.09) % 1, "rgba(101,230,196,.62)");
+  const { x, y, angle } = polyline(ctx, route, (t * 0.09) % 1, withA(theme.ok, 0.62));
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(t * 1.6);
   for (let i = 0; i < 24; i++) {
     const a = (i / 24) * Math.PI * 2;
-    ctx.strokeStyle = `rgba(101,230,196,${i % 3 === 0 ? 0.32 : 0.12})`;
+    ctx.strokeStyle = withA(theme.ok, i % 3 === 0 ? 0.32 : 0.12);
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(Math.cos(a) * 92, Math.sin(a) * 92);
     ctx.stroke();
   }
   ctx.restore();
-  robot(ctx, x, y, angle, MINT, t);
-  label(ctx, "360° LASER SCAN", 24, h - 22, MINT);
+  robot(ctx, x, y, angle, C.OK, t);
+  label(ctx, "360° LASER SCAN", 24, h - 22, C.OK);
 }
 
 function soccer(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
-  ctx.strokeStyle = "rgba(101,230,196,.22)";
+  ctx.strokeStyle = withA(theme.ok, 0.22);
   ctx.strokeRect(30, 25, w - 60, h - 50);
   ctx.beginPath();
   ctx.moveTo(w / 2, 25);
@@ -203,15 +199,15 @@ function soccer(ctx: CanvasRenderingContext2D, w: number, h: number, t: number):
   const bx = w * 0.54 + Math.max(0, phase - 0.58) * w * 0.82;
   const by = h * 0.5 + Math.sin(phase * Math.PI) * 24;
   const rx = w * 0.16 + Math.min(phase / 0.62, 1) * w * 0.36;
-  robot(ctx, rx, h * 0.57, 0, PURPLE, t);
-  ctx.fillStyle = YELLOW;
-  ctx.shadowColor = YELLOW;
+  robot(ctx, rx, h * 0.57, 0, C.ACCENT_2, t);
+  ctx.fillStyle = C.WARN;
+  ctx.shadowColor = C.WARN;
   ctx.shadowBlur = 12;
   ctx.beginPath();
   ctx.arc(bx, by, 10, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = MINT;
+  ctx.strokeStyle = C.OK;
   ctx.lineWidth = 3;
   ctx.strokeRect(w - 44, h * 0.32, 15, h * 0.36);
   label(
@@ -219,29 +215,29 @@ function soccer(ctx: CanvasRenderingContext2D, w: number, h: number, t: number):
     phase < 0.58 ? "TRACK BALL" : "SHOOT!",
     w / 2,
     18,
-    phase < 0.58 ? PURPLE : YELLOW,
+    phase < 0.58 ? C.ACCENT_2 : C.WARN,
     "center",
   );
 }
 
 function rescue(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
   const target = { x: w * 0.72, y: h * 0.5 };
-  ctx.strokeStyle = "rgba(251,113,133,.7)";
+  ctx.strokeStyle = withA(theme.danger, 0.7);
   ctx.beginPath();
   ctx.arc(target.x, target.y, 23 + Math.sin(t * 4) * 3, 0, Math.PI * 2);
   ctx.stroke();
-  label(ctx, "RESCUE", target.x, target.y + 4, "#fb7185", "center");
+  label(ctx, "RESCUE", target.x, target.y + 4, C.DANGER, "center");
   const starts = [
     { x: 70, y: 55 },
     { x: 55, y: h - 55 },
     { x: w * 0.38, y: h - 35 },
   ];
-  const colors = [CYAN, PURPLE, MINT];
+  const colors = [C.ACCENT, C.ACCENT_2, C.OK];
   starts.forEach((start, i) => {
     const p = (Math.sin(t * 0.7 - i * 0.55) + 1) / 2;
     const x = start.x + (target.x - start.x - (i - 1) * 42) * p;
     const y = start.y + (target.y - start.y + (i - 1) * 40) * p;
-    ctx.strokeStyle = `rgba(${i === 0 ? "112,215,247" : i === 1 ? "195,183,251" : "101,230,196"},.2)`;
+    ctx.strokeStyle = withA(colors[i], 0.2);
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
     ctx.lineTo(x, y);
@@ -249,7 +245,7 @@ function rescue(ctx: CanvasRenderingContext2D, w: number, h: number, t: number):
     robot(ctx, x, y, Math.atan2(target.y - y, target.x - x), colors[i], t + i, 0.72);
     label(ctx, `R${i + 1}`, x, y - 24, colors[i], "center");
   });
-  label(ctx, "COOPERATIVE ROBOTS", 24, h - 20, PURPLE);
+  label(ctx, "COOPERATIVE ROBOTS", 24, h - 20, C.ACCENT_2);
 }
 
 export function setupHeroShowcase(): void {
@@ -293,6 +289,11 @@ export function setupHeroShowcase(): void {
     if (raf) cancelAnimationFrame(raf);
     raf = 0;
   };
+
+  onThemeChange(() => {
+    pause();
+    render(performance.now());
+  });
 
   if (reduced) {
     render(1500);
