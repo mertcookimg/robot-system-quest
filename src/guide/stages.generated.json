@@ -505,7 +505,12 @@
         "title": "Robo Soccer — マルチロボット遠隔操作",
         "summary": "プレイヤーは/cmd_velでロボットを動かします。味方と相手の計5体の自動制御ロボットは/ball/poseをsubscribeし、それぞれの役割（forward / mid / defender）に応じてボールを追います。ROS 2のマルチロボット環境を単純化した構成で体験できます。",
         "msgTypes": ["geometry_msgs/msg/Twist", "geometry_msgs/msg/Pose", "std_msgs/msg/String"],
-        "cli": ["ros2 topic list", "ros2 topic echo /ball/pose", "ros2 topic echo /soccer/score"],
+        "cli": [
+          "ros2 topic list",
+          "ros2 topic echo /ball/pose",
+          "ros2 topic echo /soccer/score",
+          "ros2 topic echo /soccer/pass"
+        ],
         "realWorld": "RoboCupなどの実機ロボットサッカーでも、各ロボットが共有Topicからボール位置を取得し、自分の役割（Forward / Defender / Goalie）に応じてcmd_velを計算する構成が使われます。このステージは、そのようなマルチロボット通信を単純化したものです。",
         "state": {
           "nodes": [
@@ -532,6 +537,7 @@
               "sub": ["/player_node", "/ai_p2", "/ai_p3", "/ai_o1", "/ai_o2", "/ai_o3"]
             },
             { "name": "/soccer/score", "type": "std_msgs/msg/String", "pub": ["/ball_tracker"] },
+            { "name": "/soccer/pass", "type": "std_msgs/msg/String", "pub": ["/ball_tracker"] },
             { "name": "/goal/scored", "type": "std_msgs/msg/String", "pub": ["/ball_tracker"] }
           ]
         }
@@ -546,7 +552,12 @@
         "title": "Robo Soccer — multi-robot teleop",
         "summary": "プレイヤーは/cmd_velでロボットを動かします。味方と相手の計5体の自動制御ロボットは/ball/poseをsubscribeし、それぞれの役割（forward / mid / defender）に応じてボールを追います。ROS 2のマルチロボット環境を単純化した構成で体験できます。",
         "msgTypes": ["geometry_msgs/msg/Twist", "geometry_msgs/msg/Pose", "std_msgs/msg/String"],
-        "cli": ["ros2 topic list", "ros2 topic echo /ball/pose", "ros2 topic echo /soccer/score"],
+        "cli": [
+          "ros2 topic list",
+          "ros2 topic echo /ball/pose",
+          "ros2 topic echo /soccer/score",
+          "ros2 topic echo /soccer/pass"
+        ],
         "realWorld": "Real RoboCup soccer follows the same recipe: each robot subscribes to the shared ball pose and computes its own cmd_vel based on its role (Forward / Defender / Goalie). This stage shows the minimum multi-robot setup.",
         "state": {
           "nodes": [
@@ -573,6 +584,7 @@
               "sub": ["/player_node", "/ai_p2", "/ai_p3", "/ai_o1", "/ai_o2", "/ai_o3"]
             },
             { "name": "/soccer/score", "type": "std_msgs/msg/String", "pub": ["/ball_tracker"] },
+            { "name": "/soccer/pass", "type": "std_msgs/msg/String", "pub": ["/ball_tracker"] },
             { "name": "/goal/scored", "type": "std_msgs/msg/String", "pub": ["/ball_tracker"] }
           ]
         }

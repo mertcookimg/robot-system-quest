@@ -1,13 +1,27 @@
 /* Copyright 2026 Masato Kobayashi */
 /* SPDX-License-Identifier: Apache-2.0 */
 
+.game-videos-section,
+.stage-card--game,
+.stage-dialog--game,
+.hero-video-link--game {
+  --video-accent: var(--cyan);
+  --video-accent-rgb: var(--cyan-rgb);
+}
+
+.hero-video-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 24px;
+}
+
 .hero-video-link {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   min-height: 44px;
   margin-top: 8px;
-  color: var(--purple);
+  color: var(--video-accent, var(--purple));
   font-size: 14px;
   font-weight: 650;
   text-decoration: none;
@@ -19,24 +33,130 @@
   color: var(--fg);
 }
 
-.lesson-videos-section {
+.guide-video-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 18px;
+  min-width: 0;
+  padding: 24px max(clamp(28px, 6vw, 96px), (100% - var(--content-max)) / 2);
+  border-bottom: 1px solid var(--line);
+}
+.guide-video-grid > .guide-section {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
   background:
-    radial-gradient(ellipse at 15% 30%, rgba(var(--purple-rgb), 0.065), transparent 45rem),
+    radial-gradient(
+      ellipse at 15% 30%,
+      rgba(var(--video-accent-rgb, var(--purple-rgb)), 0.065),
+      transparent 45rem
+    ),
     var(--panel-2);
+}
+.stage-video-summary {
+  list-style: none;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.stage-video-summary::-webkit-details-marker {
+  display: none;
+}
+.stage-video-summary-heading {
+  display: grid;
+  grid-template-columns: clamp(112px, 10vw, 160px) minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 112px;
+  margin: 0;
+  font: inherit;
+}
+.stage-video-summary-thumbnail {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--panel);
+}
+.stage-video-summary-thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.stage-video-summary-icon {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: auto;
+  padding-left: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 50%;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.72);
+  font-size: 12px;
+}
+.stage-video-summary-copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.stage-video-summary-title {
+  color: var(--fg);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.stage-video-summary-meta {
+  color: var(--fg-mid);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.stage-video-summary-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+  color: var(--video-accent, var(--purple));
+  font-size: 14px;
+  font-weight: 650;
+}
+.stage-video-chevron {
+  font-size: 22px;
+  line-height: 1;
+}
+.stage-video-collapse-label,
+.stage-video-disclosure[open] .stage-video-expand-label {
+  display: none;
+}
+.stage-video-disclosure[open] .stage-video-collapse-label {
+  display: inline;
+}
+.stage-video-disclosure[open] .stage-video-chevron {
+  transform: rotate(180deg);
+}
+.stage-video-summary:hover .stage-video-summary-title {
+  color: var(--video-accent, var(--purple));
+}
+.stage-video-body {
+  margin-top: 16px;
+  padding-block: 22px 14px;
+  border-top: 1px solid var(--line);
 }
 .lesson-video-heading {
   max-width: 800px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 .lesson-video-heading .section-kicker {
-  color: var(--purple);
-}
-.lesson-video-heading h2 {
-  margin: 12px 0 14px;
-  font-size: clamp(28px, 3.2vw, 42px);
-  line-height: 1.25;
-  letter-spacing: -0.035em;
-  text-wrap: balance;
+  color: var(--video-accent, var(--purple));
 }
 .lesson-video-heading > p:last-child {
   margin: 0;
@@ -46,9 +166,9 @@
 }
 .lesson-video-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  gap: clamp(24px, 3vw, 42px);
+  gap: 24px;
 }
 .lesson-video-player {
   position: relative;
@@ -104,7 +224,7 @@
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 50%;
   color: var(--on-accent);
-  background: var(--purple);
+  background: var(--video-accent, var(--purple));
   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
   font-size: 23px;
 }
@@ -133,10 +253,10 @@
 }
 .lesson-video-meta > * {
   padding: 6px 9px;
-  border: 1px solid rgba(var(--purple-rgb), 0.25);
+  border: 1px solid rgba(var(--video-accent-rgb, var(--purple-rgb)), 0.25);
   border-radius: 5px;
-  color: var(--purple);
-  background: rgba(var(--purple-rgb), 0.06);
+  color: var(--video-accent, var(--purple));
+  background: rgba(var(--video-accent-rgb, var(--purple-rgb)), 0.06);
   font: 700 14px/1.2 var(--mono);
 }
 .lesson-video-info > p {
@@ -163,12 +283,12 @@
   cursor: pointer;
 }
 .lesson-video-editions button[aria-pressed="true"] {
-  border-color: var(--purple);
+  border-color: var(--video-accent, var(--purple));
   color: var(--on-accent);
-  background: var(--purple);
+  background: var(--video-accent, var(--purple));
 }
 .lesson-video-editions button:hover {
-  border-color: var(--purple);
+  border-color: var(--video-accent, var(--purple));
 }
 .lesson-video-info .lesson-video-format {
   margin-bottom: 10px;
@@ -196,7 +316,7 @@
   display: inline-flex;
   align-items: center;
   min-height: 40px;
-  color: var(--purple);
+  color: var(--video-accent, var(--purple));
   font-size: 14px;
   font-weight: 650;
   text-underline-offset: 4px;
@@ -204,15 +324,15 @@
 .lesson-video-info .lesson-video-tip {
   margin: 17px 0 0;
   padding: 13px 15px;
-  border-left: 2px solid var(--purple);
+  border-left: 2px solid var(--video-accent, var(--purple));
   border-radius: 0 6px 6px 0;
   color: var(--fg-mid);
-  background: rgba(var(--purple-rgb), 0.055);
+  background: rgba(var(--video-accent-rgb, var(--purple-rgb)), 0.055);
   font-size: 14px;
   line-height: 1.8;
 }
 .lesson-video-tip strong {
-  color: var(--purple);
+  color: var(--video-accent, var(--purple));
 }
 
 .lesson-video-chapters {
@@ -230,14 +350,14 @@
   cursor: pointer;
 }
 .lesson-video-chapters > summary::marker {
-  color: var(--purple);
+  color: var(--video-accent, var(--purple));
 }
 .lesson-video-chapters[open] > summary {
   border-bottom: 1px solid var(--line);
 }
 .lesson-video-chapter-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 7px;
   margin: 0;
   padding: 14px;
@@ -264,12 +384,12 @@
 }
 .lesson-video-chapter:hover,
 .lesson-video-chapter[aria-current="true"] {
-  border-color: rgba(var(--purple-rgb), 0.3);
+  border-color: rgba(var(--video-accent-rgb, var(--purple-rgb)), 0.3);
   color: var(--fg);
-  background: rgba(var(--purple-rgb), 0.08);
+  background: rgba(var(--video-accent-rgb, var(--purple-rgb)), 0.08);
 }
 .video-chapter-number {
-  color: var(--purple);
+  color: var(--video-accent, var(--purple));
   font: 700 14px/1.4 var(--mono);
 }
 .video-chapter-name {
@@ -283,7 +403,7 @@
   white-space: nowrap;
 }
 .video-chapter-play {
-  color: var(--purple);
+  color: var(--video-accent, var(--purple));
   font-size: 14px;
 }
 .stage-video-link,
@@ -293,7 +413,7 @@
   justify-content: space-between;
   gap: 10px;
   min-height: 40px;
-  color: var(--purple);
+  color: var(--video-accent, var(--purple));
   font-size: 14px;
   line-height: 1.5;
   font-weight: 650;
@@ -308,9 +428,9 @@
   flex-wrap: wrap;
   margin: 12px 0 0;
   padding: 8px 13px;
-  border: 1px solid rgba(var(--purple-rgb), 0.3);
+  border: 1px solid rgba(var(--video-accent-rgb, var(--purple-rgb)), 0.3);
   border-radius: 6px;
-  background: rgba(var(--purple-rgb), 0.06);
+  background: rgba(var(--video-accent-rgb, var(--purple-rgb)), 0.06);
 }
 .stage-video-link:hover,
 .dialog-video-link:hover,
@@ -321,6 +441,7 @@
   color: var(--fg);
 }
 .hero-video-link:focus-visible,
+.stage-video-summary:focus-visible,
 .lesson-video-poster:focus-visible,
 .lesson-video-editions button:focus-visible,
 .lesson-video-chapters > summary:focus-visible,
@@ -337,9 +458,8 @@
 }
 
 @media (max-width: 1120px) {
-  .lesson-video-layout {
+  .guide-video-grid {
     grid-template-columns: minmax(0, 1fr);
-    gap: 24px;
   }
   .lesson-video-info {
     max-width: 740px;
@@ -347,6 +467,18 @@
 }
 
 @media (max-width: 760px) {
+  .guide-video-grid {
+    gap: 12px;
+    padding: 20px 22px;
+  }
+  .guide-video-grid > .guide-section {
+    padding: 12px;
+  }
+  .stage-video-summary-heading {
+    grid-template-columns: clamp(96px, 24vw, 140px) minmax(0, 1fr);
+    gap: 12px;
+    min-height: 108px;
+  }
   .lesson-video-heading {
     margin-bottom: 24px;
   }
@@ -373,5 +505,14 @@
     bottom: 12px;
     left: 14px;
     font-size: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .guide-video-grid {
+    padding-inline: 16px;
+  }
+  .stage-video-summary-title {
+    font-size: 16px;
   }
 }

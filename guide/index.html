@@ -48,27 +48,33 @@
         <a href="#skills"><span>02</span> 学べること</a>
         <a href="#learning-path"><span>03</span> 学び方</a>
         <p class="guide-nav-label">CONTENTS</p>
+        <a href="#game-videos"><span>▶</span> ゲーム紹介動画</a>
         <a href="#lesson-videos"><span>V</span> レッスン解説動画</a>
         <a href="#games"><span>G</span> Games <b id="nav-game-count">0</b></a>
         <a href="#lessons"><span>L</span> Lessons <b id="nav-lesson-count">0</b></a>
         <a href="#real-robot"><span>R</span> 実機で学ぶ</a>
         <p class="guide-nav-label">TRY IT</p>
         <a class="guide-open-app" href="../" data-lang-link><span>▶</span> Game / Lessonを開く</a>
-        <p class="guide-nav-label guide-creator-label">CREATOR</p>
+      </nav>
+
+      <div class="guide-creator">
+        <p class="guide-creator-label">CREATOR</p>
         <a
           class="guide-author-site"
           href="https://mertcookimg.github.io/"
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="小林聖人のサイトを開く"
         >
-          <span>◆</span>
           <span class="creator-link-copy">
             <strong>Masato Kobayashi</strong>
-            <small>小林聖人 · 作品・講義・プロフィール</small>
+            <small>作品・講義・プロフィール</small>
           </span>
-          <i>↗</i>
+          <svg class="creator-link-arrow" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 17 17 7M7 7h10v10" />
+          </svg>
         </a>
-      </nav>
+      </div>
     </aside>
 
     <div class="guide-shell">
@@ -164,10 +170,16 @@
               <a class="primary-cta" href="#games">Gamesから見る <span>↓</span></a>
               <a class="secondary-cta" href="#lessons">Lessonsから見る</a>
             </div>
-            <a class="hero-video-link" href="#lesson-videos">
-              <span aria-hidden="true">▶</span> 全24レッスンを動画で見る
-              <span aria-hidden="true">↓</span>
-            </a>
+            <div class="hero-video-links">
+              <a class="hero-video-link hero-video-link--game" href="#game-videos">
+                <span aria-hidden="true">▶</span> 全14ゲームを動画で見る
+                <span aria-hidden="true">↓</span>
+              </a>
+              <a class="hero-video-link" href="#lesson-videos">
+                <span aria-hidden="true">▶</span> 全24レッスンを動画で見る
+                <span aria-hidden="true">↓</span>
+              </a>
+            </div>
           </div>
 
           <div class="hero-visual" aria-hidden="true">
@@ -456,13 +468,23 @@
           </div>
         </section>
 
-        <section
-          class="guide-section lesson-videos-section"
-          id="lesson-videos"
-          aria-labelledby="lesson-videos-title"
-        >
-          <div id="lesson-video-content"></div>
-        </section>
+        <div class="guide-video-grid">
+          <section
+            class="guide-section game-videos-section"
+            id="game-videos"
+            aria-labelledby="game-videos-title"
+          >
+            <div id="game-video-content"></div>
+          </section>
+
+          <section
+            class="guide-section lesson-videos-section"
+            id="lesson-videos"
+            aria-labelledby="lesson-videos-title"
+          >
+            <div id="lesson-video-content"></div>
+          </section>
+        </div>
 
         <section class="guide-section catalogue-section" id="games">
           <div class="section-heading">

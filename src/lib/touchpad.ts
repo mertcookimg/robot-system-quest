@@ -91,6 +91,9 @@ function syncTouchpadForStage(): void {
   resetTouchpadLayout();
 
   const stageId = touchpadRoot.dataset.stage ?? "";
+  const kick = touchpadRoot.querySelector<HTMLButtonElement>(".touch-ok");
+  if (kick)
+    kick.textContent = stageId === "robo_soccer" ? (getLang() === "ja" ? "キック" : "KICK") : "OK";
   const blockEditor = document.getElementById("block-editor");
   const blockEditing = blockEditor?.style.display !== "none";
   const drivesWithEditor = BLOCK_EDITOR_DRIVE_STAGES.has(stageId);
@@ -361,6 +364,9 @@ export function setupTouchpad(): void {
 
   const refreshLanguage = () => {
     const ja = getLang() === "ja";
+    const kick = root.querySelector<HTMLButtonElement>(".touch-ok");
+    if (kick)
+      kick.textContent = root.dataset.stage === "robo_soccer" ? (ja ? "キック" : "KICK") : "OK";
     title.textContent = ja ? "タッチ操作" : "TOUCH CONTROLS";
     root.setAttribute("aria-label", ja ? "画面上のタッチ操作" : "On-screen touch controls");
     switcher.setAttribute("aria-label", ja ? "移動操作の種類" : "Movement control style");

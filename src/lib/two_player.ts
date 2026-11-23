@@ -14,8 +14,10 @@
 // RShift is disambiguated from LShift via KeyboardEvent.location === 2.
 
 import { isStageInteractionBlocked, isTypingTarget, ownsNativeKey } from "./input_guard";
+import { consumeStageGamepadButtons, readStageGamepads } from "./stage_gamepads";
 
 const STICK_DEAD = 0.35;
+const MOVE_DEAD = 0.18;
 
 const p1Keys = new Set<string>();
 const p2Keys = new Set<string>();
@@ -25,6 +27,9 @@ let prevP1Action = false;
 let prevP2Action = false;
 
 export interface PlayerInput {
+  /** Screen-space movement vector with a maximum length of one. */
+  moveX: number;
+  moveY: number;
   fwd: boolean;
   back: boolean;
   left: boolean;
@@ -123,7 +128,7 @@ export function isActive(): boolean {
   return installed;
 }
 
-/** Reset edge-detection (call on stage reset so a held button isn't mis-fired). */
+/** Reset round edges while keeping consumed UI buttons masked until release. */
 export function resetEdges(): void {
   prevP1Action = false;
   prevP2Action = false;
@@ -133,15 +138,15 @@ export function resetEdges(): void {
 export function releasePlayerInput(): void {
   p1Keys.clear();
   p2Keys.clear();
-  const { p1, p2 } = findPads();
-  prevP1Action = p1 ? readPad(p1).action : false;
-  prevP2Action = p2 ? readPad(p2).action : false;
-  prevToggleY = p1?.buttons[3]?.pressed ?? false;
+  consumeStageGamepadButtons();
+  prevP1Action = false;
+  prevP2Action = false;
+  prevToggleY = false;
   key2Pending = false;
 }
 
 function findPads(): { p1: Gamepad | null; p2: Gamepad | null } {
-  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  const pads = readStageGamepads();
   let p1: Gamepad | null = null;
   let p2: Gamepad | null = null;
   for (const p of pads) {
@@ -155,7 +160,7 @@ function findPads(): { p1: Gamepad | null; p2: Gamepad | null } {
   return { p1, p2 };
 }
 
-interface PadAxes {
+interface DigitalInput {
   fwd: boolean;
   back: boolean;
   left: boolean;
@@ -164,13 +169,44 @@ interface PadAxes {
   boost: boolean;
 }
 
+interface PadAxes extends DigitalInput {
+  moveX: number;
+  moveY: number;
+}
+
+function digitalMovement(input: Pick<DigitalInput, "fwd" | "back" | "left" | "right">) {
+  const x = Number(input.right) - Number(input.left);
+  const y = Number(input.back) - Number(input.fwd);
+  const length = Math.hypot(x, y) || 1;
+  return { moveX: x / length, moveY: y / length };
+}
+
+function stickMovement(x: number, y: number) {
+  const length = Math.hypot(x, y);
+  if (!Number.isFinite(length) || length <= MOVE_DEAD) return { moveX: 0, moveY: 0 };
+  const strength = (Math.min(1, length) - MOVE_DEAD) / (1 - MOVE_DEAD);
+  return { moveX: (x / length) * strength, moveY: (y / length) * strength };
+}
+
 function readPad(pad: Gamepad): PadAxes {
   const ax = pad.axes[0] ?? 0;
   const ay = pad.axes[1] ?? 0;
-  const fwd = (pad.buttons[12]?.pressed ?? false) || ay < -STICK_DEAD;
-  const back = (pad.buttons[13]?.pressed ?? false) || ay > STICK_DEAD;
-  const left = (pad.buttons[14]?.pressed ?? false) || ax < -STICK_DEAD;
-  const right = (pad.buttons[15]?.pressed ?? false) || ax > STICK_DEAD;
+  const dpad = {
+    fwd: pad.buttons[12]?.pressed ?? false,
+    back: pad.buttons[13]?.pressed ?? false,
+    left: pad.buttons[14]?.pressed ?? false,
+    right: pad.buttons[15]?.pressed ?? false,
+  };
+  // Racing keeps its original digital thresholds. Soccer uses the continuous
+  // vector below, including fine stick movements and arbitrary angles.
+  const fwd = dpad.fwd || ay < -STICK_DEAD;
+  const back = dpad.back || ay > STICK_DEAD;
+  const left = dpad.left || ax < -STICK_DEAD;
+  const right = dpad.right || ax > STICK_DEAD;
+  const movement =
+    dpad.fwd || dpad.back || dpad.left || dpad.right
+      ? digitalMovement(dpad)
+      : stickMovement(ax, ay);
   const action =
     (pad.buttons[0]?.pressed ?? false) || // A / Cross
     (pad.buttons[2]?.pressed ?? false); // X / Square
@@ -179,11 +215,16 @@ function readPad(pad: Gamepad): PadAxes {
     (pad.buttons[5]?.pressed ?? false) || // RB
     (pad.buttons[6]?.pressed ?? false) || // LT
     (pad.buttons[7]?.pressed ?? false); // RT
-  return { fwd, back, left, right, action, boost };
+  return { fwd, back, left, right, action, boost, ...movement };
 }
 
-function blend(pad: PadAxes | null, kb: PadAxes): PadAxes {
-  if (!pad) return kb;
+function blend(pad: PadAxes | null, kb: DigitalInput): PadAxes {
+  const keyboardMovement = digitalMovement(kb);
+  if (!pad) return { ...kb, ...keyboardMovement };
+  const movement =
+    kb.fwd || kb.back || kb.left || kb.right
+      ? keyboardMovement
+      : { moveX: pad.moveX, moveY: pad.moveY };
   return {
     fwd: pad.fwd || kb.fwd,
     back: pad.back || kb.back,
@@ -191,21 +232,23 @@ function blend(pad: PadAxes | null, kb: PadAxes): PadAxes {
     right: pad.right || kb.right,
     action: pad.action || kb.action,
     boost: pad.boost || kb.boost,
+    ...movement,
   };
 }
 
-export function pollP1(): PlayerInput {
+export function pollP1(options: { arrowKeys?: boolean } = {}): PlayerInput {
   if (isStageInteractionBlocked()) {
     releasePlayerInput();
     return neutralInput();
   }
   const { p1 } = findPads();
   const pad = p1 ? readPad(p1) : null;
-  const kb: PadAxes = {
-    fwd: p1Keys.has("w"),
-    back: p1Keys.has("s"),
-    left: p1Keys.has("a"),
-    right: p1Keys.has("d"),
+  const arrows = options.arrowKeys === true;
+  const kb: DigitalInput = {
+    fwd: p1Keys.has("w") || (arrows && p2Keys.has("arrowup")),
+    back: p1Keys.has("s") || (arrows && p2Keys.has("arrowdown")),
+    left: p1Keys.has("a") || (arrows && p2Keys.has("arrowleft")),
+    right: p1Keys.has("d") || (arrows && p2Keys.has("arrowright")),
     action: p1Keys.has("e") || p1Keys.has(" "),
     boost: p1Keys.has("shift") || p1Keys.has("x"),
   };
@@ -222,7 +265,7 @@ export function pollP2(): PlayerInput {
   }
   const { p2 } = findPads();
   const pad = p2 ? readPad(p2) : null;
-  const kb: PadAxes = {
+  const kb: DigitalInput = {
     fwd: p2Keys.has("arrowup"),
     back: p2Keys.has("arrowdown"),
     left: p2Keys.has("arrowleft"),
@@ -248,6 +291,8 @@ export function padCount(): number {
 
 function neutralInput(): PlayerInput {
   return {
+    moveX: 0,
+    moveY: 0,
     fwd: false,
     back: false,
     left: false,

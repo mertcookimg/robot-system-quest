@@ -17,6 +17,15 @@ const element = <T extends HTMLElement = HTMLElement>(id: string): T =>
   document.getElementById(id) as T;
 const dialog = () => element<HTMLDialogElement>("stage-dialog");
 const content = () => element("dialog-content");
+const videoDisclosure = (mode: "game" | "lesson") =>
+  element(`${mode}-video-content`).querySelector<HTMLDetailsElement>(".stage-video-disclosure")!;
+
+function setVideoOpen(mode: "game" | "lesson", open: boolean): void {
+  const disclosure = videoDisclosure(mode);
+  disclosure.open = open;
+  // Happy DOM does not consistently schedule the native toggle event.
+  disclosure.dispatchEvent(new Event("toggle"));
+}
 
 function openStage(id: string): void {
   dialog().close();
@@ -348,7 +357,7 @@ test("all Lesson guides link to the supplied video chapter in the selected langu
     ["world_model", "25:55", 1555],
   ] as const;
   assert.equal(document.querySelectorAll("#lesson-grid .stage-video-link").length, 24);
-  assert.equal(document.querySelectorAll("#game-grid .stage-video-link").length, 0);
+  assert.equal(document.querySelectorAll("#game-grid .stage-video-link").length, 14);
   for (const [lang, videoId] of [
     ["ja", "YJ34tb8ADns"],
     ["en", "k5dfFVgThU8"],
@@ -368,17 +377,21 @@ test("all Lesson guides link to the supplied video chapter in the selected langu
       assert.ok(link.relList.contains("noopener"));
       assert.ok(link.relList.contains("noreferrer"));
     }
-    openStage("delivery");
-    assert.equal(content().querySelector(".dialog-video-link"), null);
   }
 });
 
 test("walkthrough loads on request, seeks chapters and preserves the chapter when changing editions", () => {
   const videos = element("lesson-video-content");
   const player = () => videos.querySelector<HTMLIFrameElement>(".lesson-video-player iframe");
+  const thumbnail = () =>
+    videos.querySelector<HTMLImageElement>(".stage-video-summary-thumbnail img")!;
   const edition = (lang: string) =>
     videos.querySelector<HTMLButtonElement>(`[data-video-lang="${lang}"]`)!;
   const details = () => videos.querySelector<HTMLDetailsElement>(".lesson-video-chapters")!;
+  assert.equal(videoDisclosure("lesson").open, false);
+  assert.equal(videoDisclosure("game").open, false);
+  assert.match(thumbnail().src, /\/YJ34tb8ADns\/hqdefault\.jpg$/);
+  setVideoOpen("lesson", true);
   assert.equal(details().open, false);
   assert.equal(videos.querySelectorAll("[data-video-chapter]").length, 24);
   assert.equal(player(), null);
@@ -392,6 +405,7 @@ test("walkthrough loads on request, seeks chapters and preserves the chapter whe
   assert.equal(player(), null);
   assert.equal(edition("en").getAttribute("aria-pressed"), "true");
   assert.equal(edition("ja").getAttribute("aria-pressed"), "false");
+  assert.match(thumbnail().src, /\/k5dfFVgThU8\/hqdefault\.jpg$/);
   assert.equal(document.documentElement.lang, "ja");
   videos.querySelector<HTMLButtonElement>("[data-video-play]")!.click();
   let url = new URL(player()!.src);
@@ -420,6 +434,7 @@ test("walkthrough loads on request, seeks chapters and preserves the chapter whe
   );
 
   edition("ja").click();
+  assert.match(thumbnail().src, /\/YJ34tb8ADns\/hqdefault\.jpg$/);
   url = new URL(player()!.src);
   assert.equal(url.pathname, "/embed/YJ34tb8ADns");
   assert.equal(url.searchParams.get("start"), "1555");
@@ -433,10 +448,12 @@ test("walkthrough loads on request, seeks chapters and preserves the chapter whe
   assert.ok(fallback.relList.contains("noreferrer"));
 
   setLang("en");
+  assert.match(thumbnail().src, /\/k5dfFVgThU8\/hqdefault\.jpg$/);
   url = new URL(player()!.src);
   assert.equal(url.pathname, "/embed/k5dfFVgThU8");
   assert.equal(url.searchParams.get("start"), "1555");
   assert.equal(details().open, true);
+  assert.equal(videoDisclosure("lesson").open, true);
   assert.match(element("lesson-videos-title").textContent!, /All 24 lessons/);
   assert.equal(
     new URL(videos.querySelector<HTMLAnchorElement>(".lesson-video-lesson")!.href).searchParams.get(
@@ -453,4 +470,200 @@ test("walkthrough loads on request, seeks chapters and preserves the chapter whe
     videos.querySelector(".lesson-video-format")!.textContent!,
     /English interface with Japanese explanations and captions/,
   );
+});
+
+test("all Game cards, guides and chapters use the supplied English showcase timestamps", () => {
+  const chapters = [
+    ["delivery", "00:00", 0],
+    ["follower", "00:16", 16],
+    ["lidar_explorer", "00:32", 32],
+    ["patrol", "00:54", 54],
+    ["racing", "01:13", 73],
+    ["robo_soccer", "01:51", 111],
+    ["treasure_map", "02:25", 145],
+    ["tag_chase", "02:45", 165],
+    ["sumo_battle", "03:21", 201],
+    ["battery_rush", "03:45", 225],
+    ["robo_kitchen", "04:30", 270],
+    ["swarm_rescue", "05:15", 315],
+    ["robo_baseball", "05:40", 340],
+    ["robo_tennis", "06:08", 368],
+  ] as const;
+  for (const lang of ["ja", "en"] as const) {
+    setLang(lang);
+    assert.equal(document.querySelectorAll("#game-grid .stage-video-link").length, 14);
+    for (const [stageId, time, seconds] of chapters) {
+      const card = document.querySelector(`[data-stage-id="${stageId}"]`)!.closest(".stage-card")!;
+      openStage(stageId);
+      const links = [
+        card.querySelector<HTMLAnchorElement>(".stage-video-link")!,
+        content().querySelector<HTMLAnchorElement>(".dialog-video-link")!,
+      ];
+      for (const link of links) {
+        assert.ok(link);
+        const url = new URL(link.href);
+        assert.equal(url.origin, "https://www.youtube.com");
+        assert.equal(url.searchParams.get("v"), "bTiUXUTwiko");
+        assert.equal(url.searchParams.get("t"), `${seconds}s`);
+        assert.equal(url.searchParams.has("lang"), false);
+        assert.equal(link.hasAttribute("data-lang-link"), false);
+        assert.equal(link.querySelector("time")!.textContent, time);
+        assert.equal(link.target, "_blank");
+        assert.ok(link.relList.contains("noopener"));
+        assert.ok(link.relList.contains("noreferrer"));
+      }
+      const chapter = element("game-video-content").querySelector(
+        `[data-video-chapter="${stageId}"]`,
+      )!;
+      assert.equal(chapter.querySelector("time")!.textContent, time);
+      assert.equal(chapter.querySelector("time")!.getAttribute("datetime"), `PT${seconds}S`);
+    }
+  }
+});
+
+test("Game showcase loads on demand and keeps its chapter in both Guide languages", () => {
+  const videos = element("game-video-content");
+  const player = () => videos.querySelector<HTMLIFrameElement>(".lesson-video-player iframe");
+  const details = () => videos.querySelector<HTMLDetailsElement>(".lesson-video-chapters")!;
+  const lessonPlayer = () =>
+    element("lesson-video-content").querySelector<HTMLIFrameElement>("iframe");
+  assert.equal(videoDisclosure("game").open, false);
+  setVideoOpen("game", true);
+  assert.equal(player(), null);
+  assert.equal(details().open, false);
+  assert.equal(videos.querySelectorAll("[data-video-chapter]").length, 14);
+  assert.equal(videos.querySelector('[data-video-lang="ja"]'), null);
+  assert.match(videos.querySelector(".lesson-video-format")!.textContent!, /英語/);
+  assert.match(videos.querySelector(".lesson-video-format")!.textContent!, /ダーク/);
+  assert.match(videos.querySelector(".lesson-video-format")!.textContent!, /ナレーションなし/);
+
+  const previousLesson = lessonPlayer();
+  videos.querySelector<HTMLButtonElement>("[data-video-play]")!.click();
+  let url = new URL(player()!.src);
+  assert.equal(url.origin, "https://www.youtube-nocookie.com");
+  assert.equal(url.pathname, "/embed/bTiUXUTwiko");
+  assert.equal(url.searchParams.get("start"), "0");
+  assert.equal(url.searchParams.get("autoplay"), "1");
+  assert.equal(document.activeElement, element("game-video-player"));
+  assert.equal(
+    lessonPlayer(),
+    previousLesson,
+    "Playing a Game video must not reload Lesson playback",
+  );
+
+  details().open = true;
+  videos.querySelector<HTMLButtonElement>('[data-video-chapter="robo_soccer"]')!.click();
+  url = new URL(player()!.src);
+  assert.equal(url.searchParams.get("start"), "111");
+  assert.equal(videos.querySelectorAll('[data-video-chapter][aria-current="true"]').length, 1);
+  assert.equal(
+    videos
+      .querySelector('[data-video-chapter][aria-current="true"]')!
+      .getAttribute("data-video-chapter"),
+    "robo_soccer",
+  );
+  const tryGame = () => videos.querySelector<HTMLAnchorElement>(".lesson-video-lesson")!;
+  const gameUrl = new URL(tryGame().href);
+  assert.equal(gameUrl.hash, "#robo_soccer");
+  assert.equal(gameUrl.searchParams.get("direct"), "stage");
+  assert.equal(gameUrl.searchParams.get("lang"), "ja");
+  assert.equal(tryGame().dataset.guidePlayStage, "robo_soccer");
+  assert.equal(tryGame().dataset.stageMode, "game");
+
+  setLang("en");
+  url = new URL(player()!.src);
+  assert.equal(url.pathname, "/embed/bTiUXUTwiko");
+  assert.equal(url.searchParams.get("start"), "111");
+  assert.equal(url.searchParams.get("autoplay"), "0");
+  assert.equal(details().open, true);
+  assert.equal(videoDisclosure("game").open, true);
+  assert.equal(videos.querySelector('[data-video-lang="ja"]'), null);
+  assert.match(element("game-videos-title").textContent!, /14 games/i);
+  assert.match(videos.querySelector(".lesson-video-format")!.textContent!, /English/);
+  assert.match(videos.querySelector(".lesson-video-format")!.textContent!, /dark mode/i);
+  assert.match(videos.querySelector(".lesson-video-format")!.textContent!, /no spoken narration/i);
+  assert.equal(new URL(tryGame().href).searchParams.get("lang"), "en");
+  const fallback = videos.querySelector<HTMLAnchorElement>(".lesson-video-youtube")!;
+  assert.equal(new URL(fallback.href).searchParams.get("v"), "bTiUXUTwiko");
+  assert.equal(new URL(fallback.href).searchParams.get("t"), "111s");
+  assert.equal(fallback.target, "_blank");
+  assert.ok(fallback.relList.contains("noopener"));
+  assert.ok(fallback.relList.contains("noreferrer"));
+
+  const previousGame = player();
+  element("lesson-video-content")
+    .querySelector<HTMLButtonElement>('[data-video-chapter="navigation"]')!
+    .click();
+  assert.equal(player(), previousGame, "Lesson chapter changes must leave Game playback alone");
+  details().open = false;
+  setLang("ja");
+  assert.equal(new URL(player()!.src).pathname, "/embed/bTiUXUTwiko");
+  assert.equal(new URL(player()!.src).searchParams.get("start"), "111");
+  assert.equal(details().open, false);
+});
+
+test("collapsing either video stops playback while preserving its chapter and the other player", () => {
+  const cases = [
+    ["game", "robo_soccer", "111"],
+    ["lesson", "navigation", "795"],
+  ] as const;
+  for (const [mode, stageId] of cases) {
+    setVideoOpen(mode, true);
+    const videos = element(`${mode}-video-content`);
+    const chapters = videos.querySelector<HTMLDetailsElement>(".lesson-video-chapters")!;
+    chapters.open = true;
+    chapters.dispatchEvent(new Event("toggle"));
+    videos.querySelector<HTMLButtonElement>(`[data-video-chapter="${stageId}"]`)!.click();
+  }
+  for (const [mode, , start] of cases) {
+    const videos = element(`${mode}-video-content`);
+    const player = () => videos.querySelector<HTMLIFrameElement>("iframe");
+    const chapters = () => videos.querySelector<HTMLDetailsElement>(".lesson-video-chapters")!;
+    const other = mode === "game" ? "lesson" : "game";
+    const otherPlayer = element(`${other}-video-content`).querySelector("iframe");
+    chapters().open = true;
+    const beforeChapterToggle = player();
+    chapters().dispatchEvent(new Event("toggle"));
+    assert.equal(player(), beforeChapterToggle, "Chapter expansion must not stop playback");
+    if (mode === "lesson")
+      videos.querySelector<HTMLButtonElement>('[data-video-lang="en"]')!.click();
+
+    setVideoOpen(mode, false);
+    assert.equal(player(), null, "A collapsed panel cannot leave a hidden player running");
+    assert.equal(element(`${other}-video-content`).querySelector("iframe"), otherPlayer);
+    assert.equal(chapters().open, true);
+
+    setVideoOpen(mode, true);
+    assert.equal(player(), null, "Opening the panel does not restart playback");
+    videos.querySelector<HTMLButtonElement>("[data-video-play]")!.click();
+    let url = new URL(player()!.src);
+    assert.equal(url.searchParams.get("start"), start);
+    if (mode === "lesson") assert.equal(url.pathname, "/embed/k5dfFVgThU8");
+    setVideoOpen(mode, false);
+    setLang("en");
+    assert.equal(videoDisclosure(mode).open, false);
+    assert.equal(chapters().open, true);
+    assert.equal(player(), null, "Language changes must not reload a collapsed video");
+    const fallback = videos.querySelector<HTMLAnchorElement>(".lesson-video-youtube")!;
+    assert.equal(new URL(fallback.href).searchParams.get("t"), `${start}s`);
+    setVideoOpen(mode, true);
+    videos.querySelector<HTMLButtonElement>("[data-video-play]")!.click();
+    url = new URL(player()!.src);
+    assert.equal(url.searchParams.get("start"), start);
+  }
+});
+
+test("video navigation opens only its compact panel without starting playback", () => {
+  setVideoOpen("game", false);
+  setVideoOpen("lesson", false);
+  document.querySelector<HTMLAnchorElement>('.hero-video-link[href="#game-videos"]')!.click();
+  assert.equal(videoDisclosure("game").open, true);
+  assert.equal(videoDisclosure("lesson").open, false);
+  assert.equal(element("game-video-content").querySelector("iframe"), null);
+  setVideoOpen("game", false);
+  element<HTMLButtonElement>("menu-toggle").click();
+  element("guide-sidebar").querySelector<HTMLAnchorElement>('a[href="#lesson-videos"]')!.click();
+  assert.equal(videoDisclosure("lesson").open, true);
+  assert.equal(videoDisclosure("game").open, false);
+  assert.equal(element("lesson-video-content").querySelector("iframe"), null);
 });

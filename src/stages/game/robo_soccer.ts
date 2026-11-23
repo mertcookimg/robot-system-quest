@@ -26,23 +26,31 @@ import { formatPose, formatTwist } from "../../lib/hud";
 import { makeOverlayPanel, type OverlayPanelHandle } from "../../lib/overlay_panel";
 import { t, tx, onLangChange } from "../../i18n";
 import * as twoPlayer from "../../lib/two_player";
+import {
+  SOCCER_CONTROL,
+  canControlSoccerBall,
+  dribbleSoccerBall,
+  shootSoccerBall,
+} from "../../lib/soccer_ball";
+import { isStageInteractionBlocked } from "../../lib/input_guard";
+import {
+  chooseSoccerAction,
+  soccerSupportTarget,
+  type SoccerDecision,
+} from "../../lib/soccer_tactics";
 
 const ROBOT_R = 13;
 const BALL_R = 9;
 const BASE_LIN = 220;
 const BASE_ANG = 3.2;
-const KICK_VEL = 610; // ball velocity added when kicked (E or pad-X)
+const KICK_VEL = SOCCER_CONTROL.kickSpeed;
 const PUSH_FACTOR = 1.7; // push factor: robot → ball
 const BALL_FRIC = 0.985; // ball friction per frame at 60fps
 const BALL_BOUNCE = 0.7; // wall-bounce restitution
 const TARGET_SCORE = 3;
 const KICK_REQUEST_WINDOW = 0.7; // forgiving input buffer before ball contact
-const KICK_REACH = 22; // extra reach while a buffered kick is armed
-const SHOT_ASSIST_1P = 0.78;
-const SHOT_ASSIST_2P = 0.5;
+const KICK_REACH = SOCCER_CONTROL.kickReach - ROBOT_R - BALL_R;
 const AI_KICK_COOLDOWN = 0.9; // seconds between AI "kicks"
-const AI_KICK_DIST = 38; // attempt kick only when close to ball
-const AI_KICK_ALIGN_COS = 0.55; // require heading roughly toward scoring direction
 const AI_AGGRESSION = 1.02; // opponent team's overall speed multiplier
 
 const FIELD = { x: 30, y: 60, w: 740, h: 380 };
@@ -101,10 +109,22 @@ export function makeRoboSoccer(): Stage {
   let mode2P = false;
   let kickCooldown2 = 0;
   let kickRequestT2 = 0;
+  let dribbler = -1; // index of the robot currently carrying the ball
+  let trapCooldown = 0; // let a shot leave the feet before it can be caught again
 
-  // Kick-like attack state for AI opponents.
+  // Both teams use the same pass/shoot decisions after controlling the ball.
   let aiKickCooldownByIdx: number[] = [];
-  let aiWantsKickByIdx: boolean[] = [];
+  let aiActions: SoccerDecision[] = [];
+  let aiPossessionT: number[] = [];
+  let activePass: {
+    from: number;
+    to: number;
+    x: number;
+    y: number;
+    fromX: number;
+    fromY: number;
+    life: number;
+  } | null = null;
 
   let pubAcc = 0;
   let ballStillT = 0; // time the ball has been moving slowly / stalled
@@ -198,24 +218,21 @@ export function makeRoboSoccer(): Stage {
     kickRequestT = 0;
     kickCooldown2 = 0;
     kickRequestT2 = 0;
+    dribbler = -1;
+    trapCooldown = 0;
+    ballStillT = 0;
+    activePass = null;
+    g.setHud([]);
     twoPlayer.resetEdges();
 
     aiKickCooldownByIdx = bots.map(() => 0);
-    aiWantsKickByIdx = bots.map(() => false);
+    aiActions = bots.map(() => ({ kind: "dribble" }));
+    aiPossessionT = bots.map(() => 0);
   }
 
-  function aiKickCooldown(): number {
+  function aiKickCooldown(b: Bot): number {
     // Stronger AI kicks more frequently.
-    return Math.max(0.25, Math.min(1.8, AI_KICK_COOLDOWN / aiStrength));
-  }
-
-  function aiKickDist(): number {
-    return Math.max(18, Math.min(70, AI_KICK_DIST * aiStrength));
-  }
-
-  function aiKickAlignCos(): number {
-    // Stronger AI accepts more heading errors => threshold gets smaller.
-    return Math.max(0.25, Math.min(0.75, AI_KICK_ALIGN_COS / aiStrength));
+    return Math.max(0.25, Math.min(1.8, AI_KICK_COOLDOWN / (b.team === "O" ? aiStrength : 1)));
   }
 
   function aiAggression(): number {
@@ -225,22 +242,19 @@ export function makeRoboSoccer(): Stage {
   /**
    * Tactical "skill" of the OPPONENT AI, 0..1, derived from the difficulty
    * preset: 0 at "weak" (0.75), ~0.42 at "normal" (1.0), 1 at "strong" (1.35).
-   * Scales the smart behaviors (get-behind-the-ball, ball prediction, keeper,
-   * aimed shots) so the easy setting stays beginner-friendly and only the
-   * strong setting plays a proper game.
+   * Scales reaction time and goalkeeper position. Every difficulty uses
+   * the same passing decisions, so even Easy plays as a team.
    */
   function aiSkill(): number {
     return Math.max(0, Math.min(1, (aiStrength - 0.75) / 0.6));
   }
 
-  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+  function isHuman(index: number): boolean {
+    return index === 0 || (mode2P && index === 3);
+  }
 
-  /** Interpolate between two angles along the shortest arc. */
-  function lerpAngle(a: number, b: number, t: number): number {
-    let d = b - a;
-    while (d > Math.PI) d -= 2 * Math.PI;
-    while (d < -Math.PI) d += 2 * Math.PI;
-    return a + d * t;
+  function playerLabel(index: number): string {
+    return mode2P && index === 3 ? "P2" : bots[index].label;
   }
 
   // AI strength presets — three choices instead of a slider (easier to use).
@@ -322,17 +336,18 @@ export function makeRoboSoccer(): Stage {
   }
 
   function applyDirectHumanDrive(b: Bot, input: twoPlayer.PlayerInput) {
-    const dx = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-    const dy = (input.back ? 1 : 0) - (input.fwd ? 1 : 0);
+    const dx = input.moveX;
+    const dy = input.moveY;
     if (dx === 0 && dy === 0) {
       b.v = 0;
       b.w = 0;
       return;
     }
-    // Top-down direct movement: the robot immediately faces and travels in
-    // the direction of the stick/WASD input. No turn-then-drive step.
+    // Keep the stick's angle and magnitude for fine positioning. Close control
+    // slows the player slightly so keyboard taps are easier to judge, too.
     b.theta = Math.atan2(dy, dx);
-    b.v = BASE_LIN;
+    const carrying = bots[dribbler] === b;
+    b.v = BASE_LIN * Math.min(1, Math.hypot(dx, dy)) * (carrying ? SOCCER_CONTROL.carrySpeed : 1);
     b.w = 0;
   }
 
@@ -348,27 +363,39 @@ export function makeRoboSoccer(): Stage {
     if (kickRequestT > 0) kickRequestT = Math.max(0, kickRequestT - dt);
     if (kickCooldown2 > 0) kickCooldown2 = Math.max(0, kickCooldown2 - dt);
     if (kickRequestT2 > 0) kickRequestT2 = Math.max(0, kickRequestT2 - dt);
+    trapCooldown = Math.max(0, trapCooldown - dt);
+    const inputBlocked = isStageInteractionBlocked();
+    if (inputBlocked) {
+      kickRequestT = 0;
+      kickRequestT2 = 0;
+      if (isHuman(dribbler)) dribbler = -1;
+    }
     if (kickoffT > 0) {
       kickoffT -= dt;
       return;
+    }
+    if (activePass) {
+      activePass.life -= dt;
+      if (activePass.life <= 0) activePass = null;
     }
 
     // Decrement AI kick cooldowns.
     for (let i = 0; i < aiKickCooldownByIdx.length; i++) {
       if (aiKickCooldownByIdx[i] > 0)
         aiKickCooldownByIdx[i] = Math.max(0, aiKickCooldownByIdx[i] - dt);
+      aiPossessionT[i] = dribbler === i ? aiPossessionT[i] + dt : 0;
     }
 
     // ── P1 input (pad slot 0 OR WASD/E/Shift via two_player) ──
-    const p1 = twoPlayer.pollP1();
-    if (p1.actionEdge) kickRequestT = KICK_REQUEST_WINDOW;
+    const p1 = twoPlayer.pollP1({ arrowKeys: !mode2P });
+    if (p1.action) kickRequestT = KICK_REQUEST_WINDOW;
     const human = bots[0];
     applyDirectHumanDrive(human, p1);
 
     // ── P2 input (only in 2P) — drives bots[3] ──
     if (mode2P) {
       const p2 = twoPlayer.pollP2();
-      if (p2.actionEdge) kickRequestT2 = KICK_REQUEST_WINDOW;
+      if (p2.action) kickRequestT2 = KICK_REQUEST_WINDOW;
       const human2 = bots[3];
       applyDirectHumanDrive(human2, p2);
     }
@@ -463,6 +490,48 @@ export function makeRoboSoccer(): Stage {
       ball.vy = -Math.abs(ball.vy) * BALL_BOUNCE;
     }
 
+    // Trap slow balls automatically and keep them near the feet. Opponents
+    // can still tackle; a fast shot cannot be caught by the proximity assist.
+    if (trapCooldown <= 0) {
+      if (
+        dribbler >= 0 &&
+        Math.hypot(ball.x - bots[dribbler].x, ball.y - bots[dribbler].y) > SOCCER_CONTROL.carryReach
+      )
+        dribbler = -1;
+      if (dribbler < 0) {
+        const candidates = bots
+          .map((_, i) => i)
+          .filter((i) => !(inputBlocked && isHuman(i)) && activePass?.from !== i);
+        candidates.sort(
+          (a, b) =>
+            Math.hypot(ball.x - bots[a].x, ball.y - bots[a].y) -
+            Math.hypot(ball.x - bots[b].x, ball.y - bots[b].y),
+        );
+        dribbler = candidates.find((i) => canControlSoccerBall(ball, bots[i])) ?? -1;
+        if (dribbler >= 0) activePass = null;
+      }
+      if (dribbler >= 0) {
+        const owner = bots[dribbler];
+        const tackled = bots.some(
+          (b, i) =>
+            i !== dribbler &&
+            b.team !== owner.team &&
+            Math.hypot(ball.x - b.x, ball.y - b.y) < ROBOT_R + BALL_R + 5,
+        );
+        if (tackled) {
+          dribbler = -1;
+          trapCooldown = 0.18;
+        } else {
+          dribbleSoccerBall(ball, owner, dt);
+          // Keep possession usable along the touchlines. Goal crossings are
+          // left to the normal scoring check at the start of the next step.
+          ball.y = Math.max(FIELD.y + BALL_R, Math.min(FIELD.y + FIELD.h - BALL_R, ball.y));
+          if (!inGoalY(ball.y))
+            ball.x = Math.max(FIELD.x + BALL_R, Math.min(FIELD.x + FIELD.w - BALL_R, ball.x));
+        }
+      }
+    }
+
     // -- Ball vs all robots --
     for (let i = 0; i < bots.length; i++) {
       const b = bots[i];
@@ -471,26 +540,44 @@ export function makeRoboSoccer(): Stage {
       let wantKick: boolean;
       if (isP1) wantKick = kickRequestT > 0 && kickCooldown <= 0;
       else if (isP2) wantKick = kickRequestT2 > 0 && kickCooldown2 <= 0;
-      else wantKick = b.team === "O" && aiWantsKickByIdx[i] && aiKickCooldownByIdx[i] <= 0;
+      else
+        wantKick = dribbler === i && aiActions[i].kind !== "dribble" && aiKickCooldownByIdx[i] <= 0;
 
-      // Human kicks receive a moderate goal-center assist. The robot still
-      // needs to face the attacking half, but small heading errors no longer
-      // turn a good approach into a shot off the post.
       let aimAngle: number | undefined;
-      if (isP1 || isP2) {
-        const targetX = b.team === "P" ? FIELD.x + FIELD.w : FIELD.x;
-        const targetY = GOAL_Y + GOAL_H / 2;
-        const goalAngle = Math.atan2(targetY - ball.y, targetX - ball.x);
-        aimAngle = lerpAngle(b.theta, goalAngle, mode2P ? SHOT_ASSIST_2P : SHOT_ASSIST_1P);
-      } else if (b.team === "O") {
-        const s = aiSkill();
-        if (s > 0) {
-          const goalAng = Math.atan2(FIELD.y + FIELD.h / 2 - ball.y, FIELD.x - ball.x);
-          aimAngle = lerpAngle(b.theta, goalAng, s);
-        }
+      const action = aiActions[i];
+      if (!isP1 && !isP2) {
+        const targetX =
+          action.kind === "pass" ? action.x : b.team === "P" ? FIELD.x + FIELD.w : FIELD.x;
+        const targetY = action.kind === "pass" ? action.y : FIELD.y + FIELD.h / 2;
+        aimAngle = Math.atan2(targetY - ball.y, targetX - ball.x);
       }
 
-      if (handleBallContact(b, wantKick, aimAngle) && wantKick) {
+      // Teammates leave a controlled ball to its owner, but an explicit human
+      // shot takes priority when a nearby AI teammate has possession.
+      if (
+        dribbler >= 0 &&
+        b.team === bots[dribbler].team &&
+        i !== dribbler &&
+        !((isP1 || isP2) && wantKick)
+      )
+        continue;
+      if (i === dribbler && !wantKick) continue;
+      const contact = handleBallContact(
+        b,
+        wantKick,
+        aimAngle,
+        isP1 || isP2,
+        action.kind === "pass" ? action.speed : KICK_VEL,
+      );
+      if (contact && activePass && activePass.from !== i) activePass = null;
+      if (contact && dribbler >= 0 && b.team !== bots[dribbler].team) {
+        dribbler = -1;
+        trapCooldown = 0.18;
+      }
+      if (contact && wantKick) {
+        dribbler = -1;
+        trapCooldown = 0.3;
+        activePass = null;
         if (isP1) {
           kickRequestT = 0;
           kickCooldown = 0.5;
@@ -498,7 +585,23 @@ export function makeRoboSoccer(): Stage {
           kickRequestT2 = 0;
           kickCooldown2 = 0.5;
         } else {
-          aiKickCooldownByIdx[i] = aiKickCooldown();
+          aiKickCooldownByIdx[i] = aiKickCooldown(b);
+          if (action.kind === "pass") {
+            activePass = {
+              from: i,
+              to: action.receiver,
+              x: action.x,
+              y: action.y,
+              fromX: ball.x,
+              fromY: ball.y,
+              life: 2.2,
+            };
+            trapCooldown = 0.12;
+            g.publish(
+              "/soccer/pass",
+              `team:${b.team} from:${playerLabel(i)} to:${playerLabel(action.receiver)}`,
+            );
+          }
         }
       }
     }
@@ -536,6 +639,7 @@ export function makeRoboSoccer(): Stage {
       `pose:${formatPose(human)}`,
       `cmd_vel:${formatTwist({ v: human.v, w: rosAngularFromCanvas(human.w) }, { pxPerM: BASE_LIN })}`,
       `ball:    x=${ball.x.toFixed(0)}  y=${ball.y.toFixed(0)}  v=${Math.hypot(ball.vx, ball.vy).toFixed(0)} px/s`,
+      `pass:    ${activePass ? `${playerLabel(activePass.from)} → ${playerLabel(activePass.to)}` : "none"}`,
       `kick P1: ${kickStatus(kickCooldown, kickRequestT, "E / Space / pad A-X")}`,
     ];
     if (mode2P)
@@ -548,164 +652,85 @@ export function makeRoboSoccer(): Stage {
     return y > GOAL_Y - postForgiveness && y < GOAL_Y + GOAL_H + postForgiveness;
   }
 
-  // -- AI: pick a target based on role and team --
+  // The same team tactics drive friendly and opposing robots. Difficulty
+  // changes opponents' pace and reaction time, not whether they can pass.
   function aiStep(b: Bot, idx: number) {
-    aiWantsKickByIdx[idx] = false;
-
-    const isPlayerTeam = b.team === "P";
-    const attackDir = isPlayerTeam ? 1 : -1; // P attacks right, O attacks left
-    const ownGoalX = isPlayerTeam ? FIELD.x : FIELD.x + FIELD.w; // goal we defend
-    const targetGoalX = isPlayerTeam ? FIELD.x + FIELD.w : FIELD.x;
+    aiActions[idx] = { kind: "dribble" };
+    const attackDir = b.team === "P" ? 1 : -1;
+    const ownGoalX = b.team === "P" ? FIELD.x : FIELD.x + FIELD.w;
+    const targetGoalX = b.team === "P" ? FIELD.x + FIELD.w : FIELD.x;
     const cy = FIELD.y + FIELD.h / 2;
-    const inOwnHalf = isPlayerTeam
-      ? ball.x < FIELD.x + FIELD.w / 2
-      : ball.x > FIELD.x + FIELD.w / 2;
+    const owner = dribbler >= 0 ? bots[dribbler] : undefined;
+    const teamHasBall = owner?.team === b.team;
+    const teamPass = activePass && bots[activePass.from].team === b.team ? activePass : null;
 
-    // Only the team-mate closest to the ball becomes "chaser"; others
-    // hang back as support to avoid corner pile-ups.
-    const myTeamMates = bots.filter((x) => x.team === b.team);
-    let closest: Bot = b;
-    let bestD = Infinity;
-    for (const m of myTeamMates) {
-      const d = Math.hypot(m.x - ball.x, m.y - ball.y);
-      if (d < bestD) {
-        bestD = d;
-        closest = m;
+    // A stationary human far away should not prevent an AI from retrieving
+    // a loose ball. Nearby or moving humans still have priority by distance.
+    let chaser = -1;
+    let closest = Infinity;
+    for (let i = 0; i < bots.length; i++) {
+      const teammate = bots[i];
+      if (teammate.team !== b.team) continue;
+      const distance = Math.hypot(teammate.x - ball.x, teammate.y - ball.y);
+      if (isHuman(i) && teammate.v === 0 && distance > 90) continue;
+      if (distance < closest) {
+        closest = distance;
+        chaser = i;
       }
     }
-    const isChaser = closest === b;
 
-    let tx_: number,
-      ty_: number,
-      speedMul = 0.85;
-
-    if (b.role === "defender") {
-      // Defender: move in front of our goal; when danger is close, go direct.
-      const distToOwnGoal = Math.abs(ball.x - ownGoalX);
-      if (inOwnHalf && distToOwnGoal < FIELD.w * 0.3) {
-        tx_ = ball.x;
-        ty_ = ball.y;
-        speedMul = 0.98;
-      } else {
-        tx_ = ownGoalX + attackDir * 90;
-        ty_ = ball.y * 0.55 + cy * 0.45;
-        speedMul = 0.66;
-      }
-    } else if (b.role === "mid") {
-      // Midfielder: anchor around midline but more reactive for opponents.
-      const myMidX = isPlayerTeam ? FIELD.x + FIELD.w * 0.42 : FIELD.x + FIELD.w * 0.58;
-      const mix = b.team === "O" ? 0.62 : 0.55;
-      tx_ = ball.x * mix + myMidX * (1 - mix);
-      ty_ = ball.y * 0.5 + cy * 0.5;
-      speedMul = b.team === "O" ? 0.88 : 0.78;
+    let tx_: number;
+    let ty_: number;
+    let speedMul = 0.85;
+    if (dribbler === idx) {
+      tx_ = targetGoalX;
+      ty_ = cy;
+      speedMul = SOCCER_CONTROL.carrySpeed * 0.9;
+      const reaction = b.team === "O" ? 0.42 - aiSkill() * 0.22 : 0.3;
+      if (aiPossessionT[idx] >= reaction && aiKickCooldownByIdx[idx] <= 0)
+        aiActions[idx] = chooseSoccerAction(ball, bots, idx, FIELD);
+    } else if (teamPass?.to === idx) {
+      // Meet the pass at its destination; do not chase behind the moving ball.
+      tx_ = teamPass.x;
+      ty_ = teamPass.y;
+      speedMul = 1;
+    } else if (teamHasBall || teamPass) {
+      const carrier = owner ?? bots[teamPass!.to];
+      const target = soccerSupportTarget(b, carrier, FIELD);
+      tx_ = target.x;
+      ty_ = target.y;
+    } else if (chaser === idx) {
+      const lead = 0.12;
+      const predictedX = ball.x + ball.vx * lead;
+      const predictedY = ball.y + ball.vy * lead;
+      const goalAngle = Math.atan2(cy - predictedY, targetGoalX - predictedX);
+      tx_ = predictedX - Math.cos(goalAngle) * 24;
+      ty_ = predictedY - Math.sin(goalAngle) * 24;
+      // Approach around the ball when standing on its goal side.
+      if ((b.x - ball.x) * attackDir > 0 && Math.hypot(b.x - ball.x, b.y - ball.y) < 100)
+        ty_ += (b.y < ball.y ? -1 : 1) * 38;
+      speedMul = 0.96;
+    } else if (b.role === "defender") {
+      tx_ = ownGoalX + attackDir * (45 + (b.team === "O" ? (1 - aiSkill()) * 45 : 30));
+      ty_ = Math.max(GOAL_Y + 12, Math.min(GOAL_Y + GOAL_H - 12, ball.y));
+      speedMul = 0.72;
     } else {
-      // Forward: chase only when designated chaser; otherwise camp the
-      // opposing goal as a finisher.
-      if (isChaser) {
-        const dx = ball.x - b.x,
-          dy = ball.y - b.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist > 50) {
-          tx_ = ball.x - attackDir * 26;
-          ty_ = ball.y;
-        } else {
-          tx_ = targetGoalX;
-          ty_ = cy;
-        }
-        speedMul = b.team === "O" ? 1.02 : 0.95;
-      } else {
-        // A team-mate is chasing — set up in front of the opposing goal.
-        tx_ = targetGoalX - attackDir * 100;
-        ty_ = ball.y * 0.52 + cy * 0.48;
-        speedMul = b.team === "O" ? 0.78 : 0.7;
-      }
+      const target = soccerSupportTarget(b, ball, FIELD);
+      tx_ = target.x;
+      ty_ = target.y;
+      // Keep the midfield connected to its own half when defending.
+      if (owner && owner.team !== b.team) tx_ -= attackDir * 130;
     }
-
-    // Opponent team is a bit more aggressive.
-    if (!isPlayerTeam) speedMul *= aiAggression();
-
-    // ── Smart tactics (opponent only, scaled by difficulty) ─────────────
-    // At skill 0 (easy) these are no-ops, so the target stays exactly the
-    // old role-based one; at skill 1 (strong) they fully take over.
-    const smart = b.team === "O" ? aiSkill() : 0;
-    if (smart > 0) {
-      if (isChaser) {
-        // B1 + B2: aim for the point BEHIND the (predicted) ball on the line
-        // to the target goal, so pushing forward drives the ball goalward
-        // instead of the old "run at the ball and shove it any direction".
-        const lead = smart * 0.16; // seconds of look-ahead
-        const pbx = ball.x + ball.vx * lead;
-        const pby = ball.y + ball.vy * lead;
-        let vgx = pbx - targetGoalX,
-          vgy = pby - cy; // goal → ball (behind dir)
-        const gl = Math.hypot(vgx, vgy) || 1;
-        vgx /= gl;
-        vgy /= gl;
-        const behindOff = ROBOT_R + BALL_R + 4;
-        let smx = pbx + vgx * behindOff;
-        let smy = pby + vgy * behindOff;
-        // If we're on the goal side of the ball, curve around it rather than
-        // plowing through and knocking it toward our own goal.
-        const rbx = b.x - pbx,
-          rby = b.y - pby;
-        if (rbx * vgx + rby * vgy < 0) {
-          const side = rbx * -vgy + rby * vgx >= 0 ? 1 : -1;
-          smx += -vgy * side * ROBOT_R * 2.6;
-          smy += vgx * side * ROBOT_R * 2.6;
-        }
-        tx_ = lerp(tx_, smx, smart);
-        ty_ = lerp(ty_, smy, smart);
-        speedMul = lerp(speedMul, Math.max(speedMul, 1.05), smart);
-      } else if (b.role === "defender") {
-        // B3: play goalkeeper — hold the goal line and track the ball's Y
-        // within the mouth, closing off the "empty net".
-        const keeperX = ownGoalX + attackDir * (ROBOT_R + 6);
-        const keeperY = Math.max(GOAL_Y + 8, Math.min(GOAL_Y + GOAL_H - 8, ball.y));
-        const keeperSkill = !mode2P && b.team === "O" ? smart * 0.48 : smart;
-        tx_ = lerp(tx_, keeperX, keeperSkill);
-        ty_ = lerp(ty_, keeperY, keeperSkill);
-        speedMul = lerp(speedMul, 1.0, keeperSkill);
-      }
-    }
-
-    // Keep the target inside the field bounds (avoid wall-pinning).
+    if (b.team === "O") speedMul *= aiAggression();
     tx_ = Math.max(FIELD.x + AI_SAFE_MARGIN, Math.min(FIELD.x + FIELD.w - AI_SAFE_MARGIN, tx_));
     ty_ = Math.max(FIELD.y + AI_SAFE_MARGIN, Math.min(FIELD.y + FIELD.h - AI_SAFE_MARGIN, ty_));
-
-    const dx = tx_ - b.x,
-      dy = ty_ - b.y;
+    const dx = tx_ - b.x;
+    const dy = ty_ - b.y;
     const desired = Math.atan2(dy, dx);
-    let dAng = desired - b.theta;
-    while (dAng > Math.PI) dAng -= 2 * Math.PI;
-    while (dAng < -Math.PI) dAng += 2 * Math.PI;
+    const dAng = Math.atan2(Math.sin(desired - b.theta), Math.cos(desired - b.theta));
     b.w = Math.max(-BASE_ANG, Math.min(BASE_ANG, dAng * 4));
-    const align = Math.cos(dAng); // [-1..1]
-    const distToTarget = Math.hypot(dx, dy);
-
-    // Don't stop completely: nearby bots should still push the ball.
-    const slowDiv = b.team === "O" ? 22 : 30;
-    const slow = Math.min(1, distToTarget / slowDiv);
-
-    // Signed velocity allows slight backward pressure instead of "spin and stop".
-    const vRaw = align * BASE_LIN * speedMul * slow;
-    const maxBack = -BASE_LIN * 0.35;
-    const maxFwd = BASE_LIN * speedMul;
-    b.v = Math.max(maxBack, Math.min(maxFwd, vRaw));
-
-    // AI kick decision: only opponent team tries to kick (strong impulse),
-    // only when close to the ball and aligned with scoring direction.
-    if (b.team === "O" && isChaser) {
-      const distToBall = Math.hypot(ball.x - b.x, ball.y - b.y);
-      if (distToBall < aiKickDist() && aiKickCooldownByIdx[idx] <= 0) {
-        const goalX = targetGoalX; // O scoring goal
-        const goalY = cy;
-        const goalAng = Math.atan2(goalY - ball.y, goalX - ball.x);
-        let dd = goalAng - b.theta;
-        while (dd > Math.PI) dd -= 2 * Math.PI;
-        while (dd < -Math.PI) dd += 2 * Math.PI;
-        if (Math.cos(dd) > aiKickAlignCos()) aiWantsKickByIdx[idx] = true;
-      }
-    }
+    const slow = Math.min(1, Math.hypot(dx, dy) / 30);
+    b.v = Math.max(-BASE_LIN * 0.35, Math.cos(dAng) * BASE_LIN * speedMul * slow);
   }
 
   function separateBodies(a: Body, c: Body) {
@@ -728,7 +753,13 @@ export function makeRoboSoccer(): Stage {
 
   /** Returns whether contact happened. Kick eligibility / kickRequestT
    *  consumption is handled by the caller. */
-  function handleBallContact(b: Bot, doKick: boolean, aimAngle?: number): boolean {
+  function handleBallContact(
+    b: Bot,
+    doKick: boolean,
+    aimAngle?: number,
+    human = false,
+    kickSpeed = KICK_VEL,
+  ): boolean {
     const dx = ball.x - b.x;
     const dy = ball.y - b.y;
     const d = Math.hypot(dx, dy);
@@ -737,28 +768,41 @@ export function makeRoboSoccer(): Stage {
 
     const ux = dx / d,
       uy = dy / d;
-    ball.x = b.x + ux * minD;
-    ball.y = b.y + uy * minD;
+    // Resolve overlap only; kicking from the reach ring must not teleport
+    // the ball back toward the player.
+    if (d < minD) {
+      ball.x = b.x + ux * minD;
+      ball.y = b.y + uy * minD;
+    }
     const robotVx = b.v * Math.cos(b.theta);
     const robotVy = b.v * Math.sin(b.theta);
     const along = robotVx * ux + robotVy * uy;
     const push = Math.max(along * PUSH_FACTOR, b.v * 0.3);
-    ball.vx += ux * push;
-    ball.vy += uy * push;
-
     if (doKick) {
-      // B4: AI kicks are steered toward the goal (aimAngle); the human's kick
-      // still follows their own heading.
-      const ang = aimAngle ?? b.theta;
-      const fx = Math.cos(ang),
-        fy = Math.sin(ang);
-      ball.vx += fx * KICK_VEL;
-      ball.vy += fy * KICK_VEL;
-      particles.burst(ball.x, ball.y, "#925b00", 14, 240);
-      g.sfx.deliver();
-      g.shake(0.4);
-    } else if (Math.abs(along) > 30) {
-      g.sfx.bump();
+      if (human) {
+        shootSoccerBall(ball, b.team === "P" ? FIELD.x + FIELD.w : FIELD.x, GOAL_Y + GOAL_H / 2);
+      } else {
+        const ang = aimAngle ?? b.theta;
+        ball.vx = Math.cos(ang) * kickSpeed;
+        ball.vy = Math.sin(ang) * kickSpeed;
+      }
+      const passing = !human && kickSpeed < KICK_VEL;
+      particles.burst(
+        ball.x,
+        ball.y,
+        passing ? (b.team === "P" ? "#075f93" : "#be2949") : "#925b00",
+        passing ? 6 : 14,
+        passing ? 100 : 240,
+      );
+      if (passing) g.sfx.bump();
+      else {
+        g.sfx.deliver();
+        g.shake(0.4);
+      }
+    } else {
+      ball.vx += ux * push;
+      ball.vy += uy * push;
+      if (Math.abs(along) > 30) g.sfx.bump();
     }
     return true;
   }
@@ -827,6 +871,7 @@ export function makeRoboSoccer(): Stage {
     drawPitch(c);
     drawGoal(c, FIELD.x - GOAL_W, GOAL_Y, "#075f93", mode2P ? "P2 TARGET" : "DEFEND");
     drawGoal(c, FIELD.x + FIELD.w, GOAL_Y, "#be2949", mode2P ? "P1 TARGET" : "TARGET");
+    drawPassGuide(c);
     drawShotGuide(c, bots[0], "P1");
     if (mode2P) drawShotGuide(c, bots[3], "P2");
 
@@ -986,17 +1031,48 @@ export function makeRoboSoccer(): Stage {
     c.restore();
   }
 
+  function drawPassGuide(c: CanvasRenderingContext2D) {
+    if (!activePass) return;
+    c.save();
+    c.strokeStyle = stageColor(bots[activePass.from].team === "P" ? "#075f93" : "#be2949");
+    c.fillStyle = c.strokeStyle;
+    c.lineWidth = 2;
+    c.globalAlpha = 0.8;
+    c.setLineDash([5, 5]);
+    c.beginPath();
+    c.moveTo(activePass.fromX, activePass.fromY);
+    c.lineTo(activePass.x, activePass.y);
+    c.stroke();
+    c.setLineDash([]);
+    c.beginPath();
+    c.arc(activePass.x, activePass.y, ROBOT_R + 8, 0, Math.PI * 2);
+    c.stroke();
+    c.font = "700 10px ui-monospace, monospace";
+    c.textAlign = "center";
+    drawCanvasLabel(
+      c,
+      t("robo_soccer.pass.target", { player: playerLabel(activePass.to) }),
+      activePass.x,
+      activePass.y - 29,
+      { bounds: FIELD },
+    );
+    c.restore();
+  }
+
   function drawShotGuide(c: CanvasRenderingContext2D, bot: Bot, label: string) {
     const distance = Math.hypot(ball.x - bot.x, ball.y - bot.y);
     if (distance > 105 || kickoffT > 0) return;
     const targetX = bot.team === "P" ? FIELD.x + FIELD.w : FIELD.x;
     const targetY = GOAL_Y + GOAL_H / 2;
     const armed = bot.team === "P" ? kickRequestT > 0 : kickRequestT2 > 0;
+    const cooldown = bot.team === "P" ? kickCooldown : kickCooldown2;
+    const inReach = distance <= SOCCER_CONTROL.kickReach;
+    const carrying = bots[dribbler] === bot;
     c.save();
     c.strokeStyle = stageColor(armed ? "#925b00" : bot.team === "P" ? "#075f93" : "#be2949");
     c.fillStyle = stageColor(c.strokeStyle);
     c.globalAlpha = getTheme() === "light" ? (armed ? 1 : 0.8) : armed ? 0.85 : 0.32;
-    c.lineWidth = armed ? 2 : 1;
+    c.lineWidth = inReach && cooldown <= 0 ? 2.5 : 1;
     c.setLineDash([6, 7]);
     c.beginPath();
     c.moveTo(ball.x, ball.y);
@@ -1007,11 +1083,17 @@ export function makeRoboSoccer(): Stage {
     c.arc(ball.x, ball.y, ROBOT_R + BALL_R + KICK_REACH, 0, Math.PI * 2);
     c.stroke();
     c.globalAlpha = 0.85;
-    c.font = "800 8px ui-monospace, monospace";
+    c.font = "800 10px ui-monospace, monospace";
     c.textAlign = "center";
-    drawCanvasLabel(c, armed ? `${label} SHOT LOCK` : "SHOT RANGE", ball.x, ball.y - 29, {
-      bounds: FIELD,
-    });
+    const guideKey =
+      cooldown > 0 ? "wait" : armed ? "armed" : carrying ? "carry" : inReach ? "ready" : "approach";
+    drawCanvasLabel(
+      c,
+      `${label} ${t(`robo_soccer.shot.${guideKey}`)}`,
+      ball.x,
+      ball.y - SOCCER_CONTROL.kickReach - 10,
+      { bounds: FIELD },
+    );
     c.restore();
   }
 
@@ -1148,7 +1230,12 @@ export function makeRoboSoccer(): Stage {
         "プレイヤーは/cmd_velでロボットを動かします。味方と相手の計5体の自動制御ロボットは/ball/poseをsubscribeし、それぞれの役割（forward / mid / defender）に応じてボールを追います。" +
         "ROS 2のマルチロボット環境を単純化した構成で体験できます。",
       msgTypes: ["geometry_msgs/msg/Twist", "geometry_msgs/msg/Pose", "std_msgs/msg/String"],
-      cli: ["ros2 topic list", "ros2 topic echo /ball/pose", "ros2 topic echo /soccer/score"],
+      cli: [
+        "ros2 topic list",
+        "ros2 topic echo /ball/pose",
+        "ros2 topic echo /soccer/score",
+        "ros2 topic echo /soccer/pass",
+      ],
       python: `# 各ロボが /ball/pose を subscribe して役割ごとの cmd_vel を計算する
 class SoccerBot(Node):
     def __init__(self, name, role, attack_dir):
@@ -1209,6 +1296,7 @@ class SoccerBot(Node):
               ],
             },
             { name: "/soccer/score", type: "std_msgs/msg/String", pub: ["/ball_tracker"] },
+            { name: "/soccer/pass", type: "std_msgs/msg/String", pub: ["/ball_tracker"] },
             { name: "/goal/scored", type: "std_msgs/msg/String", pub: ["/ball_tracker"] },
           ];
         },
@@ -1273,21 +1361,28 @@ export default defineStage({
       en: "You teleoperate your robot via /cmd_vel while five rule-based robots (your two teammates and three opponents) subscribe to /ball/pose and act according to their roles (forward, midfielder, or defender). They share one ball topic but independently publish their own cmd_vel commands, illustrating a basic multi-robot ROS 2 setup.",
     },
     goal: {
-      ja: "WASDでロボットを操縦し、E・Space・ゲームパッドのA/Xでキックします。光るシュート範囲から相手側（右）のゴールを狙いましょう。\n先に3点取れば勝ちです。2体の仲間ロボットも自動でサポートします。",
-      en: "Drive with WASD and kick with E, Space, or pad A/X. Use the glowing shot range to aim at the right goal.\nFirst to 3 wins! Your two teammates help automatically.",
+      ja: "WASD・矢印キー・左スティックで移動します。近くのボールは自動で足元に収まり、そのままドリブルできます。E・Space・ゲームパッドのA/Xで右のゴールへシュート。押しっぱなしで近づいても蹴れます。\n先に3点取れば勝ちです。2体の仲間ロボットも自動でサポートします。",
+      en: "Move with WASD, arrows, or the left stick. Nearby slow balls stay at your feet for easy dribbling. Press E, Space, or pad A/X to shoot at the right goal; holding the button while approaching works too.\nFirst to 3 wins! Both teams pass to open teammates and shoot near goal. Dashed lines and a receiver marker show each pass destination.",
     },
     first: {
-      ja: "2キー、P1のゲームパッドのY、または対戦モードボタンで1P/2Pを切り替えます。キーボードはP1がWASDで移動・E/Spaceでキック、P2が矢印で移動・Enterでキックします。ゲームパッドは各プレイヤーが左スティックで移動・A/Xでキックします。キックは少し早めの入力も受け付け、ゴール方向へ補正されます。",
-      en: "Switch 1P/2P with 2, Y on pad 1, or the match-mode buttons. On keyboard, P1 moves with WASD and kicks with E/Space; P2 moves with arrows and kicks with Enter. Each gamepad uses the left stick and A/X. Kicks are buffered and gently assisted toward goal.",
+      ja: "移動キーを離すと止まり、ドリブル中のボールも足元に止まります。スティックは浅く倒すとゆっくり移動できます。シュートはロボットの向きに関係なく、表示された線に沿って相手ゴールへ飛びます。タッチ操作は移動パッドと「キック」を使います。2キー・PAD Y・対戦モードボタンで2Pに切り替えると、P1はWASD＋E/Space、P2は矢印＋Enter。各ゲームパッドは左スティック＋A/Xです。",
+      en: "Release movement to stop with the ball at your feet. Tilt the stick gently for slower movement. Shots follow the displayed line toward the opposing goal regardless of your heading. Touch players use the movement pad and KICK. Switch to 2P with 2, pad Y, or the match-mode buttons: P1 uses WASD + E/Space; P2 uses arrows + Enter. Each gamepad uses the left stick + A/X.",
     },
   },
   strings: {
     ja: {
       "crash.lost": "AIチームが先に{target}点に到達 — リトライ",
-      hint: "1P · WASD/左スティック 移動 · E/Space/PAD A-X キック · SHOT RANGEで照準 · 2/PAD Y → 2P",
-      hint2p: "2P · P1: WASD＋E/Space · P2: 矢印＋Enter · PAD: 左スティック＋A/X · 2/PAD Y → 1P",
+      hint: "WASD/矢印/左スティックで移動・自動ドリブル · E/Space/PAD A-Xでゴールへシュート（長押しOK） · 2/PAD Y → 2P",
+      hint2p:
+        "P1: WASD＋E/Space · P2: 矢印＋Enter · PAD: 左スティック＋A/X · 自動ドリブル・シュート長押しOK · 2/PAD Y → 1P",
       "status.kickoff":
-        "ボールを相手ゴールに押し込め — E でキック / 3 vs 3 で先に {target} 点で勝ち",
+        "近づくと自動ドリブル · E/Space/PAD A-X 長押しでシュート · 先に {target} 点で勝ち",
+      "shot.wait": "準備中",
+      "shot.armed": "シュート予約",
+      "shot.carry": "ドリブル中 · キックでシュート",
+      "shot.ready": "シュートできる！",
+      "shot.approach": "ボールに近づこう",
+      "pass.target": "パス → {player}",
       "status.match": "YOU-team {p} - {o} AI-team  ·  先に {target} 点取った方の勝ち",
       "status.match2p": "P1-team {p} - {o} P2-team  ·  先に {target} 点取った方の勝ち",
       "status.opp_score": "AI に 1 点取られた — 反撃しよう",
@@ -1303,10 +1398,17 @@ export default defineStage({
     },
     en: {
       "crash.lost": "The AI team reached {target} goals first — retry",
-      hint: "1P · WASD/LEFT STICK · E/Space/PAD A-X kick · aim in SHOT RANGE · 2/PAD Y → 2P",
-      hint2p: "2P · P1: WASD + E/Space · P2: arrows + Enter · PAD: stick + A/X · 2/PAD Y → 1P",
+      hint: "WASD/arrows/stick: move + auto-dribble · Hold E/Space/PAD A-X: shoot at goal · 2/PAD Y → 2P",
+      hint2p:
+        "P1: WASD + E/Space · P2: arrows + Enter · PAD: stick + A/X · Auto-dribble; hold to shoot · 2/PAD Y → 1P",
       "status.kickoff":
-        "Push the ball into the opponent goal — E to kick / 3 vs 3, first to {target} wins",
+        "Approach to dribble · Hold E/Space/PAD A-X to shoot · First to {target} wins",
+      "shot.wait": "RECOVERING",
+      "shot.armed": "SHOT QUEUED",
+      "shot.carry": "DRIBBLING · KICK TO SHOOT",
+      "shot.ready": "READY TO SHOOT",
+      "shot.approach": "APPROACH THE BALL",
+      "pass.target": "PASS → {player}",
       "status.match": "YOU-team {p} - {o} AI-team  ·  first to {target} wins",
       "status.match2p": "P1-team {p} - {o} P2-team  ·  first to {target} wins",
       "status.opp_score": "The AI just scored — fight back",

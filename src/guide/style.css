@@ -148,41 +148,6 @@ summary:focus-visible {
   color: var(--cyan);
   font: normal 800 14px/1 var(--mono);
 }
-.guide-nav .guide-author-site {
-  min-height: 52px;
-  color: var(--fg-mid);
-  border: 1px solid rgba(var(--cyan-rgb), 0.16);
-  background: rgba(var(--cyan-rgb), 0.035);
-}
-.guide-nav .guide-creator-label {
-  margin-top: 20px;
-}
-.guide-nav .guide-author-site > span:first-child {
-  color: var(--purple);
-  filter: none;
-}
-.creator-link-copy {
-  width: auto !important;
-  min-width: 0;
-}
-.creator-link-copy strong,
-.creator-link-copy small {
-  display: block;
-}
-.creator-link-copy strong {
-  color: var(--fg);
-  font-size: 14px;
-}
-.creator-link-copy small {
-  margin-top: 4px;
-  color: var(--fg-mid);
-  font: 14px/1 var(--mono);
-  letter-spacing: 0.04em;
-}
-.guide-nav .guide-author-site:hover {
-  border-color: rgba(var(--cyan-rgb), 0.38);
-  background: rgba(var(--cyan-rgb), 0.08);
-}
 .guide-nav a:hover,
 .guide-nav a.active {
   color: var(--fg);
@@ -193,6 +158,63 @@ summary:focus-visible {
 }
 .guide-nav a.active > span {
   color: var(--cyan);
+}
+.guide-creator {
+  margin-top: 24px;
+  padding: 18px 10px 4px;
+  border-top: 1px solid var(--line);
+}
+.guide-creator-label {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font: 600 11px/1.5 var(--mono);
+  letter-spacing: 1.6px;
+}
+.guide-author-site {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14px;
+  align-items: start;
+  gap: 10px;
+  min-height: 44px;
+  padding-block: 4px;
+  color: var(--fg-mid);
+  text-decoration: none;
+  border-radius: 3px;
+}
+.creator-link-copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.creator-link-copy strong {
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.creator-link-copy small {
+  color: var(--fg-mid);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.creator-link-arrow {
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.guide-author-site:hover {
+  color: var(--cyan);
+}
+.guide-author-site:hover strong {
+  color: var(--cyan);
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 .guide-shell {
   min-width: 0;
