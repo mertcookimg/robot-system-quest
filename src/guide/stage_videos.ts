@@ -149,7 +149,7 @@ export function setupStageVideos(options: StageVideoOptions): void {
               <span class="stage-video-summary-action" aria-hidden="true">
                 <span class="stage-video-expand-label">${gt("動画を見る", "Watch video")}</span>
                 <span class="stage-video-collapse-label">${gt("閉じる", "Close")}</span>
-                <span class="stage-video-chevron">⌄</span>
+                <svg class="stage-video-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
               </span>
             </span>
           </h2>

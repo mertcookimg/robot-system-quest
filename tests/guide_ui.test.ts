@@ -189,9 +189,21 @@ test("Guide reads bilingual metadata without registering executable stages", asy
   assert.equal(catalog.getLessonNumbers().get("world_model"), 24);
 });
 
-test("Guide keeps the selected language on all app links and stage dialog links", () => {
+test("Guide translates its introductions and keeps the selected language on app links", async () => {
+  const { localizeStaticGuide } = await server.ssrLoadModule("/src/guide/localization.ts");
   for (const lang of ["en", "ja"] as const) {
     setLang(lang);
+    if (lang === "en") {
+      // The real language switch reloads the static shell. Translate a fresh
+      // copy here so other UI tests can keep their original Japanese shell.
+      const shell = document.querySelector("main")!.cloneNode(true) as HTMLElement;
+      localizeStaticGuide(shell);
+      for (const introduction of shell.querySelectorAll(
+        ".hero-copy > p, .hero-learn-tags, .section-heading > p, .skill-card, .catalogue-guide, .flow-card",
+      )) {
+        assert.doesNotMatch(introduction.textContent!, /[ぁ-んァ-ヶ一-龥]/);
+      }
+    }
     openStage("navigation");
     const links = [...document.querySelectorAll<HTMLAnchorElement>("a[data-lang-link]")];
     assert.ok(links.length >= 43);

@@ -17,12 +17,13 @@ const STATIC_EN: Record<string, string> = {
   "GAME / LESSONへ": "OPEN GAME / LESSON",
   "遊んで、理解して、": "Play. Understand.",
   "実機へつなげる。": "Build toward real robots.",
-  "Robot System Questのゲームとレッスンを入口に、ROS 2の通信、制御、認識、 ナビゲーションを段階的に理解するためのガイドです。":
-    "A structured guide to ROS 2 communication, control, perception, and navigation—starting with the games and lessons in Robot System Quest.",
+  "Robot System Questのゲームとレッスンを入口に、ROS 2の通信・制御・認識・ナビゲーションから、 ロボット学習まで段階的に理解するためのガイドです。":
+    "Explore ROS 2 communication, control, perception, navigation, and robot learning through the games and lessons in Robot System Quest.",
   "ROS 2通信": "ROS 2 Communication",
   ロボット制御: "Robot Control",
   "センサー・認識": "Sensors & Perception",
   "自律移動・アーム": "Navigation & Manipulation",
+  ロボット学習: "Robot Learning",
   "ブラウザ上でROS 2のデータフローを再現する概念シミュレーションです。ROS 2やDDS自体は実行していません。":
     "This is a conceptual browser simulation of ROS 2 data flow; it does not run ROS 2 or DDS itself.",
   Gamesから見る: "Explore Games",
@@ -91,21 +92,39 @@ const STATIC_EN: Record<string, string> = {
     "Connect joint motion, end-effector poses, and grasping to complete a manipulation task.",
   "JointState・IK・Pick & Placeの概要と流れを理解できる":
     "Understand the basics and workflow of JointState, IK, and Pick & Place",
+  実演と報酬から学ぶ: "Learn from Demonstrations and Rewards",
+  "自分の操作を記録する模倣学習と、報酬を使う強化学習を試し、学習前後の動きを比較します。":
+    "Try imitation learning from your recorded actions and reinforcement learning from rewards, then compare behavior before and after training.",
+  "実演データと報酬の役割、学習と評価の違いを理解できる":
+    "Understand the roles of demonstrations and rewards, and distinguish training from evaluation",
+  画像と言葉を動作につなぐ: "Connect Images and Instructions to Actions",
+  "学習済みの小さなVLAモデルで、指示や箱の配置を1つずつ変え、動作の違いを確かめます。":
+    "Use a small pretrained VLA model to compare actions as you change the instruction or box layout, one input at a time.",
+  "VLAの画像・指示・動作のつながりを、条件を揃えて比較できる":
+    "Compare how VLA connects images and instructions to actions under controlled conditions",
+  先の動きを予測して選ぶ: "Predict Motion and Choose an Action",
+  "学習済みのWorld Modelで箱の動きを予測し、目標に応じて押し方を選んで実行結果と比べます。":
+    "Predict a box's motion with a pretrained world model, choose a push for the target, and compare the forecast with simulated motion.",
+  "予測と行動選択の役割を区別し、予測と実行結果のずれを確認できる":
+    "Distinguish prediction from action selection, and compare forecasts with execution results",
   体験できるステージ: "Interactive stages",
   分野をつなぐ学習: "Connected learning across domains",
   つながったロボットシステム: "Connected robot system",
   "3つのステップで学ぶ": "Learn in Three Steps",
   体験から概念へ: "From experience to understanding",
-  "基礎から制御・認識・ナビゲーションまで、ステップごとに理解を深めます。":
-    "Build understanding step by step, from fundamentals to control, perception, and navigation.",
+  "通信・制御・認識・ナビゲーションから、模倣学習・強化学習・VLA・World Modelまで学べます。":
+    "Explore communication, control, perception, and navigation, then imitation learning, reinforcement learning, VLA, and world models.",
   動かして気づく: "Discover by Playing",
+  "ミッションを攻略しながら、ROS 2がロボットを動かす感覚をつかみます。":
+    "Complete missions to get a feel for how ROS 2 controls a robot.",
+  "ROS 2の仕組みに気づく": "Discover how ROS 2 works",
   "まずはロボットを動かし、センサーや通信がゲーム中でどう働くかを体感します。":
     "Move the robot first and experience how sensors and communication affect the game.",
   Gamesで体験: "Experience through Games",
   "Gamesを見る →": "Explore Games →",
   仕組みを組み立てる: "Build the System",
-  "Topic、Service、TF、制御などを操作しながら、システムの仕組みを分解します。":
-    "Manipulate Topics, Services, TF, and controllers to break the system into understandable parts.",
+  "通信・制御・認識の仕組みを組み立て、ロボット学習ではデータや入力による動きの違いを比べます。":
+    "Build communication, control, and perception systems, then explore how data and inputs affect behavior in robot learning.",
   Lessonsで理解: "Understand through Lessons",
   "Lessonsを見る →": "Explore Lessons →",
   実機で実践: "Apply It on a Real Robot",

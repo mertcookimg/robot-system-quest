@@ -153,14 +153,16 @@
               <em>実機へつなげる。</em>
             </h1>
             <p>
-              Robot System Questのゲームとレッスンを入口に、ROS 2の通信、制御、認識、
-              ナビゲーションを段階的に理解するためのガイドです。
+              Robot System Questのゲームとレッスンを入口に、ROS
+              2の通信・制御・認識・ナビゲーションから、
+              ロボット学習まで段階的に理解するためのガイドです。
             </p>
             <div class="hero-learn-tags" aria-label="学べる分野">
               <span><i>01</i> ROS 2通信</span>
               <span><i>02</i> ロボット制御</span>
               <span><i>03</i> センサー・認識</span>
               <span><i>04</i> 自律移動・アーム</span>
+              <span><i>05</i> ロボット学習</span>
             </div>
             <p class="hero-simulation-note">
               ブラウザ上でROS 2のデータフローを再現する概念シミュレーションです。ROS
@@ -416,6 +418,65 @@
                 <span>JointState</span><span>IK</span><span>Pick &amp; Place</span>
               </div>
             </article>
+
+            <article class="skill-card skill-learning">
+              <div class="skill-card-top">
+                <span class="skill-icon" aria-hidden="true">↻</span>
+                <b>07</b>
+              </div>
+              <small>ROBOT LEARNING</small>
+              <h3>実演と報酬から学ぶ</h3>
+              <p>
+                自分の操作を記録する模倣学習と、報酬を使う強化学習を試し、学習前後の動きを比較します。
+              </p>
+              <div class="skill-can">
+                <span>できるようになること</span>
+                <strong>実演データと報酬の役割、学習と評価の違いを理解できる</strong>
+              </div>
+              <div class="skill-chips">
+                <span>Imitation Learning</span><span>Reinforcement Learning</span
+                ><span>Evaluation</span>
+              </div>
+            </article>
+
+            <article class="skill-card skill-vla">
+              <div class="skill-card-top">
+                <span class="skill-icon" aria-hidden="true">VLA</span>
+                <b>08</b>
+              </div>
+              <small>VISION / LANGUAGE / ACTION</small>
+              <h3>画像と言葉を動作につなぐ</h3>
+              <p>
+                学習済みの小さなVLAモデルで、指示や箱の配置を1つずつ変え、動作の違いを確かめます。
+              </p>
+              <div class="skill-can">
+                <span>できるようになること</span>
+                <strong>VLAの画像・指示・動作のつながりを、条件を揃えて比較できる</strong>
+              </div>
+              <div class="skill-chips">
+                <span>VLA</span><span>Vision</span><span>Language</span><span>Action</span>
+              </div>
+            </article>
+
+            <article class="skill-card skill-world">
+              <div class="skill-card-top">
+                <span class="skill-icon" aria-hidden="true">◎</span>
+                <b>09</b>
+              </div>
+              <small>WORLD MODEL / PLANNING</small>
+              <h3>先の動きを予測して選ぶ</h3>
+              <p>
+                学習済みのWorld
+                Modelで箱の動きを予測し、目標に応じて押し方を選んで実行結果と比べます。
+              </p>
+              <div class="skill-can">
+                <span>できるようになること</span>
+                <strong>予測と行動選択の役割を区別し、予測と実行結果のずれを確認できる</strong>
+              </div>
+              <div class="skill-chips">
+                <span>World Model</span><span>Prediction</span><span>Planning</span>
+              </div>
+            </article>
           </div>
 
           <div class="outcome-strip">
@@ -453,7 +514,9 @@
               <div class="flow-icon">▤</div>
               <small>UNDERSTAND</small>
               <h3>Lessonsで理解</h3>
-              <p>Topic、Service、TF、制御などを操作しながら、システムの仕組みを分解します。</p>
+              <p>
+                通信・制御・認識の仕組みを組み立て、ロボット学習ではデータや入力による動きの違いを比べます。
+              </p>
               <a href="#lessons">Lessonsを見る →</a>
             </article>
             <span class="flow-arrow">→</span>
@@ -519,7 +582,10 @@
               <p class="section-kicker lesson-text">LESSONS / UNDERSTAND</p>
               <h2>仕組みを組み立てる</h2>
             </div>
-            <p>基礎から制御・認識・ナビゲーションまで、ステップごとに理解を深めます。</p>
+            <p>
+              通信・制御・認識・ナビゲーションから、模倣学習・強化学習・VLA・World
+              Modelまで学べます。
+            </p>
           </div>
           <div class="catalogue-toolbar">
             <span><b id="lesson-count">0</b> LESSONS</span>

@@ -103,7 +103,7 @@ function stageCard(stage: StageMeta, index: number, mode: "game" | "lesson"): st
           ${mode === "game" ? gt("Gameを開く", "Open Game") : gt("Lessonを開く", "Open Lesson")} <span>↗</span>
         </a>
       </div>
-      ${video ? `<a class="stage-video-link" href="${escapeHtml(video.href)}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">▶</span> ${gt("動画で見る", mode === "game" ? "Watch game" : "Watch lesson")} <time>${video.time}</time><span aria-hidden="true">↗</span></a>` : ""}
+      ${video ? `<a class="stage-video-link" href="${escapeHtml(video.href)}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">▶</span> <span class="video-link-label">${gt("動画で見る", mode === "game" ? "Watch game" : "Watch lesson")}</span> <span class="video-link-meta"><time>${video.time}</time><span aria-hidden="true">↗</span></span></a>` : ""}
     </article>
   `;
 }
@@ -164,7 +164,7 @@ function openStage(stage: StageMeta, syncUrl = true): void {
           <div class="dialog-kicker">${number} / ${mode.toUpperCase()}</div>
           <h2 id="dialog-stage-title">${escapeHtml(displayName)}</h2>
           <p class="dialog-lead">${escapeHtml(getLang() === "ja" ? displayLesson : (ros?.title ?? stage.lesson ?? "Robot System"))}</p>
-          ${video ? `<a class="dialog-video-link" href="${escapeHtml(video.href)}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">▶</span> ${mode === "game" ? gt("このGameを動画で見る", "Watch this game on YouTube") : gt("このLessonを動画で見る", "Watch this lesson on YouTube")} <time>${video.time}</time><span aria-hidden="true">↗</span></a>` : ""}
+          ${video ? `<a class="dialog-video-link" href="${escapeHtml(video.href)}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">▶</span> <span class="video-link-label">${mode === "game" ? gt("このGameを動画で見る", "Watch this game on YouTube") : gt("このLessonを動画で見る", "Watch this lesson on YouTube")}</span> <span class="video-link-meta"><time>${video.time}</time><span aria-hidden="true">↗</span></span></a>` : ""}
         </div>
         <span class="lesson-page-id">${escapeHtml(stage.id)}</span>
       </header>

@@ -8,6 +8,11 @@
 
 :root {
   --content-max: 1320px;
+  --guide-gutter: clamp(20px, 4vw, 64px);
+  --guide-section-space: clamp(56px, 6vw, 88px);
+  --guide-radius: 12px;
+  --guide-gap: 20px;
+  --guide-card-border: var(--line-soft);
   --mono: "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --sans: Inter, "Segoe UI Variable", "Yu Gothic UI", "Hiragino Sans", system-ui, sans-serif;
 }
@@ -99,7 +104,7 @@ summary:focus-visible {
   text-transform: uppercase;
 }
 .guide-nav {
-  margin-top: 54px;
+  margin-top: 32px;
 }
 .guide-nav-label {
   margin: 28px 10px 10px;
@@ -217,6 +222,7 @@ summary:focus-visible {
   text-underline-offset: 4px;
 }
 .guide-shell {
+  container: guide-shell / inline-size;
   min-width: 0;
   margin-left: 260px;
 }
@@ -320,18 +326,21 @@ main {
 }
 .guide-hero {
   position: relative;
-  min-height: 620px;
-  padding: 104px max(clamp(28px, 6vw, 96px), (100% - var(--content-max)) / 2) 90px;
+  padding: var(--guide-section-space) max(var(--guide-gutter), (100% - var(--content-max)) / 2);
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.95fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
   align-items: center;
-  gap: clamp(38px, 7vw, 100px);
-  border-bottom: 1px solid var(--line);
+  gap: clamp(32px, 4vw, 56px);
+  border-bottom: 1px solid var(--guide-card-border);
   isolation: isolate;
 }
 .hero-copy,
 .hero-visual {
   min-width: 0;
+}
+.hero-visual {
+  width: 100%;
+  max-width: 720px;
 }
 .hero-grid {
   position: absolute;
@@ -361,9 +370,10 @@ main {
 .hero-copy h1 {
   margin: 27px 0 22px;
   color: var(--fg);
-  font-size: clamp(42px, 4vw, 58px);
-  line-height: 1.13;
-  letter-spacing: -4px;
+  font-size: clamp(36px, 3.5vw, 52px);
+  line-height: 1.3;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
 }
 .hero-copy h1 em {
   display: block;
@@ -374,7 +384,7 @@ main {
 }
 .hero-title-line {
   display: block;
-  white-space: nowrap;
+  white-space: normal;
 }
 .hero-copy > p {
   max-width: 620px;
@@ -424,6 +434,7 @@ main {
 .hero-cta {
   margin-top: 26px;
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 .primary-cta,
@@ -677,8 +688,9 @@ main {
 /* Content stops widening past --content-max while the background and the
    divider stay full-bleed: the side padding absorbs the surplus. */
 .guide-section {
-  padding: 96px max(clamp(28px, 6vw, 96px), (100% - var(--content-max)) / 2);
-  border-bottom: 1px solid var(--line);
+  container: guide-section / inline-size;
+  padding: var(--guide-section-space) max(var(--guide-gutter), (100% - var(--content-max)) / 2);
+  border-bottom: 1px solid var(--guide-card-border);
 }
 
 .skills-section {
@@ -696,15 +708,15 @@ main {
    reading as a single diagram instead of five separately tuned boxes. */
 .robot-functions {
   --arch-gap: 14px;
-  --arch-radius: 12px;
+  --arch-radius: var(--guide-radius);
   margin: 0 0 32px;
   padding: 18px;
   position: relative;
   overflow: hidden;
   display: grid;
   gap: var(--arch-gap);
-  border: 1px solid var(--line);
-  border-radius: 16px;
+  border: 1px solid var(--guide-card-border);
+  border-radius: var(--guide-radius);
   background:
     radial-gradient(circle at 15% 45%, rgba(var(--cyan-rgb), 0.07), transparent 28rem),
     radial-gradient(circle at 88% 100%, rgba(var(--purple-rgb), 0.08), transparent 25rem),
@@ -723,10 +735,10 @@ main {
 .architecture-summary {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr) clamp(170px, 17%, 230px);
+  grid-template-columns: minmax(0, 1fr) 160px;
   align-items: center;
-  gap: 28px;
-  padding: 26px 28px;
+  gap: 12px 24px;
+  padding: 24px;
   overflow: hidden;
   border: 1px solid rgba(var(--cyan-rgb), 0.18);
   border-radius: var(--arch-radius);
@@ -738,6 +750,7 @@ main {
 }
 .architecture-summary > div,
 .architecture-summary > p {
+  grid-column: 1;
   position: relative;
   z-index: 1;
 }
@@ -745,7 +758,7 @@ main {
 .architecture-row small {
   display: block;
   color: var(--cyan);
-  font: 700 14px/1 var(--mono);
+  font: 700 12px/1.5 var(--mono);
   letter-spacing: 1.4px;
 }
 .architecture-summary h3 {
@@ -761,6 +774,8 @@ main {
   line-height: 1.85;
 }
 .architecture-robot-art {
+  grid-column: 2;
+  grid-row: 1 / 3;
   width: 100%;
   height: auto;
   justify-self: end;
@@ -831,6 +846,8 @@ main {
 .architecture-flow span {
   flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   display: grid;
   place-items: center;
   padding: 9px 10px;
@@ -860,7 +877,7 @@ main {
 }
 .robot-function-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: var(--arch-gap);
 }
 .robot-function {
@@ -915,7 +932,7 @@ main {
 .robot-function small {
   margin: 0;
   color: var(--cyan);
-  font: 700 14px/1 var(--mono);
+  font: 700 12px/1.5 var(--mono);
   letter-spacing: 1.4px;
 }
 .robot-function h3 {
@@ -1028,19 +1045,20 @@ main {
 }
 .skill-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 13px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: var(--guide-gap);
 }
 .skill-card {
   --skill-color: var(--cyan);
   --skill-rgb: var(--cyan-rgb);
   position: relative;
   min-width: 0;
-  min-height: 330px;
-  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  border: 1px solid var(--guide-card-border);
+  border-radius: var(--guide-radius);
   background:
     radial-gradient(circle at 0 0, rgba(var(--skill-rgb), 0.075), transparent 14rem), var(--panel);
   transition:
@@ -1062,15 +1080,18 @@ main {
   border-color: var(--line-bright);
   box-shadow: 0 20px 40px rgba(var(--shadow-rgb), 0.07);
 }
-.skill-control {
+.skill-control,
+.skill-learning {
   --skill-color: var(--purple);
   --skill-rgb: var(--purple-rgb);
 }
-.skill-perception {
+.skill-perception,
+.skill-vla {
   --skill-color: var(--mint);
   --skill-rgb: var(--ok-rgb);
 }
-.skill-map {
+.skill-map,
+.skill-world {
   --skill-color: var(--yellow);
   --skill-rgb: var(--warn-rgb);
 }
@@ -1104,9 +1125,9 @@ main {
 }
 .skill-card > small {
   display: block;
-  margin: 21px 0 8px;
+  margin: 16px 0 8px;
   color: var(--skill-color);
-  font: 700 14px/1 var(--mono);
+  font: 700 12px/1.5 var(--mono);
   letter-spacing: 1.6px;
 }
 .skill-card h3 {
@@ -1115,7 +1136,6 @@ main {
   letter-spacing: -0.5px;
 }
 .skill-card > p {
-  min-height: 57px;
   margin: 0;
   color: var(--fg-mid);
   font-size: 16px;
@@ -1144,7 +1164,8 @@ main {
   line-height: 1.6;
 }
 .skill-chips {
-  margin-top: 13px;
+  margin-top: auto;
+  padding-top: 16px;
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
@@ -1152,9 +1173,9 @@ main {
 .skill-chips span {
   padding: 4px 6px;
   color: var(--muted);
-  border: 1px solid var(--line);
+  border: 1px solid var(--guide-card-border);
   border-radius: 4px;
-  font: 700 14px/1 var(--mono);
+  font: 500 12px/1.5 var(--mono);
 }
 .outcome-strip {
   min-height: 94px;
@@ -1164,8 +1185,8 @@ main {
   align-items: center;
   gap: 23px;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  border: 1px solid var(--guide-card-border);
+  border-radius: var(--guide-radius);
   background:
     linear-gradient(90deg, rgba(var(--cyan-rgb), 0.055), rgba(var(--purple-rgb), 0.04)),
     var(--panel);
@@ -1174,9 +1195,11 @@ main {
   display: flex;
   align-items: center;
   gap: 10px;
-  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
 }
 .outcome-strip strong {
+  flex: 0 0 auto;
   color: var(--cyan);
   font: 700 27px/1 var(--mono);
 }
@@ -1206,14 +1229,14 @@ main {
    lead paragraph against the far right edge on wide screens. */
 .section-heading {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   align-items: end;
-  gap: clamp(32px, 4vw, 64px);
-  margin-bottom: 48px;
+  gap: 24px 40px;
+  margin-bottom: 32px;
 }
 .section-heading > div {
   position: relative;
-  padding-left: 58px;
+  padding-left: 40px;
 }
 .section-number {
   position: absolute;
@@ -1230,8 +1253,10 @@ main {
 }
 .section-heading h2 {
   margin: 0;
-  font-size: clamp(28px, 3vw, 42px);
-  letter-spacing: -1.8px;
+  font-size: clamp(28px, 2.6vw, 38px);
+  line-height: 1.4;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
 }
 /* em, not ch: one em is one CJK character, so this caps the Japanese
    measure at ~38 characters per line. */
@@ -1247,16 +1272,18 @@ main {
 }
 .learning-flow {
   display: grid;
-  grid-template-columns: 1fr auto 1fr auto 1fr;
-  align-items: center;
-  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: var(--guide-gap);
 }
 .flow-card {
   position: relative;
-  min-height: 276px;
-  padding: 27px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--guide-card-border);
+  border-radius: var(--guide-radius);
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.025), transparent), var(--panel);
   transition:
     transform 180ms ease,
@@ -1308,19 +1335,20 @@ main {
 }
 .flow-card p {
   margin: 0;
-  min-height: 66px;
   color: var(--fg-mid);
   font-size: 16px;
   line-height: 1.8;
 }
 .flow-card a {
   display: inline-block;
-  margin-top: 18px;
+  margin-top: auto;
+  padding-top: 20px;
   color: var(--fg);
   font: 700 14px/1 var(--mono);
   text-decoration: none;
 }
 .flow-arrow {
+  display: none;
   color: var(--muted);
   font: 700 17px/1 var(--mono);
 }
@@ -1339,7 +1367,7 @@ main {
   align-items: center;
   gap: 14px;
   color: var(--muted);
-  font: 700 14px/1 var(--mono);
+  font: 700 12px/1.5 var(--mono);
   letter-spacing: 1.3px;
 }
 .catalogue-toolbar b {
@@ -1393,7 +1421,7 @@ main {
 }
 .catalogue-guide small {
   color: var(--muted);
-  font: 14px/1 var(--mono);
+  font: 14px/1.5 var(--sans);
 }
 .catalogue-guide > i {
   color: var(--muted);
@@ -1402,19 +1430,18 @@ main {
 }
 .stage-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: var(--guide-gap);
 }
 .stage-card {
   position: relative;
   min-width: 0;
-  min-height: 455px;
-  padding: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  border: 1px solid var(--guide-card-border);
+  border-radius: var(--guide-radius);
   background: linear-gradient(145deg, rgba(var(--cyan-rgb), 0.035), transparent 45%), var(--panel);
   transition:
     transform 170ms ease,
@@ -1521,7 +1548,7 @@ main {
   height: 104px;
   margin: 8px 0 15px;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid var(--guide-card-border);
   border-radius: 7px;
   background: var(--canvas-bg);
 }
@@ -1688,17 +1715,17 @@ main {
 .stage-tags span {
   padding: 4px 6px;
   color: var(--muted);
-  border: 1px solid var(--line);
+  border: 1px solid var(--guide-card-border);
   border-radius: 4px;
-  font: 700 14px/1 var(--mono);
+  font: 500 12px/1.5 var(--mono);
 }
 .stage-card-actions {
   margin-top: auto;
-  padding-top: 10px;
+  padding-top: 16px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--guide-card-border);
 }
 .stage-detail-button,
 .stage-open-button {
@@ -1751,13 +1778,13 @@ main {
   display: grid;
   grid-template-columns: 1.03fr 0.97fr;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--guide-card-border);
+  border-radius: var(--guide-radius);
   background:
     radial-gradient(circle at 10% 0%, rgba(var(--ok-rgb), 0.08), transparent 35%), var(--panel);
 }
 .real-copy {
-  padding: clamp(34px, 5vw, 66px);
+  padding: clamp(24px, 3vw, 40px);
 }
 .real-eyebrow {
   color: var(--mint);
@@ -1768,8 +1795,9 @@ main {
 }
 .real-copy h2 {
   margin: 22px 0 17px;
-  font-size: clamp(30px, 4vw, 50px);
-  letter-spacing: -2px;
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.4;
+  letter-spacing: -0.035em;
 }
 .real-copy > p {
   margin: 0;
@@ -1778,7 +1806,7 @@ main {
   line-height: 1.9;
 }
 .real-copy ul {
-  margin: 27px 0;
+  margin: 20px 0;
   padding: 0;
   list-style: none;
 }
@@ -1828,10 +1856,10 @@ main {
 }
 .real-resources {
   align-self: center;
-  margin: 35px 42px 35px 0;
+  margin: 32px 32px 32px 0;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  border: 1px solid var(--guide-card-border);
+  border-radius: var(--guide-radius);
   background: var(--canvas-bg);
   box-shadow: 0 26px 60px rgba(var(--shadow-rgb), 0.112);
 }
@@ -1880,7 +1908,7 @@ main {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 13px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--guide-card-border);
   background:
     radial-gradient(circle at 100% 0%, rgba(var(--warn-rgb), 0.07), transparent 45%), var(--panel);
 }
@@ -1914,12 +1942,13 @@ main {
 }
 .real-resource-card small,
 .real-resource-card strong {
+  overflow-wrap: anywhere;
   display: block;
 }
 .real-resource-card small {
   margin-bottom: 5px;
   color: var(--muted);
-  font: 700 14px/1 var(--mono);
+  font: 700 12px/1.5 var(--mono);
   letter-spacing: 1.2px;
 }
 .real-resource-card strong {
@@ -1954,7 +1983,7 @@ main {
 
 .guide-footer {
   min-height: 140px;
-  padding: 35px clamp(28px, 6vw, 96px);
+  padding: 32px max(var(--guide-gutter), (100% - var(--content-max)) / 2);
   display: flex;
   flex-wrap: wrap;
   overflow-wrap: anywhere;
@@ -2006,12 +2035,12 @@ main {
   z-index: 5;
   right: max(30px, calc((100vw - 1080px) / 2 + 16px));
   top: 28px;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   color: var(--fg-mid);
   border: 1px solid var(--line);
   border-radius: 50%;
-  background: transparent;
+  background: var(--panel);
   cursor: pointer;
 }
 .dialog-kicker {
@@ -2157,7 +2186,7 @@ main {
   min-width: 0;
   flex-wrap: wrap;
   min-height: 190px;
-  padding: 58px 62px 40px;
+  padding: 48px 40px 32px;
   display: flex;
   align-items: end;
   justify-content: space-between;
@@ -2175,7 +2204,9 @@ main {
 .lesson-page-header h2 {
   overflow-wrap: anywhere;
   margin-top: 15px;
-  font-size: clamp(42px, 6vw, 70px);
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.3;
+  letter-spacing: -0.035em;
 }
 .lesson-page-header .dialog-lead {
   max-width: 700px;
@@ -2690,21 +2721,8 @@ main {
   .guide-shell {
     margin-left: 220px;
   }
-  .guide-hero {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .hero-copy {
     max-width: 760px;
-  }
-  .hero-visual {
-    max-width: 620px;
-    width: 100%;
-  }
-  .stage-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .skill-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .outcome-strip {
     flex-wrap: wrap;
@@ -2714,24 +2732,13 @@ main {
     margin-left: 0;
     text-align: left;
   }
-  .learning-flow {
-    grid-template-columns: 1fr;
-  }
-  .flow-arrow {
-    display: none;
-  }
-  .flow-card {
-    min-height: 230px;
-  }
-  .real-robot-card {
-    grid-template-columns: 1fr;
-  }
-  .real-resources {
-    margin: 0 42px 42px;
-  }
 }
 
 @media (max-width: 760px) {
+  :root {
+    --guide-gutter: 22px;
+    --guide-section-space: 56px;
+  }
   html {
     scroll-padding-top: 180px;
   }
@@ -2803,26 +2810,22 @@ main {
   }
   .guide-hero {
     width: 100%;
-    min-height: auto;
-    padding: 72px 22px;
-    grid-template-columns: minmax(0, calc(100vw - 44px));
+    grid-template-columns: minmax(0, 1fr);
   }
   .hero-copy,
   .hero-visual {
-    width: calc(100vw - 44px);
-    max-width: calc(100vw - 44px);
+    width: 100%;
+    max-width: 100%;
   }
   .system-window {
     width: 100%;
     transform: none;
   }
   .hero-copy h1 {
-    font-size: clamp(36px, 10vw, 48px);
-    letter-spacing: -2.5px;
+    font-size: clamp(32px, 7vw, 44px);
   }
   .hero-title-line {
     white-space: normal;
-    word-break: break-all;
   }
   .system-map {
     height: 220px;
@@ -2835,9 +2838,6 @@ main {
     padding: 3px 4px;
     font-size: 12px;
   }
-  .guide-section {
-    padding: 72px 22px;
-  }
   .section-heading {
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
@@ -2845,7 +2845,7 @@ main {
     margin-bottom: 34px;
   }
   .section-heading > p {
-    padding-left: 58px;
+    padding-left: 0;
   }
   .hero-learn-tags {
     gap: 5px;
@@ -2866,7 +2866,7 @@ main {
   }
   .architecture-robot-art {
     grid-column: 2;
-    grid-row: 1 / -1;
+    grid-row: 1 / 3;
   }
   /* Equal-width chips can be squeezed below one CJK word here, so let them
      size to their own label and wrap onto a second line instead. */
@@ -2886,12 +2886,6 @@ main {
     padding-left: 0;
     border-left: 0;
   }
-  .skill-grid {
-    grid-template-columns: 1fr;
-  }
-  .skill-card {
-    min-height: 305px;
-  }
   .outcome-strip {
     align-items: flex-start;
     flex-direction: column;
@@ -2904,23 +2898,8 @@ main {
   .outcome-strip > b {
     margin-top: 4px;
   }
-  .catalogue-guide {
-    padding: 16px;
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  .catalogue-guide > i {
-    text-align: center;
-    transform: rotate(90deg);
-  }
-  .stage-grid {
-    grid-template-columns: 1fr;
-  }
-  .stage-card {
-    min-height: 310px;
-  }
   .real-copy {
-    padding: 35px 23px;
+    padding: 24px;
   }
   .real-resources {
     margin: 0 18px 22px;
@@ -3099,12 +3078,7 @@ main {
   font-size: 12px;
 }
 
-.skill-card {
-  min-height: 370px;
-}
-.skill-card > small,
-.skill-can span,
-.skill-chips span {
+.skill-can span {
   font-size: 14px;
 }
 .skill-card h3 {
@@ -3143,9 +3117,6 @@ main {
   font-size: 14px;
 }
 
-.stage-card {
-  min-height: 480px;
-}
 .stage-code {
   font-size: 12px;
 }
@@ -3163,9 +3134,6 @@ main {
   font-size: 14px;
 }
 .stage-at-glance strong {
-  font-size: 14px;
-}
-.stage-tags span {
   font-size: 14px;
 }
 .stage-detail-button,
@@ -3276,12 +3244,6 @@ main {
   .hero-copy > p {
     font-size: 16px;
   }
-  .skill-card {
-    min-height: 350px;
-  }
-  .stage-card {
-    min-height: 430px;
-  }
   .section-heading > p {
     font-size: 16px;
   }
@@ -3341,20 +3303,15 @@ main {
 }
 
 @media (max-width: 420px) {
+  :root {
+    --guide-gutter: 16px;
+  }
   .guide-header {
     padding-inline: 10px;
   }
-  .guide-hero,
-  .guide-section {
-    padding-inline: 16px;
-  }
-  .hero-copy,
-  .hero-visual {
-    width: calc(100vw - 32px);
-    max-width: calc(100vw - 32px);
-  }
-  .guide-hero {
-    grid-template-columns: minmax(0, calc(100vw - 32px));
+  .hero-cta > a {
+    flex: 1 1 140px;
+    justify-content: center;
   }
   .robot-functions {
     --arch-gap: 12px;
@@ -3386,6 +3343,194 @@ main {
     width: 100%;
     max-width: 100%;
     white-space: normal;
-    word-break: break-all;
+    word-break: normal;
+  }
+}
+
+/* Layout follows the usable content width, including when the sidebar is open. */
+@container guide-shell (max-width: 960px) {
+  .guide-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .system-window {
+    transform: none;
+  }
+  .guide-breadcrumb {
+    display: none;
+  }
+  .guide-actions {
+    margin-left: auto;
+  }
+}
+
+@container guide-section (max-width: 900px) {
+  .real-robot-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .real-resources {
+    margin: 0 24px 24px;
+  }
+}
+
+@container guide-section (max-width: 860px) {
+  .robot-function-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .architecture-summary {
+    grid-template-columns: minmax(0, 1fr) 120px;
+  }
+  .architecture-summary > p {
+    grid-column: 1 / -1;
+  }
+  .architecture-robot-art {
+    grid-row: 1;
+  }
+}
+
+@container guide-section (max-width: 800px) {
+  .learning-flow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .flow-card {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 6px 18px;
+    padding: 20px;
+  }
+  .flow-icon {
+    grid-column: 1;
+    grid-row: 1 / 4;
+    margin: 0;
+  }
+  .flow-card small,
+  .flow-card h3,
+  .flow-card p,
+  .flow-card a {
+    grid-column: 2;
+  }
+  .flow-card small {
+    padding-right: 30px;
+    line-height: 1.5;
+  }
+  .flow-card h3 {
+    margin: 0;
+  }
+  .flow-card a {
+    margin: 0;
+    padding-top: 10px;
+    line-height: 1.5;
+  }
+}
+
+@container guide-section (max-width: 600px) {
+  .catalogue-guide {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px;
+  }
+  .catalogue-guide > i {
+    display: none;
+  }
+}
+
+@container guide-section (max-width: 520px) {
+  .architecture-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .architecture-robot-art {
+    display: none;
+  }
+  .architecture-flow {
+    flex-wrap: wrap;
+  }
+  .architecture-flow span {
+    flex: 1 1 auto;
+  }
+  .stage-card,
+  .skill-card {
+    padding: 20px;
+  }
+  .flow-card p,
+  .flow-card a {
+    grid-column: 1 / -1;
+  }
+  .flow-icon {
+    grid-row: 1 / 3;
+  }
+  .catalogue-toolbar {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    line-height: 1.5;
+    letter-spacing: 0.5px;
+  }
+  .catalogue-toolbar > span:first-child {
+    white-space: nowrap;
+  }
+}
+
+@container guide-section (max-width: 360px) {
+  .architecture-flow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .architecture-flow i {
+    justify-self: center;
+    transform: rotate(90deg);
+  }
+  .stage-detail-button,
+  .stage-open-button {
+    gap: 4px;
+    padding-inline: 7px;
+    font-size: 13px;
+  }
+  .real-resource-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .real-resource-card .resource-mark {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .guide-actions {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 6px 8px;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .guide-actions .theme-switcher {
+    margin-left: 0;
+    justify-self: end;
+  }
+  .guide-actions .repository-button,
+  .guide-actions .language-switcher {
+    justify-self: start;
+  }
+  .guide-actions .play-button {
+    justify-self: end;
+    padding: 8px;
+    font-size: 12px;
+  }
+  .guide-actions .language-switcher {
+    padding-inline: 4px;
+  }
+  .guide-actions .language-switcher > span {
+    display: none;
+  }
+}
+
+/* Align each catalogue row without reserving empty lines in short titles. */
+@supports (grid-template-rows: subgrid) {
+  .stage-card {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 8;
+    row-gap: 0;
+  }
+  .stage-at-glance {
+    grid-template-rows: repeat(2, 1fr);
   }
 }
