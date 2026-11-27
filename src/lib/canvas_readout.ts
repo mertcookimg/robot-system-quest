@@ -5,12 +5,6 @@
 // every size. Compact layouts also move timing here. Capture only the live
 // stage canvas, never the Guide's preview canvases.
 import { tx } from "../i18n";
-import {
-  setupCanvasTextReadout,
-  beginCanvasTextReadoutFrame,
-  endCanvasTextReadoutFrame,
-  clearCanvasTextReadout,
-} from "./canvas_text_readout";
 
 let canvas: HTMLCanvasElement | null = null;
 let compact: MediaQueryList | null = null;
@@ -21,10 +15,7 @@ let timerElement: HTMLElement | null = null;
 let hint = "";
 let timer: { elapsed: number; best?: number } | null = null;
 
-export function setupCanvasReadout(
-  target: HTMLCanvasElement,
-  context: CanvasRenderingContext2D,
-): void {
+export function setupCanvasReadout(target: HTMLCanvasElement): void {
   panel?.remove();
   canvas = target;
   compact = target.ownerDocument.defaultView?.matchMedia("(max-width: 840px)") ?? null;
@@ -38,14 +29,12 @@ export function setupCanvasReadout(
   hintElement.className = "canvas-readout-hint";
   panel.append(timerElement, hintElement);
   target.after(panel);
-  setupCanvasTextReadout(target, context);
   clearCanvasReadout();
 }
 
 export function beginCanvasReadoutFrame(): void {
   hint = "";
   timer = null;
-  beginCanvasTextReadoutFrame();
 }
 
 /** True means wrapping HTML instructions replace this canvas text. */
@@ -72,7 +61,6 @@ function setText(element: HTMLElement, text: string): void {
 }
 
 export function endCanvasReadoutFrame(): void {
-  endCanvasTextReadoutFrame();
   if (!panel || !hintElement || !timerElement) return;
   const showTimer = !!(compact?.matches || shortViewport?.matches) && timer !== null;
   if (!hint && !showTimer) {
@@ -93,7 +81,6 @@ export function endCanvasReadoutFrame(): void {
 
 export function clearCanvasReadout(): void {
   beginCanvasReadoutFrame();
-  clearCanvasTextReadout();
   if (panel) panel.hidden = true;
   if (hintElement) setText(hintElement, "");
   if (timerElement) setText(timerElement, "");

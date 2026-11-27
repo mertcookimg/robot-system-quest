@@ -4,7 +4,7 @@
 // Canvas pixels and responsive layout still require browser visual review.
 import test, { after, afterEach, before, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { Window } from "happy-dom";
 import { createServer, type ViteDevServer } from "vite";
 import type { GameContext, Stage } from "../src/types";
@@ -14,21 +14,9 @@ let server: ViteDevServer;
 let stage: Stage | undefined;
 let context: GameContext;
 let setLang: (lang: "ja" | "en") => void;
-let readout: typeof import("../src/lib/canvas_readout");
 const factories = new Map<string, () => Stage>();
 const descriptors = new Map<string, PropertyDescriptor | undefined>();
 let messages: Array<{ topic: string; message: string }> = [];
-let drawnText: string[] = [];
-const sources: Array<{ category: string; id: string }> = [];
-for (const category of ["game", "lesson"]) {
-  const files = await readdir(new URL(`../src/stages/${category}/`, import.meta.url));
-  sources.push(
-    ...files
-      .filter((file) => file.endsWith(".ts"))
-      .map((file) => ({ category, id: file.slice(0, -3) })),
-  );
-}
-
 function canvasContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
   const pixels = (width: number, height: number) => ({
     width,
@@ -40,8 +28,6 @@ function canvasContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
     {
       get(target, key) {
         if (key in target) return Reflect.get(target, key);
-        if (key === "fillText" || key === "strokeText")
-          return (value: string) => drawnText.push(String(value));
         if (key === "getImageData")
           return (_x: number, _y: number, w: number, h: number) => pixels(w, h);
         if (key === "createImageData") return pixels;
@@ -111,13 +97,11 @@ before(async () => {
     factories.set(id, (await server.ssrLoadModule(`/src/stages/lesson/${id}.ts`)).default.build);
   }
   setLang = (await server.ssrLoadModule("/src/i18n/index.ts")).setLang;
-  readout = (await server.ssrLoadModule("/src/lib/canvas_readout.ts")) as typeof readout;
 });
 
 beforeEach(() => {
   setLang("en");
   messages = [];
-  drawnText = [];
   const canvas = document.getElementById("game") as HTMLCanvasElement;
   canvas.width = 800;
   canvas.height = 500;
@@ -139,7 +123,6 @@ beforeEach(() => {
     ghost: new Proxy({}, { get: () => noop }),
     getBestTime: () => undefined,
   } as unknown as GameContext;
-  readout.setupCanvasReadout(canvas, context.ctx);
 });
 
 afterEach(() => {
@@ -270,48 +253,3 @@ test("a long image-processing pipeline retains every block in flowing text and i
   stage = undefined;
   assert.equal(document.querySelector(".image-processing-pipeline"), null);
 });
-
-test("scene text coverage includes all 14 games and 24 lessons", () => {
-  assert.equal(sources.filter(({ category }) => category === "game").length, 14);
-  assert.equal(sources.filter(({ category }) => category === "lesson").length, 24);
-});
-
-for (const { category, id } of sources) {
-  test(`${category}/${id}: scene labels remain available as ordinary text in both languages`, async () => {
-    stage = (await server.ssrLoadModule(`/src/stages/${category}/${id}.ts`)).default.build();
-    stage!.init(context);
-    const details = document.querySelector<HTMLDetailsElement>(".canvas-text-readout")!;
-    for (const lang of ["en", "ja"] as const) {
-      setLang(lang);
-      drawnText = [];
-      readout.beginCanvasReadoutFrame();
-      stage!.update(0.05);
-      stage!.draw();
-      readout.endCanvasReadoutFrame();
-      details.open = true;
-      details.dispatchEvent(new Event("toggle"));
-      const text = details.querySelector("ul")!.textContent!;
-      const meaningful = drawnText
-        .map((value) => value.trim())
-        .filter((value) => /[\p{L}\p{N}]/u.test(value));
-      assert.ok(meaningful.length > 0, `${id} draws scene information`);
-      assert.equal(details.hidden, false);
-      for (const value of meaningful)
-        assert.ok(text.includes(value), `${id}/${lang}: missing readable scene label ${value}`);
-      assert.ok(
-        !context.canvas.parentElement!.contains(details),
-        "The scene remains independently sticky",
-      );
-      if (id === "pubsub_builder") {
-        assert.ok(text.includes("/cmd_vel\ngeometry_msgs/msg/Twist"));
-      }
-      if (id === "tf_puzzle") {
-        assert.ok(text.includes("tx=0\nty=0\nyaw=0°"));
-        assert.ok(text.includes("base_link"));
-      }
-    }
-    readout.clearCanvasReadout();
-    assert.equal(details.querySelector("ul")!.textContent, "");
-    assert.equal(details.hidden, true);
-  });
-}

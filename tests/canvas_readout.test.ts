@@ -58,7 +58,7 @@ beforeEach(() => {
   context = makeContext(canvas);
   compact = true;
   language.setLang("en");
-  readout.setupCanvasReadout(canvas, context);
+  readout.setupCanvasReadout(canvas);
   readout.beginCanvasReadoutFrame();
 });
 
@@ -165,92 +165,10 @@ test("long instructions remain complete outside the desktop scene without leavin
   assert.equal(panel().hidden, true, "Desktop timing alone uses its existing canvas badge");
 });
 
-const sceneText = () => document.querySelector<HTMLDetailsElement>(".canvas-text-readout")!;
-
-function openSceneText(): void {
-  sceneText().open = true;
-  sceneText().dispatchEvent(new browser.Event("toggle"));
-}
-
-test("small scene labels have a larger text alternative outside the sticky canvas on any viewport", () => {
-  compact = false; // A short, wide PC window also needs this alternative.
-  context.font = "9px monospace";
-  context.fillText("/cmd_vel", 60, 80);
-  context.fillText("geometry_msgs/msg/Twist", 60, 96);
-  context.fillText("tx=12", 300, 80);
-  context.fillText("ty=0", 300, 90);
-  context.fillText("yaw=30°", 300, 100);
-  context.strokeText("yaw=30°", 300, 100);
-  context.fillText("▶", 310, 180);
-  readout.endCanvasReadoutFrame();
-  const details = sceneText();
-  assert.equal(details.hidden, false);
-  assert.equal(
-    details.open,
-    false,
-    "The text alternative must not push the controls down by default",
-  );
-  assert.equal(
-    details.querySelector("ul")!.childElementCount,
-    0,
-    "Closed text needs no live DOM updates",
-  );
-  assert.ok(!canvas.parentElement!.contains(details), "Reading must not enlarge the sticky scene");
-  openSceneText();
-  assert.deepEqual(
-    [...details.querySelectorAll("li")].map((row) => row.textContent),
-    ["/cmd_vel\ngeometry_msgs/msg/Twist", "tx=12\nty=0\nyaw=30°"],
-    "Topic/type and transform values retain their grouping, without outlines or decorations",
-  );
-  assert.equal(details.hasAttribute("aria-live"), false);
-  assert.equal(details.querySelector("[aria-live]"), null);
-  assert.ok(canvasText.includes("/cmd_vel"), "The normal scene must retain its labels");
-});
-
-test("text inspection preserves focus, existing rows and scroll while rate-limiting changing values", (t) => {
-  let now = 0;
-  t.mock.method(performance, "now", () => now);
-  const draw = (score: number) => {
-    readout.beginCanvasReadoutFrame();
-    context.fillText("SCORE", 40, 40);
-    context.fillText(String(score), 40, 55);
-    context.fillText("A <robot> & a long/type/name", 400, 40);
-    readout.endCanvasReadoutFrame();
-  };
-  draw(1);
-  openSceneText();
-  const details = sceneText();
-  const summary = details.querySelector("summary")!;
-  const rows = [...details.querySelectorAll("li")];
-  summary.focus();
-  details.scrollTop = 91;
-  now = 100;
-  draw(2);
-  assert.equal(rows[0].textContent, "SCORE\n1", "Do not redraw text on every animation frame");
-  now = 250;
-  draw(3);
-  assert.equal(rows[0].textContent, "SCORE\n3");
-  assert.deepEqual([...details.querySelectorAll("li")], rows);
-  assert.equal(document.activeElement, summary);
-  assert.equal(details.scrollTop, 91);
-  assert.equal(details.querySelector("robot"), null, "Drawn strings remain escaped text");
-  language.setLang("ja");
-  assert.equal(summary.textContent, "画面の文字を大きく読む");
-  assert.equal(details.open, true);
-  assert.equal(document.activeElement, summary);
-
-  readout.clearCanvasReadout();
-  assert.equal(details.hidden, true);
-  assert.equal(details.querySelector("ul")!.textContent, "");
-  draw(4);
-  assert.equal(details.querySelector("li")!.textContent, "SCORE\n4");
-  assert.equal(details.open, true, "A restart keeps the chosen reading mode");
-});
-
 test("short desktop viewports also show time as readable HTML", (t) => {
   t.mock.method(browser, "matchMedia", viewportMatchMedia);
   browser.happyDOM.setWindowSize({ width: 1280, height: 480 });
-  readout.setupCanvasReadout(canvas, context);
+  readout.setupCanvasReadout(canvas);
   readout.beginCanvasReadoutFrame();
   drawing.drawTimer(context, 8.5, 7.25);
   readout.endCanvasReadoutFrame();
@@ -259,43 +177,4 @@ test("short desktop viewports also show time as readable HTML", (t) => {
     "Time 8.5 s · Best 7.25 s",
   );
   assert.deepEqual(canvasText, [], "A height-limited canvas must not be the only timer readout");
-});
-
-test("keyboard reading keys keep native behavior without reaching stage handlers", (t) => {
-  context.fillText("Read these instructions", 40, 40);
-  readout.endCanvasReadoutFrame();
-  openSceneText();
-  const summary = sceneText().querySelector("summary")!;
-  let downs = 0;
-  let ups = 0;
-  const down = () => downs++;
-  const up = () => ups++;
-  window.addEventListener("keydown", down);
-  window.addEventListener("keyup", up);
-  t.after(() => {
-    window.removeEventListener("keydown", down);
-    window.removeEventListener("keyup", up);
-  });
-  for (const key of ["ArrowDown", "PageDown", " ", "w"]) {
-    const event = new browser.KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
-    summary.dispatchEvent(event);
-    assert.equal(event.defaultPrevented, false);
-    summary.dispatchEvent(new browser.KeyboardEvent("keyup", { key, bubbles: true }));
-  }
-  assert.equal(downs, 0, "Reading keys must not drive a stage");
-  assert.equal(ups, 4, "Previously held stage keys still need their release events");
-});
-
-test("preview text and prior frames never leak into the current scene text", () => {
-  const preview = makeContext(document.createElement("canvas"));
-  context.fillText("Live lesson", 40, 40);
-  preview.fillText("Guide preview", 40, 40);
-  readout.endCanvasReadoutFrame();
-  openSceneText();
-  assert.equal(sceneText().querySelector("ul")!.textContent, "Live lesson");
-  readout.clearCanvasReadout();
-  readout.beginCanvasReadoutFrame();
-  context.fillText("Next lesson", 40, 40);
-  readout.endCanvasReadoutFrame();
-  assert.equal(sceneText().querySelector("ul")!.textContent, "Next lesson");
 });
